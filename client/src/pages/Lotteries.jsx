@@ -1,0 +1,79 @@
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { api } from '../api.js';
+
+const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
+
+export default function Lotteries() {
+  const [types, setTypes] = useState([]);
+  const [draws, setDraws] = useState([]);
+  const [typeInfo, setTypeInfo] = useState(null);
+  const [params] = useSearchParams();
+  const selType = params.get('type');
+
+  useEffect(() => {
+    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const q = selType ? `?type=${selType}` : '';
+    api(`/lottery/draws${q}`).then(r => setDraws(r.draws)).catch(() => {});
+    if (selType) api(`/lottery/types/${selType}`).then(r => setTypeInfo(r)).catch(() => {});
+    else setTypeInfo(null);
+  }, [selType]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <Link to="/lotteries" className={`px-4 py-2 rounded-lg text-sm ${!selType ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>ทั้งหมด</Link>
+        {types.map(t => (
+          <Link key={t.id} to={`/lotteries?type=${t.id}`}
+            className={`px-4 py-2 rounded-lg text-sm ${selType == t.id ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700 hover:border-gold-500/40'}`}>
+            {t.name_th}
+          </Link>
+        ))}
+      </div>
+
+      {typeInfo?.rules?.length > 0 && (
+        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+          <h3 className="font-bold text-white mb-2">ประเภทการแทง & อัตราจ่าย</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+            {typeInfo.rules.map(r => (
+              <div key={r.id} className="bg-navy-900 rounded-lg px-3 py-2">
+                <span className="text-white">{r.name_th}</span>
+                <span className="text-gold-400 float-right">x{r.payout_multiplier}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {draws.map(d => (
+          <div key={d.id} className="bg-navy-800 border border-navy-700 rounded-xl p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="font-bold text-white text-lg">{d.type_name_th}</div>
+                <div className="text-sm text-navy-300">{d.draw_code}</div>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
+                {STATUS_TH[d.status] || d.status}
+              </span>
+            </div>
+            <div className="mt-3 text-sm text-navy-300 space-y-1">
+              <div>🕐 ออกรางวัล: <span className="text-white">{d.draw_at}</span></div>
+              <div>⏱️ ปิดรับโพย: <span className="text-white">{d.close_at}</span></div>
+              {d.result_numbers && <div>🎯 ผล: <code className="text-gold-300">{d.result_numbers}</code></div>}
+            </div>
+            {d.status === 'open' && (
+              <Link to={`/bet/${d.id}`} className="mt-4 block text-center bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400">
+                แทงหวยรอบนี้
+              </Link>
+            )}
+          </div>
+        ))}
+        {!draws.length && <div className="text-navy-300 col-span-2 text-center py-10">ไม่พบรอบหวย</div>}
+      </div>
+    </div>
+  );
+}

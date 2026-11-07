@@ -1,0 +1,282 @@
+import { getDb, tx, makeReference } from '../db/index.js';
+import { HttpError, audit } from '../lib/audit.js';
+import { debitForBetTx, creditTx, getBalance } from './walletService.js';
+
+export const BET_TYPES = ['2top', '2bottom', '3top', '3tod', 'run_top', 'run_bottom'];
+
+function nowSql() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
+
+export function listLotteryTypes({ activeOnly = true } = {}) {
+  const db = getDb();
+  return activeOnly
+    ? db.prepare('SELECT * FROM lottery_types WHERE is_active = 1 ORDER BY id').all()
+    : db.prepare('SELECT * FROM lottery_types ORDER BY id').all();
+}
+
+export function getLotteryType(id) {
+  return getDb().prepare('SELECT * FROM lottery_types WHERE id = ?').get(id);
+}
+
+export function listRules(lotteryTypeId, { activeOnly = true } = {}) {
+  const db = getDb();
+  return db.prepare(`SELECT * FROM lottery_rules
+                     WHERE lottery_type_id = ? ${activeOnly ? 'AND is_active = 1' : ''} ORDER BY bet_type`)
+    .all(lotteryTypeId);
+}
+
+export function listDraws({ lotteryTypeId = null, status = null, upcoming = false } = {}) {
+  const db = getDb();
+  let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th
+             FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id WHERE 1=1`;
+  const args = [];
+  if (lotteryTypeId) { sql += ' AND d.lottery_type_id = ?'; args.push(lotteryTypeId); }
+  if (status) { sql += ' AND d.status = ?'; args.push(status); }
+  if (upcoming) sql += ` AND d.status IN ('scheduled','open') AND d.close_at > '${nowSql()}'`;
+  sql += ' ORDER BY d.draw_at DESC LIMIT 200';
+  return db.prepare(sql).all(...args);
+}
+
+export function getDraw(id) {
+  const db = getDb();
+  return db.prepare(`SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th
+                     FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id WHERE d.id = ?`).get(id);
+}
+
+export function isDrawOpen(draw) {
+  if (!draw) return false;
+  if (draw.status === 'open' && draw.close_at > nowSql()) return true;
+  // auto-transition stale draws
+  if (draw.status === 'open' && draw.close_at <= nowSql()) {
+    getDb().prepare(`UPDATE lottery_draws SET status = 'closed', updated_at = datetime('now') WHERE id = ?`).run(draw.id);
+    return false;
+  }
+  return false;
+}
+
+export function validateBetNumber(rule, number) {
+  if (!/^\d+$/.test(number || '')) throw new HttpError(400, `หมายเลขต้องเป็นตัวเลขล้วน (${rule.name_th})`);
+  if (number.length !== rule.digits) throw new HttpError(400, `${rule.name_th} ต้องเป็น ${rule.digits} หลัก`);
+  return number;
+}
+
+/**
+ * Place a bet slip. items: [{ ruleId, number, amount }] — amount in satang, multiple of stake_unit.
+ * All-or-nothing inside one DB transaction.
+ */
+export function placeBet(userId, { drawId, items }) {
+  if (!Array.isArray(items) || items.length === 0) throw new HttpError(400, 'กรุณาเลือกอย่างน้อย 1 รายการ');
+  if (items.length > 50) throw new HttpError(400, 'สูงสุด 50 รายการต่อโพย');
+
+  const db = getDb();
+  const draw = getDraw(drawId);
+  if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+  if (!isDrawOpen(draw)) throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพย', 'DRAW_CLOSED');
+
+  // Resolve rules (must belong to draw's lottery type, active)
+  const slipRef = makeReference('BET');
+  const resolved = items.map(it => {
+    const rule = db.prepare('SELECT * FROM lottery_rules WHERE id = ? AND lottery_type_id = ? AND is_active = 1')
+      .get(it.ruleId, draw.lottery_type_id);
+    if (!rule) throw new HttpError(400, `ประเภทการแทงไม่ถูกต้องหรือปิดใช้งาน (rule ${it.ruleId})`);
+    const number = validateBetNumber(rule, String(it.number ?? '').trim());
+    const amount = Number(it.amount);
+    if (!Number.isInteger(amount) || amount <= 0) throw new HttpError(400, 'จำนวนเงินแทงไม่ถูกต้อง');
+    if (amount % rule.stake_unit !== 0) throw new HttpError(400, `จำนวนเงินต้องเป็นหน่วย ${rule.stake_unit} สตางค์`);
+    if (amount < rule.min_amount) throw new HttpError(400, `ขั้นต่ำ ${rule.min_amount} สตางค์`);
+    if (rule.max_amount && amount > rule.max_amount) throw new HttpError(400, `สูงสุด ${rule.max_amount} สตางค์`);
+    return { rule, number, amount };
+  });
+
+  const totalStake = resolved.reduce((s, r) => s + r.amount, 0);
+
+  return tx((d) => {
+    const slip = d.prepare(`INSERT INTO bet_slips (slip_ref, user_id, draw_id, status, total_stake)
+                            VALUES (?, ?, ?, 'pending', ?)`).run(slipRef, userId, drawId, totalStake);
+    const slipId = Number(slip.lastInsertRowid);
+
+    const insItem = d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount)
+                               VALUES (?, ?, ?, ?, ?, ?)`);
+    for (const r of resolved) {
+      insItem.run(slipId, drawId, r.rule.id, r.rule.bet_type, r.number, r.amount);
+    }
+
+    debitForBetTx(d, {
+      userId, slipRef, totalStake,
+      idempotencyKey: `bet-debit-${slipRef}`,
+    });
+
+    audit({ userId, action: 'bet.place', entityType: 'bet_slip', entityId: slipRef,
+      detail: { drawId, totalStake, items: resolved.map(r => ({ t: r.rule.bet_type, n: r.number, a: r.amount })) } });
+
+    return { slipRef, slipId, totalStake, balance: getBalance(userId) };
+  });
+}
+
+export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
+  const db = getDb();
+  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.status AS draw_status, lt.name_th AS type_name_th
+                           FROM bet_slips bs
+                           JOIN lottery_draws d ON d.id = bs.draw_id
+                           JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                           WHERE bs.user_id = ? ORDER BY bs.id DESC LIMIT ? OFFSET ?`)
+    .all(userId, limit, offset);
+  const itemStmt = db.prepare(`SELECT id, bet_type, number, amount, status, payout, result_detail FROM bet_items WHERE slip_id = ?`);
+  return slips.map(s => ({ ...s, items: itemStmt.all(s.id) }));
+}
+
+export function getMySlip(userId, slipRef) {
+  const db = getDb();
+  const slip = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th
+                           FROM bet_slips bs JOIN lottery_draws d ON d.id = bs.draw_id
+                           JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                           WHERE bs.slip_ref = ? AND bs.user_id = ?`).get(slipRef, userId);
+  if (!slip) throw new HttpError(404, 'ไม่พบโพย');
+  slip.items = db.prepare('SELECT * FROM bet_items WHERE slip_id = ?').all(slip.id);
+  return slip;
+}
+
+/**
+ * Evaluate a bet item against winning numbers using rule.match_config.
+ * match_config: { source: 'top3'|'bottom2'|'main'|..., mode: 'tail'|'head'|'sorted'|'digit_contains' }
+ */
+export function evaluateBet(rule, betNumber, winningNumbers) {
+  const cfg = JSON.parse(rule.match_config);
+  const source = String(winningNumbers?.[cfg.source] ?? '');
+  const bet = String(betNumber);
+  if (!/^\d+$/.test(source)) return { win: false, detail: { reason: 'no_source', source: cfg.source } };
+
+  let win = false;
+  let detail = {};
+  switch (cfg.mode) {
+    case 'tail': {
+      win = bet === source.slice(-bet.length);
+      detail = { source, compared: source.slice(-bet.length) };
+      break;
+    }
+    case 'head': {
+      win = bet === source.slice(0, bet.length);
+      detail = { source, compared: source.slice(0, bet.length) };
+      break;
+    }
+    case 'sorted': {
+      const src = source.slice(-bet.length).split('').sort().join('');
+      const b = bet.split('').sort().join('');
+      win = b === src;
+      detail = { source: src, compared: b };
+      break;
+    }
+    case 'digit_contains': {
+      // run bet: every digit of bet must appear in source
+      const srcDigits = new Set(source.split(''));
+      win = bet.split('').every(d => srcDigits.has(d));
+      detail = { source };
+      break;
+    }
+    default:
+      return { win: false, detail: { reason: 'unknown_mode', mode: cfg.mode } };
+  }
+  return { win, detail, multiplier: rule.payout_multiplier };
+}
+
+/** Publish result + settle all pending bets for a draw. Admin only. Atomic. */
+export function settleDraw(adminId, drawId, winningNumbers) {
+  const db = getDb();
+  const draw = getDraw(drawId);
+  if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+  if (draw.status === 'settled') throw new HttpError(400, 'รอบนี้ออกผลแล้ว', 'ALREADY_SETTLED');
+  if (draw.status === 'cancelled') throw new HttpError(400, 'รอบนี้ถูกยกเลิก');
+
+  // validate winning_numbers is non-empty object of digit strings
+  if (!winningNumbers || typeof winningNumbers !== 'object' || Array.isArray(winningNumbers))
+    throw new HttpError(400, 'winning_numbers ต้องเป็น object เช่น {"top3":"123","bottom2":"45"}');
+  for (const [k, v] of Object.entries(winningNumbers)) {
+    if (!/^\d{1,10}$/.test(String(v))) throw new HttpError(400, `ตัวเลขผลรางวัล field "${k}" ไม่ถูกต้อง`);
+  }
+
+  return tx((d) => {
+    // prevent double-settle race: re-check status inside tx
+    const cur = d.prepare('SELECT status FROM lottery_draws WHERE id = ?').get(drawId);
+    if (cur.status === 'settled') throw new HttpError(400, 'รอบนี้ออกผลแล้ว', 'ALREADY_SETTLED');
+
+    d.prepare(`INSERT INTO lottery_results (draw_id, winning_numbers, published_by) VALUES (?, ?, ?)`)
+      .run(drawId, JSON.stringify(winningNumbers), adminId);
+    d.prepare(`UPDATE lottery_draws SET status = 'settled', result_numbers = ?, updated_at = datetime('now') WHERE id = ?`)
+      .run(JSON.stringify(winningNumbers), drawId);
+
+    const pendingItems = d.prepare(`SELECT bi.*, bs.user_id AS owner_id, bs.slip_ref, r.match_config, r.payout_multiplier, r.bet_type AS rule_bet_type
+                                    FROM bet_items bi
+                                    JOIN bet_slips bs ON bs.id = bi.slip_id
+                                    JOIN lottery_rules r ON r.id = bi.rule_id
+                                    WHERE bi.draw_id = ? AND bi.status = 'pending'`).all(drawId);
+
+    const ruleCache = new Map();
+    const slipStats = new Map(); // slip_id -> {won,payout,stake}
+    let settledCount = 0, winCount = 0, totalPayout = 0;
+
+    for (const item of pendingItems) {
+      let rule = ruleCache.get(item.rule_id);
+      if (!rule) {
+        rule = d.prepare('SELECT * FROM lottery_rules WHERE id = ?').get(item.rule_id);
+        ruleCache.set(item.rule_id, rule);
+      }
+      const { win, detail } = evaluateBet(rule, item.number, winningNumbers);
+      const payout = win ? Math.floor(item.amount * Number(rule.payout_multiplier)) : 0;
+      d.prepare(`UPDATE bet_items SET status = ?, payout = ?, result_detail = ? WHERE id = ?`)
+        .run(win ? 'won' : 'lost', payout, JSON.stringify(detail), item.id);
+      settledCount++;
+      if (win) { winCount++; totalPayout += payout; }
+      const st = slipStats.get(item.slip_id) || { won: 0, payout: 0, stake: 0, userId: item.owner_id, slipRef: item.slip_ref };
+      st.payout += payout; st.stake += item.amount; if (win) st.won++;
+      slipStats.set(item.slip_id, st);
+    }
+
+    // credit winners & update slip status
+    const updSlip = d.prepare(`UPDATE bet_slips SET status = ?, total_payout = ?, settled_at = datetime('now') WHERE id = ?`);
+    const itemsBySlip = d.prepare(`SELECT COUNT(*) c, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) w FROM bet_items WHERE slip_id = ?`);
+    for (const [slipId, st] of slipStats) {
+      const counts = itemsBySlip.get(slipId);
+      const status = counts.w === 0 ? 'lost' : (counts.w === counts.c ? 'won' : 'partial');
+      updSlip.run(status, st.payout, slipId);
+      if (st.payout > 0) {
+        creditTx(d, {
+          userId: st.userId, type: 'win_credit', amount: st.payout,
+          description: `เงินรางวัลโพย ${st.slipRef} (net payout รวม ${st.payout} สตางค์)`,
+          idempotencyKey: `win-${st.slipRef}`,
+        });
+      }
+    }
+
+    audit({ userId: adminId, action: 'draw.settle', entityType: 'draw', entityId: String(drawId),
+      detail: { winningNumbers, settledCount, winCount, totalPayout } });
+
+    return { drawId, settledItems: settledCount, winningItems: winCount, totalPayout };
+  });
+}
+
+export function createDraw(adminId, { lotteryTypeId, categoryId = null, drawCode, drawAt, closeAt }) {
+  if (!drawCode || !drawAt || !closeAt) throw new HttpError(400, 'กรุณาระบุ draw_code, draw_at, close_at');
+  if (new Date(closeAt) <= new Date(drawAt)) throw new HttpError(400, 'close_at ต้องหลัง draw_at');
+  const db = getDb();
+  if (!db.prepare('SELECT id FROM lottery_types WHERE id = ?').get(lotteryTypeId)) throw new HttpError(400, 'lottery_type ไม่ถูกต้อง');
+  try {
+    const r = db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
+                          VALUES (?, ?, ?, ?, ?, 'scheduled')`)
+      .run(lotteryTypeId, categoryId, drawCode, drawAt.replace('T', ' ').slice(0, 19), closeAt.replace('T', ' ').slice(0, 19));
+    audit({ userId: adminId, action: 'draw.create', entityType: 'draw', entityId: String(r.lastInsertRowid), detail: { drawCode } });
+    return Number(r.lastInsertRowid);
+  } catch (e) {
+    if (String(e.message).includes('UNIQUE')) throw new HttpError(409, 'draw_code นี้ถูกใช้แล้ว');
+    throw e;
+  }
+}
+
+export function updateDrawStatus(adminId, drawId, status) {
+  const allowed = ['scheduled', 'open', 'closed', 'cancelled'];
+  if (!allowed.includes(status)) throw new HttpError(400, 'สถานะไม่ถูกต้อง');
+  const db = getDb();
+  const draw = getDraw(drawId);
+  if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+  if (draw.status === 'settled') throw new HttpError(400, 'รอบที่ออกผลแล้วไม่สามารถเปลี่ยนสถานะได้');
+  db.prepare(`UPDATE lottery_draws SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, drawId);
+  audit({ userId: adminId, action: 'draw.status', entityType: 'draw', entityId: String(drawId), detail: { from: draw.status, to: status } });
+}
