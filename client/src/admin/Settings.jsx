@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
+import { confirmAction } from './confirm.jsx';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState([]);
@@ -15,6 +16,7 @@ export default function AdminSettings() {
   useEffect(load, []);
 
   const save = async (key) => {
+    if (!(await confirmAction({ title: 'ยืนยันบันทึกการตั้งค่า', message: `บันทึกการเปลี่ยนแปลง "${key}" ใช่หรือไม่?` }))) return;
     let value = edits[key];
     try { value = JSON.parse(value); } catch {}
     try {

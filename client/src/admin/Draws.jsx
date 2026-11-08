@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
+import { confirmAction } from './confirm.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -29,6 +30,7 @@ export default function AdminDraws() {
 
   const create = async (e) => {
     e.preventDefault();
+    if (!(await confirmAction({ title: 'ยืนยันสร้างรอบหวย', message: `สร้างรอบใหม่ "${form.draw_code}" ใช่หรือไม่?` }))) return;
     try {
       await api('/admin/draws', { method: 'POST', body: {
         ...form, lottery_type_id: Number(form.lottery_type_id),
@@ -40,6 +42,11 @@ export default function AdminDraws() {
   };
 
   const setStatus = async (id, status) => {
+    const d = draws.find(x => x.id === id);
+    const warn = status === 'cancelled'
+      ? { title: '⚠️ ยืนยันยกเลิกรอบ', message: `ยกเลิกรอบ "${d?.draw_code}" ถาวร?\nรอบที่ยกเลิกจะไม่สามารถแก้ไขได้`, danger: true, confirmLabel: 'ยกเลิกรอบ' }
+      : { title: 'ยืนยันเปลี่ยนสถานะ', message: `เปลี่ยนสถานะรอบ "${d?.draw_code}" เป็น "${STATUS_TH[status]}" ใช่หรือไม่?` };
+    if (!(await confirmAction(warn))) return;
     try { await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } }); load(); }
     catch (e) { alert(e.message); }
   };
@@ -50,6 +57,7 @@ export default function AdminDraws() {
   });
 
   const saveEdit = async () => {
+    if (!(await confirmAction({ title: 'ยืนยันแก้ไขรอบหวย', message: `บันทึกการแก้ไขรอบ "${editDraw.draw_code}" ใช่หรือไม่?` }))) return;
     try {
       await api(`/admin/draws/${editDraw.id}`, { method: 'PATCH', body: {
         draw_code: editDraw.draw_code,

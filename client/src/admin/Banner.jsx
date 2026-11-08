@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { DEFAULT_BANNER } from '../bannerConfig.js';
+import { confirmAction } from './confirm.jsx';
 
 const FIELDS = [
   { key: 'enabled', label: 'แสดงแบนเนอร์', type: 'checkbox' },
@@ -28,6 +29,7 @@ export default function AdminBanner() {
 
   const save = async () => {
     setMsg('');
+    if (!(await confirmAction({ title: 'ยืนยันบันทึกแบนเนอร์', message: 'บันทึกการเปลี่ยนแปลงแบนเนอร์หน้าแรก?\nการเปลี่ยนจะมีผลกับผู้ใช้ทุกคนทันที' }))) return;
     try {
       await api('/admin/settings/homepage_banner', { method: 'PUT', body: { value: form } });
       setMsg('บันทึกแบนเนอร์แล้ว — หน้าแรกจะอัปเดตทันที');

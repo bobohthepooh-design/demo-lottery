@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
+import { confirmAction } from './confirm.jsx';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
@@ -46,16 +47,24 @@ export default function AdminLotteries() {
 
   const createType = async (e) => {
     e.preventDefault();
+    if (!(await confirmAction({ title: 'ยืนยันเพิ่มประเภทหวย', message: `เพิ่มประเภทหวย "${typeForm.name_th}" (${typeForm.code}) ใช่หรือไม่?` }))) return;
     try { await api('/admin/lottery/types', { method: 'POST', body: typeForm }); setShowTypeForm(false); setTypeForm({ code:'', name_th:'', name_en:'', description:'' }); load(); }
     catch (e2) { alert(e2.message); }
   };
 
   const toggleType = async (t) => {
-    await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { is_active: t.is_active ? 0 : 1 } });
+    const enabling = !t.is_active;
+    if (!(await confirmAction({
+      title: enabling ? 'ยืนยันเปิดประเภทหวย' : '⚠️ ยืนยันปิดประเภทหวย',
+      message: `${enabling ? 'เปิด' : 'ปิด'}การใช้งาน "${t.name_th}" ใช่หรือไม่?${enabling ? '' : '\nประเภทที่ปิดจะไม่แสดงให้สมาชิกเห็น'}`,
+      danger: !enabling,
+    }))) return;
+    await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { is_active: enabling ? 1 : 0 } });
     load();
   };
 
   const saveRule = async () => {
+    if (!(await confirmAction({ title: editRule.id ? 'ยืนยันแก้ไขกติกา' : 'ยืนยันเพิ่มกติกา', message: `${editRule.id ? 'บันทึกการแก้ไข' : 'เพิ่ม'}กติกา "${editRule.name_th}" ใช่หรือไม่?` }))) return;
     try {
       const body = { ...editRule, category_id: editRule.category_id || null };
       if (editRule.id) await api(`/admin/lottery/rules/${editRule.id}`, { method: 'PATCH', body });
@@ -161,7 +170,15 @@ export default function AdminLotteries() {
                         <td className="px-3 py-2.5 text-navy-300 text-xs" title={r.match_config}>{matchLabel(r.match_config)}</td>
                         <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">x{r.payout_multiplier}</td>
                         <td className="px-3 py-2.5 text-center">
-                          <button onClick={async () => { await api(`/admin/lottery/rules/${r.id}`, { method: 'PATCH', body: { is_active: r.is_active ? 0 : 1 } }); load(); }}
+                          <button onClick={async () => {
+                            const enabling = !r.is_active;
+                            if (!(await confirmAction({
+                              title: enabling ? 'ยืนยันเปิดใช้กติกา' : '⚠️ ยืนยันปิดกติกา',
+                              message: `${enabling ? 'เปิดใช้' : 'ปิด'}กติกา "${r.name_th}" (${r.bet_type}) ใช่หรือไม่?`,
+                              danger: !enabling,
+                            }))) return;
+                            await api(`/admin/lottery/rules/${r.id}`, { method: 'PATCH', body: { is_active: enabling ? 1 : 0 } }); load();
+                          }}
                             className={`text-xs px-2 py-1 rounded ${r.is_active ? 'bg-green-500/20 text-green-300' : 'bg-navy-700 text-navy-400'}`}>
                             {r.is_active ? 'ใช้งาน' : 'ปิด'}
                           </button>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
+import { confirmAction } from './confirm.jsx';
 
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
@@ -93,6 +94,11 @@ export default function AdminSettle() {
       winning[k] = t;
     }
     if (!Object.keys(winning).length) return setErr('กรุณากรอกผลรางวัลอย่างน้อย 1 รายการ');
+    if (!(await confirmAction({
+      title: '⚠️ ยืนยันออกผลรางวัล',
+      message: `ยืนยันออกผลรางวัลและจ่ายเครดิตโพยอัตโนมัติ?\n${selDraw?.draw_code || ''}\nการกระทำนี้ไม่สามารถย้อนกลับได้`,
+      danger: true, confirmLabel: 'ยืนยันออกผล',
+    }))) return;
     try {
       const r = await api(`/admin/draws/${sel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
       setResult(r); load();
@@ -179,6 +185,11 @@ export default function AdminSettle() {
           if (!s) return <div className="text-navy-400 text-sm">ไม่พบโครงสร้างผลรางวัลสำหรับประเภทนี้</div>;
           const save = async () => {
             setEditMsg('');
+            if (!(await confirmAction({
+              title: '⚠️ ยืนยันแก้ไขผลย้อนหลัง',
+              message: `แก้ไขผลรางวัลของรอบที่ออกผลแล้ว?\nระบบจะคำนวณเครดิตโพยทั้งหมดใหม่`,
+              danger: true, confirmLabel: 'ยืนยันแก้ไข',
+            }))) return;
             const winning = {};
             for (const [k, v] of Object.entries(editFields)) {
               const isSet5 = s.fields.some(f => f.key === k && f.set5);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
+import { confirmAction } from './confirm.jsx';
 
 export default function AdminRoles() {
   const { user } = useAuth();
@@ -25,6 +26,8 @@ export default function AdminRoles() {
   };
 
   const save = async (roleId) => {
+    const role = data.roles.find(r => r.id === roleId);
+    if (!(await confirmAction({ title: 'ยืนยันบันทึกสิทธิ์', message: `บันทึกสิทธิ์การใช้งานของ role "${role?.name}" ใช่หรือไม่?` }))) return;
     try {
       await api('/admin/roles/permissions', { method: 'PUT', body: { roleId, permissionIds: [...sel[roleId]] } });
       alert('บันทึกสิทธิ์แล้ว');

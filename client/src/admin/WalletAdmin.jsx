@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
+import { confirmAction } from './confirm.jsx';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -23,6 +24,13 @@ export default function AdminWallet() {
 
   const submit = async (e) => {
     e.preventDefault(); setMsg('');
+    const m = members.find(x => String(x.id) === String(form.userId));
+    const dir = form.direction === 'credit' ? 'เพิ่ม' : 'หัก';
+    if (!(await confirmAction({
+      title: 'ยืนยันปรับเครดิต',
+      message: `${dir}เครดิต ฿${form.amount} ให้ "${m?.username || form.userId}"?\nเหตุผล: ${form.reason || '-'}`,
+      danger: form.direction === 'debit',
+    }))) return;
     try {
       const r = await api('/admin/wallet/adjust', { method: 'POST', body: {
         ...form, userId: Number(form.userId), amount: Math.round(parseFloat(form.amount) * 100),

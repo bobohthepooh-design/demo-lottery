@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
+import { ConfirmHost } from './confirm.jsx';
 
 const items = [
   { to: '/admin', label: 'ภาพรวม', end: true },
@@ -33,6 +34,7 @@ export default function AdminLayout() {
         </div>
       </aside>
       <div className="flex-1 min-w-0"><Outlet /></div>
+      <ConfirmHost />
     </div>
   );
 }

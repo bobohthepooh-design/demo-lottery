@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
+import { confirmAction } from './confirm.jsx';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([]);
@@ -11,6 +12,7 @@ export default function AdminMembers() {
   useEffect(() => { load(); }, []);
 
   const save = async () => {
+    if (!(await confirmAction({ title: 'ยืนยันการแก้ไขสมาชิก', message: `บันทึกการเปลี่ยนแปลงของ ${edit.username} ใช่หรือไม่?` }))) return;
     try {
       await api(`/admin/members/${edit.id}`, { method: 'PATCH', body: edit });
       setEdit(null); load();
