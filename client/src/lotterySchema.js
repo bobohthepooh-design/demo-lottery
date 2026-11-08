@@ -2,43 +2,44 @@
 // ใช้ร่วมกันระหว่าง WinningBoard (แสดงผล) และหน้า admin settle (กรอกผล)
 // key ของ field ต้องตรงกับ source ใน lottery_rules.match_config
 // (ยกเว้น field ที่ optional/display-only เช่น main)
+// short = ป้ายย่อสำหรับแถวผลแบบบรรทัดเดียวบนหน้าแรก
 
 const TH = {
   hero: 'first',
   fields: [
-    { key: 'first',    label: 'รางวัลที่ 1',       digits: 6, prizes: 1, hero: true },
-    { key: 'front3',   label: 'เลขหน้า 3 ตัว',     digits: 3, prizes: 2 },
-    { key: 'top3',     label: 'เลขท้าย 3 ตัวบน',   digits: 3, prizes: 2 },
-    { key: 'bottom2',  label: 'เลขท้าย 2 ตัว',     digits: 2, prizes: 1 },
+    { key: 'first',    label: 'รางวัลที่ 1',       short: 'รางวัล1', digits: 6, prizes: 1, hero: true },
+    { key: 'front3',   label: 'เลขหน้า 3 ตัว',     short: 'หน้า3',   digits: 3, prizes: 2 },
+    { key: 'top3',     label: 'เลขท้าย 3 ตัวบน',   short: 'ท้าย3',   digits: 3, prizes: 2 },
+    { key: 'bottom2',  label: 'เลขท้าย 2 ตัว',     short: 'ท้าย2',   digits: 2, prizes: 1 },
   ],
 };
 
 const LA = {
   hero: 'main',
   fields: [
-    { key: 'main',    label: 'เลขหลัก',          digits: 6, optional: true },
-    { key: 'last4',   label: 'เลขท้าย 4 ตัว',     digits: 4, prizes: 1 },
-    { key: 'last3',   label: 'เลขท้าย 3 ตัว',     digits: 3, prizes: 1 },
-    { key: 'last2',   label: 'เลขท้าย 2 ตัว',     digits: 2, prizes: 1 },
+    { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
+    { key: 'last4',   label: 'เลขท้าย 4 ตัว',     short: 'ท้าย4',   digits: 4, prizes: 1 },
+    { key: 'last3',   label: 'เลขท้าย 3 ตัว',     short: 'ท้าย3',   digits: 3, prizes: 1 },
+    { key: 'last2',   label: 'เลขท้าย 2 ตัว',     short: 'ท้าย2',   digits: 2, prizes: 1 },
   ],
 };
 
 const LAD = {
   hero: 'main',
   fields: [
-    { key: 'main',    label: 'เลขหลัก',          digits: 6, optional: true },
-    { key: 'last2',   label: 'เลขท้าย 2 ตัว',     digits: 2, prizes: 5 },
+    { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
+    { key: 'last2',   label: 'เลขท้าย 2 ตัว',     short: 'ท้าย2×5', digits: 2, prizes: 5 },
   ],
 };
 
 const HN = {
   hero: 'main',
   fields: [
-    { key: 'main',    label: 'เลขหลัก',          digits: 6, optional: true },
-    { key: 'num4',    label: 'เลข 4 ตัว',         digits: 4, prizes: 1 },
-    { key: 'top3',    label: 'เลข 3 ตัวบน',       digits: 3, prizes: 1 },
-    { key: 'top2',    label: 'เลข 2 ตัวบน',       digits: 2, prizes: 1 },
-    { key: 'bottom2', label: 'เลข 2 ตัวล่าง',     digits: 2, prizes: 1 },
+    { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
+    { key: 'num4',    label: 'เลข 4 ตัว',         short: '4ตัว',    digits: 4, prizes: 1 },
+    { key: 'top3',    label: 'เลข 3 ตัวบน',       short: '3บน',    digits: 3, prizes: 1 },
+    { key: 'top2',    label: 'เลข 2 ตัวบน',       short: '2บน',    digits: 2, prizes: 1 },
+    { key: 'bottom2', label: 'เลข 2 ตัวล่าง',     short: '2ล่าง',  digits: 2, prizes: 1 },
   ],
 };
 
