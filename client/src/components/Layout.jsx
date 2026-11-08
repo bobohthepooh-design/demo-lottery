@@ -62,7 +62,7 @@ export default function Layout() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <NavLink to="/" end
-              className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
+              className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-400 font-semibold' : 'text-navy-300 hover:bg-navy-700/60 hover:text-navy-950'}`}>
               หน้าแรก
             </NavLink>
             {types.map(t => {
@@ -77,7 +77,7 @@ export default function Layout() {
             })}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end}
-                className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
+                className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-400 font-semibold' : 'text-navy-300 hover:bg-navy-700/60 hover:text-navy-950'}`}>
                 {n.label}
               </NavLink>
             ))}
@@ -92,7 +92,7 @@ export default function Layout() {
               <>
                 <div className="hidden sm:block text-right">
                   <div className="text-[10px] text-navy-300">เครดิตจำลอง</div>
-                  <div className="text-gold-400 font-bold">฿{satang(balance)}</div>
+                  <div className="text-amber-600 font-bold">฿{satang(balance)}</div>
                 </div>
                 <button onClick={doLogout} className="text-sm text-navy-200 hover:text-gold-300 border border-navy-600 rounded-lg px-3 py-1.5">
                   ออกจากระบบ
@@ -111,7 +111,7 @@ export default function Layout() {
         {menuOpen && (
           <nav className="lg:hidden border-t border-navy-700 bg-navy-900 px-4 py-2 space-y-1">
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
+              className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-400 font-semibold' : 'text-navy-300'}`}>
               หน้าแรก
             </NavLink>
             {types.map(t => {
@@ -126,11 +126,11 @@ export default function Layout() {
             })}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
+                className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-400 font-semibold' : 'text-navy-300'}`}>
                 {n.label}
               </NavLink>
             ))}
-            {user && <div className="px-3 py-2 text-gold-400 font-bold">เครดิต ฿{satang(balance)}</div>}
+            {user && <div className="px-3 py-2 text-amber-600 font-bold">เครดิต ฿{satang(balance)}</div>}
           </nav>
         )}
       </header>
@@ -158,7 +158,7 @@ export default function Layout() {
             ]),
           ].filter(i => i.show).map(i => (
             <NavLink key={i.to} to={i.to} end={i.end}
-              className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] ${isActive ? 'text-gold-300' : 'text-navy-300'}`}>
+              className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] ${isActive ? 'text-gold-500 font-bold' : 'text-navy-400'}`}>
               <span className="text-lg leading-none">{i.icon}</span>
               {i.label}
             </NavLink>

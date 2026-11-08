@@ -57,7 +57,7 @@ export default function ResultLine({ r }) {
     return (
       <div key={key} className="shrink-0 text-center min-w-[3.4rem]">
         <div className="text-[9px] leading-tight text-navy-400">{label}</div>
-        <div className="text-xs font-mono font-bold text-gold-300 whitespace-nowrap">{vals}</div>
+        <div className="text-xs font-mono font-bold text-amber-600 whitespace-nowrap">{vals}</div>
       </div>
     );
   };

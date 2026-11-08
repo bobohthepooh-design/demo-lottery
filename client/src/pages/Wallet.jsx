@@ -67,7 +67,7 @@ export default function Wallet() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-gold-500/40 rounded-2xl p-8 text-center">
         <div className="text-sm text-navy-300">ยอดเครดิตจำลองคงเหลือ</div>
-        <div className="text-5xl font-bold text-gold-400 mt-2">฿{satang(balance)}</div>
+        <div className="text-5xl font-bold text-amber-600 mt-2">฿{satang(balance)}</div>
         <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
           <button onClick={() => { setModal('deposit'); setAmount(''); setErr(''); }}
             className="bg-gold-500 text-navy-950 font-bold px-6 py-2.5 rounded-xl hover:bg-gold-400 transition">
@@ -107,7 +107,7 @@ export default function Wallet() {
                   <td className={`px-4 py-3 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
                     {t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}
                   </td>
-                  <td className="px-4 py-3 text-right text-gold-300">฿{satang(t.balance_after)}</td>
+                  <td className="px-4 py-3 text-right text-amber-600">฿{satang(t.balance_after)}</td>
                   <td className="px-4 py-3 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
                   <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
                 </tr>
@@ -148,7 +148,7 @@ export default function Wallet() {
             <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง (ขั้นต่ำ ฿1 สูงสุด ฿10,000):</div>
             <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
               inputMode="decimal" placeholder="0.00" autoFocus
-              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
+              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-amber-600 focus:outline-none focus:border-gold-500" />
             {err && <div className="text-red-400 text-sm mt-2">{err}</div>}
             <div className="flex gap-3 mt-5">
               <button onClick={() => setModal(null)} disabled={busy}

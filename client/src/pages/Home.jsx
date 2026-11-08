@@ -73,8 +73,8 @@ function BigCountdown({ closeAt }) {
     <div className="flex items-end gap-2 justify-center">
       {cells.map(([v, label], i) => (
         <div key={i} className="text-center">
-          <div className="font-mono font-black text-3xl sm:text-4xl text-gold-300"
-            style={{ textShadow: '0 0 18px rgba(212,175,55,.45)' }}>{p(v)}</div>
+          <div className="font-mono font-black text-3xl sm:text-4xl text-amber-500"
+            style={{ textShadow: '0 0 18px rgba(217,119,6,.4)' }}>{p(v)}</div>
           <div className="text-[10px] text-navy-300">{label}</div>
         </div>
       ))}

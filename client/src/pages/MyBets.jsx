@@ -88,7 +88,7 @@ function ItemRow({ i }) {
         {i.status === 'pending' && (
           <div className="text-[11px]">
             <div className="text-blue-300">รอผล</div>
-            <div className="text-gold-300/80">ถ้าถูก ได้ ฿{satang(potential(i))}</div>
+            <div className="text-amber-600/80">ถ้าถูก ได้ ฿{satang(potential(i))}</div>
           </div>
         )}
         {i.status === 'cancelled' && <div className="text-navy-400 text-xs">ยกเลิก</div>}
@@ -140,7 +140,7 @@ export default function MyBets() {
                     <div className="text-green-400 font-bold animate-coin">
                       🎉 รวมเงินรางวัล ฿{satang(s.total_payout)}
                     </div>
-                    <div className={`text-xs font-semibold ${net >= 0 ? 'text-gold-300' : 'text-navy-400'}`}>
+                    <div className={`text-xs font-semibold ${net >= 0 ? 'text-amber-600' : 'text-navy-400'}`}>
                       {net >= 0 ? `กำไรสุทธิ ฿${satang(net)}` : `ขาดทุนสุทธิ ฿${satang(-net)}`}
                     </div>
                   </div>
