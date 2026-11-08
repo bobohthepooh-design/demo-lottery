@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 const nav = [
-  { to: '/', label: 'หน้าแรก', end: true },
   { to: '/my-bets', label: 'โพยของฉัน', auth: true },
   { to: '/wallet', label: 'กระเป๋าเครดิต', auth: true },
   { to: '/profile', label: 'โปรไฟล์', auth: true },
@@ -58,6 +57,10 @@ export default function Layout() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
+            <NavLink to="/" end
+              className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
+              หน้าแรก
+            </NavLink>
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`}
                 className={`px-3 py-2 rounded-lg text-sm transition ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
@@ -99,6 +102,10 @@ export default function Layout() {
         </div>
         {menuOpen && (
           <nav className="md:hidden border-t border-navy-700 bg-navy-900 px-4 py-2 space-y-1">
+            <NavLink to="/" end onClick={() => setMenuOpen(false)}
+              className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
+              หน้าแรก
+            </NavLink>
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-sm ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-300 hover:bg-navy-800'}`}>
