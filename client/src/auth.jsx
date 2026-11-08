@@ -14,7 +14,8 @@ export function AuthProvider({ children }) {
       const me = await api('/auth/me');
       setUser(me.user);
       setBalance(me.balance);
-      setMfaRequired(!me.user.mfaVerified);
+      const admin = (me.user.roles || []).some(r => ['admin', 'super_admin'].includes(r));
+      setMfaRequired(admin && !me.user.mfaVerified);
     } catch {
       setUser(null); setBalance(0); setMfaRequired(false);
     } finally { setLoading(false); }

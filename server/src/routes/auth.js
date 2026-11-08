@@ -51,7 +51,7 @@ router.post('/login', loginLimiter, (req, res, next) => {
     const data = loginSchema.parse(req.body);
     const result = auth.login({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
     auth.setSessionCookie(res, result.token);
-    const needsMfa = result.user.mfaEnabled;
+    const needsMfa = result.requiresMfa;
     res.json({
       ok: true,
       user: result.user,
