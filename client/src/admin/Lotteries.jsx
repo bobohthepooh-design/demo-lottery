@@ -1,11 +1,34 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
+// แปลง match_config เป็นภาษาคนอ่านง่าย
+const SOURCE_TH = {
+  first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน',
+  bottom2: 'เลขท้าย 2 ตัว', last4: 'เลขท้าย 4 ตัว', last3: 'เลขท้าย 3 ตัว',
+  last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', top2: 'เลข 2 ตัวบน', main: 'เลขหลัก',
+};
+const MODE_TH = {
+  exact: 'ตรงกันเป๊ะ', sorted: 'โต๊ด (สลับหลักได้)', digit_contains: 'วิ่ง (มีเลขนั้น)',
+  tail: 'เทียบท้าย', head: 'เทียบหน้า',
+};
+function matchLabel(cfg) {
+  try {
+    const c = JSON.parse(cfg);
+    return `${SOURCE_TH[c.source] || c.source} • ${MODE_TH[c.mode] || c.mode}`;
+  } catch { return cfg; }
+}
+
+const emptyRule = (typeId) => ({
+  lottery_type_id: typeId, category_id: null, bet_type: '', name_th: '', name_en: '',
+  digits: 2, match_config: '{"source":"bottom2","mode":"exact"}',
+  payout_multiplier: 100, stake_unit: 100, min_amount: 100, max_amount: 1000000, is_active: 1,
+});
+
 export default function AdminLotteries() {
   const [types, setTypes] = useState([]);
   const [rules, setRules] = useState([]);
-  const [showInactive, setShowInactive] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [showInactive, setShowInactive] = useState(false);
   const [editRule, setEditRule] = useState(null);
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [typeForm, setTypeForm] = useState({ code: '', name_th: '', name_en: '', description: '' });
@@ -30,8 +53,9 @@ export default function AdminLotteries() {
 
   const saveRule = async () => {
     try {
-      if (editRule.id) await api(`/admin/lottery/rules/${editRule.id}`, { method: 'PATCH', body: editRule });
-      else await api('/admin/lottery/rules', { method: 'POST', body: editRule });
+      const body = { ...editRule, category_id: editRule.category_id || null };
+      if (editRule.id) await api(`/admin/lottery/rules/${editRule.id}`, { method: 'PATCH', body });
+      else await api('/admin/lottery/rules', { method: 'POST', body });
       setEditRule(null); load();
     } catch (e) { alert(e.message); }
   };
@@ -40,9 +64,22 @@ export default function AdminLotteries() {
   const catName = (id) => categories.find(c => c.id === id)?.name_th || '';
   const visibleRules = showInactive ? rules : rules.filter(r => r.is_active);
 
+  // จัดกลุ่ม: ประเภทหวย → หมวด → กติกา
+  const sections = types.map(t => {
+    const typeRules = visibleRules.filter(r => r.lottery_type_id === t.id);
+    if (!typeRules.length) return null;
+    const catIds = [...new Set(typeRules.map(r => r.category_id || 0))];
+    const groups = catIds.map(cid => ({
+      cid: cid || null,
+      name: cid ? catName(cid) : 'ทั่วไป (ไม่ระบุหมวด)',
+      rows: typeRules.filter(r => (r.category_id || 0) === cid),
+    }));
+    return { type: t, groups };
+  }).filter(Boolean);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">ประเภทหวย & กติกา</h1>
         <button onClick={() => setShowTypeForm(!showTypeForm)} className="bg-gold-500 text-navy-950 font-bold px-4 py-2 rounded-lg text-sm">+ เพิ่มประเภทหวย</button>
       </div>
@@ -72,38 +109,70 @@ export default function AdminLotteries() {
         ))}
       </div>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
-        <div className="px-5 py-4 border-b border-navy-700 flex items-center justify-between flex-wrap gap-2">
-          <h2 className="font-bold text-white">ตารางกติกา (Lottery Rules) <span className="text-xs text-navy-400 font-normal">— {visibleRules.length} รายการ</span></h2>
-          <div className="flex items-center gap-4">
+      {/* กติกา แยกตามประเทศ/หมวดหวย */}
+      <div className="space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-bold text-white text-lg">กติกาการแทงรายประเทศ/หมวด</h2>
+          <div className="flex items-center gap-3">
             <label className="text-xs text-navy-300 flex items-center gap-1.5">
               <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="accent-gold-500" />
-              แสดงกติกาที่ปิดใช้งาน ({rules.filter(r => !r.is_active).length})
+              แสดงที่ปิดใช้งาน ({rules.filter(r => !r.is_active).length})
             </label>
-            <button onClick={() => setEditRule({ lottery_type_id: types[0]?.id, bet_type: '', name_th: '', digits: 2, match_config: '{"source":"top3","mode":"tail"}', payout_multiplier: 100, stake_unit: 100, min_amount: 100, is_active: 1 })}
-              className="text-sm text-gold-400 hover:underline">+ เพิ่มกติกา</button>
+            <button onClick={() => setEditRule(emptyRule(types[0]?.id))} className="text-sm text-gold-400 hover:underline">+ เพิ่มกติกา</button>
           </div>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-navy-900 text-navy-300 text-xs">
-            <tr><th className="text-left px-4 py-3">หวย</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-left px-4 py-3">ชื่อ</th><th className="text-center px-4 py-3">หลัก</th><th className="text-left px-4 py-3">Match Config</th><th className="text-right px-4 py-3">จ่าย x</th><th className="text-right px-4 py-3">ขั้นต่ำ</th><th className="text-center px-4 py-3">เปิด</th><th className="px-4 py-3"></th></tr>
-          </thead>
-          <tbody className="divide-y divide-navy-700">
-            {visibleRules.map(r => (
-              <tr key={r.id} className={`hover:bg-navy-700/40 ${r.is_active ? '' : 'opacity-50'}`}>
-                <td className="px-4 py-2 text-navy-300">{typeName(r.lottery_type_id)}{r.category_id ? ` — ${catName(r.category_id)}` : ''}</td>
-                <td className="px-4 py-2"><code className="text-gold-300 text-xs">{r.bet_type}</code></td>
-                <td className="px-4 py-2 text-white">{r.name_th}</td>
-                <td className="px-4 py-2 text-center">{r.digits}</td>
-                <td className="px-4 py-2"><code className="text-xs text-navy-300">{r.match_config}</code></td>
-                <td className="px-4 py-2 text-right text-gold-300">{r.payout_multiplier}</td>
-                <td className="px-4 py-2 text-right text-navy-300">{r.min_amount}</td>
-                <td className="px-4 py-2 text-center">{r.is_active ? '✅' : '—'}</td>
-                <td className="px-4 py-2"><button onClick={() => setEditRule({ ...r })} className="text-gold-400 text-xs hover:underline">แก้ไข</button></td>
-              </tr>
+
+        {sections.map(({ type, groups }) => (
+          <div key={type.id} className="bg-navy-800 border border-navy-700 rounded-xl overflow-hidden">
+            <div className="px-5 py-3.5 bg-navy-900/60 border-b border-navy-700 flex items-center gap-2">
+              <span className="text-lg">{type.code === 'TH' ? '🇹🇭' : type.code === 'LA' ? '🇱🇦' : '🇻🇳'}</span>
+              <span className="font-bold text-white">{type.name_th}</span>
+              <span className="text-xs text-navy-400">({type.code})</span>
+            </div>
+            {groups.map(g => (
+              <div key={g.cid || 'none'} className={g.cid ? 'border-t border-navy-700/60' : ''}>
+                <div className="px-5 py-2 bg-navy-800/60 text-xs font-semibold text-gold-400/90">
+                  {g.name}
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-navy-900/40 text-navy-400 text-xs">
+                    <tr>
+                      <th className="text-left px-5 py-2">ประเภทการแทง</th>
+                      <th className="text-center px-3 py-2">หลัก</th>
+                      <th className="text-left px-3 py-2">เทียบกับผลรางวัล</th>
+                      <th className="text-right px-3 py-2">จ่าย (เท่า)</th>
+                      <th className="text-center px-3 py-2">สถานะ</th>
+                      <th className="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-navy-700/50">
+                    {g.rows.map(r => (
+                      <tr key={r.id} className={`hover:bg-navy-700/30 ${r.is_active ? '' : 'opacity-50'}`}>
+                        <td className="px-5 py-2.5">
+                          <div className="text-white font-medium">{r.name_th}</div>
+                          <code className="text-[10px] text-navy-500">{r.bet_type}</code>
+                        </td>
+                        <td className="px-3 py-2.5 text-center text-navy-200">{r.digits} หลัก</td>
+                        <td className="px-3 py-2.5 text-navy-300 text-xs" title={r.match_config}>{matchLabel(r.match_config)}</td>
+                        <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">x{r.payout_multiplier}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <button onClick={async () => { await api(`/admin/lottery/rules/${r.id}`, { method: 'PATCH', body: { is_active: r.is_active ? 0 : 1 } }); load(); }}
+                            className={`text-xs px-2 py-1 rounded ${r.is_active ? 'bg-green-500/20 text-green-300' : 'bg-navy-700 text-navy-400'}`}>
+                            {r.is_active ? 'ใช้งาน' : 'ปิด'}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button onClick={() => setEditRule({ ...r })} className="text-gold-400 text-xs hover:underline">แก้ไข</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        ))}
+        {!sections.length && <div className="text-navy-400 text-sm">ไม่มีกติกาที่ใช้งาน — กด "แสดงที่ปิดใช้งาน" เพื่อดูของเก่า</div>}
       </div>
 
       {editRule && (
@@ -111,19 +180,28 @@ export default function AdminLotteries() {
           <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-4">{editRule.id ? 'แก้ไข' : 'เพิ่ม'}กติกา</h2>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <div><label className="text-navy-300 text-xs">ประเภทหวย ID</label>
-                <input type="number" value={editRule.lottery_type_id} disabled={!!editRule.id} onChange={e => setEditRule({...editRule, lottery_type_id: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">bet_type</label>
+              <div><label className="text-navy-300 text-xs">ประเภทหวย</label>
+                <select value={editRule.lottery_type_id} disabled={!!editRule.id} onChange={e => setEditRule({...editRule, lottery_type_id: +e.target.value, category_id: null})}
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
+                  {types.map(t => <option key={t.id} value={t.id}>{t.name_th} ({t.code})</option>)}
+                </select></div>
+              <div><label className="text-navy-300 text-xs">หมวดหวย (เว้นว่าง = ทั่วไป)</label>
+                <select value={editRule.category_id || ''} disabled={!!editRule.id} onChange={e => setEditRule({...editRule, category_id: e.target.value ? +e.target.value : null})}
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
+                  <option value="">— ทั่วไป —</option>
+                  {categories.filter(c => c.lottery_type_id === editRule.lottery_type_id).map(c => <option key={c.id} value={c.id}>{c.name_th}</option>)}
+                </select></div>
+              <div><label className="text-navy-300 text-xs">bet_type (รหัสภาษาอังกฤษ)</label>
                 <input value={editRule.bet_type} onChange={e => setEditRule({...editRule, bet_type: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">ชื่อไทย</label>
+              <div><label className="text-navy-300 text-xs">ชื่อไทย (แสดงให้สมาชิก)</label>
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               <div><label className="text-navy-300 text-xs">ชื่ออังกฤษ</label>
                 <input value={editRule.name_en || ''} onChange={e => setEditRule({...editRule, name_en: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               <div><label className="text-navy-300 text-xs">จำนวนหลัก</label>
                 <input type="number" min="1" max="10" value={editRule.digits} onChange={e => setEditRule({...editRule, digits: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">match_config (JSON)</label>
+              <div className="sm:col-span-2"><label className="text-navy-300 text-xs">{`match_config (JSON: {"source":"...","mode":"exact|sorted|digit_contains|tail|head"})`}</label>
                 <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" /></div>
-              <div><label className="text-navy-300 text-xs">payout_multiplier</label>
+              <div><label className="text-navy-300 text-xs">payout_multiplier (จ่ายกี่เท่า)</label>
                 <input type="number" step="0.1" value={editRule.payout_multiplier} onChange={e => setEditRule({...editRule, payout_multiplier: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               <div><label className="text-navy-300 text-xs">stake_unit (สตางค์)</label>
                 <input type="number" value={editRule.stake_unit} onChange={e => setEditRule({...editRule, stake_unit: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
