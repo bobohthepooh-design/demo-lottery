@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- เชือกผูกปากถุง -->
+  <path d="M20 16c5-7 19-7 24 0" stroke="#8E3A56" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <circle cx="20" cy="15" r="3.5" fill="#8E3A56"/>
+  <circle cx="44" cy="15" r="3.5" fill="#8E3A56"/>
+  <!-- ตัวถุง -->
+  <path d="M15 24c0-4 4-7 9-8h16c5 1 9 4 9 8v20c0 9-7 16-17 16S15 53 15 44V24z" fill="#F6B8C8"/>
+  <!-- ปากถุง -->
+  <rect x="20" y="19" width="24" height="9" rx="4.5" fill="#D96C8F"/>
+  <!-- เหรียญทอง -->
+  <circle cx="32" cy="40" r="9" fill="#FFE9A8" stroke="#D9A441" stroke-width="2.5"/>
+  <text x="32" y="44" font-size="11" text-anchor="middle" fill="#8E5A00" font-family="Arial, sans-serif" font-weight="bold">฿</text>
+</svg>
