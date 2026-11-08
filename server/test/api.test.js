@@ -228,6 +228,20 @@ describe('wallet', () => {
     });
     expect(r.status).toBe(400);
   });
+  it('admin-unlocked withdrawable excludes un-clawed signup credit', async () => {
+    const u = `w${ts}`;
+    const ag = makeAgent();
+    await ag.post('/auth/register', { username: u, email: `${u}@t.local`, password: 'Password123' });
+    await ag.post('/auth/login', { username: u, password: 'Password123' });
+    const me = await ag.get('/auth/me');
+    // จำลองเคส flag ถูกปลดล็อกโดยตรง (ยังไม่ได้ clawback เครดิตแถม)
+    getDb().prepare('UPDATE users SET withdraw_unlocked=1 WHERE id=?').run(me.body.user.id);
+    const w = await ag.get('/bets/wallet');
+    expect(w.body.withdrawable.unlocked).toBe(true);
+    expect(w.body.withdrawable.withdrawable).toBe(0); // ยอดคือเครดิตแถม ฿50 ล้วน
+    const wd = await ag.post('/bets/wallet/action', { direction: 'withdraw', amount: 5000 });
+    expect(wd.status).toBe(400);
+  });
 });
 
 describe('bet cancel', () => {

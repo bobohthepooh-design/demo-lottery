@@ -70,18 +70,25 @@ const WITHDRAW_UNLOCK_SATANG = 10000; // ต้องเติมเครดิ
  *  ระบบ/adjust/เงินฝากไม่สามารถถอนได้โดยตรง) */
 function withdrawableInfo(d, userId, balance) {
   const u = d.prepare('SELECT withdraw_unlocked FROM users WHERE id = ?').get(userId);
-  // admin ปลดล็อกให้รายคน → ถอนได้เต็มยอดคงเหลือ แต่ต้องเหลืออย่างน้อย ฿50
-  // และระบบหักเครดิตแถม ฿50 ของขวัญสมัครออกแล้วตอนปลดล็อก (ดู clawbackSignupCreditTx)
-  if (u?.withdraw_unlocked) {
-    return { deposited: 0, won: 0, withdrawn: 0,
-      withdrawable: balance >= 5000 ? balance : 0, unlocked: true, override: true };
-  }
   const row = d.prepare(`SELECT
       COALESCE(SUM(CASE WHEN type='deposit' THEN amount END),0) AS deposited,
       COALESCE(SUM(CASE WHEN type='win_credit' THEN amount END),0) AS won,
       COALESCE(SUM(CASE WHEN type='withdraw' THEN amount END),0) AS withdrawn
     FROM virtual_transactions WHERE user_id = ?`).get(userId);
-  const withdrawable = Math.max(0, Math.min(row.won - row.withdrawn, balance));
+  const netWon = Math.max(0, row.won - row.withdrawn);
+  // เครดิตแถม ฿50 สมัครใหม่ — ถอนได้เฉพาะเงินรางวัล ต้องไม่รวมในยอดถอนได้
+  // ถ้า admin ปลดล็อกแล้วแต่ยังไม่ได้ clawback → หักเครดิตแถมที่เหลืออยู่ออกก่อน
+  const clawed = d.prepare(`SELECT id FROM virtual_transactions WHERE idempotency_key = ?`)
+    .get(`free-credit-clawback-${userId}`);
+  const promoLeft = clawed ? 0 : Math.min(5000, Math.max(0, balance - netWon));
+  // admin ปลดล็อกให้รายคน → ถอนได้เกือบเต็มยอดคงเหลือ แต่ต้องเหลืออย่างน้อย ฿50
+  // และระบบหักเครดิตแถม ฿50 ของขวัญสมัครออก (ดู clawbackSignupCreditTx)
+  if (u?.withdraw_unlocked) {
+    const w = balance - promoLeft;
+    return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn,
+      withdrawable: w >= 5000 ? w : 0, unlocked: true, override: true };
+  }
+  const withdrawable = Math.max(0, Math.min(netWon, balance));
   return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn, withdrawable, unlocked: row.deposited >= WITHDRAW_UNLOCK_SATANG };
 }
 
