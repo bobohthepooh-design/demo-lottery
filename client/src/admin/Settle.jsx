@@ -17,6 +17,9 @@ export default function AdminSettle() {
   const [editMsg, setEditMsg] = useState('');
   const [autoMsg, setAutoMsg] = useState('');
   const [autoBusy, setAutoBusy] = useState(false);
+  const [legacySel, setLegacySel] = useState(null);   // รอบเก่าที่ยังไม่ออกผล (แก้ไข/ออกผลย้อนหลัง)
+  const [legacyFields, setLegacyFields] = useState({});
+  const [legacyMsg, setLegacyMsg] = useState('');
 
   const load = () => api('/admin/draws').then(r => setDraws(r.draws)).catch(e => alert(e.message));
   useEffect(() => { load(); }, []);
@@ -38,6 +41,14 @@ export default function AdminSettle() {
 
   const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
   const settled = draws.filter(d => d.status === 'settled');
+  // "รอบล่าสุด" = เลยเวลาออกรางวัลไม่เกิน 48 ชม. หรือยังไม่ถึงเวลา — ที่เหลือคือรอบค้างเก่า
+  const drawMs = (s) => new Date(String(s).replace(' ', 'T') + 'Z').getTime();
+  const latestUnsettled = unsettled
+    .filter(d => drawMs(d.draw_at) >= Date.now() - 48 * 3600e3)
+    .sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
+  const legacyUnsettled = unsettled.filter(d => !latestUnsettled.includes(d));
+  const legacyDraw = legacyUnsettled.find(d => d.id === legacySel) || null;
+  const legacySchema = legacyDraw ? resultSchema(legacyDraw.type_code, legacyDraw.category_code) : null;
 
   // เติมค่าลงช่องกรอกจาก winning_numbers object
   const fillFields = (wn, setter) => {
@@ -65,11 +76,15 @@ export default function AdminSettle() {
     } catch (e) { setErr(e.message); }
   };
 
-  const settle = async () => {
+  const settle = async (target = null) => {
     setErr(''); setResult(null);
+    const useSel = target?.id ?? sel;
+    const useSchema = target?.schema ?? schema;
+    const useFields = target?.fields ?? fields;
+    const useDraw = target?.draw ?? selDraw;
     const winning = {};
-    for (const f of schema?.fields || []) {
-      const t = (fields[f.key] || '').trim();
+    for (const f of useSchema?.fields || []) {
+      const t = (useFields[f.key] || '').trim();
       if (!t) {
         if (!f.optional) return setErr(`กรุณากรอกผล "${f.label}" ให้ครบทุกประเภทรางวัล`);
         continue;
@@ -103,8 +118,8 @@ export default function AdminSettle() {
       } catch (e) { return setErr(e.message); }
     }
     // field เสริมที่ไม่อยู่ใน schema (ถ้ามี) — รับตัวเลขอะไรก็ได้
-    for (const [k, v] of Object.entries(fields)) {
-      if (winning[k] !== undefined || schema?.fields?.some(f => f.key === k)) continue;
+    for (const [k, v] of Object.entries(useFields)) {
+      if (winning[k] !== undefined || useSchema?.fields?.some(f => f.key === k)) continue;
       const t = v.trim();
       if (!t) continue;
       if (!/^\d{1,10}$/.test(t)) return setErr(`field "${k}" ต้องเป็นตัวเลข`);
@@ -113,12 +128,13 @@ export default function AdminSettle() {
     if (!Object.keys(winning).length) return setErr('กรุณากรอกผลรางวัลอย่างน้อย 1 รายการ');
     if (!(await confirmAction({
       title: '⚠️ ยืนยันออกผลรางวัล',
-      message: `ยืนยันออกผลรางวัลและจ่ายเครดิตโพยอัตโนมัติ?\n${selDraw?.draw_code || ''}\nการกระทำนี้ไม่สามารถย้อนกลับได้`,
+      message: `ยืนยันออกผลรางวัลและจ่ายเครดิตโพยอัตโนมัติ?\n${useDraw?.draw_code || ''}\nการกระทำนี้ไม่สามารถย้อนกลับได้`,
       danger: true, confirmLabel: 'ยืนยันออกผล',
     }))) return;
     try {
-      const r = await api(`/admin/draws/${sel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
+      const r = await api(`/admin/draws/${useSel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
       setResult(r); load();
+      if (target) setLegacyMsg(`ออกผลย้อนหลังสำเร็จ: ตรวจ ${r.settledItems} รายการ • ถูกรางวัล ${r.winningItems} รายการ • จ่ายรวม ฿${satang(r.totalPayout)}`);
     } catch (e) { setErr(e.message); }
   };
 
@@ -142,8 +158,11 @@ export default function AdminSettle() {
           <select value={sel || ''} onChange={e => setSel(e.target.value ? Number(e.target.value) : null)}
             className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 mt-1">
             <option value="">— เลือกรอบ —</option>
-            {unsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'} — {d.status}</option>)}
+            {latestUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'} — {d.status}</option>)}
           </select>
+          {legacyUnsettled.length > 0 && (
+            <p className="text-xs text-navy-400 mt-1">มีรอบเก่าที่ยังไม่ออกผลอีก {legacyUnsettled.length} รอบ — เลือกได้ที่ส่วน "รอบย้อนหลัง" ด้านล่าง</p>
+          )}
         </div>
         {sel && selDraw && schema && (
           <>
@@ -183,7 +202,7 @@ export default function AdminSettle() {
                   ดึงผลอัตโนมัติ
                 </button>
               )}
-              <button onClick={settle} className="flex-1 bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400">
+              <button onClick={() => settle()} className="flex-1 bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400">
                 ยืนยันออกผลและ settle โพยทั้งหมด
               </button>
             </div>
@@ -254,6 +273,47 @@ export default function AdminSettle() {
             </>
           );
         })()}
+
+        {/* รอบเก่าที่ยังไม่ออกผล — ให้ admin กลับมาออกผลได้จากส่วนนี้ */}
+        {legacyUnsettled.length > 0 && (
+          <div className="border-t border-navy-700 pt-4 space-y-3">
+            <h3 className="text-sm font-bold text-amber-300">⏳ รอบเก่าที่ยังไม่ออกผล ({legacyUnsettled.length})</h3>
+            <select value={legacySel || ''}
+              onChange={e => {
+                const id = e.target.value ? Number(e.target.value) : null;
+                setLegacySel(id); setLegacyFields({}); setLegacyMsg(''); setErr('');
+              }}
+              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
+              <option value="">— เลือกรอบเก่าที่ต้องออกผล —</option>
+              {legacyUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
+            </select>
+            {legacyDraw && legacySchema && (
+              <>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {legacySchema.fields.map(f => (
+                    <div key={f.key}>
+                      <label className="text-sm text-navy-300">
+                        {f.label}
+                        {f.prizes > 1 && <span className="text-gold-400"> ({f.prizes} รางวัล)</span>}
+                        {f.optional && <span className="text-navy-500 text-xs"> (ไม่บังคับ)</span>}
+                      </label>
+                      <input value={legacyFields[f.key] || ''}
+                        onChange={e => setLegacyFields({ ...legacyFields, [f.key]: e.target.value.replace(f.set5 ? /[^\d,\s\-]/g : /[^\d,\s]/g, '').slice(0, f.set5 ? 40 : (f.prizes > 1 ? 60 : f.digits)) })}
+                        className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
+                        placeholder={f.set5 ? 'เช่น 12, 7, 34, 19, 45' : (f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits))} />
+                    </div>
+                  ))}
+                </div>
+                {err && <div className="text-red-400 text-sm">{err}</div>}
+                {legacyMsg && <div className="text-green-400 text-sm">{legacyMsg}</div>}
+                <button onClick={() => settle({ id: legacySel, schema: legacySchema, fields: legacyFields, draw: legacyDraw })}
+                  className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400">
+                  ยืนยันออกผลย้อนหลังและ settle โพย
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
