@@ -214,8 +214,16 @@ export default function AdminLotteries() {
               )}
               <div><label className="text-navy-300 text-xs">ชื่อไทย (แสดงให้สมาชิก)</label>
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">อัตราจ่าย (จ่ายกี่เท่า — เพิ่ม/ลดทีละ 0.5)</label>
-                <input type="number" step="0.5" min="0" value={editRule.payout_multiplier} onChange={e => setEditRule({...editRule, payout_multiplier: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+              <div><label className="text-navy-300 text-xs">อัตราจ่าย (จ่ายกี่เท่า)</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <button type="button" onClick={() => setEditRule({...editRule, payout_multiplier: Math.max(0, +(Number(editRule.payout_multiplier) - 0.5).toFixed(2))})}
+                    className="w-9 h-9 shrink-0 bg-navy-900 border border-navy-600 rounded-lg text-gold-300 font-bold hover:bg-navy-700">−</button>
+                  <input type="number" step="0.5" min="0" value={editRule.payout_multiplier} onChange={e => setEditRule({...editRule, payout_multiplier: +e.target.value})}
+                    className="flex-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 min-w-0" />
+                  <button type="button" onClick={() => setEditRule({...editRule, payout_multiplier: +(Number(editRule.payout_multiplier) + 0.5).toFixed(2)})}
+                    className="w-9 h-9 shrink-0 bg-navy-900 border border-navy-600 rounded-lg text-gold-300 font-bold hover:bg-navy-700">+</button>
+                </div>
+                <div className="text-[10px] text-navy-500 mt-1">กด − / + เพื่อเพิ่มลดทีละ 0.5 หรือพิมพ์ตัวเลขเองได้เลย</div></div>
               <div><label className="text-navy-300 text-xs">ขั้นต่ำ (บาท)</label>
                 <input type="number" step="0.01" min="0" value={toBaht(editRule.min_amount)} onChange={e => setEditRule({...editRule, min_amount: toSatang(e.target.value)})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               <div><label className="text-navy-300 text-xs">สูงสุด (บาท, เว้นว่าง = ไม่จำกัด)</label>
