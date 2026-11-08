@@ -337,7 +337,7 @@ router.get('/bets', requirePerm('bets.view_all'), (req, res) => {
   if (req.query.userId) { sql += ' AND bs.user_id = ?'; args.push(Number(req.query.userId)); }
   sql += ' ORDER BY bs.id DESC LIMIT ?'; args.push(limit);
   const slips = db().prepare(sql).all(...args);
-  const items = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
+  const items = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th, r.payout_multiplier FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
   res.json({ slips: slips.map(s => ({ ...s, items: items.all(s.id) })) });
 });
 
