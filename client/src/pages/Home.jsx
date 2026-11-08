@@ -14,10 +14,13 @@ function useNow() {
   return now;
 }
 
+function msLeft(closeAtSql, now) {
+  return new Date(String(closeAtSql).replace(' ', 'T') + 'Z').getTime() - now;
+}
+
 function countdownText(closeAtSql, now) {
   // close_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS'
-  const close = new Date(String(closeAtSql).replace(' ', 'T') + 'Z').getTime();
-  const diff = close - now;
+  const diff = msLeft(closeAtSql, now);
   if (diff <= 0) return 'ปิดรับแล้ว';
   const h = Math.floor(diff / 3600e3), m = Math.floor(diff % 3600e3 / 60e3), s = Math.floor(diff % 60e3 / 1000);
   const p = n => String(n).padStart(2, '0');
@@ -84,8 +87,40 @@ export default function Home() {
     ? latestByCategory.filter(r => r.type_code === selCode)
     : latestByCategory;
 
+  // แจ้งเตือนรอบที่ใกล้ปิดรับสุด (สูงสุด 3 รอบ) — กระพริบแดงเมื่อเหลือ < 1 ชม.
+  const alertDraws = sorted
+    .filter(d => d.status === 'open' && msLeft(d.close_at, now) > 0)
+    .slice(0, 3);
+
   return (
     <div className="space-y-8">
+      {/* แจ้งเตือนเวลาปิดรับโพย — รอบที่ใกล้สุดก่อน */}
+      {alertDraws.length > 0 && (
+        <section className="bg-gradient-to-r from-amber-500/15 to-red-500/10 border border-amber-500/40 rounded-xl p-4">
+          <h2 className="text-sm font-bold text-amber-300 mb-2 flex items-center gap-2">
+            🔔 แจ้งเตือนรอบหวยที่ใกล้ปิดรับ
+          </h2>
+          <div className="space-y-1.5">
+            {alertDraws.map(d => {
+              const left = msLeft(d.close_at, now);
+              const urgent = left < 3600e3;
+              return (
+                <div key={d.id} className="flex items-center gap-2 flex-wrap bg-navy-900/60 rounded-lg px-3 py-2">
+                  <span className="text-xs">{TYPE_EMOJI[d.type_code] || '🎟️'}</span>
+                  <span className="text-xs font-semibold text-white">
+                    {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                  </span>
+                  <span className="text-[10px] text-navy-400">ออกรางวัล {fmtDateTime(d.draw_at)}</span>
+                  <span className={`text-xs font-mono font-bold ml-auto px-2 py-0.5 rounded ${urgent ? 'bg-red-500/25 text-red-300 animate-pulse' : 'bg-amber-500/20 text-amber-300'}`}>
+                    ปิดรับใน {countdownText(d.close_at, now)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ผลรางวัลล่าสุด — ไว้บนสุดเสมอ กรองตามประเภทหวยได้ */}
       {shownResults.length > 0 && (
         <section>
