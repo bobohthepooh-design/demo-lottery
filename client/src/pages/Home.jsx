@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import { TypeBadge } from '../components/ResultLine.jsx';
+import { FlagIcon } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
 import { mergeBanner } from '../bannerConfig.js';
 
@@ -47,7 +47,7 @@ function DrawLine({ d, now }) {
   const closed = d.status !== 'open';
   return (
     <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
-      <TypeBadge code={d.type_code} className="w-5 h-5 text-[9px]" />
+      <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
       <span className="text-[11px] font-semibold text-white shrink-0">
         {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
       </span>
@@ -168,7 +168,7 @@ export default function Home() {
             <div className="flex w-max animate-marquee gap-8 px-4">
               {[...results, ...results].map((r, i) => (
                 <span key={i} className="text-xs text-navy-200 whitespace-nowrap flex items-center gap-1.5">
-                  <TypeBadge code={r.type_code} className="w-5 h-5 text-[9px]" />
+                  <FlagIcon code={r.type_code} className="w-5 h-5 text-[9px]" />
                   {tickerText(r)}
                 </span>
               ))}
@@ -189,7 +189,7 @@ export default function Home() {
               const urgent = left < 3600e3;
               return (
                 <div key={d.id} className="flex items-center gap-2 flex-wrap bg-navy-900/60 rounded-lg px-3 py-2">
-                  <TypeBadge code={d.type_code} className="w-5 h-5 text-[9px]" />
+                  <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
                   <span className="text-xs font-semibold text-white">
                     {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
                   </span>
@@ -213,7 +213,7 @@ export default function Home() {
             return (
               <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-col hover:border-gold-500/40 hover:-translate-y-0.5 transition">
                 <Link to={`/lotteries?type=${t.id}`} className="group">
-                  <TypeBadge code={t.code} className="w-9 h-9 text-xs mb-1" />
+                  <FlagIcon code={t.code} className="w-9 h-9 text-xs mb-1" />
                   <div className="font-bold text-white group-hover:text-gold-300">{t.name_th}</div>
                   <div className="text-xs text-navy-300 mt-1 mb-3">{t.description}</div>
                 </Link>
