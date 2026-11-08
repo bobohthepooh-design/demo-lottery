@@ -41,13 +41,16 @@ export default function AdminSettle() {
 
   const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
   const settled = draws.filter(d => d.status === 'settled');
-  // "รอบล่าสุด" = เลยเวลาออกรางวัลไม่เกิน 48 ชม. หรือยังไม่ถึงเวลา — ที่เหลือคือรอบค้างเก่า
+  // "รอบล่าสุด" = ออกรางวัลวันนี้ (เวลาไทย) หรือค้างไม่เกิน 48 ชม. — รอบวันถัดไปและค้างเก่าไปส่วนล่าง
   const drawMs = (s) => new Date(String(s).replace(' ', 'T') + 'Z').getTime();
+  const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD เวลาไทย
   const latestUnsettled = unsettled
-    .filter(d => drawMs(d.draw_at) >= Date.now() - 48 * 3600e3)
+    .filter(d => String(d.draw_at).slice(0, 10) <= todayStr && drawMs(d.draw_at) >= Date.now() - 48 * 3600e3)
     .sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
-  const legacyUnsettled = unsettled.filter(d => !latestUnsettled.includes(d));
-  const legacyDraw = legacyUnsettled.find(d => d.id === legacySel) || null;
+  const otherUnsettled = unsettled.filter(d => !latestUnsettled.includes(d));
+  const overdueUnsettled = otherUnsettled.filter(d => drawMs(d.draw_at) < Date.now() - 48 * 3600e3);
+  const upcomingUnsettled = otherUnsettled.filter(d => !overdueUnsettled.includes(d));
+  const legacyDraw = otherUnsettled.find(d => d.id === legacySel) || null;
   const legacySchema = legacyDraw ? resultSchema(legacyDraw.type_code, legacyDraw.category_code) : null;
 
   // เติมค่าลงช่องกรอกจาก winning_numbers object
@@ -160,8 +163,8 @@ export default function AdminSettle() {
             <option value="">— เลือกรอบ —</option>
             {latestUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'} — {d.status}</option>)}
           </select>
-          {legacyUnsettled.length > 0 && (
-            <p className="text-xs text-navy-400 mt-1">มีรอบเก่าที่ยังไม่ออกผลอีก {legacyUnsettled.length} รอบ — เลือกได้ที่ส่วน "รอบย้อนหลัง" ด้านล่าง</p>
+          {otherUnsettled.length > 0 && (
+            <p className="text-xs text-navy-400 mt-1">มีรอบอื่นที่ยังไม่ออกผลอีก {otherUnsettled.length} รอบ (ค้างเก่า/ล่วงหน้า) — เลือกได้ที่ส่วน "รอบย้อนหลัง" ด้านล่าง</p>
           )}
         </div>
         {sel && selDraw && schema && (
@@ -274,18 +277,27 @@ export default function AdminSettle() {
           );
         })()}
 
-        {/* รอบเก่าที่ยังไม่ออกผล — ให้ admin กลับมาออกผลได้จากส่วนนี้ */}
-        {legacyUnsettled.length > 0 && (
+        {/* รอบอื่นที่ยังไม่ออกผล — ค้างเก่า + รอบล่วงหน้า */}
+        {otherUnsettled.length > 0 && (
           <div className="border-t border-navy-700 pt-4 space-y-3">
-            <h3 className="text-sm font-bold text-amber-300">⏳ รอบเก่าที่ยังไม่ออกผล ({legacyUnsettled.length})</h3>
+            <h3 className="text-sm font-bold text-amber-300">⏳ รอบอื่นที่ยังไม่ออกผล ({otherUnsettled.length})</h3>
             <select value={legacySel || ''}
               onChange={e => {
                 const id = e.target.value ? Number(e.target.value) : null;
                 setLegacySel(id); setLegacyFields({}); setLegacyMsg(''); setErr('');
               }}
               className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
-              <option value="">— เลือกรอบเก่าที่ต้องออกผล —</option>
-              {legacyUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
+              <option value="">— เลือกรอบที่ต้องออกผล —</option>
+              {overdueUnsettled.length > 0 && (
+                <optgroup label={`ค้างเก่า เกิน 48 ชม. (${overdueUnsettled.length})`}>
+                  {overdueUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
+                </optgroup>
+              )}
+              {upcomingUnsettled.length > 0 && (
+                <optgroup label={`รอบล่วงหน้า (${upcomingUnsettled.length})`}>
+                  {upcomingUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
+                </optgroup>
+              )}
             </select>
             {legacyDraw && legacySchema && (
               <>
