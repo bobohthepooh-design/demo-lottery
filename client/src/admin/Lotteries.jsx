@@ -24,6 +24,10 @@ const emptyRule = (typeId) => ({
   payout_multiplier: 100, stake_unit: 100, min_amount: 100, max_amount: 1000000, is_active: 1,
 });
 
+// หน่วยเงินใน DB เป็นสตางค์ — ฟอร์มแสดง/กรอกเป็นบาท
+const toBaht = (satang) => (Number(satang || 0) / 100);
+const toSatang = (v) => Math.round((parseFloat(v) || 0) * 100);
+
 export default function AdminLotteries() {
   const [types, setTypes] = useState([]);
   const [rules, setRules] = useState([]);
@@ -193,24 +197,29 @@ export default function AdminLotteries() {
                   <option value="">— ทั่วไป —</option>
                   {categories.filter(c => c.lottery_type_id === editRule.lottery_type_id).map(c => <option key={c.id} value={c.id}>{c.name_th}</option>)}
                 </select></div>
-              <div><label className="text-navy-300 text-xs">bet_type (รหัสภาษาอังกฤษ)</label>
-                <input value={editRule.bet_type} onChange={e => setEditRule({...editRule, bet_type: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+              {/* field เชิงเทคนิค (syntax) แสดงเฉพาะตอนสร้างกติกาใหม่ — ตอนแก้ไขไม่ต้องยุ่ง */}
+              {!editRule.id && (
+                <>
+                  <div><label className="text-navy-300 text-xs">bet_type (รหัสภาษาอังกฤษ)</label>
+                    <input value={editRule.bet_type} onChange={e => setEditRule({...editRule, bet_type: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+                  <div><label className="text-navy-300 text-xs">ชื่ออังกฤษ</label>
+                    <input value={editRule.name_en || ''} onChange={e => setEditRule({...editRule, name_en: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+                  <div><label className="text-navy-300 text-xs">จำนวนหลัก</label>
+                    <input type="number" min="1" max="10" value={editRule.digits} onChange={e => setEditRule({...editRule, digits: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+                  <div className="sm:col-span-2"><label className="text-navy-300 text-xs">{`match_config (JSON: {"source":"...","mode":"exact|sorted|digit_contains|tail|head"})`}</label>
+                    <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" /></div>
+                  <div><label className="text-navy-300 text-xs">หน่วยเดิมพัน (บาท)</label>
+                    <input type="number" step="0.01" value={toBaht(editRule.stake_unit)} onChange={e => setEditRule({...editRule, stake_unit: toSatang(e.target.value)})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+                </>
+              )}
               <div><label className="text-navy-300 text-xs">ชื่อไทย (แสดงให้สมาชิก)</label>
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">ชื่ออังกฤษ</label>
-                <input value={editRule.name_en || ''} onChange={e => setEditRule({...editRule, name_en: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">จำนวนหลัก</label>
-                <input type="number" min="1" max="10" value={editRule.digits} onChange={e => setEditRule({...editRule, digits: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div className="sm:col-span-2"><label className="text-navy-300 text-xs">{`match_config (JSON: {"source":"...","mode":"exact|sorted|digit_contains|tail|head"})`}</label>
-                <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" /></div>
-              <div><label className="text-navy-300 text-xs">payout_multiplier (จ่ายกี่เท่า)</label>
-                <input type="number" step="0.1" value={editRule.payout_multiplier} onChange={e => setEditRule({...editRule, payout_multiplier: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">stake_unit (สตางค์)</label>
-                <input type="number" value={editRule.stake_unit} onChange={e => setEditRule({...editRule, stake_unit: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">ขั้นต่ำ (สตางค์)</label>
-                <input type="number" value={editRule.min_amount} onChange={e => setEditRule({...editRule, min_amount: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-              <div><label className="text-navy-300 text-xs">สูงสุด (สตางค์, เว้นว่าง = ไม่จำกัด)</label>
-                <input type="number" value={editRule.max_amount ?? ''} onChange={e => setEditRule({...editRule, max_amount: e.target.value === '' ? null : +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+              <div><label className="text-navy-300 text-xs">อัตราจ่าย (จ่ายกี่เท่า — เพิ่ม/ลดทีละ 0.5)</label>
+                <input type="number" step="0.5" min="0" value={editRule.payout_multiplier} onChange={e => setEditRule({...editRule, payout_multiplier: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+              <div><label className="text-navy-300 text-xs">ขั้นต่ำ (บาท)</label>
+                <input type="number" step="0.01" min="0" value={toBaht(editRule.min_amount)} onChange={e => setEditRule({...editRule, min_amount: toSatang(e.target.value)})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+              <div><label className="text-navy-300 text-xs">สูงสุด (บาท, เว้นว่าง = ไม่จำกัด)</label>
+                <input type="number" step="0.01" min="0" value={editRule.max_amount == null ? '' : toBaht(editRule.max_amount)} onChange={e => setEditRule({...editRule, max_amount: e.target.value === '' ? null : toSatang(e.target.value)})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               <div className="sm:col-span-2 flex items-center gap-2">
                 <input type="checkbox" checked={!!editRule.is_active} onChange={e => setEditRule({...editRule, is_active: e.target.checked ? 1 : 0})} className="accent-gold-500" />
                 <label className="text-navy-200">เปิดใช้งาน</label>
