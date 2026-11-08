@@ -23,7 +23,7 @@ export default function Countdown({ closeAt }) {
   const s = left % 60;
   const urgent = h < 1;
   const text = h > 0
-    ? `⏳ เหลืออีก ${h} ชม. ${m} นาที`
+    ? `⏳ เหลืออีก ${h} ชม. ${m} นาที ${s} วินาที`
     : m > 0
       ? `⏳ เหลืออีก ${m} นาที ${s} วินาที`
       : `⏳ เหลืออีก ${s} วินาที`;
