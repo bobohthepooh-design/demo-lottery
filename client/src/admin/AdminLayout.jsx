@@ -4,7 +4,6 @@ import { ConfirmHost } from './confirm.jsx';
 const items = [
   { to: '/admin', label: 'ภาพรวม', end: true },
   { to: '/admin/members', label: 'สมาชิก' },
-  { to: '/admin/roles', label: 'สิทธิ์การใช้งาน' },
   { to: '/admin/lotteries', label: 'ประเภทหวย/กติกา' },
   { to: '/admin/draws', label: 'รอบหวย' },
   { to: '/admin/wallet', label: 'จัดการเครดิต' },
@@ -14,6 +13,7 @@ const items = [
   { to: '/admin/security', label: 'Security Events' },
   { to: '/admin/settings', label: 'ตั้งค่าระบบ' },
   { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก' },
+  { to: '/admin/roles', label: 'สิทธิ์การใช้งาน' },
 ];
 
 export default function AdminLayout() {
