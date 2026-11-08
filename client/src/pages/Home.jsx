@@ -290,7 +290,7 @@ export default function Home() {
                 </Link>
                 {/* body */}
                 <div className="px-4 pb-4 pt-2 flex-1 flex flex-col">
-                  <div className="text-[11px] text-navy-400 mb-2 line-clamp-1">{t.description}</div>
+                  <div className="text-[11px] text-navy-400 mb-2">{t.description}</div>
                   {typeDraws.length > 0 ? (
                     <div className="space-y-1 flex-1">
                       {typeDraws.slice(0, 4).map(d => <DrawLine key={d.id} d={d} now={now} />)}
