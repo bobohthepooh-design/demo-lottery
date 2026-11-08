@@ -126,9 +126,11 @@ main table tbody tr:hover { background: #faf3f7; }
 main table tbody tr { border-color: #ecdde6; }
 main table td, main table th { border-color: #ecdde6; }
 
-/* ตัวหนังสือขนาดเล็กมาก — ขยายให้อ่านง่ายขึ้น (10px→11px, 11px→12px) */
-.text-\[10px\] { font-size: 11px; }
-.text-\[11px\] { font-size: 12px; }
+/* ตัวหนังสือขนาดเล็ก — ขยายให้อ่านง่าย/เห็นชัดขึ้น */
+.text-xs { font-size: 13px; line-height: 1.45; }
+.text-sm { font-size: 15px; line-height: 1.5; }
+.text-\[10px\] { font-size: 12px; }
+.text-\[11px\] { font-size: 13px; }
 
 /* placeholder เข้มขึ้นเล็กน้อย */
 ::placeholder { color: #b7abbd; opacity: 1; }
