@@ -152,7 +152,6 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
             </div>
           </div>
           <div className="space-y-1">

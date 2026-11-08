@@ -1,32 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, fmtDateTime, drawLabel } from '../api.js';
-import ResultLine from '../components/ResultLine.jsx';
 import Countdown from '../components/Countdown.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
 export default function Lotteries() {
-  const [types, setTypes] = useState([]);
-  const [allDraws, setAllDraws] = useState([]);   // รอบ upcoming ทั้งหมด (ใช้ทำ badge นับ)
-  const [results, setResults] = useState([]);
+  const [allDraws, setAllDraws] = useState([]);   // รอบ upcoming ทั้งหมด
   const [params] = useSearchParams();
   const selType = params.get('type');
 
   useEffect(() => {
-    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/lottery/draws?upcoming=1').then(r => setAllDraws(r.draws)).catch(() => {});
-    api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, []);
 
   // กรองรอบตามประเภทประเทศที่เลือก (client-side — allDraws มีทุกประเภทอยู่แล้ว)
   const draws = selType ? allDraws.filter(d => String(d.lottery_type_id) === String(selType)) : allDraws;
-
-  // ผล 3 ครั้งล่าสุด (กรองตามประเภทประเทศที่เลือกอยู่ ถ้ามี)
-  const selCode = types.find(t => String(t.id) === String(selType))?.code;
-  const recentResults = results
-    .filter(r => !selCode || r.type_code === selCode)
-    .slice(0, 3);
 
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const isLive = d => d.status === 'open' && d.close_at > nowSql;
@@ -76,16 +65,6 @@ export default function Lotteries() {
 
   return (
     <div className="space-y-6">
-      {/* ผลรางวัล 3 ครั้งล่าสุด — อยู่ด้านบนเสมอ */}
-      {recentResults.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-navy-300 mb-2">ผลรางวัล 3 ครั้งล่าสุด</h2>
-          <div className="space-y-1.5">
-            {recentResults.map(r => <ResultLine key={r.id} r={r} />)}
-          </div>
-        </section>
-      )}
-
       {/* รอบที่เปิดรับตอนนี้ — แสดงก่อนเสมอพร้อม badge ONLINE */}
       {liveDraws.length > 0 && (
         <section>
