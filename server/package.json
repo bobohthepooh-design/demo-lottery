@@ -12,6 +12,7 @@
     "migrate": "node src/db/migrate.js",
     "seed": "node src/db/seed.js",
     "demo:data": "node src/db/demo-data.js",
+    "seed:rules": "node src/db/seed-rules.js",
     "test": "vitest run"
   },
   "dependencies": {

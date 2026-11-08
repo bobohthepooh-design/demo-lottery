@@ -35,6 +35,14 @@ router.get('/draws/:id', (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.get('/draws/:id/rules', requireAuth, (req, res, next) => {
+  try {
+    const r = svc.rulesForDraw(Number(req.params.id));
+    if (!r) return res.status(404).json({ error: 'ไม่พบรอบหวย' });
+    res.json({ rules: r.rules });
+  } catch (e) { next(e); }
+});
+
 router.get('/results', requireAuth, (req, res) => {
   const rows = getDb().prepare(`
     SELECT lr.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th, lt.code AS type_code

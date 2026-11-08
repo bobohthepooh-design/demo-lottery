@@ -181,6 +181,10 @@ router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), (req, res, nex
   } catch (e) { next(e); }
 });
 
+router.get('/lottery/categories', requirePerm('lottery.manage'), (req, res) => {
+  res.json({ categories: db().prepare(`SELECT c.*, lt.name_th AS type_name_th FROM lottery_categories c JOIN lottery_types lt ON lt.id=c.lottery_type_id ORDER BY c.lottery_type_id, c.id`).all() });
+});
+
 router.get('/lottery/rules', requirePerm('lottery.manage'), (req, res) => {
   res.json({ rules: db().prepare('SELECT * FROM lottery_rules ORDER BY lottery_type_id, bet_type').all() });
 });
@@ -218,8 +222,9 @@ router.patch('/draws/:id/status', requirePerm('draws.manage'), (req, res, next) 
   } catch (e) { next(e); }
 });
 
+const numVal = z.union([z.string().regex(/^\d{1,10}$/), z.array(z.string().regex(/^\d{1,10}$/)).min(1).max(20)]);
 const settleSchema = z.object({
-  winning_numbers: z.record(z.string(), z.string().regex(/^\d{1,10}$/)),
+  winning_numbers: z.record(z.string(), numVal),
 });
 router.post('/draws/:id/settle', requirePerm('results.publish'), (req, res, next) => {
   try {

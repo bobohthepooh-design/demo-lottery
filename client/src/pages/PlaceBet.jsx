@@ -27,10 +27,18 @@ export default function PlaceBet() {
   useEffect(() => {
     api(`/lottery/draws/${drawId}`).then(async r => {
       setDraw(r.draw);
-      const t = await api(`/lottery/types/${r.draw.lottery_type_id}`);
-      setRules(t.rules);
-      if (t.rules[0]) setSelRule(String(t.rules[0].id));
-    }).catch(e => setErr(e.message));
+      try {
+        const t = await api(`/lottery/draws/${drawId}/rules`);
+        setRules(t.rules);
+        if (t.rules[0]) setSelRule(String(t.rules[0].id));
+      } catch (e2) {
+        if (e2.status === 401) { navigate('/login'); return; }
+        setErr(e2.message);
+      }
+    }).catch(e => {
+      if (e.status === 401) navigate('/login');
+      else setErr(e.message);
+    });
   }, [drawId]);
 
   const rule = rules.find(r => String(r.id) === selRule);
@@ -92,7 +100,7 @@ export default function PlaceBet() {
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white">{draw.type_name_th}</h1>
+              <h1 className="text-xl font-bold text-white">{draw.type_name_th}{draw.category_name_th ? ` — ${draw.category_name_th}` : ''}</h1>
               <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)} • ปิด {fmtDateTime(draw.close_at)}</div>
             </div>
             <span className={`text-xs font-bold px-3 py-1 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>

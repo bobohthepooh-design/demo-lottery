@@ -54,7 +54,7 @@ export default function Lotteries() {
           <div key={d.id} className="bg-navy-800 border border-navy-700 rounded-xl p-5">
             <div className="flex items-start justify-between">
               <div>
-                <div className="font-bold text-white text-lg">{d.type_name_th}</div>
+                <div className="font-bold text-white text-lg">{d.type_name_th}{d.category_name_th ? ` — ${d.category_name_th}` : ''}</div>
                 <div className="text-sm text-navy-300">{d.draw_code}</div>
               </div>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>

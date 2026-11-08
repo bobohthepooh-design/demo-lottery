@@ -25,17 +25,30 @@ export function getLotteryType(id) {
   return getDb().prepare('SELECT * FROM lottery_types WHERE id = ?').get(id);
 }
 
-export function listRules(lotteryTypeId, { activeOnly = true } = {}) {
+export function listRules(lotteryTypeId, { activeOnly = true, categoryId = undefined } = {}) {
   const db = getDb();
-  return db.prepare(`SELECT * FROM lottery_rules
-                     WHERE lottery_type_id = ? ${activeOnly ? 'AND is_active = 1' : ''} ORDER BY bet_type`)
-    .all(lotteryTypeId);
+  let sql = `SELECT * FROM lottery_rules WHERE lottery_type_id = ? ${activeOnly ? 'AND is_active = 1' : ''}`;
+  const args = [lotteryTypeId];
+  if (categoryId !== undefined) { sql += ' AND COALESCE(category_id,0) = COALESCE(?,0)'; args.push(categoryId); }
+  sql += ' ORDER BY bet_type';
+  return db.prepare(sql).all(...args);
+}
+
+/** Rules that apply to a specific draw (type + category). */
+export function rulesForDraw(drawId) {
+  const draw = getDraw(drawId);
+  if (!draw) return null;
+  return { draw, rules: listRules(draw.lottery_type_id, { categoryId: draw.category_id }) };
 }
 
 export function listDraws({ lotteryTypeId = null, status = null, upcoming = false } = {}) {
   const db = getDb();
-  let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th
-             FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id WHERE 1=1`;
+  let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th,
+                    c.code AS category_code, c.name_th AS category_name_th
+             FROM lottery_draws d
+             JOIN lottery_types lt ON lt.id = d.lottery_type_id
+             LEFT JOIN lottery_categories c ON c.id = d.category_id
+             WHERE 1=1`;
   const args = [];
   if (lotteryTypeId) { sql += ' AND d.lottery_type_id = ?'; args.push(lotteryTypeId); }
   if (status) { sql += ' AND d.status = ?'; args.push(status); }
@@ -46,8 +59,12 @@ export function listDraws({ lotteryTypeId = null, status = null, upcoming = fals
 
 export function getDraw(id) {
   const db = getDb();
-  return db.prepare(`SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th
-                     FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id WHERE d.id = ?`).get(id);
+  return db.prepare(`SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th,
+                            c.code AS category_code, c.name_th AS category_name_th
+                     FROM lottery_draws d
+                     JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                     LEFT JOIN lottery_categories c ON c.id = d.category_id
+                     WHERE d.id = ?`).get(id);
 }
 
 export function isDrawOpen(draw) {
@@ -83,8 +100,10 @@ export function placeBet(userId, { drawId, items }) {
   // Resolve rules (must belong to draw's lottery type, active)
   const slipRef = makeReference('BET');
   const resolved = items.map(it => {
-    const rule = db.prepare('SELECT * FROM lottery_rules WHERE id = ? AND lottery_type_id = ? AND is_active = 1')
-      .get(it.ruleId, draw.lottery_type_id);
+    const rule = db.prepare(`SELECT * FROM lottery_rules
+                             WHERE id = ? AND lottery_type_id = ? AND is_active = 1
+                               AND COALESCE(category_id, 0) = COALESCE(?, 0)`)
+      .get(it.ruleId, draw.lottery_type_id, draw.category_id);
     if (!rule) throw new HttpError(400, `ประเภทการแทงไม่ถูกต้องหรือปิดใช้งาน (rule ${it.ruleId})`);
     const number = validateBetNumber(rule, String(it.number ?? '').trim());
     const amount = Number(it.amount);
@@ -149,41 +168,31 @@ export function getMySlip(userId, slipRef) {
  */
 export function evaluateBet(rule, betNumber, winningNumbers) {
   const cfg = JSON.parse(rule.match_config);
-  const source = String(winningNumbers?.[cfg.source] ?? '');
+  const raw = winningNumbers?.[cfg.source];
   const bet = String(betNumber);
-  if (!/^\d+$/.test(source)) return { win: false, detail: { reason: 'no_source', source: cfg.source } };
+  // source อาจเป็น string เดียว หรือ array ของ string (หลายรางวัล เช่นเลขท้าย 2 ตัว 5 รางวัล)
+  const sources = (Array.isArray(raw) ? raw : [raw]).map(s => String(s ?? '')).filter(s => /^\d+$/.test(s));
+  if (!sources.length) return { win: false, detail: { reason: 'no_source', source: cfg.source } };
 
-  let win = false;
-  let detail = {};
-  switch (cfg.mode) {
-    case 'tail': {
-      win = bet === source.slice(-bet.length);
-      detail = { source, compared: source.slice(-bet.length) };
-      break;
+  const matchOne = (source) => {
+    switch (cfg.mode) {
+      case 'exact': return bet === source;
+      case 'tail': return bet === source.slice(-bet.length);
+      case 'head': return bet === source.slice(0, bet.length);
+      case 'sorted': {
+        const src = source.slice(-bet.length).split('').sort().join('');
+        return bet.split('').sort().join('') === src;
+      }
+      case 'digit_contains': {
+        const srcDigits = new Set(source.split(''));
+        return bet.split('').every(dg => srcDigits.has(dg));
+      }
+      default: return false;
     }
-    case 'head': {
-      win = bet === source.slice(0, bet.length);
-      detail = { source, compared: source.slice(0, bet.length) };
-      break;
-    }
-    case 'sorted': {
-      const src = source.slice(-bet.length).split('').sort().join('');
-      const b = bet.split('').sort().join('');
-      win = b === src;
-      detail = { source: src, compared: b };
-      break;
-    }
-    case 'digit_contains': {
-      // run bet: every digit of bet must appear in source
-      const srcDigits = new Set(source.split(''));
-      win = bet.split('').every(d => srcDigits.has(d));
-      detail = { source };
-      break;
-    }
-    default:
-      return { win: false, detail: { reason: 'unknown_mode', mode: cfg.mode } };
-  }
-  return { win, detail, multiplier: rule.payout_multiplier };
+  };
+
+  const win = sources.some(matchOne);
+  return { win, detail: { sources, mode: cfg.mode }, multiplier: rule.payout_multiplier };
 }
 
 /** Publish result + settle all pending bets for a draw. Admin only. Atomic. */
@@ -197,8 +206,14 @@ export function settleDraw(adminId, drawId, winningNumbers) {
   // validate winning_numbers is non-empty object of digit strings
   if (!winningNumbers || typeof winningNumbers !== 'object' || Array.isArray(winningNumbers))
     throw new HttpError(400, 'winning_numbers ต้องเป็น object เช่น {"top3":"123","bottom2":"45"}');
+  const validVal = (v) => /^\d{1,10}$/.test(String(v));
   for (const [k, v] of Object.entries(winningNumbers)) {
-    if (!/^\d{1,10}$/.test(String(v))) throw new HttpError(400, `ตัวเลขผลรางวัล field "${k}" ไม่ถูกต้อง`);
+    if (Array.isArray(v)) {
+      if (!v.length || v.length > 20 || !v.every(validVal))
+        throw new HttpError(400, `ตัวเลขผลรางวัล field "${k}" ไม่ถูกต้อง`);
+    } else if (!validVal(v)) {
+      throw new HttpError(400, `ตัวเลขผลรางวัล field "${k}" ไม่ถูกต้อง`);
+    }
   }
 
   return tx((d) => {
