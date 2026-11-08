@@ -88,3 +88,33 @@ body {
   50% { transform: translateY(-8px); }
 }
 .animate-float { animation: float-slow 5s ease-in-out infinite; }
+
+/* confetti ฉลองถูกรางวัล */
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.6; }
+}
+.confetti-piece {
+  position: absolute; top: -5vh; width: 10px; height: 14px;
+  animation: confetti-fall linear infinite;
+}
+
+/* หยดน้ำตา/ฝนซาเมื่อไม่ถูกรางวัล */
+@keyframes tear-fall {
+  0% { transform: translateY(-6vh) scale(0.6); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(60vh) scale(1); opacity: 0; }
+}
+.tear-drop {
+  position: absolute; top: -5vh; width: 6px; height: 10px;
+  border-radius: 50% 50% 60% 60%;
+  background: linear-gradient(#7dd3fc, #0284c7);
+  animation: tear-fall linear infinite;
+}
+
+/* modal ฉลอง/เสียใจ */
+@keyframes result-pop {
+  0% { transform: scale(0.5) translateY(30px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.animate-result-pop { animation: result-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }

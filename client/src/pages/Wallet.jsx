@@ -19,10 +19,22 @@ export default function Wallet() {
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [celebration, setCelebration] = useState(null); // { kind:'win'|'lose', slip }
 
   const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
     .catch(() => {}).finally(() => setLoading(false));
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // ดึงโพยล่าสุดที่ออกผลแล้วมาแสดงอารมณ์ถูก/ไม่ถูก
+    api('/bets/mine?limit=10').then(r => {
+      const s = (r.slips || []).find(x => ['won', 'lost', 'partial'].includes(x.status));
+      // แสดงครั้งเดียวต่อโพยต่อ session เพื่อไม่ให้รบกวนทุกครั้งที่เปิดหน้า
+      if (s && sessionStorage.getItem(`celebrated-${s.slip_ref}`) !== '1') {
+        sessionStorage.setItem(`celebrated-${s.slip_ref}`, '1');
+        setCelebration({ kind: s.status === 'lost' ? 'lose' : 'win', slip: s });
+      }
+    }).catch(() => {});
+  }, []);
 
   const doAction = async () => {
     setErr('');
@@ -132,6 +144,60 @@ export default function Wallet() {
                 {busy ? 'กำลังดำเนินการ...' : modal === 'deposit' ? 'ยืนยันเติมเครดิต' : 'ยืนยันถอนเครดิต'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* overlay ฉลอง/เสียใจผลโพยล่าสุด */}
+      {celebration && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 overflow-hidden">
+          {celebration.kind === 'win' ? (
+            <>
+              {Array.from({ length: 40 }).map((_, i) => (
+                <span key={i} className="confetti-piece"
+                  style={{
+                    left: `${(i * 37) % 100}%`,
+                    background: ['#d4af37', '#22c55e', '#f472b6', '#60a5fa', '#fbbf24', '#a78bfa'][i % 6],
+                    animationDuration: `${2.2 + (i % 5) * 0.5}s`,
+                    animationDelay: `${(i % 10) * 0.18}s`,
+                    borderRadius: i % 3 === 0 ? '50%' : '2px',
+                  }} />
+              ))}
+            </>
+          ) : (
+            <>
+              {Array.from({ length: 30 }).map((_, i) => (
+                <span key={i} className="tear-drop"
+                  style={{
+                    left: `${(i * 41) % 100}%`,
+                    animationDuration: `${1.8 + (i % 4) * 0.4}s`,
+                    animationDelay: `${(i % 8) * 0.22}s`,
+                  }} />
+              ))}
+            </>
+          )}
+          <div className={`relative bg-navy-800 border rounded-3xl p-8 max-w-sm w-full text-center animate-result-pop ${celebration.kind === 'win' ? 'border-gold-500/60 animate-win' : 'border-blue-500/40'}`}>
+            {celebration.kind === 'win' ? (
+              <>
+                <div className="text-6xl animate-coin mb-2">🎉🏆</div>
+                <h2 className="text-2xl font-bold text-gold-300 mb-1">ยินดีด้วย!</h2>
+                <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ถูกรางวัล</p>
+                <div className="text-3xl font-bold text-green-400 animate-coin mb-1">+฿{satang(celebration.slip.total_payout)}</div>
+                <p className="text-xs text-navy-400 mb-5">เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — ถอนได้หลังปลดล็อก</p>
+              </>
+            ) : (
+              <>
+                <div className="text-6xl mb-2 animate-lose">😢💧</div>
+                <h2 className="text-2xl font-bold text-blue-300 mb-1">เสียใจด้วย...</h2>
+                <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ไม่ถูกรางวัลรอบนี้</p>
+                <div className="text-xl font-bold text-navy-300 mb-1">เสีย ฿{satang(celebration.slip.total_stake)}</div>
+                <p className="text-xs text-navy-400 mb-5">เก็บเครดิตไว้ลองใหม่นะ — ห้องยังเปิดรับแทงทุกวัน</p>
+              </>
+            )}
+            <button onClick={() => setCelebration(null)}
+              className={`w-full font-bold py-3 rounded-xl ${celebration.kind === 'win' ? 'bg-gold-500 text-navy-950 hover:bg-gold-400' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
+              {celebration.kind === 'win' ? 'รับทราบ ขอบคุณ! 🎊' : 'เป็นกำลังใจให้นะ 💙'}
+            </button>
           </div>
         </div>
       )}
