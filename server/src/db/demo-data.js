@@ -80,8 +80,19 @@ export function seedDemoDraws() {
     }
 
     for (const c of targets) {
+      // นับรอบที่ยังไม่ถึงเวลาปิด — สร้างเพิ่มเฉพาะเมื่อมีไม่ครบ schedule.length รอบ
+      // (idempotent สำหรับการรันอัตโนมัติทุกวัน)
+      const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const upcoming = db.prepare(`SELECT COUNT(*) c FROM lottery_draws
+        WHERE lottery_type_id = ? AND COALESCE(category_id,0) = COALESCE(?,0)
+          AND status IN ('scheduled','open') AND close_at > ?`)
+        .get(t.id, c.id, nowUtc).c;
+      let need = Math.max(0, schedule.length - upcoming);
       for (const s of schedule) {
-        const drawCode = `${c.code}-DEMO-${ymd}-${s.seq}`;
+        if (need <= 0) break;
+        const seq = String(upcoming + (schedule.length - need) + 1).padStart(2, '0');
+        need--;
+        const drawCode = `${c.code}-DEMO-${ymd}-${seq}`;
         if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
         const drawAt = toUtcSql(localSql(s.drawInH * 3600e3));
         const closeAt = toUtcSql(localSql(s.closeInH * 3600e3));

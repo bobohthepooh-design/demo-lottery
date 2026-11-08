@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { runMigrations } from './db/migrate.js';
 import { seed } from './db/seed.js';
+import { seedDemoDraws } from './db/demo-data.js';
 import { getDb } from './db/index.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { csrfTokenEndpoint, csrfProtection, ensureCsrf } from './middleware/csrf.js';
@@ -20,6 +21,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 runMigrations();
 // seed only if users table empty
 if (getDb().prepare('SELECT COUNT(*) c FROM users').get().c === 0) seed();
+
+// สร้างรอบหวยตัวอย่างอัตโนมัติ (idempotent — เติมเฉพาะรอบที่ยังไม่มี)
+// หวยไทย: ทุกวันที่ 1 และ 16 ของเดือน | ประเทศอื่น: top-up ให้มีรอบล่วงหน้าเสมอ
+if (config.env !== 'test') {
+  try { seedDemoDraws(); } catch (e) { console.error('[demo-data] auto-seed failed:', e.message); }
+  setInterval(() => {
+    try { seedDemoDraws(); } catch (e) { console.error('[demo-data] periodic seed failed:', e.message); }
+  }, 6 * 3600 * 1000).unref();
+}
 
 const app = express();
 app.disable('x-powered-by');

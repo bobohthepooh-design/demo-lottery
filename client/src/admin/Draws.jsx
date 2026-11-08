@@ -4,12 +4,22 @@ import WinningBoard from '../components/WinningBoard.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
+// DB เก็บเวลาเป็น UTC — แปลงเป็นค่า datetime-local (เวลา local ของ admin)
+const utcToLocalInput = (s) => {
+  if (!s) return '';
+  const d = new Date(String(s).replace(' ', 'T') + 'Z');
+  if (isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
 export default function AdminDraws() {
   const [draws, setDraws] = useState([]);
   const [types, setTypes] = useState([]);
   const [cats, setCats] = useState([]);
   const [form, setForm] = useState({ lottery_type_id: '', category_id: '', draw_code: '', draw_at: '', close_at: '' });
   const [showForm, setShowForm] = useState(false);
+  const [editDraw, setEditDraw] = useState(null);
 
   const load = () => {
     api('/admin/draws').then(r => setDraws(r.draws)).catch(e => alert(e.message));
@@ -33,6 +43,22 @@ export default function AdminDraws() {
   const setStatus = async (id, status) => {
     try { await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } }); load(); }
     catch (e) { alert(e.message); }
+  };
+
+  const openEdit = (d) => setEditDraw({
+    id: d.id, draw_code: d.draw_code,
+    draw_at: utcToLocalInput(d.draw_at), close_at: utcToLocalInput(d.close_at),
+  });
+
+  const saveEdit = async () => {
+    try {
+      await api(`/admin/draws/${editDraw.id}`, { method: 'PATCH', body: {
+        draw_code: editDraw.draw_code,
+        draw_at: editDraw.draw_at.replace('T', ' '),
+        close_at: editDraw.close_at.replace('T', ' '),
+      }});
+      setEditDraw(null); load();
+    } catch (e) { alert(e.message); }
   };
 
   return (
@@ -83,6 +109,7 @@ export default function AdminDraws() {
                       {d.status !== 'open' && <button onClick={() => setStatus(d.id, 'open')} className="text-xs text-green-400 hover:underline">เปิด</button>}
                       {d.status === 'open' && <button onClick={() => setStatus(d.id, 'closed')} className="text-xs text-navy-300 hover:underline">ปิด</button>}
                       <button onClick={() => setStatus(d.id, 'cancelled')} className="text-xs text-red-400 hover:underline">ยกเลิก</button>
+                      <button onClick={() => openEdit(d)} className="text-xs text-gold-400 hover:underline">แก้ไข</button>
                     </div>
                   )}
                 </td>
@@ -91,6 +118,35 @@ export default function AdminDraws() {
           </tbody>
         </table>
       </div>
+
+      {editDraw && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEditDraw(null)}>
+          <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-white mb-4">แก้ไขรอบหวย: {editDraw.draw_code}</h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <label className="text-xs text-navy-300">รหัสรอบ</label>
+                <input value={editDraw.draw_code} onChange={e => setEditDraw({...editDraw, draw_code: e.target.value})}
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" />
+              </div>
+              <div>
+                <label className="text-xs text-navy-300">เวลาออกรางวัล</label>
+                <input type="datetime-local" value={editDraw.draw_at} onChange={e => setEditDraw({...editDraw, draw_at: e.target.value})}
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
+              </div>
+              <div>
+                <label className="text-xs text-navy-300">เวลาปิดรับโพย (ต้องก่อนเวลาออกรางวัล)</label>
+                <input type="datetime-local" value={editDraw.close_at} onChange={e => setEditDraw({...editDraw, close_at: e.target.value})}
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={saveEdit} className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">บันทึก</button>
+                <button onClick={() => setEditDraw(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

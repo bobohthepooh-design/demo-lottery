@@ -237,6 +237,19 @@ router.post('/draws', requirePerm('draws.manage'), (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+const drawUpdateSchema = z.object({
+  draw_code: z.string().min(1).max(100).optional(),
+  draw_at: z.string().min(10).optional(),
+  close_at: z.string().min(10).optional(),
+});
+router.patch('/draws/:id', requirePerm('draws.manage'), (req, res, next) => {
+  try {
+    const data = drawUpdateSchema.parse(req.body);
+    lottery.updateDraw(req.user.id, Number(req.params.id), data);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 const statusSchema = z.object({ status: z.enum(['scheduled', 'open', 'closed', 'cancelled']) });
 router.patch('/draws/:id/status', requirePerm('draws.manage'), (req, res, next) => {
   try {

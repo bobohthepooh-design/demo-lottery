@@ -85,7 +85,7 @@ beforeAll(async () => {
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
   const d = await adminAgent.post('/admin/draws', {
     lottery_type_id: 1, draw_code: `T${ts}`,
-    draw_at: fmt(now - 3600e3), close_at: fmt(now + 3600e3),
+    draw_at: fmt(now + 7200e3), close_at: fmt(now + 3600e3),
   });
   drawId = d.body.id;
   await adminAgent.patch(`/admin/draws/${drawId}/status`, { status: 'open' });
@@ -126,7 +126,7 @@ describe('betting', () => {
     const now = Date.now();
     const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
-    const d = await adminAgent.post('/admin/draws', { lottery_type_id: 1, draw_code: `C${ts}`, draw_at: fmt(now-7200e3), close_at: fmt(now-3600e3) });
+    const d = await adminAgent.post('/admin/draws', { lottery_type_id: 1, draw_code: `C${ts}`, draw_at: fmt(now-1800e3), close_at: fmt(now-3600e3) });
     await adminAgent.patch(`/admin/draws/${d.body.id}/status`, { status: 'open' }); // will auto-close since close_at passed
     const r = await member.agent.post('/bets', { drawId: d.body.id, items: [{ ruleId: ruleBottom2.id, number: '42', amount: 100 }] });
     expect(r.status).toBe(400);

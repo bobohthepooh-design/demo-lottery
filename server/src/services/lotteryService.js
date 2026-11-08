@@ -281,7 +281,7 @@ export function settleDraw(adminId, drawId, winningNumbers) {
 
 export function createDraw(adminId, { lotteryTypeId, categoryId = null, drawCode, drawAt, closeAt }) {
   if (!drawCode || !drawAt || !closeAt) throw new HttpError(400, 'กรุณาระบุ draw_code, draw_at, close_at');
-  if (new Date(closeAt) <= new Date(drawAt)) throw new HttpError(400, 'close_at ต้องหลัง draw_at');
+  if (new Date(closeAt) >= new Date(drawAt)) throw new HttpError(400, 'เวลาปิดรับโพยต้องอยู่ก่อนเวลาออกรางวัล');
   const db = getDb();
   if (!db.prepare('SELECT id FROM lottery_types WHERE id = ?').get(lotteryTypeId)) throw new HttpError(400, 'lottery_type ไม่ถูกต้อง');
   try {
@@ -294,6 +294,24 @@ export function createDraw(adminId, { lotteryTypeId, categoryId = null, drawCode
     if (String(e.message).includes('UNIQUE')) throw new HttpError(409, 'draw_code นี้ถูกใช้แล้ว');
     throw e;
   }
+}
+
+export function updateDraw(adminId, drawId, { drawCode, drawAt, closeAt }) {
+  const db = getDb();
+  const draw = getDraw(drawId);
+  if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+  if (draw.status === 'settled' || draw.status === 'cancelled') throw new HttpError(400, 'รอบที่ออกผล/ยกเลิกแล้วไม่สามารถแก้ไขได้');
+  const code = drawCode ?? draw.draw_code;
+  const at = drawAt ? toUtcSql(drawAt) : draw.draw_at;
+  const close = closeAt ? toUtcSql(closeAt) : draw.close_at;
+  if (new Date(close) >= new Date(at)) throw new HttpError(400, 'เวลาปิดรับโพยต้องอยู่ก่อนเวลาออกรางวัล');
+  if (code !== draw.draw_code) {
+    const dup = db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ? AND id != ?').get(code, drawId);
+    if (dup) throw new HttpError(409, 'draw_code นี้ถูกใช้แล้ว');
+  }
+  db.prepare(`UPDATE lottery_draws SET draw_code = ?, draw_at = ?, close_at = ?, updated_at = datetime('now') WHERE id = ?`)
+    .run(code, at, close, drawId);
+  audit({ userId: adminId, action: 'draw.update', entityType: 'draw', entityId: String(drawId), detail: { drawCode: code } });
 }
 
 export function updateDrawStatus(adminId, drawId, status) {
