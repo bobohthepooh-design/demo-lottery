@@ -71,7 +71,7 @@ export default function Lotteries() {
         <div>⏱️ ปิดรับโพย: <Countdown closeAt={d.close_at} /></div>
       </div>
       {live && (
-        <Link to={`/bet/${d.id}`} className="mt-4 block text-center bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400">
+        <Link to={`/bet/${d.id}`} className={`mt-4 block text-center bg-gradient-to-r ${ac.btn} text-white font-bold py-2.5 rounded-lg hover:brightness-110 transition`}>
           แทงหวยรอบนี้
         </Link>
       )}
