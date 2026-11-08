@@ -219,9 +219,9 @@ export default function Home() {
                 </Link>
                 {typeDraws.length > 0 ? (
                   <div className="space-y-1 mt-auto pt-3">
-                    {typeDraws.slice(0, 3).map(d => <DrawLine key={d.id} d={d} now={now} />)}
-                    {typeDraws.length > 3 && (
-                      <div className="text-[10px] text-navy-500 text-center">+อีก {typeDraws.length - 3} รอบ</div>
+                    {typeDraws.slice(0, 4).map(d => <DrawLine key={d.id} d={d} now={now} />)}
+                    {typeDraws.length > 4 && (
+                      <div className="text-[10px] text-navy-500 text-center">+อีก {typeDraws.length - 4} รอบ</div>
                     )}
                     <Link to={`/lotteries?type=${t.id}`}
                       className="block mt-2 text-center text-xs font-bold bg-gold-500/15 text-gold-300 border border-gold-500/40 rounded-lg py-1.5 hover:bg-gold-500/25 transition">
