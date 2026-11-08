@@ -64,9 +64,11 @@ export default function Layout() {
               </NavLink>
               {lotOpen && (
                 <div className="absolute top-full left-0 mt-1 w-60 bg-navy-800 border border-navy-600 rounded-xl shadow-2xl py-2 z-50">
-                  <div className="px-3 py-1 text-[10px] text-navy-400">เลือกตลาดหวย</div>
+                  <div className="px-3 py-1 text-[10px] text-navy-400">เลือกประเภทหวย</div>
                   <Link to="/lotteries" onClick={() => setLotOpen(false)}
-                    className="block px-3 py-2 text-sm text-navy-200 hover:bg-navy-700 hover:text-gold-300">ดูหวยทั้งหมด</Link>
+                    className="block px-3 py-2 text-sm font-semibold text-gold-300 hover:bg-navy-700">
+                    🎟️ หวยทั้งหมด — ทุกประเทศ
+                  </Link>
                   {types.map(t => (
                     <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setLotOpen(false)}
                       className="block px-3 py-2 text-sm text-navy-200 hover:bg-navy-700 hover:text-gold-300">

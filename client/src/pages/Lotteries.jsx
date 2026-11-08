@@ -9,20 +9,19 @@ const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 export default function Lotteries() {
   const [types, setTypes] = useState([]);
-  const [draws, setDraws] = useState([]);
+  const [allDraws, setAllDraws] = useState([]);   // รอบ upcoming ทั้งหมด (ใช้ทำ badge นับ)
   const [results, setResults] = useState([]);
   const [params] = useSearchParams();
   const selType = params.get('type');
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
+    api('/lottery/draws?upcoming=1').then(r => setAllDraws(r.draws)).catch(() => {});
     api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const q = `upcoming=1${selType ? `&type=${selType}` : ''}`;
-    api(`/lottery/draws?${q}`).then(r => setDraws(r.draws)).catch(() => {});
-  }, [selType]);
+  // กรองรอบตามประเภทประเทศที่เลือก (client-side — allDraws มีทุกประเภทอยู่แล้ว)
+  const draws = selType ? allDraws.filter(d => String(d.lottery_type_id) === String(selType)) : allDraws;
 
   // ผล 3 ครั้งล่าสุด (กรองตามประเภทประเทศที่เลือกอยู่ ถ้ามี)
   const selCode = types.find(t => String(t.id) === String(selType))?.code;
@@ -42,6 +41,12 @@ export default function Lotteries() {
   const liveIds = new Set(liveDraws.map(d => d.id));
   const otherDraws = draws.filter(d => !liveIds.has(d.id))
     .sort((a, b) => a.draw_at.localeCompare(b.draw_at));
+
+  // จำนวนรอบที่เปิดรับของแต่ละประเภท — ไว้แสดงบนปุ่มเมนู
+  const liveCountByType = {};
+  for (const d of allDraws.filter(isLive)) {
+    liveCountByType[d.lottery_type_id] = (liveCountByType[d.lottery_type_id] || 0) + 1;
+  }
 
   const DrawCard = ({ d, featured }) => {
     const live = isLive(d);
@@ -76,7 +81,18 @@ export default function Lotteries() {
     );
   };
 
-  const menuCls = (active) => `px-4 py-2 rounded-lg text-sm ${active ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700 hover:border-gold-500/40'}`;
+  // ปุ่มเมนูประเภทหวย — ใหญ่ขึ้น แตะง่าย พร้อม badge จำนวนรอบที่เปิดรับ
+  const TypeButton = ({ to, active, children, badge }) => (
+    <Link to={to}
+      className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border transition ${active ? 'bg-gold-500 text-navy-950 border-gold-400 shadow-lg shadow-gold-500/20' : 'bg-navy-800 text-navy-100 border-navy-600 hover:border-gold-500/50 hover:bg-navy-700'}`}>
+      {children}
+      {badge > 0 && (
+        <span className="text-[10px] font-bold bg-green-500/25 text-green-300 border border-green-500/40 rounded-full px-1.5 py-0.5">
+          {badge} เปิด
+        </span>
+      )}
+    </Link>
+  );
 
   return (
     <div className="space-y-6">
@@ -103,13 +119,17 @@ export default function Lotteries() {
         </section>
       )}
 
-      {/* เมนูแยกตามประเทศ (3 ประเภทหลัก) */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Link to="/lotteries" className={menuCls(!selType)}>ทั้งหมด</Link>
+      {/* เมนูประเภทหวย — ปุ่มใหญ่เลือกง่าย */}
+      <div className="flex flex-wrap items-center gap-3">
+        <TypeButton to="/lotteries" active={!selType} badge={Object.values(liveCountByType).reduce((a, b) => a + b, 0)}>
+          🎟️ หวยทั้งหมด
+        </TypeButton>
         {types.map(t => (
-          <Link key={t.id} to={`/lotteries?type=${t.id}`} className={menuCls(selType == t.id)}>
-            {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
-          </Link>
+          <TypeButton key={t.id} to={`/lotteries?type=${t.id}`} active={selType == t.id}
+            badge={liveCountByType[t.id] || 0}>
+            <span className="text-lg leading-none">{TYPE_EMOJI[t.code] || '🎟️'}</span>
+            {t.name_th}
+          </TypeButton>
         ))}
       </div>
 
