@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, satang } from '../api.js';
 import { BET_TYPE_LABELS } from '../lotterySchema.js';
 
@@ -106,7 +107,7 @@ export default function MyBets() {
           </div>
         );
       })}
-      {!loading && !slips.length && <div className="text-center text-navy-400 py-10">ยังไม่มีโพย — <a href="/lotteries" className="text-gold-400">ไปแทงเลย</a></div>}
+      {!loading && !slips.length && <div className="text-center text-navy-400 py-10">ยังไม่มีโพย — <Link to="/lotteries" className="text-gold-400">ไปแทงเลย</Link></div>}
       {loading && <div className="text-center text-navy-400 py-10">กำลังโหลด...</div>}
     </div>
   );

@@ -5,7 +5,6 @@ import ResultLine from '../components/ResultLine.jsx';
 import Countdown from '../components/Countdown.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
-const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 export default function Lotteries() {
   const [types, setTypes] = useState([]);
@@ -42,12 +41,6 @@ export default function Lotteries() {
   const otherDraws = draws.filter(d => !liveIds.has(d.id))
     .sort((a, b) => a.draw_at.localeCompare(b.draw_at));
 
-  // จำนวนรอบที่เปิดรับของแต่ละประเภท — ไว้แสดงบนปุ่มเมนู
-  const liveCountByType = {};
-  for (const d of allDraws.filter(isLive)) {
-    liveCountByType[d.lottery_type_id] = (liveCountByType[d.lottery_type_id] || 0) + 1;
-  }
-
   const DrawCard = ({ d, featured }) => {
     const live = isLive(d);
     return (
@@ -81,19 +74,6 @@ export default function Lotteries() {
     );
   };
 
-  // ปุ่มเมนูประเภทหวย — ใหญ่ขึ้น แตะง่าย พร้อม badge จำนวนรอบที่เปิดรับ
-  const TypeButton = ({ to, active, children, badge }) => (
-    <Link to={to}
-      className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border transition ${active ? 'bg-gold-500 text-navy-950 border-gold-400 shadow-lg shadow-gold-500/20' : 'bg-navy-800 text-navy-100 border-navy-600 hover:border-gold-500/50 hover:bg-navy-700'}`}>
-      {children}
-      {badge > 0 && (
-        <span className="text-[10px] font-bold bg-green-500/25 text-green-300 border border-green-500/40 rounded-full px-1.5 py-0.5">
-          {badge} เปิด
-        </span>
-      )}
-    </Link>
-  );
-
   return (
     <div className="space-y-6">
       {/* ผลรางวัล 3 ครั้งล่าสุด — อยู่ด้านบนเสมอ */}
@@ -118,17 +98,6 @@ export default function Lotteries() {
           </div>
         </section>
       )}
-
-      {/* เมนูประเภทหวย — ปุ่มใหญ่เลือกง่าย */}
-      <div className="flex flex-wrap items-center gap-3">
-        {types.map(t => (
-          <TypeButton key={t.id} to={`/lotteries?type=${t.id}`} active={selType == t.id}
-            badge={liveCountByType[t.id] || 0}>
-            <span className="text-lg leading-none">{TYPE_EMOJI[t.code] || '🎟️'}</span>
-            {t.name_th}
-          </TypeButton>
-        ))}
-      </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         {otherDraws.map(d => <DrawCard key={d.id} d={d} />)}

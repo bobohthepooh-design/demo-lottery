@@ -9,7 +9,6 @@ import Profile from './pages/Profile.jsx';
 import Lotteries from './pages/Lotteries.jsx';
 import PlaceBet from './pages/PlaceBet.jsx';
 import Wallet from './pages/Wallet.jsx';
-import Results from './pages/Results.jsx';
 import MyBets from './pages/MyBets.jsx';
 import AdminLayout from './admin/AdminLayout.jsx';
 import AdminOverview from './admin/Overview.jsx';
@@ -43,7 +42,6 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/lotteries" element={<Lotteries />} />
-          <Route path="/results" element={<Results />} />
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/bet/:drawId" element={<Protected><PlaceBet /></Protected>} />
           <Route path="/wallet" element={<Protected><Wallet /></Protected>} />
