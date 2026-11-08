@@ -43,10 +43,10 @@ router.get('/draws/:id/rules', requireAuth, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get('/results', requireAuth, (req, res) => {
+router.get('/results', (req, res) => {
   const rows = getDb().prepare(`
     SELECT lr.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th, lt.code AS type_code,
-           c.code AS category_code
+           c.code AS category_code, c.name_th AS category_name_th
     FROM lottery_results lr
     JOIN lottery_draws d ON d.id = lr.draw_id
     JOIN lottery_types lt ON lt.id = d.lottery_type_id

@@ -13,8 +13,18 @@ export default function Home() {
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws.slice(0, 6))).catch(() => {});
-    if (user) api('/lottery/results').then(r => setResults(r.results.slice(0, 5))).catch(() => {});
+    api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, [user]);
+
+  // ผลล่าสุดของแต่ละประเทศ/หมวด (results เรียง published_at DESC อยู่แล้ว)
+  const latestByCategory = [];
+  const seen = new Set();
+  for (const r of results) {
+    const key = `${r.type_code}:${r.category_code || ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    latestByCategory.push(r);
+  }
 
   return (
     <div className="space-y-8">
@@ -89,19 +99,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recent results */}
-      {results.length > 0 && (
+      {/* ผลรางวัลล่าสุด — แสดงทุกประเทศ/หมวดบนหน้าแรก */}
+      {latestByCategory.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold text-white mb-4">ผลรางวัลล่าสุด</h2>
-          <div className="bg-navy-800 border border-navy-700 rounded-xl divide-y divide-navy-700">
-            {results.map(r => (
-              <div key={r.id} className="px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
+            <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {latestByCategory.map(r => (
+              <div key={r.id} className="bg-navy-800 border border-gold-500/30 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <span className="font-semibold text-white">{r.type_name_th}</span>
-                    <span className="text-navy-300 text-sm ml-2">{r.draw_code}</span>
+                  <div className="font-semibold text-white text-sm">
+                    {r.type_name_th}{r.category_name_th ? ` — ${r.category_name_th}` : ''}
                   </div>
-                  <span className="text-xs text-navy-400">{fmtDateTime(r.draw_at)}</span>
+                  <span className="text-[10px] text-navy-400">{fmtDateTime(r.draw_at)}</span>
                 </div>
                 <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
               </div>

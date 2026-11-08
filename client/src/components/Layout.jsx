@@ -7,7 +7,6 @@ import { useState } from 'react';
 const nav = [
   { to: '/', label: 'หน้าแรก', end: true },
   { to: '/lotteries', label: 'หวยทั้งหมด' },
-  { to: '/results', label: 'ผลรางวัล' },
   { to: '/my-bets', label: 'โพยของฉัน', auth: true },
   { to: '/wallet', label: 'กระเป๋าเครดิต', auth: true },
   { to: '/profile', label: 'โปรไฟล์', auth: true },
