@@ -103,7 +103,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs text-navy-400">{fmtDateTime(r.draw_at)}</span>
                 </div>
-                <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} compact />
+                <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
               </div>
             ))}
           </div>

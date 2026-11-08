@@ -1,20 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
-
-const SOURCE_LABELS = {
-  first: 'รางวัลที่ 1 (first)', num4: 'เลข 4 ตัว (num4)', last4: 'เลขท้าย 4 ตัว (last4)',
-  front3: 'เลขหน้า 3 ตัว (front3)', top3: 'เลขท้าย/3 ตัวบน (top3)', last3: 'เลขท้าย 3 ตัว (last3)',
-  top2: 'เลข 2 ตัวบน (top2)', bottom2: 'เลขท้าย/2 ตัวล่าง (bottom2)', last2: 'เลขท้าย 2 ตัว (last2)',
-  main: 'เลขหลัก (main)',
-};
+import { resultSchema } from '../lotterySchema.js';
 
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
   const [sel, setSel] = useState(null);
   const [selDraw, setSelDraw] = useState(null);
-  const [sources, setSources] = useState([]);
-  const [fields, setFields] = useState({});   // key -> string
-  const [multi, setMulti] = useState({});     // key -> bool (หลายรางวัล)
+  const [schema, setSchema] = useState(null);
+  const [fields, setFields] = useState({});   // key -> string (หลายรางวัลคั่นด้วย comma)
   const [result, setResult] = useState(null);
   const [err, setErr] = useState('');
 
@@ -23,32 +16,46 @@ export default function AdminSettle() {
   useEffect(load, []);
 
   useEffect(() => {
-    setFields({}); setSources([]); setMulti({}); setResult(null); setErr('');
+    setFields({}); setSchema(null); setResult(null); setErr('');
     if (!sel) { setSelDraw(null); return; }
     const d = draws.find(x => x.id === sel);
     setSelDraw(d);
-    api(`/lottery/draws/${sel}/rules`).then(r => {
-      const srcs = [...new Set(r.rules.map(x => { try { return JSON.parse(x.match_config).source; } catch { return null; } }).filter(Boolean))];
-      setSources(srcs);
-      setFields(Object.fromEntries(srcs.map(s => [s, ''])));
-    }).catch(e => setErr(e.message));
+    setSchema(resultSchema(d?.type_code, d?.category_code));
   }, [sel, draws]);
 
   const settle = async () => {
     setErr(''); setResult(null);
     const winning = {};
+    for (const f of schema?.fields || []) {
+      const t = (fields[f.key] || '').trim();
+      if (!t) continue;
+      const parts = t.split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
+      const expected = f.prizes && f.prizes > 1 ? f.prizes : 1;
+      // field ที่มีหลายรางวัล → เก็บเป็น array; ถ้ากรอกเลขเดียวก็เก็บ string
+      const toVal = (x) => {
+        if (!new RegExp(`^\\d{${f.digits}}$`).test(x)) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลัก`);
+        return x;
+      };
+      try {
+        if (expected > 1) {
+          const arr = parts.map(toVal);
+          if (arr.length !== expected) throw new Error(`${f.label} ต้องกรอก ${expected} รางวัล (คั่นด้วย comma) — ตอนนี้ได้ ${arr.length} เลข`);
+          winning[f.key] = arr;
+        } else {
+          if (parts.length !== 1) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลักตัวเดียว`);
+          winning[f.key] = toVal(parts[0]);
+        }
+      } catch (e) { return setErr(e.message); }
+    }
+    // field เสริมที่ไม่อยู่ใน schema (ถ้ามี) — รับตัวเลขอะไรก็ได้
     for (const [k, v] of Object.entries(fields)) {
+      if (winning[k] !== undefined || schema?.fields?.some(f => f.key === k)) continue;
       const t = v.trim();
       if (!t) continue;
-      if (multi[k]) {
-        const arr = t.split(/[,\s]+/).map(x => x.trim()).filter(x => /^\d{1,10}$/.test(x));
-        if (arr.length) winning[k] = arr;
-      } else {
-        if (!/^\d{1,10}$/.test(t)) return setErr(`field "${k}" ต้องเป็นตัวเลข`);
-        winning[k] = t;
-      }
+      if (!/^\d{1,10}$/.test(t)) return setErr(`field "${k}" ต้องเป็นตัวเลข`);
+      winning[k] = t;
     }
-    if (!Object.keys(winning).length) return setErr('กรอกผลรางวัลอย่างน้อย 1 field');
+    if (!Object.keys(winning).length) return setErr('กรุณากรอกผลรางวัลอย่างน้อย 1 รายการ');
     try {
       const r = await api(`/admin/draws/${sel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
       setResult(r); load();
@@ -59,7 +66,7 @@ export default function AdminSettle() {
     <div className="max-w-2xl space-y-4">
       <h1 className="text-2xl font-bold text-white">ออกผลรางวัล & คำนวณโพย</h1>
       <div className="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 text-sm rounded-lg p-3">
-        ระบบจะ settle โพยทั้งหมดของรอบนั้นอัตโนมัติ และจ่ายเครดิตรางวัลตามกติกาใน lottery_rules — ช่องกรอก field มาจาก match_config ของกติกาประเภทนั้นโดยตรง
+        ระบบจะ settle โพยทั้งหมดของรอบนั้นอัตโนมัติและจ่ายเครดิตรางวัลตามกติกา — ช่องกรอกผลอ้างอิงตามโครงสร้างรางวัลจริงของประเทศนั้น ๆ
       </div>
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">
         <div>
@@ -70,26 +77,27 @@ export default function AdminSettle() {
             {draws.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.status}</option>)}
           </select>
         </div>
-        {sel && selDraw && (
+        {sel && selDraw && schema && (
           <>
             <div className="grid sm:grid-cols-2 gap-3">
-              {sources.map(src => (
-                <div key={src}>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-navy-300">{SOURCE_LABELS[src] || src}</label>
-                    <label className="text-[10px] text-navy-400 flex items-center gap-1">
-                      <input type="checkbox" checked={!!multi[src]} onChange={e => setMulti({...multi, [src]: e.target.checked})} className="accent-gold-500" />
-                      หลายรางวัล
-                    </label>
-                  </div>
-                  <input value={fields[src] || ''}
-                    onChange={e => setFields({...fields, [src]: e.target.value.replace(multi[src] ? /[^\d,\s]/g : /\D/g, '').slice(0, multi[src] ? 120 : 10)})}
+              {schema.fields.map(f => (
+                <div key={f.key}>
+                  <label className="text-sm text-navy-300">
+                    {f.label}
+                    {f.prizes > 1 && <span className="text-gold-400"> ({f.prizes} รางวัล)</span>}
+                    {f.optional && <span className="text-navy-500 text-xs"> (ไม่บังคับ)</span>}
+                  </label>
+                  <input value={fields[f.key] || ''}
+                    onChange={e => setFields({...fields, [f.key]: e.target.value.replace(/[^\d,\s]/g, '').slice(0, f.prizes > 1 ? 60 : f.digits)})}
                     className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                    placeholder={multi[src] ? 'เช่น 12,34,56' : '000'} />
+                    placeholder={f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits)} />
                 </div>
               ))}
             </div>
-            <p className="text-xs text-navy-400">"หลายรางวัล" ใช้กับหวยที่มีหลายเลข เช่น หวยลาวพัฒนา (เลขท้าย 2 ตัว 5 รางวัล) — คั่นด้วย comma</p>
+            <p className="text-xs text-navy-400">
+              {schema.fields.some(f => f.prizes > 1) && 'รางวัลที่มีหลายเลข ให้คั่นด้วย comma เช่น 12, 34, 56 • '}
+              ผลจะถูกบันทึกและหัก/จ่ายเครดิตโพยทั้งหมดในรอบนี้ทันที
+            </p>
             {err && <div className="text-red-400 text-sm">{err}</div>}
             {result && (
               <div className="bg-green-500/10 border border-green-500/40 rounded-lg p-4 text-sm text-green-300">
@@ -101,6 +109,7 @@ export default function AdminSettle() {
             </button>
           </>
         )}
+        {sel && !schema && <div className="text-navy-400 text-sm">ไม่พบโครงสร้างผลรางวัลสำหรับประเภทนี้</div>}
       </div>
     </div>
   );

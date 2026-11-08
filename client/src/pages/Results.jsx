@@ -27,7 +27,7 @@ export default function Results() {
             </div>
             <div className="text-xs text-navy-400">ออกผล {fmtDateTime(r.published_at)}</div>
           </div>
-          <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} />
+          <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} />
         </div>
       ))}
       {!loading && !results.length && (

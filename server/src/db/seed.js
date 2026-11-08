@@ -2,6 +2,7 @@ import { getDb, tx } from './index.js';
 import { config } from '../config.js';
 import { hashPassword } from '../lib/password.js';
 import { setSetting } from '../services/settingsService.js';
+import { seedRulesV2 } from './seed-rules.js';
 
 const ROLES = [
   { name: 'super_admin', description: 'สิทธิ์สูงสุด ทุก permission' },
@@ -40,24 +41,6 @@ const ROLE_PERMS = {
   ],
   member: ['lottery.view', 'bet.place', 'bet.view_own', 'wallet.view_own', 'results.view'],
 };
-
-// payout_multiplier = ตัวคูณยอดคืน (stake * multiplier รวมเงินต้น)
-function baseRules() {
-  return [
-    { bet_type: '2top', name_th: '2 ตัวบน', name_en: '2 Top', digits: 2,
-      match_config: JSON.stringify({ source: 'top3', mode: 'tail' }), payout_multiplier: 100, stake_unit: 100, min_amount: 100, max_amount: 1000000 },
-    { bet_type: '2bottom', name_th: '2 ตัวล่าง', name_en: '2 Bottom', digits: 2,
-      match_config: JSON.stringify({ source: 'bottom2', mode: 'tail' }), payout_multiplier: 100, stake_unit: 100, min_amount: 100, max_amount: 1000000 },
-    { bet_type: '3top', name_th: '3 ตัวบน', name_en: '3 Top', digits: 3,
-      match_config: JSON.stringify({ source: 'top3', mode: 'tail' }), payout_multiplier: 900, stake_unit: 100, min_amount: 100, max_amount: 1000000 },
-    { bet_type: '3tod', name_th: '3 ตัวโต๊ด', name_en: '3 Tod', digits: 3,
-      match_config: JSON.stringify({ source: 'top3', mode: 'sorted' }), payout_multiplier: 150, stake_unit: 100, min_amount: 100, max_amount: 1000000 },
-    { bet_type: 'run_top', name_th: 'วิ่งบน', name_en: 'Run Top', digits: 1,
-      match_config: JSON.stringify({ source: 'top3', mode: 'digit_contains' }), payout_multiplier: 3.2, stake_unit: 100, min_amount: 100, max_amount: 500000 },
-    { bet_type: 'run_bottom', name_th: 'วิ่งล่าง', name_en: 'Run Bottom', digits: 1,
-      match_config: JSON.stringify({ source: 'bottom2', mode: 'digit_contains' }), payout_multiplier: 4, stake_unit: 100, min_amount: 100, max_amount: 500000 },
-  ];
-}
 
 export function seed() {
   const db = getDb();
@@ -100,16 +83,6 @@ export function seed() {
       typeIds[t.code] = d.prepare('SELECT id FROM lottery_types WHERE code = ?').get(t.code).id;
     }
 
-    // rules per type (same structure; payout can differ per type later)
-    for (const [code, typeId] of Object.entries(typeIds)) {
-      for (const r of baseRules()) {
-        d.prepare(`INSERT OR IGNORE INTO lottery_rules
-          (lottery_type_id, category_id, bet_type, name_th, name_en, digits, match_config, payout_multiplier, stake_unit, min_amount, max_amount, is_active)
-          VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`)
-          .run(typeId, r.bet_type, r.name_th, r.name_en, r.digits, r.match_config, r.payout_multiplier, r.stake_unit, r.min_amount, r.max_amount);
-      }
-    }
-
     // super admin (password from env or default — CHANGE IN PRODUCTION)
     const adminPass = process.env.SEED_ADMIN_PASSWORD || 'Admin@Demo123';
     const existing = d.prepare(`SELECT id FROM users WHERE username = 'admin'`).get();
@@ -128,6 +101,8 @@ export function seed() {
     setSetting('maintenance_mode', false, null);
     setSetting('demo_notice', 'ระบบจำลองเพื่อการศึกษาเท่านั้น ใช้เครดิตเสมือน ไม่มีเงินจริง', null);
   });
+  // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
+  seedRulesV2();
   console.log('[seed] done');
 }
 

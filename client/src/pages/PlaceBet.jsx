@@ -8,6 +8,9 @@ const BET_TYPE_STYLE = {
   '3tod': '3 ตัวโต๊ด', 'run_top': 'วิ่งบน', 'run_bottom': 'วิ่งล่าง',
 };
 
+// เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
+const BET_ORDER = ['first', 'num4', 'front3', 'last4', 'top3', 'last3', 'top2', 'bottom2', 'last2'];
+
 export default function PlaceBet() {
   const { drawId } = useParams();
   const navigate = useNavigate();
@@ -29,7 +32,10 @@ export default function PlaceBet() {
       setDraw(r.draw);
       try {
         const t = await api(`/lottery/draws/${drawId}/rules`);
-        setRules(t.rules);
+        const sorted = [...t.rules].sort((a, b) =>
+          (BET_ORDER.indexOf(a.bet_type) === -1 ? 99 : BET_ORDER.indexOf(a.bet_type)) -
+          (BET_ORDER.indexOf(b.bet_type) === -1 ? 99 : BET_ORDER.indexOf(b.bet_type)) || a.digits - b.digits);
+        setRules(sorted);
         if (t.rules[0]) setSelRule(String(t.rules[0].id));
       } catch (e2) {
         if (e2.status === 401) { navigate('/login'); return; }

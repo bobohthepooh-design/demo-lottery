@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
+import { BET_TYPE_LABELS } from '../lotterySchema.js';
 
 const STATUS_TH = { pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูกรางวัล', partial: 'ถูกรางวัลบางรายการ', cancelled: 'ยกเลิก', refunded: 'คืนเงิน' };
-const ITEM_TH = { '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน', '3tod': '3 ตัวโต๊ด', 'run_top': 'วิ่งบน', 'run_bottom': 'วิ่งล่าง' };
 
 export default function MyBets() {
   const [slips, setSlips] = useState([]);
@@ -34,7 +34,7 @@ export default function MyBets() {
             <div className="border-t border-navy-700 px-5 py-3 space-y-2">
               {s.items.map(i => (
                 <div key={i.id} className="flex items-center justify-between text-sm bg-navy-900 rounded-lg px-3 py-2">
-                  <span><code className="text-gold-300 font-mono text-base">{i.number}</code> <span className="text-navy-300">{ITEM_TH[i.bet_type] || i.bet_type}</span></span>
+                  <span><code className="text-gold-300 font-mono text-base">{i.number}</code> <span className="text-navy-300">{BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span></span>
                   <span className="text-navy-300">฿{satang(i.amount)} {i.payout > 0 && <span className="text-green-400 font-bold ml-2">+฿{satang(i.payout)}</span>}</span>
                 </div>
               ))}

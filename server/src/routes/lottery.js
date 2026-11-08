@@ -45,10 +45,12 @@ router.get('/draws/:id/rules', requireAuth, (req, res, next) => {
 
 router.get('/results', requireAuth, (req, res) => {
   const rows = getDb().prepare(`
-    SELECT lr.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th, lt.code AS type_code
+    SELECT lr.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th, lt.code AS type_code,
+           c.code AS category_code
     FROM lottery_results lr
     JOIN lottery_draws d ON d.id = lr.draw_id
     JOIN lottery_types lt ON lt.id = d.lottery_type_id
+    LEFT JOIN lottery_categories c ON c.id = d.category_id
     ORDER BY lr.published_at DESC LIMIT 100`).all();
   res.json({ results: rows });
 });

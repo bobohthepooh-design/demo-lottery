@@ -8,7 +8,6 @@ const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิด�
 export default function Lotteries() {
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
-  const [typeInfo, setTypeInfo] = useState(null);
   const [params] = useSearchParams();
   const selType = params.get('type');
 
@@ -19,8 +18,6 @@ export default function Lotteries() {
   useEffect(() => {
     const q = selType ? `?type=${selType}` : '';
     api(`/lottery/draws${q}`).then(r => setDraws(r.draws)).catch(() => {});
-    if (selType) api(`/lottery/types/${selType}`).then(r => setTypeInfo(r)).catch(() => {});
-    else setTypeInfo(null);
   }, [selType]);
 
   return (
@@ -34,20 +31,6 @@ export default function Lotteries() {
           </Link>
         ))}
       </div>
-
-      {typeInfo?.rules?.length > 0 && (
-        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-          <h3 className="font-bold text-white mb-2">ประเภทการแทง & อัตราจ่าย</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-            {typeInfo.rules.map(r => (
-              <div key={r.id} className="bg-navy-900 rounded-lg px-3 py-2">
-                <span className="text-white">{r.name_th}</span>
-                <span className="text-gold-400 float-right">x{r.payout_multiplier}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         {draws.map(d => (
@@ -67,7 +50,7 @@ export default function Lotteries() {
             </div>
             {d.result_numbers && (
               <div className="mt-3 bg-navy-900/70 rounded-lg p-3">
-                <WinningBoard winningNumbers={d.result_numbers} typeCode={d.type_code} compact />
+                <WinningBoard winningNumbers={d.result_numbers} typeCode={d.type_code} categoryCode={d.category_code} compact />
               </div>
             )}
             {d.status === 'open' && (

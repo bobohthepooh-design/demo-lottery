@@ -51,7 +51,7 @@ async function loginAs(username, password) {
   return { agent: a, res: r };
 }
 
-let member, adminAgent, drawId, rule2top, rule3top;
+let member, adminAgent, drawId, ruleBottom2, ruleTop3;
 const ts = Date.now().toString(36);
 
 beforeAll(async () => {
@@ -81,7 +81,8 @@ beforeAll(async () => {
 
   // create + open draw
   const now = Date.now();
-  const fmt = ms => new Date(ms).toISOString().slice(0,19).replace('T',' ');
+  const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
   const d = await adminAgent.post('/admin/draws', {
     lottery_type_id: 1, draw_code: `T${ts}`,
     draw_at: fmt(now - 3600e3), close_at: fmt(now + 3600e3),
@@ -90,8 +91,8 @@ beforeAll(async () => {
   await adminAgent.patch(`/admin/draws/${drawId}/status`, { status: 'open' });
 
   const t = await member.agent.get('/lottery/types/1');
-  rule2top = t.body.rules.find(r => r.bet_type === '2top');
-  rule3top = t.body.rules.find(r => r.bet_type === '3top');
+  ruleBottom2 = t.body.rules.find(r => r.bet_type === 'bottom2');
+  ruleTop3 = t.body.rules.find(r => r.bet_type === 'top3');
 });
 
 afterAll(() => { closeDb(); for (const ext of ['', '-wal', '-shm']) { try { fs.unlinkSync(dbFile + ext); } catch {} } });
@@ -117,26 +118,27 @@ describe('auth', () => {
 
 describe('betting', () => {
   it('places bet and deducts balance', async () => {
-    const r = await member.agent.post('/bets', { drawId, items: [{ ruleId: rule2top.id, number: '42', amount: 1000 }] });
+    const r = await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleBottom2.id, number: '42', amount: 1000 }] });
     expect(r.status).toBe(201);
     expect(r.body.balance).toBe(9000);
   });
   it('rejects bet on closed draw', async () => {
     const now = Date.now();
-    const fmt = ms => new Date(ms).toISOString().slice(0,19).replace('T',' ');
+    const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
     const d = await adminAgent.post('/admin/draws', { lottery_type_id: 1, draw_code: `C${ts}`, draw_at: fmt(now-7200e3), close_at: fmt(now-3600e3) });
     await adminAgent.patch(`/admin/draws/${d.body.id}/status`, { status: 'open' }); // will auto-close since close_at passed
-    const r = await member.agent.post('/bets', { drawId: d.body.id, items: [{ ruleId: rule2top.id, number: '42', amount: 100 }] });
+    const r = await member.agent.post('/bets', { drawId: d.body.id, items: [{ ruleId: ruleBottom2.id, number: '42', amount: 100 }] });
     expect(r.status).toBe(400);
   });
   it('rejects invalid number format', async () => {
-    const r = await member.agent.post('/bets', { drawId, items: [{ ruleId: rule2top.id, number: '4a', amount: 100 }] });
+    const r = await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleBottom2.id, number: '4a', amount: 100 }] });
     expect(r.status).toBe(400);
   });
   it('settles draw and pays winner', async () => {
-    // winning top3 = '542' → 2top '42' wins (tail), place another losing bet
-    await member.agent.post('/bets', { drawId, items: [{ ruleId: rule3top.id, number: '999', amount: 500 }] });
-    const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '542', bottom2: '67' } });
+    // winning bottom2 = '42' → bottom2 bet wins x100; place another losing bet
+    await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleTop3.id, number: '999', amount: 500 }] });
+    const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '542', bottom2: '42' } });
     expect(r.status).toBe(200);
     expect(r.body.winningItems).toBe(1);
     // balance: 10000 -1000 -500 + 1000*100 = 108500
