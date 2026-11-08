@@ -177,31 +177,35 @@ export default function Home() {
         </div>
       )}
 
-      {/* แจ้งเตือนเวลาปิดรับโพย — รอบที่ใกล้สุดก่อน */}
+      {/* แจ้งเตือนเวลาปิดรับโพย — แบบข้อความวิ่งประหยัดพื้นที่ */}
       {alertDraws.length > 0 && (
-        <section className="bg-gradient-to-r from-amber-500/15 to-red-500/10 border border-amber-500/40 rounded-xl p-4">
-          <h2 className="text-sm font-bold text-amber-300 mb-2 flex items-center gap-2">
-            🔔 แจ้งเตือนรอบหวยที่ใกล้ปิดรับ
-          </h2>
-          <div className="space-y-1.5">
-            {alertDraws.map(d => {
-              const left = msLeft(d.close_at, now);
-              const urgent = left < 3600e3;
-              return (
-                <div key={d.id} className="flex items-center gap-2 flex-wrap bg-navy-900/60 rounded-lg px-3 py-2">
-                  <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
-                  <span className="text-xs font-semibold text-white">
-                    {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
-                  </span>
-                  <span className="text-[10px] text-navy-400">ออกรางวัล {fmtDateTime(d.draw_at)} • ปิดรับ {thaiTime(d.close_at)} น.</span>
-                  <span className={`text-xs font-bold ml-auto px-2 py-0.5 rounded ${urgent ? 'bg-red-500/25 text-red-300 animate-pulse' : 'bg-amber-500/20 text-amber-300'}`}>
-                    ปิดรับ {durationText(d.close_at, now)}
-                  </span>
-                </div>
-              );
-            })}
+        <div className="bg-gradient-to-r from-amber-500/15 to-red-500/10 border border-amber-500/40 rounded-xl overflow-hidden">
+          <div className="flex items-center">
+            <span className="shrink-0 px-3 py-1.5 text-[11px] font-bold text-amber-300 bg-amber-500/15 border-r border-amber-500/30">
+              🔔 ใกล้ปิดรับ
+            </span>
+            <div className="overflow-hidden flex-1 py-1.5">
+              <div className="flex w-max animate-marquee gap-10 px-4">
+                {[...alertDraws, ...alertDraws].map((d, i) => {
+                  const left = msLeft(d.close_at, now);
+                  const urgent = left > 0 && left < 3600e3;
+                  return (
+                    <span key={i} className="text-xs whitespace-nowrap flex items-center gap-1.5">
+                      <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
+                      <span className="font-semibold text-white">
+                        {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                      </span>
+                      <span className="text-navy-400">ปิด {thaiTime(d.close_at)} น.</span>
+                      <span className={`font-bold px-1.5 py-0.5 rounded ${urgent ? 'bg-red-500/25 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                        {durationText(d.close_at, now)}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
       )}
 
       {/* ประเภทหวยที่รองรับ + รอบที่เปิดรับ/นับถอยหลังของแต่ละประเทศ */}
