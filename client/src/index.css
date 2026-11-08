@@ -285,3 +285,17 @@ input:focus, select:focus, textarea:focus {
   50% { transform: rotate(2deg); }
 }
 .animate-demo-badge { animation: demo-badge-wiggle 3s ease-in-out infinite; }
+
+/* ===== Status text — เข้มขึ้นให้อ่านได้บนพื้นพาสเทล (เดิม *-300/400 จางเกิน) ===== */
+.text-green-200, .text-green-300 { color: #15803d !important; }   /* เขียว success → เข้ม */
+.text-green-400 { color: #16a34a !important; }
+.text-emerald-200, .text-emerald-300 { color: #047857 !important; }
+.text-red-200, .text-red-300 { color: #b91c1c !important; }      /* แดง error/lose → เข้ม */
+.text-red-400 { color: #dc2626 !important; }
+.text-blue-200, .text-blue-300 { color: #1d4ed8 !important; }
+.text-sky-200, .text-sky-300 { color: #0369a1 !important; }
+.text-amber-200, .text-amber-300 { color: #b45309 !important; }  /* เหลือง warning → น้ำตาลทอง */
+.text-amber-400 { color: #d97706 !important; }
+.text-yellow-200, .text-yellow-300, .text-yellow-400 { color: #a16207 !important; }
+.text-orange-300, .text-orange-400 { color: #c2410c !important; }
+.text-rose-300 { color: #be123c !important; }
