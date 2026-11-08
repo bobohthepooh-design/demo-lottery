@@ -29,6 +29,9 @@ export default function Lotteries() {
   const liveIds = new Set(liveDraws.map(d => d.id));
   const otherDraws = draws.filter(d => !liveIds.has(d.id))
     .sort((a, b) => a.draw_at.localeCompare(b.draw_at));
+  // separa: abertas p/ aposta (mas não são a rodada em destaque) vs. futuras/encerradas
+  const openOthers = otherDraws.filter(isLive);
+  const upcomingOthers = otherDraws.filter(d => !isLive(d));
 
   const DrawCard = ({ d, featured }) => {
     const live = isLive(d);
@@ -45,7 +48,7 @@ export default function Lotteries() {
             ONLINE
           </span>
         ) : (
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${d.status === 'open' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
             {STATUS_TH[d.status] || d.status}
           </span>
         )}
@@ -70,7 +73,7 @@ export default function Lotteries() {
         <section>
           <h2 className="text-sm font-bold text-green-400 mb-2 flex items-center gap-2">
             <span className="online-dot inline-block w-2.5 h-2.5 rounded-full bg-green-400" />
-            รอบที่เปิดรับตอนนี้ ({liveDraws.length})
+            ออนไลน์ตอนนี้ — กำลังรับแทง ({liveDraws.length})
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
             {liveDraws.map(d => <DrawCard key={d.id} d={d} featured />)}
@@ -78,10 +81,30 @@ export default function Lotteries() {
         </section>
       )}
 
-      <div className="grid md:grid-cols-2 gap-4">
-        {otherDraws.map(d => <DrawCard key={d.id} d={d} />)}
-        {!draws.length && <div className="text-navy-300 col-span-2 text-center py-10">ไม่พบรอบหวย</div>}
-      </div>
+      {/* Outras rodadas abertas p/ aposta — não são a "rodada atual" em destaque */}
+      {openOthers.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-blue-300 mb-2 flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-400" />
+            อื่นๆ ที่ยังเปิดรับ ({openOthers.length})
+          </h2>
+          <p className="text-xs text-navy-400 mb-3">รอบเหล่านี้ยังรับแทงได้ แต่ไม่ใช่รอบหลักด้านบน</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {openOthers.map(d => <DrawCard key={d.id} d={d} />)}
+          </div>
+        </section>
+      )}
+
+      {/* Rodadas futuras / já encerradas */}
+      {upcomingOthers.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-navy-300 mb-2">รอบถัดไป / รอบที่ผ่านมา</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {upcomingOthers.map(d => <DrawCard key={d.id} d={d} />)}
+          </div>
+        </section>
+      )}
+      {!draws.length && <div className="text-navy-300 text-center py-10">ไม่พบรอบหวย</div>}
     </div>
   );
 }
