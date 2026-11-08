@@ -155,10 +155,12 @@ export function placeBet(userId, { drawId, items }) {
 
 export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
   const db = getDb();
-  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.status AS draw_status, lt.name_th AS type_name_th
+  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.status AS draw_status, lt.name_th AS type_name_th,
+                                  c.name_th AS category_name_th
                            FROM bet_slips bs
                            JOIN lottery_draws d ON d.id = bs.draw_id
                            JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                           LEFT JOIN lottery_categories c ON c.id = d.category_id
                            WHERE bs.user_id = ? ORDER BY bs.id DESC LIMIT ? OFFSET ?`)
     .all(userId, limit, offset);
   const itemStmt = db.prepare(`SELECT bi.id, bi.bet_type, bi.number, bi.amount, bi.status, bi.payout, bi.result_detail,
@@ -170,10 +172,12 @@ export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
 
 export function getMySlip(userId, slipRef) {
   const db = getDb();
-  const slip = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th
-                           FROM bet_slips bs JOIN lottery_draws d ON d.id = bs.draw_id
-                           JOIN lottery_types lt ON lt.id = d.lottery_type_id
-                           WHERE bs.slip_ref = ? AND bs.user_id = ?`).get(slipRef, userId);
+  const slip = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th,
+                                 c.name_th AS category_name_th
+                          FROM bet_slips bs JOIN lottery_draws d ON d.id = bs.draw_id
+                          JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                          LEFT JOIN lottery_categories c ON c.id = d.category_id
+                          WHERE bs.slip_ref = ? AND bs.user_id = ?`).get(slipRef, userId);
   if (!slip) throw new HttpError(404, 'ไม่พบโพย');
   slip.items = db.prepare('SELECT * FROM bet_items WHERE slip_id = ?').all(slip.id);
   return slip;
