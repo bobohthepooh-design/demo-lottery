@@ -147,7 +147,10 @@ export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
                            JOIN lottery_types lt ON lt.id = d.lottery_type_id
                            WHERE bs.user_id = ? ORDER BY bs.id DESC LIMIT ? OFFSET ?`)
     .all(userId, limit, offset);
-  const itemStmt = db.prepare(`SELECT id, bet_type, number, amount, status, payout, result_detail FROM bet_items WHERE slip_id = ?`);
+  const itemStmt = db.prepare(`SELECT bi.id, bi.bet_type, bi.number, bi.amount, bi.status, bi.payout, bi.result_detail,
+                                     lr.name_th AS rule_name_th, lr.payout_multiplier
+                              FROM bet_items bi JOIN lottery_rules lr ON lr.id = bi.rule_id
+                              WHERE bi.slip_id = ?`);
   return slips.map(s => ({ ...s, items: itemStmt.all(s.id) }));
 }
 

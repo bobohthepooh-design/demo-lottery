@@ -1,37 +1,40 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime } from '../api.js';
+import { api, fmtDateTime, fmtDate } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 import { useAuth } from '../auth.jsx';
 
 const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
-// แถวผลรางวัลแบบบรรทัดเดียว — ชื่อประเทศ + เลขทุกประเภทรางวัลเป็นตัวหนังสือธรรมดา
+// การ์ดผลรางวัล 1 ประเทศ — หัวข้อ + คอลัมน์แยกตามประเภทรางวัล
 function ResultLine({ r }) {
   let data = r.winning_numbers;
   if (typeof data === 'string') { try { data = JSON.parse(data); } catch { data = {}; } }
   const schema = resultSchema(r.type_code, r.category_code);
-  const fields = schema?.fields?.length ? schema.fields : [];
-  const parts = fields
-    .filter(f => !f.optional)
-    .map(f => {
-      const raw = data?.[f.key];
-      if (raw === undefined || raw === null || raw === '') return null;
-      const vals = (Array.isArray(raw) ? raw : [raw]).join(',');
-      return `${f.short || f.label}:${vals}`;
-    })
-    .filter(Boolean);
-  // field เสริมที่ไม่อยู่ใน schema
+  const fields = (schema?.fields?.length ? schema.fields : []).filter(f => !f.optional);
   const known = new Set(fields.map(f => f.key));
-  for (const [k, v] of Object.entries(data || {})) {
-    if (!known.has(k) && v !== '') parts.push(`${k}:${Array.isArray(v) ? v.join(',') : v}`);
-  }
+  const extras = Object.entries(data || {}).filter(([k, v]) => !known.has(k) && v !== '');
+  const cell = (key, label, raw) => {
+    const vals = raw === undefined || raw === null || raw === '' ? '—'
+      : (Array.isArray(raw) ? raw : [raw]).join(', ');
+    return (
+      <div key={key} className="shrink-0 text-center min-w-[3.4rem]">
+        <div className="text-[9px] leading-tight text-navy-400">{label}</div>
+        <div className="text-xs font-mono font-bold text-gold-300 whitespace-nowrap">{vals}</div>
+      </div>
+    );
+  };
   return (
-    <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-1.5 overflow-x-auto whitespace-nowrap">
-      <span className="text-xs">{TYPE_EMOJI[r.type_code] || '🎟️'}</span>{' '}
-      <span className="text-[11px] font-semibold text-white">{r.type_name_th}{r.category_name_th ? ` ${r.category_name_th}` : ''}</span>
-      <span className="text-navy-500 mx-1">|</span>
-      <span className="text-[11px] font-mono text-gold-300">{parts.join('  ·  ')}</span>
+    <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-2">
+      <div className="flex items-center gap-2 text-[11px]">
+        <span>{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
+        <span className="font-semibold text-white">{r.type_name_th}{r.category_name_th ? ` ${r.category_name_th}` : ''}</span>
+        <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)}</span>
+      </div>
+      <div className="flex gap-5 mt-1.5 overflow-x-auto pb-0.5">
+        {fields.map(f => cell(f.key, f.short || f.label, data?.[f.key]))}
+        {extras.map(([k, v]) => cell(k, k, v))}
+      </div>
     </div>
   );
 }
