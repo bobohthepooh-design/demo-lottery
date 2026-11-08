@@ -2,6 +2,7 @@
 process.env.DATABASE_PATH = './test-tmp.db';
 process.env.SESSION_SECRET = 'test-secret';
 process.env.NODE_ENV = 'test';
+process.env.LOGIN_RATE_LIMIT_MAX = '200';
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
@@ -147,6 +148,56 @@ describe('betting', () => {
   });
   it('double settle rejected', async () => {
     const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '111' } });
+    expect(r.status).toBe(400);
+  });
+});
+
+describe('phone otp', () => {
+  const phone = `08${String(Date.now()).slice(-8)}`;
+  it('registers via OTP and gets session + credit', async () => {
+    const a = makeAgent();
+    const req = await a.post('/auth/otp/request', { phone, purpose: 'register' });
+    expect(req.status).toBe(200);
+    expect(req.body.devCode).toMatch(/^\d{6}$/);
+    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register', displayName: 'OTP User' });
+    expect(v.status).toBe(200);
+    expect(v.body.user.roles).toContain('member');
+    const me = await a.get('/auth/me');
+    expect(me.body.balance).toBe(5000);
+  });
+  it('rejects wrong OTP code', async () => {
+    const p2 = `09${String(Date.now()).slice(-8)}`;
+    const a = makeAgent();
+    const req = await a.post('/auth/otp/request', { phone: p2, purpose: 'register' });
+    const wrong = req.body.devCode === '000000' ? '000001' : '000000';
+    const v = await a.post('/auth/otp/verify', { phone: p2, code: wrong, purpose: 'register' });
+    expect(v.status).toBe(401);
+  });
+  it('rejects duplicate phone registration', async () => {
+    const a = makeAgent();
+    const req = await a.post('/auth/otp/request', { phone, purpose: 'register' });
+    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register' });
+    expect(v.status).toBe(409);
+  });
+  it('logs in via OTP for existing phone user', async () => {
+    const a = makeAgent();
+    const req = await a.post('/auth/otp/request', { phone, purpose: 'login' });
+    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'login' });
+    expect(v.status).toBe(200);
+    const me = await a.get('/auth/me');
+    expect(me.body.user.displayName).toBe('OTP User');
+  });
+  it('consumed OTP cannot be reused', async () => {
+    const a = makeAgent();
+    const req = await a.post('/auth/otp/request', { phone, purpose: 'login' });
+    const code = req.body.devCode;
+    await a.post('/auth/otp/verify', { phone, code, purpose: 'login' });
+    const again = makeAgent();
+    const v = await again.post('/auth/otp/verify', { phone, code, purpose: 'login' });
+    expect([400, 401]).toContain(v.status);
+  });
+  it('rejects OTP request for invalid phone', async () => {
+    const r = await makeAgent().post('/auth/otp/request', { phone: '123', purpose: 'login' });
     expect(r.status).toBe(400);
   });
 });

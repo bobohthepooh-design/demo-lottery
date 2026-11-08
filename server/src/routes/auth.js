@@ -35,6 +35,16 @@ const changePwSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 const forgotSchema = z.object({ email: z.string().email().max(200) });
+const otpRequestSchema = z.object({
+  phone: z.string().min(9).max(15),
+  purpose: z.enum(['register', 'login']),
+});
+const otpVerifySchema = z.object({
+  phone: z.string().min(9).max(15),
+  code: z.string().regex(/^\d{6}$/),
+  purpose: z.enum(['register', 'login']),
+  displayName: z.string().max(100).optional(),
+});
 const mfaCodeSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 
 router.post('/register', (req, res, next) => {
@@ -92,6 +102,26 @@ router.post('/forgot-password', (req, res, next) => {
     const data = forgotSchema.parse(req.body);
     auth.forgotPassword({ email: data.email });
     res.json({ ok: true, message: 'หากอีเมลนี้มีในระบบ เราจะส่งลิงก์รีเซ็ตรหัสผ่าน (Demo: ไม่ได้ส่งอีเมลจริง)' });
+  } catch (e) { next(e); }
+});
+
+// ขอ OTP — DEMO: ไม่ได้ส่ง SMS จริง ส่งรหัสกลับใน response (devCode) ให้ frontend แสดง
+router.post('/otp/request', loginLimiter, (req, res, next) => {
+  try {
+    const data = otpRequestSchema.parse(req.body);
+    const r = auth.requestOtp({ ...data, ip: req.ip });
+    res.json({ ok: true, ...r, message: 'ส่งรหัส OTP แล้ว (Demo: รหัสแสดงด้านล่าง ไม่ได้ส่ง SMS จริง)' });
+  } catch (e) { next(e); }
+});
+
+// ยืนยัน OTP — สมัครใหม่ (purpose=register) หรือเข้าสู่ระบบ (purpose=login)
+router.post('/otp/verify', loginLimiter, (req, res, next) => {
+  try {
+    const data = otpVerifySchema.parse(req.body);
+    const result = auth.verifyOtpLogin({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
+    auth.setSessionCookie(res, result.token);
+    const needsMfa = result.requiresMfa;
+    res.json({ ok: true, user: result.user, requiresMfa: needsMfa, mfaVerified: !needsMfa });
   } catch (e) { next(e); }
 });
 

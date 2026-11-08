@@ -5,6 +5,7 @@ import { config } from '../config.js';
 import { HttpError, audit, securityEvent } from '../lib/audit.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { generateSecret, verifyTotp, otpauthUri } from '../lib/totp.js';
+import { randomInt, createHash } from 'node:crypto';
 
 const SESSION_COOKIE = 'dl_session';
 const MAX_FAILED = 5;
@@ -202,6 +203,138 @@ export function verifyMfa(sessionId, code) {
 
 export function getSessionToken(req) {
   return parseCookies(req)[SESSION_COOKIE] || null;
+}
+
+// ---------- Phone + OTP (demo: รหัสแสดงบนจอ ไม่ได้ส่ง SMS จริง) ----------
+
+const OTP_TTL_MINUTES = 5;
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_MAX_PER_10MIN = 5;
+
+const hashOtp = (code) => createHash('sha256').update(`otp:${code}`).digest('hex');
+
+// normalize เบอร์ไทย: รับ 0xxxxxxxxx, +66xxxxxxxxx, 66xxxxxxxxx, หรือ 9 หลักหลัง +66 → '0xxxxxxxxx'
+export function normalizePhone(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (d.startsWith('66') && d.length === 11) d = '0' + d.slice(2);
+  else if (d.length === 9 && /^[689]/.test(d)) d = '0' + d; // พิมพ์เฉพาะหลัง +66 (ตัด 0 นำหน้า)
+  if (d.startsWith('0') && d.length === 10) return d;
+  throw new HttpError(400, 'เบอร์โทรไม่ถูกต้อง — ใส่เบอร์ไทย 10 หลัก เช่น 0812345678');
+}
+
+function createSessionToken(userId, ip, userAgent) {
+  const db = getDb();
+  const token = randomToken(32);
+  db.prepare(`INSERT INTO user_sessions (id, user_id, ip, user_agent, expires_at)
+              VALUES (?, ?, ?, ?, datetime('now', '+${config.sessionTtlHours} hours'))`)
+    .run(token, userId, ip || null, (userAgent || '').slice(0, 300));
+  return token;
+}
+
+function userPayload(user) {
+  const roles = getDb().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ?`)
+    .all(user.id).map(r => r.name);
+  return { id: user.id, username: user.username, email: user.email, displayName: user.display_name, roles, mfaEnabled: !!user.mfa_enabled };
+}
+
+export function requestOtp({ phone, purpose, ip }) {
+  const p = normalizePhone(phone);
+  const db = getDb();
+  const recent = db.prepare(`SELECT COUNT(*) AS c FROM otp_codes
+    WHERE phone = ? AND purpose = ? AND created_at > datetime('now', '-10 minutes')`).get(p, purpose).c;
+  if (recent >= OTP_MAX_PER_10MIN) {
+    securityEvent({ eventType: 'otp.rate_limited', severity: 'warning', ip, detail: { phone: p, purpose } });
+    throw new HttpError(429, 'ขอรหัส OTP บ่อยเกินไป กรุณารอสักครู่');
+  }
+  // ยกเลิกรหัสเก่าที่ยังไม่ใช้ของเบอร์+purpose เดียวกัน
+  db.prepare(`UPDATE otp_codes SET used = 1 WHERE phone = ? AND purpose = ? AND used = 0`).run(p, purpose);
+  const code = String(randomInt(100000, 1000000));
+  db.prepare(`INSERT INTO otp_codes (phone, code, purpose, expires_at, ip) VALUES (?, ?, ?, datetime('now', '+${OTP_TTL_MINUTES} minutes'), ?)`)
+    .run(p, hashOtp(code), purpose, ip || null);
+  audit({ action: 'user.otp_requested', entityType: 'phone', entityId: p, detail: { purpose } });
+  securityEvent({ eventType: 'otp.requested', ip, detail: { phone: p, purpose } });
+  // DEMO ONLY: ไม่ได้ส่ง SMS จริง — ส่งรหัสกลับใน response ให้ frontend แสดง
+  return { devCode: code, expiresInSec: OTP_TTL_MINUTES * 60 };
+}
+
+function consumeOtp(phone, code, purpose) {
+  const db = getDb();
+  const row = db.prepare(`SELECT * FROM otp_codes WHERE phone = ? AND purpose = ? AND used = 0
+    ORDER BY id DESC LIMIT 1`).get(phone, purpose);
+  if (!row) throw new HttpError(400, 'กรุณาขอรหัส OTP ก่อน');
+  if (row.expires_at <= new Date().toISOString().replace('T', ' ').slice(0, 19)) {
+    db.prepare('UPDATE otp_codes SET used = 1 WHERE id = ?').run(row.id);
+    throw new HttpError(400, 'รหัส OTP หมดอายุแล้ว กรุณาขอรหัสใหม่');
+  }
+  if (row.attempts >= OTP_MAX_ATTEMPTS) {
+    db.prepare('UPDATE otp_codes SET used = 1 WHERE id = ?').run(row.id);
+    securityEvent({ eventType: 'otp.too_many_attempts', severity: 'warning', detail: { phone } });
+    throw new HttpError(429, 'กรอกรหัสผิดหลายครั้งเกินไป กรุณาขอรหัสใหม่');
+  }
+  db.prepare('UPDATE otp_codes SET attempts = attempts + 1 WHERE id = ?').run(row.id);
+  if (row.code !== hashOtp(String(code))) {
+    securityEvent({ eventType: 'otp.failed', severity: 'warning', detail: { phone, purpose } });
+    throw new HttpError(401, 'รหัส OTP ไม่ถูกต้อง');
+  }
+  db.prepare('UPDATE otp_codes SET used = 1 WHERE id = ?').run(row.id);
+}
+
+// สมัครด้วยเบอร์+OTP: สร้าง user (password สุ่ม ใช้ไม่ได้) + wallet + เครดิตฟรี
+function registerPhoneUser(phone, displayName) {
+  const db = getDb();
+  const username = `u${phone.slice(1)}`;
+  const email = `phone_${phone.slice(1)}@phone.local`;
+  const userId = tx((d) => {
+    const r = d.prepare(`INSERT INTO users (username, email, password_hash, display_name, phone)
+                         VALUES (?, ?, ?, ?, ?)`)
+      .run(username, email, hashPassword(randomToken(24)), (displayName || `สมาชิก${phone.slice(-4)}`).slice(0, 100), phone);
+    const id = Number(r.lastInsertRowid);
+    const memberRole = d.prepare(`SELECT id FROM roles WHERE name = 'member'`).get();
+    if (memberRole) d.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)').run(id, memberRole.id);
+    const wallet = d.prepare('INSERT INTO virtual_wallets (user_id, balance) VALUES (?, 0)').run(id);
+    const walletId = Number(wallet.lastInsertRowid);
+    const initial = getSetting('initial_credit', config.initialCredit);
+    if (initial > 0) {
+      d.prepare('UPDATE virtual_wallets SET balance = ?, version = version + 1 WHERE id = ?').run(initial, walletId);
+      d.prepare(`INSERT INTO virtual_transactions
+        (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description)
+        VALUES (?, ?, ?, 'initial_credit', ?, ?, 'credit', 'completed', ?, 'เครดิตฟรีสำหรับสมาชิกใหม่ (DEMO — ถอนได้เฉพาะเงินรางวัล)')`)
+        .run(makeReference('TX'), walletId, id, initial, initial, `init-credit-${id}`);
+    }
+    return id;
+  });
+  audit({ userId, action: 'user.register_phone', entityType: 'user', entityId: String(userId), detail: { phone } });
+  return userId;
+}
+
+export function verifyOtpLogin({ phone, code, purpose, displayName, ip, userAgent }) {
+  const p = normalizePhone(phone);
+  consumeOtp(p, code, purpose);
+  const db = getDb();
+
+  let user;
+  if (purpose === 'register') {
+    const dup = db.prepare('SELECT id FROM users WHERE phone = ?').get(p);
+    if (dup) throw new HttpError(409, 'เบอร์นี้สมัครสมาชิกแล้ว กรุณาเข้าสู่ระบบ');
+    const id = registerPhoneUser(p, displayName);
+    user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  } else {
+    user = db.prepare('SELECT * FROM users WHERE phone = ?').get(p);
+    if (!user) throw new HttpError(404, 'ยังไม่มีบัญชีที่ใช้เบอร์นี้ กรุณาสมัครสมาชิกก่อน');
+    if (user.status !== 'active') throw new HttpError(403, 'บัญชีนี้ถูกระงับการใช้งาน');
+    if (user.locked_until && user.locked_until > new Date().toISOString().replace('T', ' ').slice(0, 19)) {
+      throw new HttpError(423, 'บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ภายหลัง');
+    }
+  }
+
+  const token = createSessionToken(user.id, ip, userAgent);
+  const payload = userPayload(user);
+  audit({ userId: user.id, action: purpose === 'register' ? 'user.login_phone_register' : 'user.login_phone',
+    entityType: 'user', entityId: String(user.id), req: { ip, headers: { 'user-agent': userAgent } } });
+  securityEvent({ eventType: purpose === 'register' ? 'login.phone_register' : 'login.phone_otp',
+    userId: user.id, ip, detail: { phone: p } });
+  const isAdmin = payload.roles.some(r => ['admin', 'super_admin'].includes(r));
+  return { token, user: payload, requiresMfa: isAdmin && !!user.mfa_enabled };
 }
 
 export { SESSION_COOKIE, setSessionCookie, MAX_FAILED, LOCK_MINUTES };
