@@ -5,7 +5,15 @@ let state = { open: false, opts: null, resolve: null };
 const listeners = new Set();
 const emit = () => listeners.forEach(l => l());
 
+let hostMounted = false;
+export function markHostMounted() { hostMounted = true; }
+
 export function confirmAction(opts = {}) {
+  // fallback: ถ้า ConfirmHost ยังไม่ mount (เช่น bundle เก่า/edge case) ใช้ native confirm แทนค้าง
+  if (!hostMounted) {
+    const o = { title: 'ยืนยันการดำเนินการ', message: 'คุณต้องการดำเนินการนี้หรือไม่?', ...opts };
+    return Promise.resolve(window.confirm(`${o.title}\n\n${o.message}`));
+  }
   return new Promise(resolve => {
     state = {
       open: true,
@@ -31,6 +39,7 @@ function settle(ok) {
 }
 
 export function ConfirmHost() {
+  markHostMounted();
   const snap = useSyncExternalStore(
     cb => { listeners.add(cb); return () => listeners.delete(cb); },
     () => state,
