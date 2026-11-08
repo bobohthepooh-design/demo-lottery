@@ -35,3 +35,4 @@ export async function api(path, { method = 'GET', body } = {}) {
 
 export const satang = (n) => (n / 100).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const bahtToSatang = (baht) => Math.round(parseFloat(baht) * 100);
+export { fmtDateTime, fmtDate } from './time.js';

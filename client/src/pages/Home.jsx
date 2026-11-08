@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, satang } from '../api.js';
+import { api, satang, fmtDateTime } from '../api.js';
+import WinningBoard from '../components/WinningBoard.jsx';
 import { useAuth } from '../auth.jsx';
 
 export default function Home() {
@@ -76,7 +77,7 @@ export default function Home() {
               <div>
                 <div className="font-semibold text-white">{d.type_name_th} — {d.draw_code}</div>
                 <div className="text-xs text-navy-300 mt-1">
-                  ออกรางวัล: {d.draw_at} • ปิดรับ: {d.close_at}
+                  ออกรางวัล: {fmtDateTime(d.draw_at)} • ปิดรับ: {fmtDateTime(d.close_at)}
                 </div>
               </div>
               <span className={`text-xs font-bold px-2 py-1 rounded ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-navy-700 text-navy-300'}`}>
@@ -94,12 +95,15 @@ export default function Home() {
           <h2 className="text-xl font-bold text-white mb-4">ผลรางวัลล่าสุด</h2>
           <div className="bg-navy-800 border border-navy-700 rounded-xl divide-y divide-navy-700">
             {results.map(r => (
-              <div key={r.id} className="px-4 py-3 flex items-center justify-between">
-                <div>
-                  <span className="font-semibold text-white">{r.type_name_th}</span>
-                  <span className="text-navy-300 text-sm ml-2">{r.draw_code}</span>
+              <div key={r.id} className="px-4 py-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="font-semibold text-white">{r.type_name_th}</span>
+                    <span className="text-navy-300 text-sm ml-2">{r.draw_code}</span>
+                  </div>
+                  <span className="text-xs text-navy-400">{fmtDateTime(r.draw_at)}</span>
                 </div>
-                <code className="text-gold-300 font-mono">{r.winning_numbers}</code>
+                <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} compact />
               </div>
             ))}
           </div>

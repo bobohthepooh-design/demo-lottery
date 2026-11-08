@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
+import WinningBoard from '../components/WinningBoard.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -63,10 +64,10 @@ export default function AdminDraws() {
               <tr key={d.id} className="hover:bg-navy-700/40">
                 <td className="px-4 py-3 font-mono text-gold-300">{d.draw_code}</td>
                 <td className="px-4 py-3 text-white">{d.type_name_th}</td>
-                <td className="px-4 py-3 text-navy-300 text-xs">{d.draw_at}</td>
-                <td className="px-4 py-3 text-navy-300 text-xs">{d.close_at}</td>
+                <td className="px-4 py-3 text-navy-300 text-xs">{fmtDateTime(d.draw_at)}</td>
+                <td className="px-4 py-3 text-navy-300 text-xs">{fmtDateTime(d.close_at)}</td>
                 <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>{STATUS_TH[d.status]}</span></td>
-                <td className="px-4 py-3"><code className="text-xs text-gold-300">{d.result_numbers || '—'}</code></td>
+                <td className="px-4 py-3">{d.result_numbers ? <WinningBoard winningNumbers={d.result_numbers} typeCode={d.type_code} compact /> : '—'}</td>
                 <td className="px-4 py-3">
                   {d.status !== 'settled' && d.status !== 'cancelled' && (
                     <div className="flex gap-1">

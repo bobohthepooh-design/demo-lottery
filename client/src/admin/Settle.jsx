@@ -1,16 +1,40 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
 
+const SOURCE_LABELS = {
+  top3: '3 ตัวบน (top3)',
+  bottom2: '2 ตัวล่าง (bottom2)',
+  front3: '3 ตัวหน้า (front3)',
+  back3: '3 ตัวหลัง (back3)',
+  main: 'เลขหลัก (main)',
+  first: 'รางวัลที่ 1 (first)',
+};
+
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
   const [sel, setSel] = useState(null);
-  const [fields, setFields] = useState({ top3: '', bottom2: '' });
+  const [selDraw, setSelDraw] = useState(null);
+  const [sources, setSources] = useState([]);
+  const [fields, setFields] = useState({});
   const [result, setResult] = useState(null);
   const [err, setErr] = useState('');
 
   const load = () => api('/admin/draws').then(r =>
     setDraws(r.draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled'))).catch(e => alert(e.message));
   useEffect(load, []);
+
+  // when draw selected → load rules of its type → derive result fields from match_config sources
+  useEffect(() => {
+    setFields({}); setSources([]); setResult(null); setErr('');
+    if (!sel) { setSelDraw(null); return; }
+    const d = draws.find(x => x.id === sel);
+    setSelDraw(d);
+    api(`/lottery/types/${d.lottery_type_id}`).then(t => {
+      const srcs = [...new Set(t.rules.map(r => { try { return JSON.parse(r.match_config).source; } catch { return null; } }).filter(Boolean))];
+      setSources(srcs);
+      setFields(Object.fromEntries(srcs.map(s => [s, ''])));
+    }).catch(() => {});
+  }, [sel, draws]);
 
   const settle = async () => {
     setErr(''); setResult(null);
@@ -27,7 +51,7 @@ export default function AdminSettle() {
     <div className="max-w-2xl space-y-4">
       <h1 className="text-2xl font-bold text-white">ออกผลรางวัล & คำนวณโพย</h1>
       <div className="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 text-sm rounded-lg p-3">
-        การออกผลจะ settle โพยทั้งหมดของรอบนั้นโดยอัตโนมัติ และจ่ายเครดิตรางวัลให้ผู้ชนะ (ระบบจะคำนวณตาม lottery_rules ในฐานข้อมูล)
+        ระบบจะ settle โพยทั้งหมดของรอบนั้นอัตโนมัติ และจ่ายเครดิตรางวัลตามกติกาใน lottery_rules (แหล่งข้อมูล field มาจาก match_config ของกติกาแต่ละประเภท)
       </div>
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">
         <div>
@@ -38,21 +62,18 @@ export default function AdminSettle() {
             {draws.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}) — {d.status}</option>)}
           </select>
         </div>
-        {sel && (
+        {sel && selDraw && (
           <>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm text-navy-300">top3 (3 ตัวบน) เช่น 123</label>
-                <input value={fields.top3} onChange={e => setFields({...fields, top3: e.target.value.replace(/\D/g,'').slice(0,10)})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1" placeholder="123" />
-              </div>
-              <div>
-                <label className="text-sm text-navy-300">bottom2 (2 ตัวล่าง) เช่น 45</label>
-                <input value={fields.bottom2} onChange={e => setFields({...fields, bottom2: e.target.value.replace(/\D/g,'').slice(0,10)})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1" placeholder="45" />
-              </div>
+            <div className="text-xs text-navy-400">field ผลรางวัลที่ต้องกรอก (อ้างอิงจากกติกาของ {selDraw.type_name_th}):</div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {sources.map(src => (
+                <div key={src}>
+                  <label className="text-sm text-navy-300">{SOURCE_LABELS[src] || src}</label>
+                  <input value={fields[src] || ''} onChange={e => setFields({...fields, [src]: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                    className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1" placeholder="000" />
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-navy-400">สามารถเพิ่ม field อื่นได้ผ่าน API (เช่น {`{"top3":"123","bottom2":"45","main":"6789"}`}) — แต่ละ field ต้องเป็นตัวเลข</p>
             {err && <div className="text-red-400 text-sm">{err}</div>}
             {result && (
               <div className="bg-green-500/10 border border-green-500/40 rounded-lg p-4 text-sm text-green-300">

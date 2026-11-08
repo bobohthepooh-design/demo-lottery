@@ -6,6 +6,14 @@ export const BET_TYPES = ['2top', '2bottom', '3top', '3tod', 'run_top', 'run_bot
 
 function nowSql() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
 
+/** Convert naive local datetime string ('YYYY-MM-DD HH:MM[:SS]' or ISO) to UTC sql string. */
+export function toUtcSql(input) {
+  const s = String(input).replace('T', ' ').slice(0, 19);
+  const d = new Date(s.length === 16 ? s + ':00' : s);
+  if (isNaN(d)) throw new HttpError(400, 'รูปแบบวันที่เวลาไม่ถูกต้อง');
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 export function listLotteryTypes({ activeOnly = true } = {}) {
   const db = getDb();
   return activeOnly
@@ -261,7 +269,7 @@ export function createDraw(adminId, { lotteryTypeId, categoryId = null, drawCode
   try {
     const r = db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
                           VALUES (?, ?, ?, ?, ?, 'scheduled')`)
-      .run(lotteryTypeId, categoryId, drawCode, drawAt.replace('T', ' ').slice(0, 19), closeAt.replace('T', ' ').slice(0, 19));
+      .run(lotteryTypeId, categoryId, drawCode, toUtcSql(drawAt), toUtcSql(closeAt));
     audit({ userId: adminId, action: 'draw.create', entityType: 'draw', entityId: String(r.lastInsertRowid), detail: { drawCode } });
     return Number(r.lastInsertRowid);
   } catch (e) {

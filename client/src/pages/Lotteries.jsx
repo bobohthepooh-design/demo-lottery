@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
+import WinningBoard from '../components/WinningBoard.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -61,10 +62,14 @@ export default function Lotteries() {
               </span>
             </div>
             <div className="mt-3 text-sm text-navy-300 space-y-1">
-              <div>🕐 ออกรางวัล: <span className="text-white">{d.draw_at}</span></div>
-              <div>⏱️ ปิดรับโพย: <span className="text-white">{d.close_at}</span></div>
-              {d.result_numbers && <div>🎯 ผล: <code className="text-gold-300">{d.result_numbers}</code></div>}
+              <div>🕐 ออกรางวัล: <span className="text-white">{fmtDateTime(d.draw_at)}</span></div>
+              <div>⏱️ ปิดรับโพย: <span className="text-white">{fmtDateTime(d.close_at)}</span></div>
             </div>
+            {d.result_numbers && (
+              <div className="mt-3 bg-navy-900/70 rounded-lg p-3">
+                <WinningBoard winningNumbers={d.result_numbers} typeCode={d.type_code} compact />
+              </div>
+            )}
             {d.status === 'open' && (
               <Link to={`/bet/${d.id}`} className="mt-4 block text-center bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400">
                 แทงหวยรอบนี้

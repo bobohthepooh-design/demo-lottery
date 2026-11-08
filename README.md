@@ -22,6 +22,7 @@ copy .env.example .env
 # 3. Migrate + Seed (สร้าง schema และ super admin)
 npm run migrate
 npm run seed
+npm run demo:data   # สร้างรอบหวยตัวอย่างที่เปิดรับได้ทันที (TH/LA/HN)
 # default: admin / Admin@Demo123  (เปลี่ยนทันทีหลัง login แรก!)
 
 # 4. รัน (development: server :4000 + client :5173)

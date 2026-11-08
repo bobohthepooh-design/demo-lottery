@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api, satang, bahtToSatang } from '../api.js';
+import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 
 const BET_TYPE_STYLE = {
@@ -93,7 +93,7 @@ export default function PlaceBet() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white">{draw.type_name_th}</h1>
-              <div className="text-sm text-navy-300">{draw.draw_code} • ออก {draw.draw_at} • ปิด {draw.close_at}</div>
+              <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)} • ปิด {fmtDateTime(draw.close_at)}</div>
             </div>
             <span className={`text-xs font-bold px-3 py-1 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
               {closed ? 'ปิดรับแล้ว' : 'เปิดรับ'}
