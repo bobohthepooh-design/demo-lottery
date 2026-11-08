@@ -14,6 +14,7 @@
     "migrate": "npm --prefix server run migrate",
     "seed": "npm --prefix server run seed",
     "demo:data": "npm --prefix server run demo:data",
+    "demo:results": "npm --prefix server run demo:results",
     "seed:rules": "npm --prefix server run seed:rules",
     "test": "npm --prefix server test"
   },

@@ -28,7 +28,10 @@ export default function AdminSettle() {
     const winning = {};
     for (const f of schema?.fields || []) {
       const t = (fields[f.key] || '').trim();
-      if (!t) continue;
+      if (!t) {
+        if (!f.optional) return setErr(`กรุณากรอกผล "${f.label}" ให้ครบทุกประเภทรางวัล`);
+        continue;
+      }
       const parts = t.split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
       const expected = f.prizes && f.prizes > 1 ? f.prizes : 1;
       // field ที่มีหลายรางวัล → เก็บเป็น array; ถ้ากรอกเลขเดียวก็เก็บ string
