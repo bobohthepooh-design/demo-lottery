@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api, fmtDateTime, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import ResultLine, { TYPE_EMOJI } from '../components/ResultLine.jsx';
+import { resultSchema } from '../lotterySchema.js';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
 function useNow() {
@@ -57,6 +58,20 @@ function DrawLine({ d, now }) {
   );
 }
 
+// แถว ticker ผลรางวัล — เลขเด่นๆ จาก schema
+function tickerText(r) {
+  let data = r.winning_numbers;
+  if (typeof data === 'string') { try { data = JSON.parse(data); } catch { data = {}; } }
+  const schema = resultSchema(r.type_code, r.category_code);
+  const fields = (schema?.fields || []).filter(f => !f.optional && f.key !== 'main');
+  const parts = fields.map(f => {
+    const v = data?.[f.key];
+    const vals = Array.isArray(v) ? v.join(', ') : v;
+    return vals ? `${f.short || f.label} ${vals}` : null;
+  }).filter(Boolean);
+  return `${r.type_name_th}${r.category_name_th ? ` ${r.category_name_th}` : ''}: ${parts.join(' • ') || '—'}`;
+}
+
 export default function Home() {
   const { user } = useAuth();
   const now = useNow();
@@ -105,8 +120,70 @@ export default function Home() {
     .filter(d => d.status === 'open' && msLeft(d.close_at, now) > 0)
     .slice(0, 3);
 
+  const openCount = draws.filter(d => d.status === 'open').length;
+
   return (
     <div className="space-y-8">
+      {/* Hero — ดึงดูดให้เข้ามาแทง */}
+      <section className="relative overflow-hidden rounded-2xl border border-gold-500/40 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 px-5 py-8 sm:px-10 sm:py-12 text-center">
+        <div className="absolute -top-16 -left-16 w-56 h-56 rounded-full bg-gold-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -right-16 w-56 h-56 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <div className="text-4xl sm:text-5xl mb-2 animate-float">🎰</div>
+          <h1 className="text-2xl sm:text-4xl font-black leading-tight">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500">
+              หวยออนไลน์ ครบทุกตลาด
+            </span>
+          </h1>
+          <p className="text-navy-200 text-sm sm:text-base mt-2">
+            🇹🇭 หวยรัฐบาลไทย • 🇱🇦 หวยลาว & ลาวพัฒนา • 🇻🇳 ฮานอย 4 รอบ/วัน
+          </p>
+          <p className="text-gold-300/90 text-xs sm:text-sm mt-1 font-semibold">
+            ✨ แทงง่ายๆ จ่ายสูงสุด <span className="text-gold-300">x6,000 เท่า</span> — รับเครดิตทดลองเมื่อสมัคร ✨
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
+            <Link to="/lotteries"
+              className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-7 py-3 rounded-xl text-sm sm:text-base shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
+              🎟️ แทงหวยเลย
+            </Link>
+            {!user && (
+              <Link to="/register"
+                className="border border-gold-500/50 text-gold-300 font-semibold px-6 py-3 rounded-xl text-sm sm:text-base hover:bg-navy-700/60 transition">
+                สมัครรับเครดิตทดลอง
+              </Link>
+            )}
+          </div>
+          {/* สถิติสด */}
+          <div className="flex items-center justify-center gap-4 sm:gap-8 mt-6 text-xs sm:text-sm flex-wrap">
+            <div><span className="text-gold-300 font-bold text-lg">{openCount}</span> <span className="text-navy-300">รอบเปิดรับ</span></div>
+            <div className="w-px h-6 bg-navy-600 hidden sm:block" />
+            <div><span className="text-gold-300 font-bold text-lg">{types.length}</span> <span className="text-navy-300">ตลาดหวย</span></div>
+            <div className="w-px h-6 bg-navy-600 hidden sm:block" />
+            <div><span className="text-gold-300 font-bold text-lg">x6,000</span> <span className="text-navy-300">อัตราจ่ายสูงสุด</span></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ticker ผลรางวัลล่าสุดแบบเลื่อน */}
+      {results.length > 0 && (
+        <div className="bg-navy-800/80 border border-gold-500/30 rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-gold-500/10 border-b border-gold-500/20">
+            <span className="text-xs font-bold text-gold-300">📢 ผลรางวัลล่าสุด</span>
+            <span className="text-[10px] text-navy-400">(ชี้เพื่อหยุดเลื่อน)</span>
+          </div>
+          <div className="overflow-hidden py-1.5">
+            <div className="flex w-max animate-marquee gap-8 px-4">
+              {[...results, ...results].map((r, i) => (
+                <span key={i} className="text-xs text-navy-200 whitespace-nowrap flex items-center gap-1.5">
+                  <span>{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
+                  {tickerText(r)}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* แจ้งเตือนเวลาปิดรับโพย — รอบที่ใกล้สุดก่อน */}
       {alertDraws.length > 0 && (
         <section className="bg-gradient-to-r from-amber-500/15 to-red-500/10 border border-amber-500/40 rounded-xl p-4">
@@ -167,15 +244,19 @@ export default function Home() {
           {types.map(t => {
             const typeDraws = openByCategory.filter(d => d.type_code === t.code);
             return (
-              <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-col">
+              <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-col hover:border-gold-500/40 hover:-translate-y-0.5 transition">
                 <Link to={`/lotteries?type=${t.id}`} className="group">
                   <div className="text-3xl mb-1">{t.code === 'TH' ? '🇹🇭' : t.code === 'LA' ? '🇱🇦' : '🇻🇳'}</div>
                   <div className="font-bold text-white group-hover:text-gold-300">{t.name_th}</div>
                   <div className="text-xs text-navy-300 mt-1 mb-3">{t.description}</div>
                 </Link>
                 {typeDraws.length > 0 ? (
-                  <div className="space-y-1 mt-auto">
+                  <div className="space-y-1 mt-auto pt-3">
                     {typeDraws.map(d => <DrawLine key={d.id} d={d} now={now} />)}
+                    <Link to={`/lotteries?type=${t.id}`}
+                      className="block mt-2 text-center text-xs font-bold bg-gold-500/15 text-gold-300 border border-gold-500/40 rounded-lg py-1.5 hover:bg-gold-500/25 transition">
+                      🎟️ แทงรอบนี้เลย →
+                    </Link>
                   </div>
                 ) : (
                   <div className="text-[11px] text-navy-500 mt-auto">ไม่มีรอบที่เปิดรับ</div>

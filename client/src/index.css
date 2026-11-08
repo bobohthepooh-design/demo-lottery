@@ -73,3 +73,18 @@ body {
 }
 .animate-online { animation: online-glow 1.8s ease-in-out infinite, online-flicker 5s linear infinite; }
 .animate-online-border { animation: online-border-glow 2.2s ease-in-out infinite; }
+
+/* ticker เลื่อนผลรางวัลล่าสุด */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 40s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+/* การ์ดลอยเบาๆ สำหรับ hero */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float-slow 5s ease-in-out infinite; }
