@@ -74,8 +74,9 @@ export function register({ username, email, password, displayName, ip, userAgent
       d.prepare('UPDATE virtual_wallets SET balance = ?, version = version + 1 WHERE id = ?').run(newBalance, walletId);
       d.prepare(`INSERT INTO virtual_transactions
         (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description)
-        VALUES (?, ?, ?, 'initial_credit', ?, ?, 'credit', 'completed', ?, 'เครดิตเริ่มต้นสำหรับสมาชิกใหม่ (DEMO)')`)
+        VALUES (?, ?, ?, 'initial_credit', ?, ?, 'credit', 'completed', ?, 'เครดิตฟรีสำหรับสมาชิกใหม่ (DEMO — ถอนได้เฉพาะเงินรางวัล)')`)
         .run(makeReference('TX'), walletId, id, initial, newBalance, `init-credit-${id}`);
+      // note: initial_credit คือเครดิตฟรี — ใช้แทงได้แต่ถอนไม่ได้ (ดู walletService.withdrawableInfo)
     }
     return id;
   });

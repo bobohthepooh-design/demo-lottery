@@ -64,6 +64,26 @@ export function adminAdjust({ adminId, targetUserId, amount, direction, reason, 
   });
 }
 
+const WITHDRAW_UNLOCK_SATANG = 10000; // ต้องเติมเครดิตสะสมขั้นต่ำ ฿100 ก่อนถอนได้
+
+/** ยอดที่ถอนได้ = เงินรางวัล − ยอดที่ถอนไปแล้ว (เฉพาะ win_credit ถอนได้
+ *  ระบบ/adjust/เงินฝากไม่สามารถถอนได้โดยตรง) */
+function withdrawableInfo(d, userId, balance) {
+  const row = d.prepare(`SELECT
+      COALESCE(SUM(CASE WHEN type='deposit' THEN amount END),0) AS deposited,
+      COALESCE(SUM(CASE WHEN type='win_credit' THEN amount END),0) AS won,
+      COALESCE(SUM(CASE WHEN type='withdraw' THEN amount END),0) AS withdrawn
+    FROM virtual_transactions WHERE user_id = ?`).get(userId);
+  const withdrawable = Math.max(0, Math.min(row.won - row.withdrawn, balance));
+  return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn, withdrawable, unlocked: row.deposited >= WITHDRAW_UNLOCK_SATANG };
+}
+
+export function getWithdrawable(userId) {
+  const d = getDb();
+  const w = getWalletTx(d, userId);
+  return withdrawableInfo(d, userId, w.balance);
+}
+
 /** สมาชิกเติม/ถอนเครดิตจำลองด้วยตนเอง — demo only, ไม่เกี่ยวกับเงินจริง */
 export function memberWalletAction(userId, { direction, amount, description }) {
   if (!['deposit', 'withdraw'].includes(direction)) throw new HttpError(400, 'ประเภทรายการไม่ถูกต้อง');
@@ -74,6 +94,13 @@ export function memberWalletAction(userId, { direction, amount, description }) {
   return tx((d) => {
     const w = getWalletTx(d, userId);
     const isCredit = direction === 'deposit';
+    if (!isCredit) {
+      const info = withdrawableInfo(d, userId, w.balance);
+      if (!info.unlocked) throw new HttpError(400, 'ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อนจึงจะสามารถถอนเงินได้', 'DEPOSIT_REQUIRED');
+      if (amount > info.withdrawable) throw new HttpError(400,
+        info.withdrawable <= 0 ? 'ยังไม่มีเงินรางวัลที่สามารถถอนได้ (ถอนได้เฉพาะเงินรางวัลจากการถูกหวย)' : `ถอนได้สูงสุด ฿${(info.withdrawable / 100).toFixed(2)}`,
+        'WITHDRAW_LIMIT');
+    }
     const newBalance = isCredit ? w.balance + amount : w.balance - amount;
     if (newBalance < 0) throw new HttpError(400, 'เครดิตไม่เพียงพอสำหรับการถอน', 'INSUFFICIENT_CREDIT');
     updateBalance(d, w.id, w.version, newBalance);

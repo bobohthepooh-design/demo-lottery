@@ -43,6 +43,7 @@ router.get('/wallet', (req, res) => {
   const offset = parseInt(req.query.offset || '0', 10);
   res.json({
     balance: wallet.getBalance(req.user.id),
+    withdrawable: wallet.getWithdrawable(req.user.id),
     transactions: wallet.listTransactions(req.user.id, { limit, offset }),
   });
 });

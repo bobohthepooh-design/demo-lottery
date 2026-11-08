@@ -27,7 +27,7 @@ export default function Register() {
   return (
     <div className="max-w-md mx-auto bg-navy-800 border border-navy-700 rounded-2xl p-8">
       <h1 className="text-2xl font-bold text-gold-400 mb-1">สมัครสมาชิก</h1>
-      <p className="text-xs text-navy-300 mb-5">กรอกแค่ชื่อผู้ใช้กับรหัสผ่านก็สมัครได้ — รับเครดิตทดลองทันที</p>
+      <p className="text-xs text-navy-300 mb-5">กรอกแค่ชื่อผู้ใช้กับรหัสผ่านก็สมัครได้ — รับเครดิตฟรี ฿50 ทันที (ถอนได้เฉพาะเงินรางวัล หลังเติมเครดิตครบ ฿100)</p>
       <form onSubmit={submit} className="space-y-4">
         <input required value={form.username} onChange={e => setForm({...form, username: e.target.value})}
           placeholder="ชื่อผู้ใช้ (a-z 0-9 _ 3-32 ตัว)" pattern="[a-zA-Z0-9_]{3,32}"

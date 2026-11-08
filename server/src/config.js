@@ -26,7 +26,7 @@ export const config = {
   sessionSecret: process.env.SESSION_SECRET || 'dev-insecure-secret-change-me',
   sessionTtlHours: parseInt(process.env.SESSION_TTL_HOURS || '12', 10),
   databasePath: dbPath,
-  initialCredit: parseInt(process.env.INITIAL_CREDIT || '10000', 10),
+  initialCredit: parseInt(process.env.INITIAL_CREDIT || '5000', 10),
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '300', 10),
   loginRateLimitMax: parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '10', 10),

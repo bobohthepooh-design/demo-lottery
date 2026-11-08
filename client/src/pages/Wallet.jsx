@@ -3,7 +3,7 @@ import { api, satang, bahtToSatang } from '../api.js';
 import { useAuth } from '../auth.jsx';
 
 const TYPE_TH = {
-  initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
+  initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
   bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
   deposit: 'เติมเครดิต', withdraw: 'ถอนเครดิต',
 };
@@ -13,13 +13,14 @@ const PRESETS = [100, 500, 1000, 5000, 10000];
 export default function Wallet() {
   const { balance, setBalance } = useAuth();
   const [txs, setTxs] = useState([]);
+  const [wd, setWd] = useState(null); // { deposited, won, withdrawn, withdrawable, unlocked }
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // 'deposit' | 'withdraw' | null
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); })
+  const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
     .catch(() => {}).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
@@ -28,7 +29,10 @@ export default function Wallet() {
     const satangAmt = bahtToSatang(amount);
     if (!satangAmt || satangAmt < 100) return setErr('กรอกจำนวนเงินอย่างน้อย 1 บาท');
     if (satangAmt > 1000000) return setErr('สูงสุด 10,000 บาทต่อรายการ');
-    if (modal === 'withdraw' && satangAmt > balance) return setErr('เครดิตไม่เพียงพอสำหรับการถอน');
+    if (modal === 'withdraw') {
+      if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อนจึงจะสามารถถอนเงินได้');
+      if (wd && satangAmt > wd.withdrawable) return setErr(`ถอนได้สูงสุด ฿${satang(wd.withdrawable)} (เฉพาะเงินรางวัล)`);
+    }
     setBusy(true);
     try {
       const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt } });
@@ -54,7 +58,14 @@ export default function Wallet() {
             － ถอนเครดิต
           </button>
         </div>
-        <div className="text-xs text-navy-400 mt-3">เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่สามารถแลกเป็นเงินจริงได้</div>
+        {wd && (
+          <div className={`text-xs mt-3 ${wd.unlocked ? 'text-green-400' : 'text-amber-300'}`}>
+            {wd.unlocked
+              ? `✅ ถอนได้ ฿${satang(wd.withdrawable)} (จากเงินรางวัล)`
+              : `🔒 ถอนเงินได้หลังเติมเครดิตครบ ฿100 — เติมแล้ว ฿${satang(wd.deposited)}`}
+          </div>
+        )}
+        <div className="text-xs text-navy-400 mt-2">เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่สามารถแลกเป็นเงินจริงได้</div>
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
@@ -90,6 +101,13 @@ export default function Wallet() {
           <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 ถอนเครดิตจำลอง'}</h2>
             <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน ฿{satang(balance)} • สำหรับ Demo เท่านั้น</p>
+            {modal === 'withdraw' && wd && (
+              <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
+                {wd.unlocked
+                  ? `ถอนได้สูงสุด ฿${satang(wd.withdrawable)} — เฉพาะเงินรางวัลจากการถูกหวย (เครดิตโปรโมชั่น/เงินฝากถอนไม่ได้)`
+                  : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อน (เติมแล้ว ฿${satang(wd.deposited)})`}
+              </div>
+            )}
             <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'}:</div>
             <div className="grid grid-cols-3 gap-2 mb-3">
               {PRESETS.map(p => (
