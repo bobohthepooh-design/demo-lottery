@@ -1,4 +1,4 @@
-import { fmtDate } from '../api.js';
+import { fmtDate, thaiTime } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 
 export const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
@@ -26,7 +26,7 @@ export default function ResultLine({ r }) {
       <div className="flex items-center gap-2 text-[11px]">
         <span>{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
         <span className="font-semibold text-white">{r.type_name_th}{r.category_name_th ? ` ${r.category_name_th}` : ''}</span>
-        <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)}</span>
+        <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.</span>
       </div>
       <div className="flex gap-5 mt-1.5 overflow-x-auto pb-0.5">
         {fields.map(f => cell(f.key, f.short || f.label, data?.[f.key]))}
