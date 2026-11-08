@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime } from '../api.js';
+import { api, fmtDateTime, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import ResultLine, { TYPE_EMOJI } from '../components/ResultLine.jsx';
 
@@ -25,6 +25,19 @@ function countdownText(closeAtSql, now) {
   const h = Math.floor(diff / 3600e3), m = Math.floor(diff % 3600e3 / 60e3), s = Math.floor(diff % 60e3 / 1000);
   const p = n => String(n).padStart(2, '0');
   return h >= 24 ? `อีก ${Math.floor(h / 24)} วัน ${p(h % 24)}:${p(m)}:${p(s)}` : `${p(h)}:${p(m)}:${p(s)}`;
+}
+
+// ระยะเวลาที่เหลือแบบอ่านเข้าใจง่าย ไม่ให้สับสนกับเวลาดน.
+function durationText(closeAtSql, now) {
+  const diff = msLeft(closeAtSql, now);
+  if (diff <= 0) return 'ปิดรับแล้ว';
+  const sec = Math.floor(diff / 1000);
+  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600);
+  const m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  if (d > 0) return `อีก ${d} วัน ${h} ชม. ${m} นาที`;
+  if (h > 0) return `อีก ${h} ชม. ${m} นาที ${s} วินาที`;
+  if (m > 0) return `อีก ${m} นาที ${s} วินาที`;
+  return `อีก ${s} วินาที`;
 }
 
 // แถวรอบหวยของแต่ละประเทศ/หมวด — แสดงเวลาออกรางวัล + นับถอยหลังปิดรับ
@@ -110,9 +123,9 @@ export default function Home() {
                   <span className="text-xs font-semibold text-white">
                     {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
                   </span>
-                  <span className="text-[10px] text-navy-400">ออกรางวัล {fmtDateTime(d.draw_at)}</span>
-                  <span className={`text-xs font-mono font-bold ml-auto px-2 py-0.5 rounded ${urgent ? 'bg-red-500/25 text-red-300 animate-pulse' : 'bg-amber-500/20 text-amber-300'}`}>
-                    ปิดรับใน {countdownText(d.close_at, now)}
+                  <span className="text-[10px] text-navy-400">ออกรางวัล {fmtDateTime(d.draw_at)} • ปิดรับ {thaiTime(d.close_at)} น.</span>
+                  <span className={`text-xs font-bold ml-auto px-2 py-0.5 rounded ${urgent ? 'bg-red-500/25 text-red-300 animate-pulse' : 'bg-amber-500/20 text-amber-300'}`}>
+                    ปิดรับ {durationText(d.close_at, now)}
                   </span>
                 </div>
               );
