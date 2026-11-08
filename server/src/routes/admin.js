@@ -71,6 +71,30 @@ router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => 
   } catch (e) { next(e); }
 });
 
+router.delete('/members/:id', requirePerm('members.manage'), (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (id === req.user.id) return res.status(400).json({ error: 'ไม่สามารถลบบัญชีของตัวเองได้' });
+    const target = db().prepare('SELECT * FROM users WHERE id = ?').get(id);
+    if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
+    const slips = db().prepare('SELECT COUNT(*) c FROM bet_slips WHERE user_id = ?').get(id).c;
+    if (slips > 0) return res.status(400).json({ error: `ไม่สามารถลบได้ สมาชิกนี้มีประวัติโพย ${slips} รายการ` });
+    tx((d) => {
+      d.prepare('DELETE FROM virtual_transactions WHERE user_id = ?').run(id);
+      d.prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?').run(id);
+      d.prepare('UPDATE security_events SET user_id = NULL WHERE user_id = ?').run(id);
+      d.prepare('UPDATE lottery_results SET published_by = NULL WHERE published_by = ?').run(id);
+      d.prepare('UPDATE virtual_transactions SET created_by = NULL WHERE created_by = ?').run(id);
+      d.prepare('UPDATE system_settings SET updated_by = NULL WHERE updated_by = ?').run(id);
+      // user_roles / user_sessions / virtual_wallets ถูกลบตามด้วย ON DELETE CASCADE
+      d.prepare('DELETE FROM users WHERE id = ?').run(id);
+    });
+    invalidatePermCache(id);
+    audit({ userId: req.user.id, action: 'admin.member_delete', entityType: 'user', entityId: String(id), detail: { username: target.username }, req });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 // ---------- roles ----------
 router.get('/roles', requirePerm('roles.manage'), (req, res) => {
   const roles = db().prepare('SELECT * FROM roles ORDER BY id').all();

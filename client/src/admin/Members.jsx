@@ -5,6 +5,7 @@ export default function AdminMembers() {
   const [members, setMembers] = useState([]);
   const [q, setQ] = useState('');
   const [edit, setEdit] = useState(null);
+  const [del, setDel] = useState(null);
 
   const load = () => api(`/admin/members?q=${encodeURIComponent(q)}`).then(r => setMembers(r.members)).catch(e => alert(e.message));
   useEffect(() => { load(); }, []);
@@ -14,6 +15,13 @@ export default function AdminMembers() {
       await api(`/admin/members/${edit.id}`, { method: 'PATCH', body: edit });
       setEdit(null); load();
     } catch (e) { alert(e.message); }
+  };
+
+  const remove = async () => {
+    try {
+      await api(`/admin/members/${del.id}`, { method: 'DELETE' });
+      setDel(null); load();
+    } catch (e) { alert(e.message); setDel(null); }
   };
 
   return (
@@ -38,7 +46,10 @@ export default function AdminMembers() {
                 <td className="px-4 py-3 text-right text-gold-300 font-bold">฿{satang(m.balance)}</td>
                 <td className="px-4 py-3"><span className={m.status === 'active' ? 'text-green-400' : 'text-red-400'}>{m.status}</span></td>
                 <td className="px-4 py-3 text-xs">{m.mfaEnabled ? '✅' : '—'}</td>
-                <td className="px-4 py-3"><button onClick={() => setEdit({ ...m })} className="text-gold-400 text-xs hover:underline">แก้ไข</button></td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <button onClick={() => setEdit({ ...m })} className="text-gold-400 text-xs hover:underline mr-3">แก้ไข</button>
+                  <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -70,6 +81,19 @@ export default function AdminMembers() {
                 <button onClick={save} className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">บันทึก</button>
                 <button onClick={() => setEdit(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {del && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setDel(null)}>
+          <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-white mb-2">ลบสมาชิก?</h2>
+            <p className="text-sm text-navy-300 mb-1">ต้องการลบบัญชี <span className="text-white font-semibold">{del.username}</span> ใช่หรือไม่</p>
+            <p className="text-xs text-navy-400 mb-4">กระเป๋า เครดิต และเซสชันทั้งหมดจะถูกลบถาวร (ลบไม่ได้ถ้ามีประวัติโพย)</p>
+            <div className="flex gap-2">
+              <button onClick={remove} className="flex-1 bg-red-500 text-white font-bold py-2.5 rounded-lg">ลบสมาชิก</button>
+              <button onClick={() => setDel(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
             </div>
           </div>
         </div>
