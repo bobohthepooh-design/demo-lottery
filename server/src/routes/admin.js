@@ -28,6 +28,30 @@ function memberDto(u) {
 router.get('/overview', requirePerm('dashboard.admin'), (req, res) => {
   const d = db();
   const one = (sql, ...a) => d.prepare(sql).get(...a);
+  const txSum = (type) => one('SELECT COALESCE(SUM(amount),0) s FROM virtual_transactions WHERE type = ?', type).s;
+  // รายรับ/รายจ่ายของระบบเครดิตจำลอง แยกตามประเภทธุรกรรม
+  const money = {
+    deposit: txSum('deposit'),          // สมาชิกเติมเครดิตเอง
+    adminCredit: txSum('admin_adjust'), // admin เพิ่มเครดิตให้
+    initialCredit: txSum('initial_credit'),
+    withdraw: txSum('withdraw'),        // สมาชิกถอนเครดิต
+    adminDebit: txSum('admin_debit'),
+    staked: txSum('bet_debit'),         // ยอดเดิมพันรวม
+    winnings: txSum('win_credit'),      // ยอดจ่ายรางวัล
+    refunds: txSum('bet_refund'),       // คืนเงินคืนโพย
+  };
+  money.totalIn = money.deposit + money.adminCredit + money.initialCredit;
+  money.totalOut = money.withdraw + money.adminDebit + money.winnings + money.refunds;
+  // house margin = ยอดเดิมพัน − เงินรางวัล − เงินคืน (demo: ติดลบได้ถ้าจ่ายเกิน)
+  money.houseNet = money.staked - money.winnings - money.refunds;
+  // ยอดเข้า-ออก 7 วันล่าสุด (stacked bars)
+  const daily = d.prepare(`SELECT date(created_at) day,
+      COALESCE(SUM(CASE WHEN direction='credit' THEN amount ELSE 0 END),0) inn,
+      COALESCE(SUM(CASE WHEN direction='debit' THEN amount ELSE 0 END),0) out
+    FROM virtual_transactions
+    WHERE created_at >= date('now','-6 days')
+    GROUP BY day ORDER BY day`).all()
+    .map(r => ({ day: r.day, inn: r.inn, out: r.out }));
   res.json({
     members: one('SELECT COUNT(*) c FROM users').c,
     activeDraws: one(`SELECT COUNT(*) c FROM lottery_draws WHERE status='open'`).c,
@@ -35,6 +59,7 @@ router.get('/overview', requirePerm('dashboard.admin'), (req, res) => {
     totalStaked: one(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status='pending'`).s,
     totalPaid: one(`SELECT COALESCE(SUM(total_payout),0) s FROM bet_slips WHERE status IN ('won','partial','lost')`).s,
     walletLiability: one('SELECT COALESCE(SUM(balance),0) s FROM virtual_wallets').s,
+    money, daily,
     recentAudit: d.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 10').all(),
     recentSecurity: d.prepare(`SELECT * FROM security_events ORDER BY id DESC LIMIT 10`).all(),
   });
