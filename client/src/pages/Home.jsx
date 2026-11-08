@@ -237,40 +237,61 @@ export default function Home() {
 
       {/* ประเภทหวยที่รองรับ + รอบที่เปิดรับ/นับถอยหลังของแต่ละประเทศ */}
       <section>
-        <h2 className="text-xl font-bold text-white mb-4">ประเภทหวยที่รองรับ</h2>
+        <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              🎯 ประเภทหวยที่รองรับ
+            </h2>
+            <p className="text-xs text-navy-400 mt-0.5">เลือกประเภทเพื่อดูรอบที่เปิดรับและเวลาออกรางวัล</p>
+          </div>
+          <Link to="/lotteries" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ดูรอบทั้งหมด →</Link>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {types.map(t => {
             const typeDraws = openByCategory.filter(d => d.type_code === t.code);
             const ac = typeAccent(t.code);
+            const openN = typeDraws.filter(d => d.status === 'open').length;
             return (
-              <div key={t.id} className={`bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-4 pt-3 flex flex-col hoverable ${ac.glow}`}>
-                <div className={`h-1 w-10 rounded-full mb-2 ${ac.bar}`} />
-                <Link to={`/lotteries?type=${t.id}`} className="group">
-                  <FlagIcon code={t.code} className="w-9 h-9 text-xs mb-1" />
-                  <div className={`font-bold ${ac.text} group-hover:brightness-125`}>{t.name_th}</div>
-                  <div className="text-xs text-navy-300 mt-1 mb-3">{t.description}</div>
-                </Link>
-                {typeDraws.length > 0 ? (
-                  <div className="space-y-1 mt-auto pt-3">
-                    {typeDraws.slice(0, 4).map(d => <DrawLine key={d.id} d={d} now={now} />)}
-                    {typeDraws.length > 4 && (
-                      <div className="text-[10px] text-navy-500 text-center">+อีก {typeDraws.length - 4} รอบ</div>
+              <div key={t.id} className="bg-navy-800/60 border border-navy-700 rounded-2xl overflow-hidden flex flex-col hoverable hover:border-navy-500">
+                {/* header การ์ด — gradient ตามสีประเภท */}
+                <Link to={`/lotteries?type=${t.id}`} className={`relative block px-4 pt-4 pb-3 bg-gradient-to-br ${ac.head} to-transparent group`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-navy-900/80 border border-navy-600/60 flex items-center justify-center shadow-inner shrink-0 group-hover:scale-105 transition">
+                      <FlagIcon code={t.code} className="w-8 h-8 text-[10px]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-navy-400">หวย {t.code}</div>
+                      <div className="font-display font-bold text-white text-lg leading-tight truncate group-hover:text-gold-300 transition">{t.name_th}</div>
+                    </div>
+                    {openN > 0 && (
+                      <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-green-500/20 text-green-300 border border-green-500/40">
+                        ● {openN} รอบ
+                      </span>
                     )}
-                    <Link to={`/lotteries?type=${t.id}`}
-                      className="block mt-2 text-center text-xs font-bold bg-gold-500/15 text-gold-300 border border-gold-500/40 rounded-lg py-1.5 hover:bg-gold-500/25 transition">
-                      🎟️ แทงรอบนี้เลย →
-                    </Link>
                   </div>
-                ) : (
-                  <div className="text-[11px] text-navy-500 mt-auto">ไม่มีรอบที่เปิดรับ</div>
-                )}
+                </Link>
+                {/* body */}
+                <div className="px-4 pb-4 pt-2 flex-1 flex flex-col">
+                  <div className="text-[11px] text-navy-400 mb-2 line-clamp-1">{t.description}</div>
+                  {typeDraws.length > 0 ? (
+                    <div className="space-y-1 flex-1">
+                      {typeDraws.slice(0, 4).map(d => <DrawLine key={d.id} d={d} now={now} />)}
+                      {typeDraws.length > 4 && (
+                        <div className="text-[10px] text-navy-500 text-center">+อีก {typeDraws.length - 4} รอบ</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-navy-500 py-3">ไม่มีรอบที่เปิดรับ</div>
+                  )}
+                  <Link to={`/lotteries?type=${t.id}`}
+                    className="mt-3 block text-center text-xs font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-lg py-2 hover:brightness-110 transition shadow-md shadow-gold-500/20">
+                    🎟️ แทงรอบนี้เลย
+                  </Link>
+                </div>
               </div>
             );
           })}
           {!types.length && <SkeletonGrid count={3} />}
-        </div>
-        <div className="mt-3 text-right">
-          <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
         </div>
       </section>
 
