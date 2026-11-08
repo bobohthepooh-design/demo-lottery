@@ -64,6 +64,9 @@ export default function PlaceBet() {
   const togglePick = (n) => setPicks(p => p.includes(n) ? p.filter(x => x !== n) : (p.length < 5 ? [...p, n] : p));
 
   const totalSatang = useMemo(() => slip.reduce((s, i) => s + i.stakeSatang, 0), [slip]);
+  // ผลรางวัลจำลองแบบไม่รวมทุน = stake × multiplier ของแต่ละรายการ (เงินจริงจ่าย = ยอดนี้ ไม่ได้คืนทุนเพิ่ม)
+  const itemPotential = (i) => Math.floor(i.stakeSatang * (i.mult || 0));
+  const totalPotential = useMemo(() => slip.reduce((s, i) => s + itemPotential(i), 0), [slip]);
   const totalBaht = totalSatang / 100;
 
   // ตรวจจำนวนเงิน → satang (ใช้ร่วมกันทุกปุ่มเพิ่มโพย)
@@ -91,7 +94,7 @@ export default function PlaceBet() {
     const { stake, err: amtErr } = stakeFromAmount();
     if (amtErr) return setErr(amtErr);
     if (stake > balance) return setErr('เครดิตไม่เพียงพอ');
-    setSlip([...slip, { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake }]);
+    setSlip([...slip, { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake, mult: Number(rule.payout_multiplier) || 0 }]);
     setNumber(''); setPicks([]); setAmount('');
   };
 
@@ -114,7 +117,7 @@ export default function PlaceBet() {
     if (totalSatang + need > balance) {
       return setErr(`เครดิตไม่พอ — รูด 19 ประตู = ${nums.length} รายการ รวม ฿${satang(need)} (คงเหลือ ฿${satang(balance - totalSatang)})`);
     }
-    setSlip([...slip, ...nums.map(n => ({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: n, stakeSatang: stake }))]);
+    setSlip([...slip, ...nums.map(n => ({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: n, stakeSatang: stake, mult: Number(rule.payout_multiplier) || 0 }))]);
     setNumber(''); setAmount('');
   };
 
@@ -260,6 +263,7 @@ export default function PlaceBet() {
                 <div>
                   <span className="text-white font-mono text-lg">{i.number}</span>
                   <span className="text-navy-300 ml-2">{i.name}</span>
+                  <div className="text-[10px] text-navy-500">ถ้าถูก ≈ ฿{satang(itemPotential(i))} (ไม่รวมทุน)</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gold-300">฿{satang(i.stakeSatang)}</span>
@@ -271,6 +275,9 @@ export default function PlaceBet() {
           </div>
           <div className="border-t border-navy-700 mt-4 pt-4 space-y-1 text-sm">
             <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
+            {slip.length > 0 && (
+              <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">฿{satang(totalPotential)}</span></div>
+            )}
             <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
           </div>
           <button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
@@ -308,6 +315,7 @@ export default function PlaceBet() {
             </div>
             <div className="border-t border-navy-700 pt-3 space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-navy-300">ยอดแทงรวม ({slip.length} รายการ)</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
+              <div className="flex justify-between"><span className="text-navy-300">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">฿{satang(totalPotential)}</span></div>
               <div className="flex justify-between"><span className="text-navy-300">เครดิตคงเหลือหลังแทง</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
             </div>
             <div className="flex gap-3 mt-5">
