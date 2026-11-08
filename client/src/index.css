@@ -9,8 +9,8 @@
   --color-navy-700: #ecdee6;   /* เส้นขอบ/active chip — rose-gray (ชัดขึ้น) */
   --color-navy-600: #d9c6d1;   /* เส้นขอบเข้มขึ้น (input border ชัด) */
   --color-navy-500: #bfaebd;   /* ข้อความ/ขอบอ่อน */
-  --color-navy-400: #94899f;   /* secondary text อ่อน */
-  --color-navy-300: #7e7690;   /* secondary text — เข้มขึ้นเพื่อ contrast */
+  --color-navy-400: #8a7f95;   /* secondary text อ่อน */
+  --color-navy-300: #746a85;   /* secondary text — เข้มขึ้นเพื่อ contrast */
   --color-navy-200: #655d75;   /* text เด่นขึ้น/hover */
   --color-navy-100: #d9d0e0;   /* พื้นอ่อนมาก */
 
@@ -47,6 +47,7 @@ body {
   background-attachment: fixed;
   color: #383344;
   font-family: var(--font-sans);
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 }
 
