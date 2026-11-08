@@ -56,6 +56,16 @@ export default function AdminSettle() {
         if (!f.optional) return setErr(`กรุณากรอกผล "${f.label}" ให้ครบทุกประเภทรางวัล`);
         continue;
       }
+      // પર-field 5/45: 5 เลขไม่ซ้ำ 1-45 คั่นด้วย comma/space/dash
+      if (f.set5) {
+        const nums = t.split(/[\s,\-]+/).map(x => x.trim()).filter(Boolean);
+        const ok = nums.length === 5 && nums.every(x => /^\d{1,2}$/.test(x))
+          && nums.every(x => { const n = +x; return n >= 1 && n <= 45; })
+          && new Set(nums.map(Number)).size === 5;
+        if (!ok) return setErr('เลขที่ออกต้องเป็นตัวเลขไม่ซ้ำ 5 ตัว ในช่วง 1-45 (คั่นด้วย comma)');
+        winning[f.key] = nums;
+        continue;
+      }
       const parts = t.split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
       const expected = f.prizes && f.prizes > 1 ? f.prizes : 1;
       // field ที่มีหลายรางวัล → เก็บเป็น array; ถ้ากรอกเลขเดียวก็เก็บ string
@@ -115,9 +125,9 @@ export default function AdminSettle() {
                     {f.optional && <span className="text-navy-500 text-xs"> (ไม่บังคับ)</span>}
                   </label>
                   <input value={fields[f.key] || ''}
-                    onChange={e => setFields({...fields, [f.key]: e.target.value.replace(/[^\d,\s]/g, '').slice(0, f.prizes > 1 ? 60 : f.digits)})}
+                    onChange={e => setFields({...fields, [f.key]: e.target.value.replace(f.set5 ? /[^\d,\s\-]/g : /[^\d,\s]/g, '').slice(0, f.set5 ? 40 : (f.prizes > 1 ? 60 : f.digits))})}
                     className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                    placeholder={f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits)} />
+                    placeholder={f.set5 ? 'เช่น 12, 7, 34, 19, 45' : (f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits))} />
                 </div>
               ))}
             </div>
@@ -171,7 +181,8 @@ export default function AdminSettle() {
             setEditMsg('');
             const winning = {};
             for (const [k, v] of Object.entries(editFields)) {
-              const parts = String(v).split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
+              const isSet5 = s.fields.some(f => f.key === k && f.set5);
+              const parts = String(v).split(isSet5 ? /[\s,\-]+/ : /[\s,]+/).map(x => x.trim()).filter(Boolean);
               if (!parts.length) continue;
               if (!parts.every(x => /^\d{1,10}$/.test(x))) return setEditMsg(`field "${k}" ต้องเป็นตัวเลข`);
               winning[k] = parts.length > 1 ? parts : parts[0];

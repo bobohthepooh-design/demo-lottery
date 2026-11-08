@@ -79,6 +79,16 @@ export function isDrawOpen(draw) {
 }
 
 export function validateBetNumber(rule, number) {
+  // หวยลาวพัฒนา 5/45 — เลือก 5 เลขไม่ซ้ำกันจาก 1-45 คั่นด้วย -
+  if (rule.bet_type === 'pattana5') {
+    const parts = String(number).split('-').map(s => s.trim());
+    if (parts.length !== 5 || !parts.every(p => /^\d{1,2}$/.test(p)))
+      throw new HttpError(400, 'สลากพัฒนา 5/45 ต้องเป็น 5 ตัวเลข 1-45 คั่นด้วย - เช่น 05-12-23-34-45');
+    const nums = parts.map(Number);
+    if (nums.some(n => n < 1 || n > 45)) throw new HttpError(400, 'เลขต้องอยู่ระหว่าง 1-45');
+    if (new Set(nums).size !== 5) throw new HttpError(400, 'เลขทั้ง 5 ต้องไม่ซ้ำกัน');
+    return nums.sort((a, b) => a - b).map(n => String(n).padStart(2, '0')).join('-');
+  }
   if (!/^\d+$/.test(number || '')) throw new HttpError(400, `หมายเลขต้องเป็นตัวเลขล้วน (${rule.name_th})`);
   if (number.length !== rule.digits) throw new HttpError(400, `${rule.name_th} ต้องเป็น ${rule.digits} หลัก`);
   return number;
@@ -173,9 +183,19 @@ export function evaluateBet(rule, betNumber, winningNumbers) {
   const cfg = JSON.parse(rule.match_config);
   const raw = winningNumbers?.[cfg.source];
   const bet = String(betNumber);
-  // source อาจเป็น string เดียว หรือ array ของ string (หลายรางวัล เช่นเลขท้าย 2 ตัว 5 รางวัล)
-  const sources = (Array.isArray(raw) ? raw : [raw]).map(s => String(s ?? '')).filter(s => /^\d+$/.test(s));
+  // source อาจเป็น string เดียว, array ของ string (หลายรางวัล) หรือข้อความที่มีตัวคั่น
+  // เช่น "12-7-34-19-45" (สลากพัฒนา 5/45) — แยกเป็นเลขเดี่ยว ๆ ก่อนเทียบ
+  const sources = (Array.isArray(raw) ? raw : [raw])
+    .flatMap(s => String(s ?? '').split(/[-,\s]+/))
+    .map(s => s.trim()).filter(s => /^\d{1,10}$/.test(s));
   if (!sources.length) return { win: false, detail: { reason: 'no_source', source: cfg.source } };
+
+  // สลากพัฒนา 5/45 — ถูกเมื่อเซ็ต 5 เลขตรงกับผลทั้งหมด (ไม่สนลำดับ)
+  if (cfg.mode === 'set5') {
+    const norm = s => String(s).split(/[-,\s]+/).map(x => parseInt(x, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b).join('-');
+    const win = norm(bet) === norm(sources.join('-'));
+    return { win, detail: { sources, mode: cfg.mode }, multiplier: rule.payout_multiplier };
+  }
 
   const matchOne = (source) => {
     switch (cfg.mode) {

@@ -25,6 +25,7 @@ export default function PlaceBet() {
   // current entry
   const [selRule, setSelRule] = useState('');
   const [number, setNumber] = useState('');
+  const [picks, setPicks] = useState([]);   // pattana5: เลขที่เลือก 1-45
   const [amount, setAmount] = useState('');
 
   useEffect(() => {
@@ -48,6 +49,8 @@ export default function PlaceBet() {
   }, [drawId]);
 
   const rule = rules.find(r => String(r.id) === selRule);
+  const isPattana = rule?.bet_type === 'pattana5';
+  const togglePick = (n) => setPicks(p => p.includes(n) ? p.filter(x => x !== n) : (p.length < 5 ? [...p, n] : p));
 
   const totalSatang = useMemo(() => slip.reduce((s, i) => s + i.stakeSatang, 0), [slip]);
   const totalBaht = totalSatang / 100;
@@ -55,8 +58,14 @@ export default function PlaceBet() {
   const addItem = () => {
     setErr('');
     if (!rule) return setErr('เลือกประเภทการแทง');
-    const num = number.trim();
-    if (!new RegExp(`^\\d{${rule.digits}}$`).test(num)) return setErr(`${rule.name_th} ต้องเป็นตัวเลข ${rule.digits} หลัก`);
+    let num;
+    if (isPattana) {
+      if (picks.length !== 5) return setErr('เลือกเลขให้ครบ 5 ตัว (1-45)');
+      num = [...picks].sort((a, b) => a - b).map(n => String(n).padStart(2, '0')).join('-');
+    } else {
+      num = number.trim();
+      if (!new RegExp(`^\\d{${rule.digits}}$`).test(num)) return setErr(`${rule.name_th} ต้องเป็นตัวเลข ${rule.digits} หลัก`);
+    }
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return setErr('กรอกจำนวนเงิน');
     const stake = bahtToSatang(amt);
@@ -65,7 +74,7 @@ export default function PlaceBet() {
     if (rule.max_amount && stake > rule.max_amount) return setErr(`สูงสุด ฿${satang(rule.max_amount)}`);
     if (stake > balance) return setErr('เครดิตไม่เพียงพอ');
     setSlip([...slip, { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake }]);
-    setNumber(''); setAmount('');
+    setNumber(''); setPicks([]); setAmount('');
   };
 
   const submit = async () => {
@@ -123,18 +132,33 @@ export default function PlaceBet() {
                 <button key={r.id} onClick={() => setSelRule(String(r.id))}
                   className={`px-3 py-3 rounded-lg text-sm border transition ${selRule === String(r.id) ? 'border-gold-500 bg-navy-700 text-gold-300' : 'border-navy-600 text-navy-200 hover:border-navy-500'}`}>
                   <div className="font-semibold">{r.name_th}</div>
-                  <div className="text-xs text-navy-300">{r.digits} หลัก • จ่าย x{r.payout_multiplier}</div>
+                  <div className="text-xs text-navy-300">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : `${r.digits} หลัก`} • จ่าย x{r.payout_multiplier}</div>
                 </button>
               ))}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
-              <div>
+              {isPattana ? (
+              <div className="sm:col-span-2">
+                <label className="text-sm text-navy-300">เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)</label>
+                <div className="grid grid-cols-5 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5 mt-2">
+                  {Array.from({ length: 45 }, (_, i) => i + 1).map(n => (
+                    <button key={n} type="button" onClick={() => togglePick(n)}
+                      className={`py-1.5 rounded text-xs font-mono font-bold border transition ${picks.includes(n) ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-900 border-navy-600 text-navy-200 hover:border-navy-400'}`}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                {picks.length > 0 && <div className="mt-2 text-sm font-mono text-gold-300">เลือก: {[...picks].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('-')}</div>}
+              </div>
+            ) : (
+            <div>
                 <label className="text-sm text-navy-300">หมายเลข ({rule?.digits || '?'} หลัก)</label>
                 <input value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                   inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
                   className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl tracking-[0.4em] text-center text-gold-300 font-mono focus:outline-none focus:border-gold-500" />
               </div>
+            )}
               <div>
                 <label className="text-sm text-navy-300">จำนวนเงิน (บาท)</label>
                 <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}

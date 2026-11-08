@@ -48,7 +48,7 @@ export default function WinningBoard({ winningNumbers, typeCode, categoryCode, c
         const hasValue = raw !== undefined && raw !== null && raw !== '';
         const values = hasValue ? (Array.isArray(raw) ? raw : [raw]).map(String) : [];
         const isHero = f.hero || f.key === schema?.hero;
-        const prizeCount = Math.max(values.length, f.prizes || 1);
+        const prizeCount = f.set5 ? 1 : Math.max(values.length, f.prizes || 1);
         return (
           <div key={f.key} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span className={`${labelCls} text-navy-300 leading-tight`}>

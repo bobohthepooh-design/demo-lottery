@@ -30,8 +30,8 @@ export function seedRulesV2() {
       return d.prepare('SELECT id FROM lottery_categories WHERE lottery_type_id = ? AND code = ?').get(t.id, code).id;
     };
 
-    const LA = cat('LA', 'LA', 'หวยลาว', 'mon/wed/fri');
-    const LAD = cat('LA', 'LAD', 'หวยลาวพัฒนา', 'daily');
+    const LA = cat('LA', 'LA', 'หวยลาว', 'mon-fri');
+    const LAD = cat('LA', 'LAD', 'หวยลาวพัฒนา 5/45', 'mon/wed/fri');
     const HNS = cat('HN', 'HNS', 'ฮานอยเฉพาะกิจ', 'special');
     const HNP = cat('HN', 'HNP', 'ฮานอยพิเศษ', 'special');
     const HNN = cat('HN', 'HNN', 'ฮานอยปกติ', 'daily');
@@ -39,6 +39,9 @@ export function seedRulesV2() {
 
     const tid = (code) => d.prepare('SELECT id FROM lottery_types WHERE code = ?').get(code)?.id;
     const TH = tid('TH'), LA_ID = tid('LA'), HN = tid('HN');
+    // sync draw_pattern ของ category ที่มีอยู่แล้ว (INSERT OR IGNORE ไม่ update)
+    d.prepare(`UPDATE lottery_categories SET draw_pattern='mon-fri' WHERE code='LA' AND lottery_type_id=?`).run(LA_ID);
+    d.prepare(`UPDATE lottery_categories SET name_th='หวยลาวพัฒนา 5/45', draw_pattern='mon/wed/fri' WHERE code='LAD' AND lottery_type_id=?`).run(LA_ID);
 
     // ---------- ปิดกติกาเดิมที่ยัง active (rename กัน unique index ชน) ----------
     d.prepare(`UPDATE lottery_rules SET is_active = 0, bet_type = bet_type || '_old'
@@ -60,9 +63,9 @@ export function seedRulesV2() {
     push(LA_ID, LA, 'last3', 'เลขท้าย 3 ตัว', 3, 'last3', 'exact',  900);
     push(LA_ID, LA, 'last2', 'เลขท้าย 2 ตัว', 2, 'last2', 'exact',  100);
 
-    // ===== หวยลาวพัฒนา (LAD) — เลขท้าย 2 ตัว มี 5 รางวัล =====
-    // ผล: { last2: ['12','34','56','78','90'] }
-    push(LA_ID, LAD, 'last2', 'เลขท้าย 2 ตัว', 2, 'last2', 'exact', 20);
+    // ===== หวยลาวพัฒนา 5/45 (LAD) — เลือก 5 เลขจาก 1-45 ออก จ/พ/ศ =====
+    // ผล: { numbers: ['12','7','34','19','45'] } — ตรงครบทั้ง 5 ตัวจ่ายใหญ่
+    push(LA_ID, LAD, 'pattana5', 'สลากพัฒนา 5/45', 0, 'numbers', 'set5', 1000);
 
     // ===== ฮานอย (HN) — กติกาเดียวกันทุก category =====
     // ผล: { main:'123456', num4:'3456', top3:'456', top2:'56', bottom2:'78' }

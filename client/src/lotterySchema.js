@@ -25,10 +25,10 @@ const LA = {
 };
 
 const LAD = {
-  hero: 'main',
+  hero: 'numbers',
   fields: [
-    { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
-    { key: 'last2',   label: 'เลขท้าย 2 ตัว',     short: 'ท้าย2×5', digits: 2, prizes: 5 },
+    // สลากพัฒนา 5/45 — ผลคือเลขที่ออก 5 ตัว (1-45) คั่นด้วย comma
+    { key: 'numbers', label: 'เลขที่ออก (5 ตัว)', short: '5ตัว', set5: true },
   ],
 };
 
@@ -59,4 +59,5 @@ export const BET_TYPE_LABELS = {
   // legacy (โพยเก่าก่อนปรับโครงสร้าง)
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
   '3tod': '3 ตัวโต๊ด', 'run_top': 'วิ่งบน', 'run_bottom': 'วิ่งล่าง',
+  pattana5: 'สลากพัฒนา 5/45',
 };

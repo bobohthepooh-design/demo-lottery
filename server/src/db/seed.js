@@ -73,7 +73,7 @@ export function seed() {
     // lottery types
     const types = [
       { code: 'TH', name_th: 'หวยรัฐบาลไทย', name_en: 'Thailand Government Lottery', description: 'ออกวันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 น.' },
-      { code: 'LA', name_th: 'หวยลาว', name_en: 'Laos Lottery', description: 'ออกทุกวันจันทร์–ศุกร์ เวลา 20:00 น.' },
+      { code: 'LA', name_th: 'หวยลาว', name_en: 'Laos Lottery', description: 'หวยลาว: จ–ศ • ลาวพัฒนา 5/45: จ/พ/ศ เวลา 20:00 น.' },
       { code: 'HN', name_th: 'หวยฮานอย', name_en: 'Hanoi Lottery', description: 'ออกทุกวัน เวลา 16:00–19:00 น. ตามหมวด' },
     ];
     const typeIds = {};

@@ -5,7 +5,8 @@ import { getDb } from './index.js';
  *
  * ตารางออกผลรางวัลจริง (เวลาประเทศไทย):
  *  - หวยไทย:        วันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 (ปิดรับ 14:00)
- *  - หวยลาว/ลาวพัฒนา: จันทร์–ศุกร์ เวลา 20:00 (ปิดรับ 19:00)
+ *  - หวยลาว:        จันทร์–ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
+ *  - ลาวพัฒนา 5/45: จันทร์/พุธ/ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
  *  - ฮานอยเฉพาะกิจ:  ทุกวัน เวลา 16:00 (ปิดรับ 15:00)
  *  - ฮานอยพิเศษ:     ทุกวัน เวลา 17:00 (ปิดรับ 16:00)
  *  - ฮานอยปกติ:      ทุกวัน เวลา 18:00 (ปิดรับ 17:00)
@@ -56,7 +57,11 @@ const isHoliday = (d) => TH_HOLIDAYS.has(ymdKey(d));
 // ตารางเวลาตามประเภท/หมวด — kind: monthly(วันที่ของเดือน) | weekly(วันในสัปดาห์) | daily
 function scheduleFor(typeCode, catCode) {
   if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
-  if (typeCode === 'LA') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, closeHour: 19, skipHoliday: true }; // จ–ศ
+  if (typeCode === 'LA') {
+    // ลาวพัฒนา 5/45 ออกเฉพาะ จ/พ/ศ — หวยลาวหลักออก จ–ศ
+    const weekdays = catCode === 'LAD' ? [1, 3, 5] : [1, 2, 3, 4, 5];
+    return { kind: 'weekly', weekdays, hour: 20, closeHour: 19, skipHoliday: true };
+  }
   if (typeCode === 'HN') {
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
     return { kind: 'daily', hour: h, closeHour: h - 1, skipHoliday: true };
