@@ -100,7 +100,7 @@ export default function PlaceBet() {
       <p className="text-navy-200">ยอดแทงรวม ฿{satang(done.totalStake)} • ยอดเครดิตคงเหลือ ฿{satang(done.balance)}</p>
       <div className="mt-6 flex gap-3 justify-center">
         <Link to="/my-bets" className="bg-gold-500 text-navy-950 font-bold px-5 py-2.5 rounded-lg">ดูโพยของฉัน</Link>
-        <Link to={draw ? `/lotteries?market=${draw.lottery_type_id}:${draw.category_id || 0}` : '/lotteries'} className="border border-navy-600 px-5 py-2.5 rounded-lg">แทงรอบอื่น</Link>
+        <Link to={draw ? `/lotteries?type=${draw.lottery_type_id}` : '/lotteries'} className="border border-navy-600 px-5 py-2.5 rounded-lg">แทงรอบอื่น</Link>
       </div>
     </div>
   );
@@ -117,7 +117,7 @@ export default function PlaceBet() {
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Link to={`/lotteries?market=${draw.lottery_type_id}:${draw.category_id || 0}`} className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่นในหมวดนี้</Link>
+              <Link to={`/lotteries?type=${draw.lottery_type_id}`} className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่นในหมวดนี้</Link>
               <h1 className="text-xl font-bold text-white mt-1">{drawLabel(draw)}</h1>
               <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)}</div>
               <div className="text-sm mt-1">⏱️ ปิดรับโพย: {!closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>

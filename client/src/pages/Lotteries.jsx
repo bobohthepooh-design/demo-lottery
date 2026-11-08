@@ -8,32 +8,26 @@ const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิด�
 const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 export default function Lotteries() {
-  const [markets, setMarkets] = useState([]);
+  const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
   const [results, setResults] = useState([]);
   const [params] = useSearchParams();
-  const selMarket = params.get('market');
-  const selType = params.get('type'); // legacy link จากหน้าแรก
+  const selType = params.get('type');
 
   useEffect(() => {
-    api('/lottery/markets').then(r => setMarkets(r.markets)).catch(() => {});
+    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const q = `upcoming=1${selMarket ? `&market=${selMarket}` : selType ? `&type=${selType}` : ''}`;
+    const q = `upcoming=1${selType ? `&type=${selType}` : ''}`;
     api(`/lottery/draws?${q}`).then(r => setDraws(r.draws)).catch(() => {});
-  }, [selMarket, selType]);
+  }, [selType]);
 
-  // ผล 3 ครั้งล่าสุด — กรองตามตลาดที่เลือก (type + category)
-  const selM = markets.find(m => m.key === selMarket);
-  const selTypeCode = selM?.type_code || markets.find(m => String(m.type_id) === String(selType))?.type_code;
+  // ผล 3 ครั้งล่าสุด (กรองตามประเภทประเทศที่เลือกอยู่ ถ้ามี)
+  const selCode = types.find(t => String(t.id) === String(selType))?.code;
   const recentResults = results
-    .filter(r => {
-      if (selM) return r.type_code === selM.type_code && (selM.category_code ? r.category_code === selM.category_code : !r.category_code);
-      if (selTypeCode) return r.type_code === selTypeCode;
-      return true;
-    })
+    .filter(r => !selCode || r.type_code === selCode)
     .slice(0, 3);
 
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -109,12 +103,12 @@ export default function Lotteries() {
         </section>
       )}
 
-      {/* เมนูแยกตามตลาดหวยของแต่ละประเทศ/หมวด */}
+      {/* เมนูแยกตามประเทศ (3 ประเภทหลัก) */}
       <div className="flex flex-wrap items-center gap-2">
-        <Link to="/lotteries" className={menuCls(!selMarket && !selType)}>ทั้งหมด</Link>
-        {markets.map(m => (
-          <Link key={m.key} to={`/lotteries?market=${m.key}`} className={menuCls(selMarket === m.key)}>
-            {TYPE_EMOJI[m.type_code] ? `${TYPE_EMOJI[m.type_code]} ` : ''}{m.name_th}
+        <Link to="/lotteries" className={menuCls(!selType)}>ทั้งหมด</Link>
+        {types.map(t => (
+          <Link key={t.id} to={`/lotteries?type=${t.id}`} className={menuCls(selType == t.id)}>
+            {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
           </Link>
         ))}
       </div>

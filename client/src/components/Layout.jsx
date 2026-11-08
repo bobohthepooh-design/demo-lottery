@@ -18,12 +18,12 @@ export default function Layout() {
   const { user, balance, logout, isAdmin, mfaRequired } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [lotOpen, setLotOpen] = useState(false);
-  const [markets, setMarkets] = useState([]);
+  const [types, setTypes] = useState([]);
   const [now, setNow] = useState(() => new Date());
   const navigate = useNavigate();
 
   useEffect(() => {
-    api('/lottery/markets').then(r => setMarkets(r.markets)).catch(() => {});
+    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -67,10 +67,10 @@ export default function Layout() {
                   <div className="px-3 py-1 text-[10px] text-navy-400">เลือกตลาดหวย</div>
                   <Link to="/lotteries" onClick={() => setLotOpen(false)}
                     className="block px-3 py-2 text-sm text-navy-200 hover:bg-navy-700 hover:text-gold-300">ดูหวยทั้งหมด</Link>
-                  {markets.map(m => (
-                    <Link key={m.key} to={`/lotteries?market=${m.key}`} onClick={() => setLotOpen(false)}
+                  {types.map(t => (
+                    <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setLotOpen(false)}
                       className="block px-3 py-2 text-sm text-navy-200 hover:bg-navy-700 hover:text-gold-300">
-                      {TYPE_EMOJI[m.type_code] ? `${TYPE_EMOJI[m.type_code]} ` : ''}{m.name_th}
+                      {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
                     </Link>
                   ))}
                 </div>
@@ -115,10 +115,10 @@ export default function Layout() {
               className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
               หวยทั้งหมด
             </NavLink>
-            {markets.map(m => (
-              <Link key={m.key} to={`/lotteries?market=${m.key}`} onClick={() => setMenuOpen(false)}
+            {types.map(t => (
+              <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
                 className="block px-3 py-2 pl-6 rounded-lg text-sm text-navy-300 hover:bg-navy-800">
-                {TYPE_EMOJI[m.type_code] ? `${TYPE_EMOJI[m.type_code]} ` : ''}{m.name_th}
+                {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
               </Link>
             ))}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).map(n => (
