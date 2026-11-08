@@ -46,6 +46,7 @@ export default function Wallet() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // 'deposit' | 'withdraw' | null
   const [payMethod, setPayMethod] = useState('bank_transfer');
+  const [accountNo, setAccountNo] = useState('');
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -84,7 +85,7 @@ export default function Wallet() {
     }
     setBusy(true);
     try {
-      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, ...(modal === 'deposit' ? { paymentMethod: payMethod } : {}) } });
+      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, paymentMethod: payMethod, ...(accountNo ? { accountNo } : {}) } });
       setBalance(r.balance);
       setModal(null); setAmount('');
       load();
@@ -165,9 +166,9 @@ export default function Wallet() {
                   : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อน (เติมแล้ว ฿${satang(wd.deposited)})`}
               </div>
             )}
-            {modal === 'deposit' && (
+            {modal && (
               <div className="mb-4">
-                <div className="text-xs text-navy-400 mb-1.5">เลือกช่องทางเติมเครดิต (ระบบจำลอง):</div>
+                <div className="text-xs text-navy-400 mb-1.5">{modal === 'deposit' ? 'เลือกช่องทางเติมเครดิต' : 'เลือกช่องทางรับเงินถอน'} (ระบบจำลอง):</div>
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {DEPOSIT_METHODS.map(m => (
                     <button key={m.key} type="button" onClick={() => setPayMethod(m.key)}
@@ -176,6 +177,7 @@ export default function Wallet() {
                     </button>
                   ))}
                 </div>
+                {modal === 'deposit' ? (
                 <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300 space-y-1.5">
                   {payMethod === 'bank_transfer' && (
                     <>
@@ -203,6 +205,15 @@ export default function Wallet() {
                   )}
                   <div className="text-[11px] text-navy-400 pt-1 border-t border-navy-700">⚠️ ช่องทางทั้งหมดเป็นข้อมูลจำลอง — ระบบเติมเครดิตเข้าทันที ไม่เกี่ยวกับเงินจริง</div>
                 </div>
+                ) : (
+                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300 space-y-2">
+                  <div>กรอกเลขบัญชี/เบอร์ปลายทางที่ต้องการรับเงิน (จำลอง):</div>
+                  <input value={accountNo} onChange={e => setAccountNo(e.target.value)}
+                    placeholder={payMethod === 'bank_transfer' ? 'เลขบัญชีธนาคาร' : payMethod === 'qr_promptpay' ? 'เบอร์พร้อมเพย์' : 'เบอร์ TrueMoney'}
+                    className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
+                  <div className="text-[11px] text-navy-400">⚠️ ระบบจำลอง — เครดิตถูกหักจากกระเป๋าทันที ไม่มีการโอนเงินจริง</div>
+                </div>
+                )}
               </div>
             )}
             <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'}:</div>
