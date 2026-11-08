@@ -11,12 +11,41 @@ const TYPE_TH = {
 
 const PRESETS = [100, 500, 1000, 5000, 10000];
 
+const DEPOSIT_METHODS = [
+  { key: 'bank_transfer', icon: '🏦', name: 'โอนเงินเข้าธนาคาร', desc: 'โอนผ่านแอปธนาคาร' },
+  { key: 'qr_promptpay', icon: '📱', name: 'QR พร้อมเพย์', desc: 'สแกนจ่ายผ่านแอปธนาคาร' },
+  { key: 'truemoney', icon: '💳', name: 'TrueMoney Wallet', desc: 'สแกน/ชำระผ่าน TrueMoney' },
+];
+
+// QR ลายจำลองสำหรับ demo — ไม่ใช่ QR จริง สแกนไม่ได้
+function FakeQr() {
+  const n = 21;
+  const cells = [];
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const inFinder = (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
+    const on = inFinder ? true : ((x * 31 + y * 17 + ((x * y) % 7)) % 3 === 0);
+    cells.push(<rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={on ? '#1f2937' : '#ffffff'} />);
+  }
+  return (
+    <svg viewBox={`0 0 ${n} ${n}`} className="w-28 h-28 bg-white rounded-lg border border-navy-600 p-1">
+      {cells}
+      {[ [0,0],[n-7,0],[0,n-7] ].map(([fx,fy],i) => (
+        <g key={i}>
+          <rect x={fx} y={fy} width={7} height={7} fill="none" stroke="#1f2937" strokeWidth={1.4} />
+          <rect x={fx+1.5} y={fy+1.5} width={4} height={4} fill="#1f2937" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 export default function Wallet() {
   const { balance, setBalance } = useAuth();
   const [txs, setTxs] = useState([]);
   const [wd, setWd] = useState(null); // { deposited, won, withdrawn, withdrawable, unlocked }
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // 'deposit' | 'withdraw' | null
+  const [payMethod, setPayMethod] = useState('bank_transfer');
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -55,7 +84,7 @@ export default function Wallet() {
     }
     setBusy(true);
     try {
-      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt } });
+      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, ...(modal === 'deposit' ? { paymentMethod: payMethod } : {}) } });
       setBalance(r.balance);
       setModal(null); setAmount('');
       load();
@@ -134,6 +163,46 @@ export default function Wallet() {
                       : `ถอนได้ ฿${satang(wd.withdrawable)} — ยอดสุทธิหักเครดิตแถม (ได้รับอนุญาตจากแอดมิน)`
                     : `ถอนได้สูงสุด ฿${satang(wd.withdrawable)} — เฉพาะเงินรางวัลจากการถูกหวย (เครดิตโปรโมชั่น/เงินฝากถอนไม่ได้)`
                   : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อน (เติมแล้ว ฿${satang(wd.deposited)})`}
+              </div>
+            )}
+            {modal === 'deposit' && (
+              <div className="mb-4">
+                <div className="text-xs text-navy-400 mb-1.5">เลือกช่องทางเติมเครดิต (ระบบจำลอง):</div>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {DEPOSIT_METHODS.map(m => (
+                    <button key={m.key} type="button" onClick={() => setPayMethod(m.key)}
+                      className={`py-2 rounded-lg text-xs font-bold border transition ${payMethod === m.key ? 'bg-gold-500/20 border-gold-500 text-gold-300' : 'bg-navy-700 border-navy-600 text-navy-300 hover:border-gold-500/50'}`}>
+                      <div className="text-base">{m.icon}</div>{m.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300 space-y-1.5">
+                  {payMethod === 'bank_transfer' && (
+                    <>
+                      <div className="flex justify-between"><span>ธนาคาร</span><span className="text-white font-semibold">ธนาคารกสิกรไทย (ตัวอย่าง)</span></div>
+                      <div className="flex justify-between"><span>เลขบัญชี</span><span className="font-mono text-amber-600">xxx-x-xxxxx-x</span></div>
+                      <div className="flex justify-between"><span>ชื่อบัญชี</span><span className="text-white">Demo Lottery (DEMO)</span></div>
+                    </>
+                  )}
+                  {payMethod === 'qr_promptpay' && (
+                    <div className="flex items-center gap-3">
+                      <FakeQr />
+                      <div>
+                        <div className="text-white font-semibold mb-1">สแกน QR เพื่อชำระ</div>
+                        <div>พร้อมเพย์: <span className="font-mono text-amber-600">081-234-5678</span></div>
+                        <div className="text-navy-400">ชื่อ: Demo Lottery (DEMO)</div>
+                      </div>
+                    </div>
+                  )}
+                  {payMethod === 'truemoney' && (
+                    <>
+                      <div className="flex justify-between"><span>เบอร์ TrueMoney</span><span className="font-mono text-amber-600">081-234-5678</span></div>
+                      <div className="flex justify-between"><span>ชื่อผู้รับ</span><span className="text-white">Demo Lottery (DEMO)</span></div>
+                      <div className="text-navy-400">ชำระผ่านแอป TrueMoney Wallet</div>
+                    </>
+                  )}
+                  <div className="text-[11px] text-navy-400 pt-1 border-t border-navy-700">⚠️ ช่องทางทั้งหมดเป็นข้อมูลจำลอง — ระบบเติมเครดิตเข้าทันที ไม่เกี่ยวกับเงินจริง</div>
+                </div>
               </div>
             )}
             <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'}:</div>

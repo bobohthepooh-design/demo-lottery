@@ -64,16 +64,24 @@ router.get('/wallet', (req, res) => {
 });
 
 // เติม/ถอนเครดิตจำลอง (demo only — ไม่มีเงินจริง)
+const DEPOSIT_METHODS = {
+  bank_transfer: 'โอนเงินเข้าธนาคาร',
+  qr_promptpay: 'QR พร้อมเพย์',
+  truemoney: 'TrueMoney Wallet',
+};
 const walletActionSchema = z.object({
   direction: z.enum(['deposit', 'withdraw']),
   amount: z.number().int().positive(),
+  paymentMethod: z.enum(['bank_transfer', 'qr_promptpay', 'truemoney']).optional(),
 });
 router.post('/wallet/action', (req, res, next) => {
   try {
-    const { direction, amount } = walletActionSchema.parse(req.body);
+    const { direction, amount, paymentMethod } = walletActionSchema.parse(req.body);
     const result = wallet.memberWalletAction(req.user.id, {
       direction, amount,
-      description: direction === 'deposit' ? 'สมาชิกเติมเครดิตจำลอง' : 'สมาชิกถอนเครดิตจำลอง',
+      description: direction === 'deposit'
+        ? `เติมเครดิต — ${DEPOSIT_METHODS[paymentMethod] || 'ช่องทางอื่น'} (DEMO)`
+        : 'ถอนเครดิตจำลอง',
     });
     res.json({ ok: true, ...result });
   } catch (e) { next(e); }
