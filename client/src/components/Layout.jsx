@@ -5,7 +5,6 @@ import MfaModal from './MfaModal.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
 import ResultsTicker from './ResultsTicker.jsx';
 import ToastHost from './ToastHost.jsx';
-import { FlagIcon } from './ResultLine.jsx';
 import { typeAccent } from '../typeAccent.js';
 import { useEffect, useState } from 'react';
 
@@ -70,7 +69,7 @@ export default function Layout() {
               return (
                 <Link key={t.id} to={`/lotteries?type=${t.id}`}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition inline-flex items-center gap-1.5 shadow-sm ${ac.chip} ${selType === String(t.id) ? 'ring-2 ring-offset-1 ring-navy-400 font-black' : 'hover:shadow-md hover:-translate-y-0.5'}`}>
-                  <FlagIcon code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
+                  <span className={`w-2.5 h-2.5 rounded-full ${ac.dot} ring-2 ring-white/70 shadow-inner`} /> {t.name_th}
                 </Link>
               );
             })}
@@ -118,7 +117,7 @@ export default function Layout() {
               return (
                 <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold border shadow-sm ${ac.chip} ${selType === String(t.id) ? 'ring-2 ring-offset-1 ring-navy-400 font-black' : ''}`}>
-                  <FlagIcon code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
+                  <span className={`w-2.5 h-2.5 rounded-full ${ac.dot} ring-2 ring-white/70 shadow-inner`} /> {t.name_th}
                 </Link>
               );
             })}
