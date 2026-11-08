@@ -33,16 +33,17 @@ function countdownText(closeAtSql, now) {
 
 // แถวรอบหวยของแต่ละประเทศ/หมวด — แสดงเวลาออกรางวัล + นับถอยหลังปิดรับ
 function DrawLine({ d, now }) {
-  const closed = d.status !== 'open';
+  const isOpen = d.status === 'open';
+  const isScheduled = d.status === 'scheduled';
   return (
-    <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+    <div className={`bg-navy-800/70 border rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap ${isOpen ? 'border-navy-700/60' : 'border-navy-700/40 opacity-75'}`}>
       <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
       <span className={`text-[11px] font-semibold shrink-0 ${typeAccent(d.type_code).text}`}>
         {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
       </span>
       <span className="text-[10px] text-navy-400 shrink-0">ออก {fmtDateTime(d.draw_at)}</span>
-      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${closed ? 'bg-navy-700 text-navy-400' : 'bg-gold-500/15 text-gold-300'}`}>
-        {closed ? 'ปิดรับแล้ว' : `⏳ ${countdownText(d.close_at, now)}`}
+      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${isOpen ? 'bg-gold-500/15 text-gold-600' : isScheduled ? 'bg-lav-100 text-lav-500 border border-lav-100' : 'bg-navy-100 text-navy-400'}`}>
+        {isOpen ? `⏳ ${countdownText(d.close_at, now)}` : isScheduled ? '🗓️ กำหนดการ' : 'ปิดรับแล้ว'}
       </span>
     </div>
   );

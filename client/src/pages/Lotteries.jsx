@@ -34,15 +34,23 @@ export default function Lotteries() {
   const openOthers = otherDraws.filter(isLive);
   const upcomingOthers = otherDraws.filter(d => !isLive(d));
 
-  const DrawCard = ({ d, featured }) => {
+  const DrawCard = ({ d, featured, soft }) => {
     const live = isLive(d);
     const ac = typeAccent(d.type_code);
+    const cardCls = featured
+      ? 'border-green-500/60 animate-online-border bg-gradient-to-b from-navy-800 to-navy-900'
+      : soft
+        ? 'border-navy-600/50 bg-gradient-to-b from-navy-800/50 to-navy-900/50'
+        : 'border-navy-700 hover:border-navy-500 bg-gradient-to-b from-navy-800 to-navy-900';
     return (
-    <div className={`bg-gradient-to-b from-navy-800 to-navy-900 border rounded-xl p-5 pt-4 hoverable ${featured ? 'border-green-500/60 animate-online-border' : 'border-navy-700 hover:border-navy-500'}`}>
-      <div className={`h-1 w-10 rounded-full mb-2 ${featured ? 'bg-green-400' : ac.bar}`} />
+    <div className={`${cardCls} border rounded-xl p-5 pt-4 hoverable`}>
+      <div className={`h-1 w-10 rounded-full mb-2 ${featured ? 'bg-green-400' : soft ? `${ac.bar} opacity-40` : ac.bar}`} />
       <div className="flex items-start justify-between">
         <div>
-          <div className="font-bold text-white text-lg leading-snug">{drawLabel(d)}</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ac.chip}`}>{d.type_name_th}</span>
+          </div>
+          <div className="font-bold text-navy-950 text-lg leading-snug mt-1">{drawLabel(d)}</div>
           <div className="text-xs text-navy-400 mt-0.5">{d.draw_code}</div>
         </div>
         {featured ? (
@@ -93,7 +101,7 @@ export default function Lotteries() {
           </h2>
           <p className="text-xs text-navy-400 mb-3">รอบเหล่านี้ยังรับแทงได้ แต่ไม่ใช่รอบหลักด้านบน</p>
           <div className="grid md:grid-cols-2 gap-4">
-            {openOthers.map(d => <DrawCard key={d.id} d={d} />)}
+            {openOthers.map(d => <DrawCard key={d.id} d={d} soft />)}
           </div>
         </section>
       )}
