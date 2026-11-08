@@ -124,34 +124,35 @@ export default function Home() {
         </section>
       )}
 
-      {/* Lottery types */}
+      {/* ประเภทหวยที่รองรับ + รอบที่เปิดรับ/นับถอยหลังของแต่ละประเทศ */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4">ประเภทหวยที่รองรับ</h2>
         <div className="grid sm:grid-cols-3 gap-4">
-          {types.map(t => (
-            <Link key={t.id} to={`/lotteries?type=${t.id}`}
-              className="bg-navy-800 border border-navy-700 rounded-xl p-5 hover:border-gold-500/50 transition group">
-              <div className="text-3xl mb-2">{t.code === 'TH' ? '🇹🇭' : t.code === 'LA' ? '🇱🇦' : '🇻🇳'}</div>
-              <div className="font-bold text-white group-hover:text-gold-300">{t.name_th}</div>
-              <div className="text-xs text-navy-300 mt-1">{t.description}</div>
-            </Link>
-          ))}
+          {types.map(t => {
+            const typeDraws = openByCategory.filter(d => d.type_code === t.code);
+            return (
+              <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-col">
+                <Link to={`/lotteries?type=${t.id}`} className="group">
+                  <div className="text-3xl mb-1">{t.code === 'TH' ? '🇹🇭' : t.code === 'LA' ? '🇱🇦' : '🇻🇳'}</div>
+                  <div className="font-bold text-white group-hover:text-gold-300">{t.name_th}</div>
+                  <div className="text-xs text-navy-300 mt-1 mb-3">{t.description}</div>
+                </Link>
+                {typeDraws.length > 0 ? (
+                  <div className="space-y-1 mt-auto">
+                    {typeDraws.map(d => <DrawLine key={d.id} d={d} now={now} />)}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-navy-500 mt-auto">ไม่มีรอบที่เปิดรับ</div>
+                )}
+              </div>
+            );
+          })}
           {!types.length && <div className="text-navy-300">กำลังโหลด...</div>}
         </div>
+        <div className="mt-3 text-right">
+          <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
+        </div>
       </section>
-
-      {/* รอบหวยที่เปิดรับ — นับถอยหลังปิดรับของแต่ละประเทศ */}
-      {openByCategory.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">รอบหวยที่เปิดรับ</h2>
-            <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูทั้งหมด →</Link>
-          </div>
-          <div className="space-y-1">
-            {openByCategory.map(d => <DrawLine key={d.id} d={d} now={now} />)}
-          </div>
-        </section>
-      )}
 
     </div>
   );
