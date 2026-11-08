@@ -5,7 +5,7 @@ import { getDb, tx } from './index.js';
  *
  * หวยไทย:      รางวัลที่ 1 (6 ตัว) | เลขหน้า 3 ตัว | เลขท้าย 3 ตัวบน | เลขท้าย 2 ตัว
  * หวยลาว:      เลขท้าย 4 ตัว | เลขท้าย 3 ตัว | เลขท้าย 2 ตัว
- * หวยลาวพัฒนา: เลขท้าย 2 ตัว (1 ประเภท — ผลมี 5 รางวัล)
+ * หวยลาวพัฒนา: เลข 3 ตัวบน + เลข 2 ตัวล่าง (ค่ำ จ–ศ 20:30 / เช้า ทุกวัน 09:00)
  * ฮานอยทุกหมวด: เลข 4 ตัว | เลข 3 ตัวบน | เลข 2 ตัวบน | เลข 2 ตัวล่าง
  *
  * match_config: { source, mode } — source อ้าง field ใน winning_numbers
@@ -31,7 +31,8 @@ export function seedRulesV2() {
     };
 
     const LA = cat('LA', 'LA', 'หวยลาว', 'mon-fri');
-    const LAD = cat('LA', 'LAD', 'หวยลาวพัฒนา 5/45', 'mon/wed/fri');
+    const LAD = cat('LA', 'LAD', 'หวยลาวพัฒนา', 'mon-fri 20:30');
+    const LADAM = cat('LA', 'LADAM', 'หวยลาวพัฒนาเช้า', 'daily 09:00');
     const HNS = cat('HN', 'HNS', 'ฮานอยเฉพาะกิจ', 'special');
     const HNP = cat('HN', 'HNP', 'ฮานอยพิเศษ', 'special');
     const HNN = cat('HN', 'HNN', 'ฮานอยปกติ', 'daily');
@@ -41,7 +42,7 @@ export function seedRulesV2() {
     const TH = tid('TH'), LA_ID = tid('LA'), HN = tid('HN');
     // sync draw_pattern ของ category ที่มีอยู่แล้ว (INSERT OR IGNORE ไม่ update)
     d.prepare(`UPDATE lottery_categories SET draw_pattern='mon-fri' WHERE code='LA' AND lottery_type_id=?`).run(LA_ID);
-    d.prepare(`UPDATE lottery_categories SET name_th='หวยลาวพัฒนา 5/45', draw_pattern='mon/wed/fri' WHERE code='LAD' AND lottery_type_id=?`).run(LA_ID);
+    d.prepare(`UPDATE lottery_categories SET name_th='หวยลาวพัฒนา', draw_pattern='mon-fri 20:30' WHERE code='LAD' AND lottery_type_id=?`).run(LA_ID);
 
     // ---------- ปิดกติกาเดิมที่ยัง active (rename กัน unique index ชน) ----------
     d.prepare(`UPDATE lottery_rules SET is_active = 0, bet_type = bet_type || '_old'
@@ -63,9 +64,14 @@ export function seedRulesV2() {
     push(LA_ID, LA, 'last3', 'เลขท้าย 3 ตัว', 3, 'last3', 'exact',  900);
     push(LA_ID, LA, 'last2', 'เลขท้าย 2 ตัว', 2, 'last2', 'exact',  100);
 
-    // ===== หวยลาวพัฒนา 5/45 (LAD) — เลือก 5 เลขจาก 1-45 ออก จ/พ/ศ =====
-    // ผล: { numbers: ['12','7','34','19','45'] } — ตรงครบทั้ง 5 ตัวจ่ายใหญ่
-    push(LA_ID, LAD, 'pattana5', 'สลากพัฒนา 5/45', 0, 'numbers', 'set5', 1000);
+    // ===== หวยลาวพัฒนา (LAD) — ค่ำ จ–ศ 20:30 | เลข 3 ตัวบน + 2 ตัวล่าง =====
+    // ผล: { main:'123456', top3:'456', bottom2:'56' }
+    push(LA_ID, LAD, 'top3',    'เลข 3 ตัวบน',  3, 'top3',    'exact',  900);
+    push(LA_ID, LAD, 'bottom2', 'เลข 2 ตัวล่าง', 2, 'bottom2', 'exact',  100);
+
+    // ===== หวยลาวพัฒนาเช้า (LADAM) — ทุกวัน 09:00 ตลาดแยก =====
+    push(LA_ID, LADAM, 'top3',    'เลข 3 ตัวบน',  3, 'top3',    'exact',  900);
+    push(LA_ID, LADAM, 'bottom2', 'เลข 2 ตัวล่าง', 2, 'bottom2', 'exact',  100);
 
     // ===== ฮานอย (HN) — กติกาเดียวกันทุก category =====
     // ผล: { main:'123456', num4:'3456', top3:'456', top2:'56', bottom2:'78' }

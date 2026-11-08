@@ -24,11 +24,13 @@ const LA = {
   ],
 };
 
+// หวยลาวพัฒนา (ค่ำ/เช้า) — เลข 3 ตัวบน + 2 ตัวล่าง
 const LAD = {
-  hero: 'numbers',
+  hero: 'main',
   fields: [
-    // สลากพัฒนา 5/45 — ผลคือเลขที่ออก 5 ตัว (1-45) คั่นด้วย comma
-    { key: 'numbers', label: 'เลขที่ออก (5 ตัว)', short: '5ตัว', set5: true },
+    { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
+    { key: 'top3',    label: 'เลข 3 ตัวบน',       short: '3บน',    digits: 3, prizes: 1 },
+    { key: 'bottom2', label: 'เลข 2 ตัวล่าง',     short: '2ล่าง',  digits: 2, prizes: 1 },
   ],
 };
 
@@ -44,7 +46,7 @@ const HN = {
 };
 
 // เฉพาะหมวด LA ที่เป็นหวยลาวพัฒนาใช้ schema ต่างจากหวยลาวทั่วไป
-const BY_CATEGORY = { 'LA:LAD': LAD };
+const BY_CATEGORY = { 'LA:LAD': LAD, 'LA:LADAM': LAD };
 const BY_TYPE = { TH, LA, HN };
 
 export function resultSchema(typeCode, categoryCode) {

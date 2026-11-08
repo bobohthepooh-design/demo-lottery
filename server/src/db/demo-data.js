@@ -5,8 +5,9 @@ import { getDb } from './index.js';
  *
  * ตารางออกผลรางวัลจริง (เวลาประเทศไทย):
  *  - หวยไทย:        วันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 (ปิดรับ 14:00)
- *  - หวยลาว:        จันทร์–ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
- *  - ลาวพัฒนา 5/45: จันทร์/พุธ/ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
+ *  - หวยลาว:            จันทร์–ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
+ *  - ลาวพัฒนา (ค่ำ):   จันทร์–ศุกร์ เวลา 20:30 (ปิดรับ 19:30)
+ *  - ลาวพัฒนาเช้า:      ทุกวัน เวลา 09:00 (ปิดรับ 08:00) — ตลาดแยกต่างหาก
  *  - ฮานอยเฉพาะกิจ:  ทุกวัน เวลา 16:00 (ปิดรับ 15:00)
  *  - ฮานอยพิเศษ:     ทุกวัน เวลา 17:00 (ปิดรับ 16:00)
  *  - ฮานอยปกติ:      ทุกวัน เวลา 18:00 (ปิดรับ 17:00)
@@ -20,9 +21,9 @@ function toUtcSql(localStr) {
   const d = new Date(localStr.replace(' ', 'T'));
   return d.toISOString().slice(0, 19).replace('T', ' ');
 }
-function localDateSql(d, hour) {
+function localDateSql(d, hour, minute = 0) {
   const p = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(hour)}:00:00`;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(hour)}:${p(minute)}:00`;
 }
 const ymdKey = (d) => {
   const p = n => String(n).padStart(2, '0');
@@ -58,9 +59,9 @@ const isHoliday = (d) => TH_HOLIDAYS.has(ymdKey(d));
 function scheduleFor(typeCode, catCode) {
   if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
   if (typeCode === 'LA') {
-    // ลาวพัฒนา 5/45 ออกเฉพาะ จ/พ/ศ — หวยลาวหลักออก จ–ศ
-    const weekdays = catCode === 'LAD' ? [1, 3, 5] : [1, 2, 3, 4, 5];
-    return { kind: 'weekly', weekdays, hour: 20, closeHour: 19, skipHoliday: true };
+    if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 30, closeHour: 19, closeMinute: 30, skipHoliday: true }; // ค่ำ จ–ศ
+    if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0, skipHoliday: true }; // เช้า ทุกวัน
+    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true }; // หวยลาวหลัก จ–ศ
   }
   if (typeCode === 'HN') {
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
@@ -80,9 +81,9 @@ function occurrences(sch, count = UPCOMING_PER_TARGET) {
     if (sch.skipHoliday && isHoliday(day)) continue;
     if (sch.kind === 'monthly' && !sch.days.includes(day.getDate())) continue;
     if (sch.kind === 'weekly' && !sch.weekdays.includes(day.getDay())) continue;
-    const close = new Date(day); close.setHours(sch.closeHour, 0, 0);
+    const close = new Date(day); close.setHours(sch.closeHour, sch.closeMinute || 0, 0);
     if (close <= new Date()) continue; // เลยเวลาปิดรับแล้ว
-    const draw = new Date(day); draw.setHours(sch.hour, 0, 0);
+    const draw = new Date(day); draw.setHours(sch.hour, sch.minute || 0, 0);
     out.push({ draw, close });
   }
   return out;
@@ -112,10 +113,10 @@ export function seedDemoDraws() {
         const drawCode = drawCodeFor(t.code, c.code, draw);
         if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
         const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        const status = toUtcSql(localDateSql(close, sch.closeHour)) > nowUtc ? 'open' : 'scheduled';
+        const status = toUtcSql(localDateSql(close, sch.closeHour, sch.closeMinute)) > nowUtc ? 'open' : 'scheduled';
         db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
                     VALUES (?, ?, ?, ?, ?, ?)`)
-          .run(t.id, c.id, drawCode, toUtcSql(localDateSql(draw, sch.hour)), toUtcSql(localDateSql(close, sch.closeHour)), status);
+          .run(t.id, c.id, drawCode, toUtcSql(localDateSql(draw, sch.hour, sch.minute)), toUtcSql(localDateSql(close, sch.closeHour, sch.closeMinute)), status);
         created++;
       }
     }
