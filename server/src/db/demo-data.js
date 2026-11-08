@@ -2,7 +2,15 @@ import { getDb } from './index.js';
 
 /**
  * สร้างรอบหวยตัวอย่างสำหรับ Demo — idempotent (เช็ค draw_code ก่อนสร้าง)
- * สร้างรอบให้ทุก lottery_category (หวยลาว/ลาวพัฒนา, ฮานอย 4 เฉพาะกิจ)
+ *
+ * ตารางออกผลรางวัลจริง (เวลาประเทศไทย):
+ *  - หวยไทย:        วันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 (ปิดรับ 14:00)
+ *  - หวยลาว/ลาวพัฒนา: จันทร์ พุธ ศุกร์ เวลา 20:00 (ปิดรับ 19:00)
+ *  - ฮานอยเฉพาะกิจ:  ทุกวัน เวลา 16:00 (ปิดรับ 15:00)
+ *  - ฮานอยพิเศษ:     ทุกวัน เวลา 17:00 (ปิดรับ 16:00)
+ *  - ฮานอยปกติ:      ทุกวัน เวลา 18:00 (ปิดรับ 17:00)
+ *  - ฮานอย VIP:      ทุกวัน เวลา 19:00 (ปิดรับ 18:00)
+ *  - ข้ามวันหยุดราชการไทย (ยกเว้นหวยไทยที่ออก 1/16 เสมอ)
  *
  * draw_at/close_at เป็นเวลา local ของ server → แปลงเป็น UTC ก่อนเก็บ
  */
@@ -11,95 +19,98 @@ function toUtcSql(localStr) {
   const d = new Date(localStr.replace(' ', 'T'));
   return d.toISOString().slice(0, 19).replace('T', ' ');
 }
-function localSql(offsetMs) {
-  const d = new Date(Date.now() + offsetMs);
-  const p = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-}
-
-const schedule = [
-  { drawInH: 2.5, closeInH: 2.0, status: 'open', seq: '01' },
-  { drawInH: 26.5, closeInH: 26.0, status: 'open', seq: '02' },
-  { drawInH: 98.5, closeInH: 98.0, status: 'scheduled', seq: '03' },
-];
-
-// หวยรัฐบาลไทยออกทุกวันที่ 1 และ 16 ของเดือน — ออกรางวัล 15:00 น. (เวลาท้องถิ่น)
-const TH_DRAW_HOUR = 15;
-const TH_CLOSE_HOUR = 14;
-const TH_UPCOMING = 4; // สร้างล่วงหน้า 4 งวด (1, 16 ของเดือนถัด ๆ ไป)
-
-function thaiDrawDates() {
-  const dates = [];
-  const now = new Date();
-  let y = now.getFullYear(), m = now.getMonth();
-  while (dates.length < TH_UPCOMING) {
-    for (const day of [1, 16]) {
-      const dt = new Date(y, m, day, TH_DRAW_HOUR, 0, 0);
-      if (dt > now) dates.push(dt);
-      if (dates.length >= TH_UPCOMING) break;
-    }
-    m += 1; if (m > 11) { m = 0; y += 1; }
-  }
-  return dates;
-}
-
 function localDateSql(d, hour) {
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(hour)}:00:00`;
+}
+const ymdKey = (d) => {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+// วันหยุดราชการไทย — แก้ไข/เพิ่มได้ที่นี่ (รวมวันหยุดยาวนักขัตฤกษ์)
+const TH_HOLIDAYS = new Set([
+  // 2026
+  '2026-01-01', '2026-02-16',                       // ปีใหม่, มาฆบูชา
+  '2026-04-06',                                     // จักรี
+  '2026-04-13', '2026-04-14', '2026-04-15',         // สงกรานต์
+  '2026-05-01', '2026-05-04',                       // แรงงาน, ฉัตรมงคล
+  '2026-05-31',                                     // วิสาขบูชา
+  '2026-06-03',                                     // วันแม่แห่งชาติ
+  '2026-07-28', '2026-07-29',                       // วันเฉลิมพระชนมพรรษา ร.10, อาสาฬหบูชา
+  '2026-10-13', '2026-10-23',                       // วันปิยมหาราช, จุฬาลงกรณ์
+  '2026-12-05', '2026-12-07',                       // วันพ่อแห่งชาติ, วันพระราชทานดินแดน
+  // 2027
+  '2027-01-01', '2027-03-06',                       // ปีใหม่, มาฆบูชา
+  '2027-04-06',                                     // จักรี
+  '2027-04-13', '2027-04-14', '2027-04-15',         // สงกรานต์
+  '2027-05-01', '2027-05-04',                       // แรงงาน, ฉัตรมงคล
+  '2027-05-20',                                     // วิสาขบูชา
+  '2027-06-03',                                     // วันแม่แห่งชาติ
+  '2027-07-19', '2027-07-28',                       // อาสาฬหบูชา, วัน ร.10
+  '2027-10-13', '2027-10-23',                       // ปิยมหาราช, จุฬาลงกรณ์
+  '2027-12-05', '2027-12-07',                       // วันพ่อ, วันดินแดน
+]);
+const isHoliday = (d) => TH_HOLIDAYS.has(ymdKey(d));
+
+// ตารางเวลาตามประเภท/หมวด — kind: monthly(วันที่ของเดือน) | weekly(วันในสัปดาห์) | daily
+function scheduleFor(typeCode, catCode) {
+  if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
+  if (typeCode === 'LA') return { kind: 'weekly', weekdays: [1, 3, 5], hour: 20, closeHour: 19, skipHoliday: true }; // จ/พ/ศ
+  if (typeCode === 'HN') {
+    const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
+    return { kind: 'daily', hour: h, closeHour: h - 1, skipHoliday: true };
+  }
+  return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true };
+}
+
+const UPCOMING_PER_TARGET = 5;
+
+// สร้างวันที่ออกรางวัลลำดับถัดไป count ครั้ง (ข้ามวันที่ผ่านมาแล้ว/วันหยุด)
+function occurrences(sch, count = UPCOMING_PER_TARGET) {
+  const out = [];
+  const base = new Date(); base.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 400 && out.length < count; i++) {
+    const day = new Date(base); day.setDate(base.getDate() + i);
+    if (sch.skipHoliday && isHoliday(day)) continue;
+    if (sch.kind === 'monthly' && !sch.days.includes(day.getDate())) continue;
+    if (sch.kind === 'weekly' && !sch.weekdays.includes(day.getDay())) continue;
+    const close = new Date(day); close.setHours(sch.closeHour, 0, 0);
+    if (close <= new Date()) continue; // เลยเวลาปิดรับแล้ว
+    const draw = new Date(day); draw.setHours(sch.hour, 0, 0);
+    out.push({ draw, close });
+  }
+  return out;
+}
+
+function drawCodeFor(typeCode, catCode, dt) {
+  const p = n => String(n).padStart(2, '0');
+  const yyyymmdd = `${dt.getFullYear()}${p(dt.getMonth() + 1)}${p(dt.getDate())}`;
+  if (typeCode === 'TH') {
+    const yyyymm = `${dt.getFullYear()}${p(dt.getMonth() + 1)}`;
+    return `TH-DEMO-${yyyymm}-${p(dt.getDate())}`; // รูปแบบเดิม TH-DEMO-202611-16
+  }
+  return `${catCode}-DEMO-${yyyymmdd}`;
 }
 
 export function seedDemoDraws() {
   const db = getDb();
   const types = db.prepare('SELECT id, code FROM lottery_types WHERE is_active = 1').all();
   let created = 0;
-  const ymd = (() => { const d = new Date(); const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`; })();
 
   for (const t of types) {
     const cats = db.prepare('SELECT id, code FROM lottery_categories WHERE lottery_type_id = ?').all(t.id);
     const targets = cats.length ? cats : [{ id: null, code: t.code }];
-
-    // หวยไทย: ออกทุกวันที่ 1 และ 16 ของเดือน
-    if (t.code === 'TH') {
-      for (const c of targets) {
-        for (const dt of thaiDrawDates()) {
-          const p = n => String(n).padStart(2, '0');
-          const yyyymm = `${dt.getFullYear()}${p(dt.getMonth() + 1)}`;
-          const drawCode = `TH-DEMO-${yyyymm}-${p(dt.getDate())}`;
-          if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
-          const drawAt = toUtcSql(localDateSql(dt, TH_DRAW_HOUR));
-          const closeAt = toUtcSql(localDateSql(dt, TH_CLOSE_HOUR));
-          const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-          const status = closeAt > nowUtc ? 'open' : 'scheduled';
-          db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
-                      VALUES (?, ?, ?, ?, ?, ?)`)
-            .run(t.id, c.id, drawCode, drawAt, closeAt, status);
-          created++;
-        }
-      }
-      continue;
-    }
-
     for (const c of targets) {
-      // นับรอบที่ยังไม่ถึงเวลาปิด — สร้างเพิ่มเฉพาะเมื่อมีไม่ครบ schedule.length รอบ
-      // (idempotent สำหรับการรันอัตโนมัติทุกวัน)
-      const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-      const upcoming = db.prepare(`SELECT COUNT(*) c FROM lottery_draws
-        WHERE lottery_type_id = ? AND COALESCE(category_id,0) = COALESCE(?,0)
-          AND status IN ('scheduled','open') AND close_at > ?`)
-        .get(t.id, c.id, nowUtc).c;
-      let need = Math.max(0, schedule.length - upcoming);
-      for (const s of schedule) {
-        if (need <= 0) break;
-        const seq = String(upcoming + (schedule.length - need) + 1).padStart(2, '0');
-        need--;
-        const drawCode = `${c.code}-DEMO-${ymd}-${seq}`;
+      const sch = scheduleFor(t.code, c.code);
+      for (const { draw, close } of occurrences(sch)) {
+        const drawCode = drawCodeFor(t.code, c.code, draw);
         if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
-        const drawAt = toUtcSql(localSql(s.drawInH * 3600e3));
-        const closeAt = toUtcSql(localSql(s.closeInH * 3600e3));
-        const status = closeAt > new Date().toISOString().slice(0, 19).replace('T', ' ') ? s.status : 'scheduled';
+        const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const status = toUtcSql(localDateSql(close, sch.closeHour)) > nowUtc ? 'open' : 'scheduled';
         db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
                     VALUES (?, ?, ?, ?, ?, ?)`)
-          .run(t.id, c.id, drawCode, drawAt, closeAt, status);
+          .run(t.id, c.id, drawCode, toUtcSql(localDateSql(draw, sch.hour)), toUtcSql(localDateSql(close, sch.closeHour)), status);
         created++;
       }
     }
