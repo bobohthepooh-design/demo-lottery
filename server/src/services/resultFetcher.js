@@ -118,6 +118,27 @@ export async function fetchHanoiResult() {
   };
 }
 
+// ---------- LA: หวยลาวหลัก (laodl.com public API) ----------
+export async function fetchLaoResult() {
+  const r = await fetch('https://laodl.com/api/website/laolot/WinPrizeHistory?type=1',
+    { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
+  if (!r.ok) throw new Error(`LA HTTP ${r.status}`);
+  const j = await r.json();
+  const row = (j?.resultData || []).find(x => x.winNumber && x.roundStatus === 0);
+  if (!row) throw new Error('LA: no result yet');
+  const w = String(row.winNumber).replace(/\D/g, '');
+  if (w.length < 4) throw new Error('LA: bad winNumber');
+  return {
+    date: String(row.roundDate).slice(0, 10),
+    winning: {
+      main: w,
+      last4: w.slice(-4),
+      last3: w.slice(-3),
+      last2: w.slice(-2),
+    },
+  };
+}
+
 // ---------- matching & settle ----------
 function drawLocalDate(draw) {
   // draw_at เก็บเป็น UTC — วันออกรางวัลตามเวลาไทย (UTC+7) ตรงกับวันที่ UTC สำหรับทุกรอบของเรา
@@ -142,13 +163,15 @@ export async function autoSettleResults() {
   const draws = pendingDraws();
   if (!draws.length) return out;
 
-  let thai = null, hanoi = null;
+  let thai = null, hanoi = null, lao = null;
   try { thai = await fetchThaiResult(); } catch (e) { out.errors.push(`TH fetch: ${e.message}`); }
   try { hanoi = await fetchHanoiResult(); } catch (e) { out.errors.push(`HN fetch: ${e.message}`); }
+  try { lao = await fetchLaoResult(); } catch (e) { out.errors.push(`LA fetch: ${e.message}`); }
 
   for (const d of draws) {
     let src = null, srcLabel = d.type_code;
     if (d.type_code === 'TH') src = thai;
+    else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(laodl)'; }
     else if (d.type_code === 'HN') {
       if (d.cat_code === 'HNN') { src = hanoi; srcLabel = 'HN(XSMB)'; }
       else { const g = generateHanoiResult(d.draw_code); src = { winning: g.winning, date: drawLocalDate(d) }; srcLabel = 'HN(gen)'; }
@@ -176,7 +199,8 @@ export async function fetchResultForDraw(drawId) {
   let src = null;
   if (draw.type_code === 'TH') src = await fetchThaiResult();
   else if (draw.type_code === 'HN') src = await hanoiResultFor(draw);
-  else throw new HttpError(400, 'หวยลาวยังไม่มีแหล่งข้อมูลอัตโนมัติ — กรุณากรอกผลเอง');
+  else if (draw.type_code === 'LA' && draw.category_code === 'LA') src = await fetchLaoResult();
+  else throw new HttpError(400, 'หวยลาวพัฒนายังไม่มีแหล่งข้อมูลอัตโนมัติ — กรุณากรอกผลเอง');
   if (src.date && drawLocalDate(draw) !== src.date) {
     throw new HttpError(409, `ผลที่ดึงได้เป็นของวันที่ ${src.date} ไม่ตรงกับรอบนี้ (${drawLocalDate(draw)})`);
   }
