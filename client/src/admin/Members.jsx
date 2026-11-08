@@ -47,7 +47,7 @@ export default function AdminMembers() {
                 <td className="px-4 py-3 text-xs text-gold-300">{m.roles.join(', ')}</td>
                 <td className="px-4 py-3 text-right text-gold-300 font-bold">฿{satang(m.balance)}</td>
                 <td className="px-4 py-3"><span className={m.status === 'active' ? 'text-green-400' : 'text-red-400'}>{m.status}</span></td>
-                <td className="px-4 py-3 text-xs">{m.mfaEnabled ? '✅' : '—'}</td>
+                <td className="px-4 py-3 text-xs">{m.mfaEnabled ? '✅' : '—'}{m.withdrawUnlocked ? ' 💸' : ''}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <button onClick={() => setEdit({ ...m })} className="text-gold-400 text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
@@ -73,6 +73,14 @@ export default function AdminMembers() {
                   className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
                   <option value="active">active</option><option value="locked">locked</option><option value="disabled">disabled</option>
                 </select>
+              </div>
+              <div className="flex items-start gap-2 bg-navy-900/60 border border-navy-700 rounded-lg p-3">
+                <input type="checkbox" id="wd-unlock" checked={!!edit.withdrawUnlocked}
+                  onChange={e => setEdit({ ...edit, withdrawUnlocked: e.target.checked })}
+                  className="mt-0.5 accent-gold-500" />
+                <label htmlFor="wd-unlock" className="text-xs text-navy-200 leading-relaxed">
+                  💸 <b>อนุญาตให้ถอนเครดิต</b> — admin กำหนดให้สมาชิกคนนี้ถอนได้เต็มยอดคงเหลือโดยไม่ต้องเช็คเงื่อนไขเงินฝาก/เงินรางวัล
+                </label>
               </div>
               <div>
                 <label className="text-xs text-navy-300">รีเซ็ตรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label>

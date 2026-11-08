@@ -73,7 +73,9 @@ export default function Wallet() {
         {wd && (
           <div className={`text-xs mt-3 ${wd.unlocked ? 'text-green-400' : 'text-amber-300'}`}>
             {wd.unlocked
-              ? `✅ ถอนได้ ฿${satang(wd.withdrawable)} (จากเงินรางวัล)`
+              ? wd.override
+                ? `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — ถอนได้เต็มยอด ฿${satang(wd.withdrawable)}`
+                : `✅ ถอนได้ ฿${satang(wd.withdrawable)} (จากเงินรางวัล)`
               : `🔒 ถอนเงินได้หลังเติมเครดิตครบ ฿100 — เติมแล้ว ฿${satang(wd.deposited)}`}
           </div>
         )}
@@ -116,7 +118,9 @@ export default function Wallet() {
             {modal === 'withdraw' && wd && (
               <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
                 {wd.unlocked
-                  ? `ถอนได้สูงสุด ฿${satang(wd.withdrawable)} — เฉพาะเงินรางวัลจากการถูกหวย (เครดิตโปรโมชั่น/เงินฝากถอนไม่ได้)`
+                  ? wd.override
+                    ? `ถอนได้เต็มยอด ฿${satang(wd.withdrawable)} — ได้รับอนุญาตจากแอดมิน`
+                    : `ถอนได้สูงสุด ฿${satang(wd.withdrawable)} — เฉพาะเงินรางวัลจากการถูกหวย (เครดิตโปรโมชั่น/เงินฝากถอนไม่ได้)`
                   : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อน (เติมแล้ว ฿${satang(wd.deposited)})`}
               </div>
             )}

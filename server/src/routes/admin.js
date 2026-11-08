@@ -21,7 +21,8 @@ function memberDto(u) {
   const w = db().prepare('SELECT balance FROM virtual_wallets WHERE user_id = ?').get(u.id);
   const roles = db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(u.id).map(r=>r.name);
   return { id: u.id, username: u.username, email: u.email, displayName: u.display_name, status: u.status,
-    balance: w?.balance ?? 0, roles, createdAt: u.created_at, mfaEnabled: !!u.mfa_enabled };
+    balance: w?.balance ?? 0, roles, createdAt: u.created_at, mfaEnabled: !!u.mfa_enabled,
+    withdrawUnlocked: !!u.withdraw_unlocked };
 }
 
 // ---------- dashboard overview ----------
@@ -77,6 +78,7 @@ const memberUpdateSchema = z.object({
   status: z.enum(['active', 'locked', 'disabled']).optional(),
   displayName: z.string().max(100).optional(),
   password: z.string().min(8).max(128).optional(),
+  withdrawUnlocked: z.boolean().optional(),
 });
 
 router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => {
@@ -87,6 +89,8 @@ router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => 
     if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
     if (data.status) db().prepare(`UPDATE users SET status=?, updated_at=datetime('now') WHERE id=?`).run(data.status, id);
     if (data.displayName) db().prepare(`UPDATE users SET display_name=?, updated_at=datetime('now') WHERE id=?`).run(data.displayName, id);
+    if (data.withdrawUnlocked !== undefined)
+      db().prepare(`UPDATE users SET withdraw_unlocked=?, updated_at=datetime('now') WHERE id=?`).run(data.withdrawUnlocked ? 1 : 0, id);
     if (data.password) {
       db().prepare(`UPDATE users SET password_hash=?, updated_at=datetime('now') WHERE id=?`).run(hashPassword(data.password), id);
       db().prepare(`UPDATE user_sessions SET revoked_at=datetime('now') WHERE user_id=? AND revoked_at IS NULL`).run(id);

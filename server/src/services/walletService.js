@@ -69,6 +69,11 @@ const WITHDRAW_UNLOCK_SATANG = 10000; // ต้องเติมเครดิ
 /** ยอดที่ถอนได้ = เงินรางวัล − ยอดที่ถอนไปแล้ว (เฉพาะ win_credit ถอนได้
  *  ระบบ/adjust/เงินฝากไม่สามารถถอนได้โดยตรง) */
 function withdrawableInfo(d, userId, balance) {
+  const u = d.prepare('SELECT withdraw_unlocked FROM users WHERE id = ?').get(userId);
+  // admin ปลดล็อกให้รายคน → ถอนได้เต็มยอดคงเหลือโดยไม่ต้องเช็คเงินฝาก/เงินรางวัล
+  if (u?.withdraw_unlocked) {
+    return { deposited: 0, won: 0, withdrawn: 0, withdrawable: Math.max(0, balance), unlocked: true, override: true };
+  }
   const row = d.prepare(`SELECT
       COALESCE(SUM(CASE WHEN type='deposit' THEN amount END),0) AS deposited,
       COALESCE(SUM(CASE WHEN type='win_credit' THEN amount END),0) AS won,
