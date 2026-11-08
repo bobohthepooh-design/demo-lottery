@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, fmtDateTime } from '../api.js';
-import WinningBoard from '../components/WinningBoard.jsx';
+import ResultLine from '../components/ResultLine.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
 export default function Lotteries() {
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
+  const [results, setResults] = useState([]);
   const [params] = useSearchParams();
   const selType = params.get('type');
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
+    api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -20,8 +22,24 @@ export default function Lotteries() {
     api(`/lottery/draws${q}`).then(r => setDraws(r.draws)).catch(() => {});
   }, [selType]);
 
+  // ผล 3 ครั้งล่าสุด (กรองตามประเภทที่เลือกอยู่ ถ้ามี)
+  const selCode = types.find(t => String(t.id) === String(selType))?.code;
+  const recentResults = results
+    .filter(r => !selCode || r.type_code === selCode)
+    .slice(0, 3);
+
   return (
     <div className="space-y-6">
+      {/* ผลรางวัล 3 ครั้งล่าสุด — อยู่ด้านบนเสมอ */}
+      {recentResults.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-navy-300 mb-2">ผลรางวัล 3 ครั้งล่าสุด</h2>
+          <div className="space-y-1.5">
+            {recentResults.map(r => <ResultLine key={r.id} r={r} />)}
+          </div>
+        </section>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         <Link to="/lotteries" className={`px-4 py-2 rounded-lg text-sm ${!selType ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>ทั้งหมด</Link>
         {types.map(t => (
@@ -48,11 +66,6 @@ export default function Lotteries() {
               <div>🕐 ออกรางวัล: <span className="text-white">{fmtDateTime(d.draw_at)}</span></div>
               <div>⏱️ ปิดรับโพย: <span className="text-white">{fmtDateTime(d.close_at)}</span></div>
             </div>
-            {d.result_numbers && (
-              <div className="mt-3 bg-navy-900/70 rounded-lg p-3">
-                <WinningBoard winningNumbers={d.result_numbers} typeCode={d.type_code} categoryCode={d.category_code} compact />
-              </div>
-            )}
             {d.status === 'open' && (
               <Link to={`/bet/${d.id}`} className="mt-4 block text-center bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400">
                 แทงหวยรอบนี้
