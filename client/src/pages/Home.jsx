@@ -47,6 +47,7 @@ export default function Home() {
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
   const [results, setResults] = useState([]);
+  const [selType, setSelType] = useState('');
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
@@ -77,17 +78,37 @@ export default function Home() {
     latestByCategory.push(r);
   }
 
+  // ผลรางวัลกรองตามประเภทหวยที่เลือก ('' = ทั้งหมด)
+  const selCode = types.find(t => String(t.id) === String(selType))?.code;
+  const shownResults = selCode
+    ? latestByCategory.filter(r => r.type_code === selCode)
+    : latestByCategory;
+
   return (
     <div className="space-y-8">
-      {/* ผลรางวัลล่าสุด — ไว้บนสุดเสมอ ครบทุกประเทศ/หมวด */}
-      {latestByCategory.length > 0 && (
+      {/* ผลรางวัลล่าสุด — ไว้บนสุดเสมอ กรองตามประเภทหวยได้ */}
+      {shownResults.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
-            <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                <button onClick={() => setSelType('')}
+                  className={`px-3 py-1 rounded-lg text-xs ${!selType ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>
+                  ทั้งหมด
+                </button>
+                {types.map(t => (
+                  <button key={t.id} onClick={() => setSelType(String(t.id))}
+                    className={`px-3 py-1 rounded-lg text-xs ${selType === String(t.id) ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>
+                    {t.name_th}
+                  </button>
+                ))}
+              </div>
+              <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
+            </div>
           </div>
           <div className="space-y-1">
-            {latestByCategory.map(r => <ResultLine key={r.id} r={r} />)}
+            {shownResults.map(r => <ResultLine key={r.id} r={r} />)}
           </div>
         </section>
       )}
