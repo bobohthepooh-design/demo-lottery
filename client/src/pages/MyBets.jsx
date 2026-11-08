@@ -4,6 +4,7 @@ import { BET_TYPE_LABELS } from '../lotterySchema.js';
 import { toast } from '../components/toast.js';
 import { SkeletonSlip } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import { FlagIcon } from '../components/ResultLine.jsx';
 
 const STATUS_TH = {
   pending: 'รอผล',
@@ -118,7 +119,10 @@ export default function MyBets() {
             <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-4 flex items-center justify-between hover:bg-navy-700/40">
               <div className="text-left">
                 <div className="font-mono text-gold-300">{s.slip_ref}</div>
-                <div className="text-sm text-navy-300">{drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}</div>
+                <div className="flex items-center gap-1.5 text-sm text-navy-300">
+                  <FlagIcon code={s.type_code} className="w-5 h-3.5 text-[7px]" />
+                  {drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}
+                </div>
                 <div className="text-[11px] text-navy-500">แทงเมื่อ {fmtDateTime(s.created_at)}</div>
               </div>
               <div className="text-right">

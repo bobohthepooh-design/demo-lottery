@@ -187,7 +187,7 @@ export function placeBet(userId, { drawId, items, idempotencyKey = null }) {
 
 export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
   const db = getDb();
-  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.status AS draw_status, lt.name_th AS type_name_th,
+  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.status AS draw_status, lt.code AS type_code, lt.name_th AS type_name_th,
                                   c.name_th AS category_name_th
                            FROM bet_slips bs
                            JOIN lottery_draws d ON d.id = bs.draw_id

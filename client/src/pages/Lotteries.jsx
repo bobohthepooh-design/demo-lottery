@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, fmtDateTime, drawLabel } from '../api.js';
 import Countdown from '../components/Countdown.jsx';
+import { FlagIcon } from '../components/ResultLine.jsx';
 import { typeAccent } from '../typeAccent.js';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
@@ -48,6 +49,7 @@ export default function Lotteries() {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
+            <FlagIcon code={d.type_code} className="w-6 h-4 text-[8px]" />
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ac.chip}`}>{d.type_name_th}</span>
           </div>
           <div className="font-bold text-navy-950 text-lg leading-snug mt-1">{drawLabel(d)}</div>

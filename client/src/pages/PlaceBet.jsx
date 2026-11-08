@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
+import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonCard } from '../components/Skeleton.jsx';
 
 const BET_TYPE_STYLE = {
@@ -158,7 +159,10 @@ export default function PlaceBet() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <Link to={`/lotteries?type=${draw.lottery_type_id}`} className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่นในหมวดนี้</Link>
-              <h1 className="text-xl font-bold text-white mt-1">{drawLabel(draw)}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <FlagIcon code={draw.type_code} className="w-9 h-6 text-[10px]" />
+                <h1 className="text-xl font-bold text-navy-950">{drawLabel(draw)}</h1>
+              </div>
               <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)}</div>
               <div className="text-sm mt-1">⏱️ ปิดรับโพย: {!closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
             </div>
