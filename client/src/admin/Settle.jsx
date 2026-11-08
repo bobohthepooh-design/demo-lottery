@@ -15,9 +15,26 @@ export default function AdminSettle() {
   const [editDraw, setEditDraw] = useState(null);
   const [editFields, setEditFields] = useState({});
   const [editMsg, setEditMsg] = useState('');
+  const [autoMsg, setAutoMsg] = useState('');
+  const [autoBusy, setAutoBusy] = useState(false);
 
   const load = () => api('/admin/draws').then(r => setDraws(r.draws)).catch(e => alert(e.message));
   useEffect(() => { load(); }, []);
+
+  // สั่งระบบตรวจสอบ+ออกผลทุกผลที่ถึงเวลาแล้วทันที (ไม่ต้องรอ scheduler 15 นาที)
+  const runAutoSettle = async () => {
+    setAutoBusy(true); setAutoMsg('');
+    try {
+      const r = await api('/admin/draws/auto-settle', { method: 'POST', body: {} });
+      const parts = [];
+      if (r.settled?.length) parts.push(`ออกผลแล้ว ${r.settled.length} รอบ: ${r.settled.join(', ')}`);
+      if (r.skipped?.length) parts.push(`ข้าม ${r.skipped.length} รอบ`);
+      if (r.errors?.length) parts.push(`error ${r.errors.length}: ${r.errors.join(' | ')}`);
+      setAutoMsg(parts.length ? parts.join(' • ') : 'ไม่มีรอบที่ถึงเวลาออกผลในขณะนี้');
+      load();
+    } catch (e) { setAutoMsg('ERROR: ' + e.message); }
+    finally { setAutoBusy(false); }
+  };
 
   const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
   const settled = draws.filter(d => d.status === 'settled');
@@ -110,6 +127,14 @@ export default function AdminSettle() {
       <h1 className="text-2xl font-bold text-white">ออกผลรางวัล & คำนวณโพย</h1>
       <div className="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 text-sm rounded-lg p-3">
         ระบบจะ settle โพยทั้งหมดของรอบนั้นอัตโนมัติและจ่ายเครดิตรางวัลตามกติกา — ช่องกรอกผลอ้างอิงตามโครงสร้างรางวัลจริงของประเทศนั้น ๆ
+      </div>
+      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-wrap items-center gap-3">
+        <button onClick={runAutoSettle} disabled={autoBusy}
+          className="bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-500 disabled:opacity-40 text-sm">
+          {autoBusy ? 'กำลังตรวจสอบ...' : '⚡ ตรวจผลอัตโนมัติทั้งหมดตอนนี้'}
+        </button>
+        <span className="text-xs text-navy-400">ออกผลทุกประเภทที่ตั้งเป็น "อัตโนมัติ" และถึงเวลาแล้วทันที — ไม่ต้องรอรอบเช็ค 15 นาที</span>
+        {autoMsg && <div className={`w-full text-xs mt-1 ${autoMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{autoMsg}</div>}
       </div>
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">
         <div>

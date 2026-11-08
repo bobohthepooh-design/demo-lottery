@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, satang } from '../api.js';
+import { api, satang, drawLabel } from '../api.js';
 
 const STATUS_TH = { pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก', partial: 'บางส่วน', cancelled: 'ยกเลิก' };
 
@@ -30,7 +30,7 @@ export default function AdminBets() {
             <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-navy-700/40">
               <div>
                 <span className="font-mono text-gold-300">{s.slip_ref}</span>
-                <span className="text-navy-300 text-sm ml-3">{s.username} • {s.type_name_th} • {s.draw_code}</span>
+                <span className="text-navy-300 text-sm ml-3">{s.username} • {drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}</span>
               </div>
               <div className="text-right">
                 <span className="text-white font-bold">฿{satang(s.total_stake)}</span>

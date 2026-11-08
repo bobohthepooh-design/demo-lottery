@@ -298,6 +298,14 @@ router.post('/draws/:id/settle', requirePerm('results.publish'), (req, res, next
   } catch (e) { next(e); }
 });
 
+// สั่งตรวจสอบ+ออกผลรางวัลอัตโนมัติทุกผลทันที (ไม่ต้องรอรอบ scheduler 15 นาที)
+router.post('/draws/auto-settle', requirePerm('results.publish'), async (req, res, next) => {
+  try {
+    const out = await fetcher.autoSettleResults();
+    res.json({ ok: true, ...out });
+  } catch (e) { next(e); }
+});
+
 // ดึงผลอัตโนมัติจากแหล่งข้อมูล (ไทย=GLO, ฮานอย=XSMB) — admin review แล้วค่อย settle
 router.post('/draws/:id/fetch-result', requirePerm('results.publish'), async (req, res, next) => {
   try {
@@ -319,9 +327,11 @@ router.post('/draws/:id/result', requirePerm('results.publish'), (req, res, next
 router.get('/bets', requirePerm('bets.view_all'), (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
   const status = req.query.status || null;
-  let sql = `SELECT bs.*, u.username, d.draw_code, d.draw_at, lt.name_th AS type_name_th
+  let sql = `SELECT bs.*, u.username, d.draw_code, d.draw_at, lt.name_th AS type_name_th,
+                    c.name_th AS category_name_th
              FROM bet_slips bs JOIN users u ON u.id=bs.user_id
-             JOIN lottery_draws d ON d.id=bs.draw_id JOIN lottery_types lt ON lt.id=d.lottery_type_id WHERE 1=1`;
+             JOIN lottery_draws d ON d.id=bs.draw_id JOIN lottery_types lt ON lt.id=d.lottery_type_id
+             LEFT JOIN lottery_categories c ON c.id=d.category_id WHERE 1=1`;
   const args = [];
   if (status) { sql += ' AND bs.status = ?'; args.push(status); }
   if (req.query.userId) { sql += ' AND bs.user_id = ?'; args.push(Number(req.query.userId)); }

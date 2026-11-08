@@ -174,7 +174,10 @@ export async function autoSettleResults() {
     if (d.type_code === 'TH') src = thai;
     else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(laodl)'; }
     else if (d.type_code === 'HN') {
-      if (d.cat_code === 'HNN') { src = hanoi; srcLabel = 'HN(XSMB)'; }
+      // HNN (ปกติ): ใช้ XSMB จริงเฉพาะเมื่อผลของวันตรงกับวันออกรางวัล —
+      // ถ้า XSMB ยังไม่อัปเดต/ล่าช้า fallback เป็นผล deterministic ของรอบนั้น
+      // เพื่อให้ระบบ demo ออกผลได้ทันทีและตรวจสอบย้อนหลังได้เสมอ
+      if (d.cat_code === 'HNN' && hanoi && (!hanoi.date || hanoi.date === drawLocalDate(d))) { src = hanoi; srcLabel = 'HN(XSMB)'; }
       else { const g = generateHanoiResult(d.draw_code); src = { winning: g.winning, date: drawLocalDate(d) }; srcLabel = 'HN(gen)'; }
     }
     if (!src) { out.skipped.push(`${d.draw_code}: no source`); continue; }
