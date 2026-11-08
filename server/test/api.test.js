@@ -229,3 +229,31 @@ describe('wallet', () => {
     expect(r.status).toBe(400);
   });
 });
+
+describe('bet cancel', () => {
+  const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+  it('member cancels pending slip and gets full refund', async () => {
+    const now = Date.now();
+    const d = await adminAgent.post('/admin/draws', {
+      lottery_type_id: 1, draw_code: `X${ts}`,
+      draw_at: fmt(now + 7200e3), close_at: fmt(now + 3600e3),
+    });
+    await adminAgent.patch(`/admin/draws/${d.body.id}/status`, { status: 'open' });
+    const t = await member.agent.get('/lottery/types/1');
+    const rule = t.body.rules.find(r => r.bet_type === 'bottom2');
+    const before = (await member.agent.get('/auth/me')).body.balance;
+    const b = await member.agent.post('/bets', { drawId: d.body.id, items: [{ ruleId: rule.id, number: '77', amount: 1000 }] });
+    expect(b.status).toBe(201);
+    const mid = (await member.agent.get('/auth/me')).body.balance;
+    expect(mid).toBe(before - 1000);
+    const c = await member.agent.post(`/bets/${b.body.slipId}/cancel`);
+    expect(c.status).toBe(200);
+    expect(c.body.refunded).toBe(1000);
+    const after = (await member.agent.get('/auth/me')).body.balance;
+    expect(after).toBe(before);
+    // double cancel rejected
+    const again = await member.agent.post(`/bets/${b.body.slipId}/cancel`);
+    expect(again.status).toBe(400);
+  });
+});

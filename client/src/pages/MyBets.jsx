@@ -5,6 +5,7 @@ import { toast } from '../components/toast.js';
 import { SkeletonSlip } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
+import { useAuth } from '../auth.jsx';
 
 const STATUS_TH = {
   pending: 'รอผล',
@@ -101,10 +102,30 @@ export default function MyBets() {
   const [slips, setSlips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(null);
+  const [cancelAsk, setCancelAsk] = useState(null);
+  const { setBalance } = useAuth();
 
-  useEffect(() => {
-    api('/bets/mine?limit=100').then(r => setSlips(r.slips)).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  const load = () => api('/bets/mine?limit=100').then(r => setSlips(r.slips)).catch(() => {});
+  useEffect(() => { load().finally(() => setLoading(false)); }, []);
+
+  // ยกเลิกได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่
+  const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const canCancel = (s) => s.status === 'pending' && s.draw_status === 'open' && s.close_at > nowSql;
+
+  const cancelSlip = async (s) => {
+    if (cancelAsk !== s.id) {
+      setCancelAsk(s.id);
+      setTimeout(() => setCancelAsk(c => (c === s.id ? null : c)), 3500);
+      return;
+    }
+    setCancelAsk(null);
+    try {
+      const r = await api(`/bets/${s.id}/cancel`, { method: 'POST' });
+      if (typeof r.balance === 'number') setBalance(r.balance);
+      toast(`ยกเลิกโพย ${r.slipRef} แล้ว — คืนเครดิต ฿${satang(r.refunded)}`, 'success');
+      await load();
+    } catch (e) { toast(e.message, 'error'); }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
@@ -148,6 +169,14 @@ export default function MyBets() {
                 {s.total_payout >= SHARE_THRESHOLD && (
                   <div className="pt-1 border-t border-navy-700/60">
                     <ShareButtons s={s} />
+                  </div>
+                )}
+                {canCancel(s) && (
+                  <div className="pt-1">
+                    <button onClick={() => cancelSlip(s)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition ${cancelAsk === s.id ? 'bg-red-500 text-white border-red-500' : 'border-red-300 text-red-600 hover:bg-red-50'}`}>
+                      {cancelAsk === s.id ? '⚠️ ยืนยันยกเลิก? กดอีกครั้งเพื่อคืนเครดิตเต็มจำนวน' : '🚫 ยกเลิกโพย (คืนเครดิต)'}
+                    </button>
                   </div>
                 )}
               </div>

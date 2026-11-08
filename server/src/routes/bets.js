@@ -4,6 +4,7 @@ import * as svc from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
 import { requireAuth } from '../services/authService.js';
 import { requirePerm } from '../middleware/rbac.js';
+import { HttpError } from '../lib/audit.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -34,6 +35,15 @@ router.get('/mine', (req, res) => {
 
 router.get('/stats', (req, res) => {
   res.json({ stats: svc.myStats(req.user.id) });
+});
+
+// ยกเลิกโพยของตัวเอง — เฉพาะตอนรอบยังเปิดรับ (คืนเครดิตเต็มจำนวน)
+router.post('/:id/cancel', (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, 'id ไม่ถูกต้อง');
+    res.json({ ok: true, ...svc.cancelBet(req.user.id, id) });
+  } catch (e) { next(e); }
 });
 
 router.get('/slips/:ref', (req, res, next) => {

@@ -187,7 +187,7 @@ export function placeBet(userId, { drawId, items, idempotencyKey = null }) {
 
 export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
   const db = getDb();
-  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.status AS draw_status, lt.code AS type_code, lt.name_th AS type_name_th,
+  const slips = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, d.close_at, d.status AS draw_status, lt.code AS type_code, lt.name_th AS type_name_th,
                                   c.name_th AS category_name_th
                            FROM bet_slips bs
                            JOIN lottery_draws d ON d.id = bs.draw_id
@@ -269,6 +269,29 @@ export function myStats(userId) {
     byType,
     best: best || null,
   };
+}
+
+/** Member cancels own pending slip — only while draw is still open. Refunds stake atomically. */
+export function cancelBet(userId, slipId) {
+  return tx((d) => {
+    const slip = d.prepare(`SELECT bs.*, dr.status AS draw_status, dr.close_at
+                            FROM bet_slips bs JOIN lottery_draws dr ON dr.id = bs.draw_id
+                            WHERE bs.id = ? AND bs.user_id = ?`).get(slipId, userId);
+    if (!slip) throw new HttpError(404, 'ไม่พบโพย');
+    if (slip.status !== 'pending') throw new HttpError(400, 'ยกเลิกได้เฉพาะโพยที่รอผล');
+    if (slip.draw_status !== 'open' || slip.close_at <= nowSql())
+      throw new HttpError(400, 'ปิดรับโพยแล้ว ไม่สามารถยกเลิกได้', 'DRAW_CLOSED');
+    d.prepare(`UPDATE bet_items SET status = 'cancelled' WHERE slip_id = ? AND status = 'pending'`).run(slipId);
+    d.prepare(`UPDATE bet_slips SET status = 'cancelled' WHERE id = ?`).run(slipId);
+    creditTx(d, {
+      userId, type: 'bet_refund', amount: slip.total_stake,
+      description: `คืนเครดิตโพย ${slip.slip_ref} (ยกเลิกการแทง)`,
+      idempotencyKey: `bet-refund-${slip.slip_ref}`,
+    });
+    audit({ userId, action: 'bet.cancel', entityType: 'bet_slip', entityId: slip.slip_ref,
+      detail: { slipId, totalStake: slip.total_stake } });
+    return { slipRef: slip.slip_ref, refunded: slip.total_stake, balance: getBalance(userId) };
+  });
 }
 
 export function getMySlip(userId, slipRef) {
