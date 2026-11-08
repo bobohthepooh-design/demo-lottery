@@ -28,7 +28,7 @@ export default function Wallet() {
       <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-navy-700 font-bold text-white">ประวัติธุรกรรมเครดิต</div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[620px]">
             <thead className="bg-navy-900 text-navy-300 text-xs">
               <tr><th className="text-left px-4 py-3">อ้างอิง</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-right px-4 py-3">จำนวน</th><th className="text-right px-4 py-3">คงเหลือหลังรายการ</th><th className="text-left px-4 py-3">เวลา</th><th className="text-left px-4 py-3">รายละเอียด</th></tr>
             </thead>

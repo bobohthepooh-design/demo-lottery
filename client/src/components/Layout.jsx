@@ -56,7 +56,7 @@ export default function Layout() {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             <NavLink to="/" end
               className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
               หน้าแรก
@@ -97,11 +97,11 @@ export default function Layout() {
               </div>
             )}
             <div className="sm:hidden text-xs font-mono font-bold text-gold-300">{timeStr}</div>
-            <button className="md:hidden text-navy-200 text-xl" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
+            <button className="lg:hidden text-navy-200 text-xl" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
           </div>
         </div>
         {menuOpen && (
-          <nav className="md:hidden border-t border-navy-700 bg-navy-900 px-4 py-2 space-y-1">
+          <nav className="lg:hidden border-t border-navy-700 bg-navy-900 px-4 py-2 space-y-1">
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
               หน้าแรก
