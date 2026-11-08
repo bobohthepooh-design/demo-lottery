@@ -9,10 +9,10 @@ const items = [
   { to: '/admin/wallet', label: 'จัดการเครดิต' },
   { to: '/admin/bets', label: 'ตรวจโพย' },
   { to: '/admin/reports', label: 'รายงาน' },
+  { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก' },
   { to: '/admin/audit', label: 'Audit Log' },
   { to: '/admin/security', label: 'Security Events' },
   { to: '/admin/settings', label: 'ตั้งค่าระบบ' },
-  { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก' },
   { to: '/admin/roles', label: 'สิทธิ์การใช้งาน' },
 ];
 
