@@ -31,19 +31,6 @@ function countdownText(closeAtSql, now) {
   return h >= 24 ? `อีก ${Math.floor(h / 24)} วัน ${p(h % 24)}:${p(m)}:${p(s)}` : `${p(h)}:${p(m)}:${p(s)}`;
 }
 
-// ระยะเวลาที่เหลือแบบอ่านเข้าใจง่าย ไม่ให้สับสนกับเวลาดน.
-function durationText(closeAtSql, now) {
-  const diff = msLeft(closeAtSql, now);
-  if (diff <= 0) return 'ปิดรับแล้ว';
-  const sec = Math.floor(diff / 1000);
-  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600);
-  const m = Math.floor(sec % 3600 / 60), s = sec % 60;
-  if (d > 0) return `อีก ${d} วัน ${h} ชม. ${m} นาที`;
-  if (h > 0) return `อีก ${h} ชม. ${m} นาที ${s} วินาที`;
-  if (m > 0) return `อีก ${m} นาที ${s} วินาที`;
-  return `อีก ${s} วินาที`;
-}
-
 // แถวรอบหวยของแต่ละประเทศ/หมวด — แสดงเวลาออกรางวัล + นับถอยหลังปิดรับ
 function DrawLine({ d, now }) {
   const closed = d.status !== 'open';
@@ -245,39 +232,6 @@ export default function Home() {
               </div>
             </div>
           )}
-        </section>
-      )}
-
-      {/* รอบที่จะปิดรับเร็วที่สุด — 5 รายการล่าสุด */}
-      {alertDraws.length > 0 && (
-        <section className="bg-navy-800/80 border border-amber-500/30 rounded-xl p-4">
-          <h2 className="text-sm font-bold text-amber-300 mb-3 flex items-center gap-2">
-            ⏰ รอบที่จะปิดรับเร็วที่สุด
-            <span className="text-[10px] text-navy-400 font-normal">(เรียงตามเวลาปิดรับ)</span>
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {alertDraws.slice(0, 5).map((d, i) => {
-              const ac = typeAccent(d.type_code);
-              const left = msLeft(d.close_at, now);
-              const urgent = left > 0 && left < 3600e3;
-              return (
-                <Link key={d.id} to={user ? `/bet/${d.id}` : '/login'}
-                  className="flex items-center gap-2 bg-navy-900/70 border border-navy-700/60 rounded-lg px-3 py-2 hover:border-gold-500/40 transition">
-                  <span className="text-[10px] font-mono text-navy-500 w-4 shrink-0">{i + 1}.</span>
-                  <FlagIcon code={d.type_code} className="w-5 h-5 text-[8px] shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-xs font-semibold truncate ${ac.text}`}>
-                      {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
-                    </div>
-                    <div className="text-[10px] text-navy-400">ปิด {thaiTime(d.close_at)} น. • ออก {fmtDateTime(d.draw_at)}</div>
-                  </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${urgent ? 'bg-red-500/25 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>
-                    {durationText(d.close_at, now)}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
         </section>
       )}
 
