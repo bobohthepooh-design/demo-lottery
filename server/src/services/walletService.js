@@ -7,9 +7,7 @@ function getWalletTx(d, userId) {
   return w;
 }
 
-function insertTransaction(d, { walletId, userId, type, amount, direction, description, idempotencyKey = null, createdBy = null }) {
-  const w = d.prepare('SELECT balance FROM virtual_wallets WHERE id = ?').get(walletId);
-  const balanceAfter = direction === 'credit' ? w.balance + amount : w.balance - amount;
+function insertTransaction(d, { walletId, userId, type, amount, direction, balanceAfter, description, idempotencyKey = null, createdBy = null }) {
   const ref = makeReference('TX');
   const r = d.prepare(`INSERT INTO virtual_transactions
     (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description, created_by)
@@ -58,10 +56,36 @@ export function adminAdjust({ adminId, targetUserId, amount, direction, reason, 
     const t = insertTransaction(d, {
       walletId: w.id, userId: targetUserId,
       type: direction === 'credit' ? 'admin_adjust' : 'admin_debit',
-      amount, direction, description: reason, idempotencyKey, createdBy: adminId,
+      amount, direction, balanceAfter: newBalance, description: reason, idempotencyKey, createdBy: adminId,
     });
     audit({ userId: adminId, action: `wallet.${direction}_adjust`, entityType: 'wallet', entityId: String(w.id),
       detail: { targetUserId, amount, reason }, req: null });
+    return { transaction: t, balance: newBalance };
+  });
+}
+
+/** สมาชิกเติม/ถอนเครดิตจำลองด้วยตนเอง — demo only, ไม่เกี่ยวกับเงินจริง */
+export function memberWalletAction(userId, { direction, amount, description }) {
+  if (!['deposit', 'withdraw'].includes(direction)) throw new HttpError(400, 'ประเภทรายการไม่ถูกต้อง');
+  if (!Number.isInteger(amount) || amount <= 0) throw new HttpError(400, 'จำนวนเงินไม่ถูกต้อง');
+  if (amount < 100) throw new HttpError(400, 'ขั้นต่ำ 1 บาท');
+  if (amount > 1000000) throw new HttpError(400, 'สูงสุด 10,000 บาทต่อรายการ');
+
+  return tx((d) => {
+    const w = getWalletTx(d, userId);
+    const isCredit = direction === 'deposit';
+    const newBalance = isCredit ? w.balance + amount : w.balance - amount;
+    if (newBalance < 0) throw new HttpError(400, 'เครดิตไม่เพียงพอสำหรับการถอน', 'INSUFFICIENT_CREDIT');
+    updateBalance(d, w.id, w.version, newBalance);
+    const t = insertTransaction(d, {
+      walletId: w.id, userId,
+      type: isCredit ? 'deposit' : 'withdraw',
+      amount, direction: isCredit ? 'credit' : 'debit',
+      balanceAfter: newBalance,
+      description,
+    });
+    audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
+      detail: { amount }, req: null });
     return { transaction: t, balance: newBalance };
   });
 }
@@ -74,6 +98,7 @@ export function debitForBetTx(d, { userId, slipRef, totalStake, idempotencyKey }
   updateBalance(d, w.id, w.version, newBalance);
   return insertTransaction(d, {
     walletId: w.id, userId, type: 'bet_debit', amount: totalStake, direction: 'debit',
+    balanceAfter: newBalance,
     description: `หักเครดิตโพย ${slipRef}`, idempotencyKey,
   });
 }
@@ -84,6 +109,6 @@ export function creditTx(d, { userId, type, amount, description, idempotencyKey 
   const newBalance = w.balance + amount;
   updateBalance(d, w.id, w.version, newBalance);
   return insertTransaction(d, {
-    walletId: w.id, userId, type, amount, direction: 'credit', description, idempotencyKey,
+    walletId: w.id, userId, type, amount, direction: 'credit', balanceAfter: newBalance, description, idempotencyKey,
   });
 }

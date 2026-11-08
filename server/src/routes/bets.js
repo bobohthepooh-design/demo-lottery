@@ -47,4 +47,20 @@ router.get('/wallet', (req, res) => {
   });
 });
 
+// เติม/ถอนเครดิตจำลอง (demo only — ไม่มีเงินจริง)
+const walletActionSchema = z.object({
+  direction: z.enum(['deposit', 'withdraw']),
+  amount: z.number().int().positive(),
+});
+router.post('/wallet/action', (req, res, next) => {
+  try {
+    const { direction, amount } = walletActionSchema.parse(req.body);
+    const result = wallet.memberWalletAction(req.user.id, {
+      direction, amount,
+      description: direction === 'deposit' ? 'สมาชิกเติมเครดิตจำลอง' : 'สมาชิกถอนเครดิตจำลอง',
+    });
+    res.json({ ok: true, ...result });
+  } catch (e) { next(e); }
+});
+
 export default router;

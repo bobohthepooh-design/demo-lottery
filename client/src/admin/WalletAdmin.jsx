@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
 
+const TYPE_TH = {
+  initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
+  bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
+  deposit: 'สมาชิกเติมเครดิต', withdraw: 'สมาชิกถอนเครดิต',
+};
+
+const newKey = () => `adj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 export default function AdminWallet() {
   const [members, setMembers] = useState([]);
   const [txs, setTxs] = useState([]);
-  const [form, setForm] = useState({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: '' });
+  const [form, setForm] = useState({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: newKey() });
   const [msg, setMsg] = useState('');
 
   const load = () => {
@@ -20,7 +28,7 @@ export default function AdminWallet() {
         ...form, userId: Number(form.userId), amount: Math.round(parseFloat(form.amount) * 100),
       }});
       setMsg(`สำเร็จ — ref ${r.transaction.reference} • ยอดใหม่ ฿${satang(r.balance)}`);
-      setForm({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: `adj-${Date.now()}` });
+      setForm({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: newKey() });
       load();
     } catch (e2) { setMsg('ERROR: ' + e2.message); }
   };
@@ -54,7 +62,7 @@ export default function AdminWallet() {
               <tr key={t.id} className="hover:bg-navy-700/40">
                 <td className="px-4 py-2 font-mono text-xs text-navy-300">{t.reference}</td>
                 <td className="px-4 py-2 text-white">{t.username}</td>
-                <td className="px-4 py-2 text-xs text-navy-300">{t.type}</td>
+                <td className="px-4 py-2 text-xs text-navy-300">{TYPE_TH[t.type] || t.type}</td>
                 <td className={`px-4 py-2 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>{t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}</td>
                 <td className="px-4 py-2 text-right text-gold-300">฿{satang(t.balance_after)}</td>
                 <td className="px-4 py-2 text-xs text-navy-300 whitespace-nowrap">{t.created_at}</td>
