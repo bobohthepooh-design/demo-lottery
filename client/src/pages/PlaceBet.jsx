@@ -57,6 +57,17 @@ export default function PlaceBet() {
   const totalSatang = useMemo(() => slip.reduce((s, i) => s + i.stakeSatang, 0), [slip]);
   const totalBaht = totalSatang / 100;
 
+  // ตรวจจำนวนเงิน → satang (ใช้ร่วมกันทุกปุ่มเพิ่มโพย)
+  const stakeFromAmount = () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return { err: 'กรอกจำนวนเงิน' };
+    const stake = bahtToSatang(amt);
+    if (stake % rule.stake_unit !== 0) return { err: `จำนวนเงินต้องเป็นหน่วย ${rule.stake_unit / 100} บาท` };
+    if (stake < rule.min_amount) return { err: `ขั้นต่ำ ฿${satang(rule.min_amount)}` };
+    if (rule.max_amount && stake > rule.max_amount) return { err: `สูงสุด ฿${satang(rule.max_amount)}` };
+    return { stake };
+  };
+
   const addItem = () => {
     setErr('');
     if (!rule) return setErr('เลือกประเภทการแทง');
@@ -68,15 +79,34 @@ export default function PlaceBet() {
       num = number.trim();
       if (!new RegExp(`^\\d{${rule.digits}}$`).test(num)) return setErr(`${rule.name_th} ต้องเป็นตัวเลข ${rule.digits} หลัก`);
     }
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) return setErr('กรอกจำนวนเงิน');
-    const stake = bahtToSatang(amt);
-    if (stake % rule.stake_unit !== 0) return setErr(`จำนวนเงินต้องเป็นหน่วย ${rule.stake_unit / 100} บาท`);
-    if (stake < rule.min_amount) return setErr(`ขั้นต่ำ ฿${satang(rule.min_amount)}`);
-    if (rule.max_amount && stake > rule.max_amount) return setErr(`สูงสุด ฿${satang(rule.max_amount)}`);
+    const { stake, err: amtErr } = stakeFromAmount();
+    if (amtErr) return setErr(amtErr);
     if (stake > balance) return setErr('เครดิตไม่เพียงพอ');
     setSlip([...slip, { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake }]);
     setNumber(''); setPicks([]); setAmount('');
+  };
+
+  // ---- ปุ่มลัดสไตล์ LINE: แค่ช่วยกรอก/เพิ่มเลข ยังต้องกดยืนยันโพยเหมือนเดิม ----
+  const randNum = (d) => Array.from({ length: d }, () => Math.floor(Math.random() * 10)).join('');
+
+  const addRud19 = () => {
+    setErr('');
+    if (!rule || rule.digits !== 2) return;
+    const num = number.trim();
+    if (!/^\d{2}$/.test(num)) return setErr('กรอกเลข 2 หลักก่อน แล้วกด "รูด 19 ประตู"');
+    const { stake, err: amtErr } = stakeFromAmount();
+    if (amtErr) return setErr(amtErr);
+    const [a, b] = num.split('');
+    // รูด 19 ประตู = {a0..a9} ∪ {0b..9b} → 19 เลขพอดี (เลขกลับมีปุ่ม "กลับเลข" แยกอยู่)
+    const set = new Set();
+    for (let i = 0; i <= 9; i++) { set.add(a + i); set.add(i + b); }
+    const nums = [...set];
+    const need = nums.length * stake;
+    if (totalSatang + need > balance) {
+      return setErr(`เครดิตไม่พอ — รูด 19 ประตู = ${nums.length} รายการ รวม ฿${satang(need)} (คงเหลือ ฿${satang(balance - totalSatang)})`);
+    }
+    setSlip([...slip, ...nums.map(n => ({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: n, stakeSatang: stake }))]);
+    setNumber(''); setAmount('');
   };
 
   const submit = async () => {
@@ -156,12 +186,35 @@ export default function PlaceBet() {
                 {picks.length > 0 && <div className="mt-2 text-sm font-mono text-gold-300">เลือก: {[...picks].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('-')}</div>}
               </div>
             ) : (
+            <>
+            <div className="sm:col-span-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-navy-400">ปุ่มลัด:</span>
+                <button type="button" onClick={() => setNumber(randNum(rule.digits))}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition">
+                  🎲 สุ่มเลข
+                </button>
+                <button type="button" disabled={number.length < 2}
+                  onClick={() => setNumber(number.split('').reverse().join(''))}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition disabled:opacity-40">
+                  🔁 กลับเลข
+                </button>
+                {rule.digits === 2 && (
+                  <button type="button" onClick={addRud19}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition">
+                    🎯 รูด 19 ประตู
+                  </button>
+                )}
+                <span className="text-[10px] text-navy-500">* ปุ่มลัดช่วยกรอกเลขเท่านั้น — ต้องเพิ่มลงโพยและยืนยันอีกครั้ง</span>
+              </div>
+            </div>
             <div>
                 <label className="text-sm text-navy-300">หมายเลข ({rule?.digits || '?'} หลัก)</label>
                 <input value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                   inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
                   className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl tracking-[0.4em] text-center text-gold-300 font-mono focus:outline-none focus:border-gold-500" />
               </div>
+            </>
             )}
               <div>
                 <label className="text-sm text-navy-300">จำนวนเงิน (บาท)</label>
