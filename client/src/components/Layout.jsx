@@ -3,6 +3,7 @@ import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
+import ResultsTicker from './ResultsTicker.jsx';
 import ToastHost from './ToastHost.jsx';
 import { FlagIcon } from './ResultLine.jsx';
 import { typeAccent } from '../typeAccent.js';
@@ -135,6 +136,7 @@ export default function Layout() {
       </header>
 
       <AnnouncementBar />
+      <ResultsTicker />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 lg:pb-6">
         <Outlet />
