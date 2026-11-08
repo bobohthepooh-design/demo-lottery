@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import ResultLine, { TYPE_EMOJI } from '../components/ResultLine.jsx';
+import { TYPE_EMOJI } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -78,7 +78,6 @@ export default function Home() {
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
   const [results, setResults] = useState([]);
-  const [selType, setSelType] = useState('');
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
@@ -98,22 +97,6 @@ export default function Home() {
     seenDraw.add(key);
     openByCategory.push(d);
   }
-
-  // ผลล่าสุดของแต่ละประเทศ/หมวด (results เรียง published_at DESC อยู่แล้ว)
-  const latestByCategory = [];
-  const seen = new Set();
-  for (const r of results) {
-    const key = `${r.type_code}:${r.category_code || ''}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    latestByCategory.push(r);
-  }
-
-  // ผลรางวัลกรองตามประเภทหวยที่เลือก ('' = ทั้งหมด)
-  const selCode = types.find(t => String(t.id) === String(selType))?.code;
-  const shownResults = selCode
-    ? latestByCategory.filter(r => r.type_code === selCode)
-    : latestByCategory;
 
   // แจ้งเตือนรอบที่ใกล้ปิดรับสุด (สูงสุด 3 รอบ) — กระพริบแดงเมื่อเหลือ < 1 ชม.
   const alertDraws = sorted
@@ -207,32 +190,6 @@ export default function Home() {
                 </div>
               );
             })}
-          </div>
-        </section>
-      )}
-
-      {/* ผลรางวัลล่าสุด — ไว้บนสุดเสมอ กรองตามประเภทหวยได้ */}
-      {shownResults.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <button onClick={() => setSelType('')}
-                  className={`px-3 py-1 rounded-lg text-xs ${!selType ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>
-                  ทั้งหมด
-                </button>
-                {types.map(t => (
-                  <button key={t.id} onClick={() => setSelType(String(t.id))}
-                    className={`px-3 py-1 rounded-lg text-xs ${selType === String(t.id) ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>
-                    {t.name_th}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-1">
-            {shownResults.map(r => <ResultLine key={r.id} r={r} />)}
           </div>
         </section>
       )}
