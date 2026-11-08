@@ -73,14 +73,15 @@ function withdrawableInfo(d, userId, balance) {
   const row = d.prepare(`SELECT
       COALESCE(SUM(CASE WHEN type='deposit' THEN amount END),0) AS deposited,
       COALESCE(SUM(CASE WHEN type='win_credit' THEN amount END),0) AS won,
-      COALESCE(SUM(CASE WHEN type='withdraw' THEN amount END),0) AS withdrawn
+      COALESCE(SUM(CASE WHEN type='withdraw' THEN amount END),0) AS withdrawn,
+      COALESCE(SUM(CASE WHEN type='initial_credit' THEN amount END),0) AS promo
     FROM virtual_transactions WHERE user_id = ?`).get(userId);
   const netWon = Math.max(0, row.won - row.withdrawn);
-  // เครดิตแถม ฿50 สมัครใหม่ — ถอนได้เฉพาะเงินรางวัล ต้องไม่รวมในยอดถอนได้
-  // ถ้า admin ปลดล็อกแล้วแต่ยังไม่ได้ clawback → หักเครดิตแถมที่เหลืออยู่ออกก่อน
-  const clawed = d.prepare(`SELECT id FROM virtual_transactions WHERE idempotency_key = ?`)
-    .get(`free-credit-clawback-${userId}`);
-  const promoLeft = clawed ? 0 : Math.min(5000, Math.max(0, balance - netWon));
+  // เครดิตแถมสมัครใหม่ (initial_credit — จำนวนตาม settings) ถอนได้เฉพาะเงินรางวัล
+  // ต้องไม่รวมในยอดถอนได้: promoLeft = ส่วนที่ยังไม่ถูก clawback และยังเหลือในยอด
+  const clawed = d.prepare(`SELECT COALESCE(SUM(amount),0) AS a FROM virtual_transactions
+    WHERE user_id = ? AND idempotency_key = ?`).get(userId, `free-credit-clawback-${userId}`).a;
+  const promoLeft = Math.min(Math.max(0, row.promo - clawed), Math.max(0, balance - netWon));
   // admin ปลดล็อกให้รายคน → ถอนได้เกือบเต็มยอดคงเหลือ แต่ต้องเหลืออย่างน้อย ฿50
   // และระบบหักเครดิตแถม ฿50 ของขวัญสมัครออก (ดู clawbackSignupCreditTx)
   if (u?.withdraw_unlocked) {
@@ -136,14 +137,17 @@ export function clawbackSignupCreditTx(d, { userId, adminId }) {
   const key = `free-credit-clawback-${userId}`;
   if (d.prepare('SELECT id FROM virtual_transactions WHERE idempotency_key = ?').get(key)) return null;
   const w = getWalletTx(d, userId);
-  const amount = Math.min(5000, w.balance);
+  // หักเท่ายอด initial_credit จริงของ user นี้ (ตาม settings ตอนสมัคร อาจไม่ใช่ ฿50)
+  const promo = d.prepare(`SELECT COALESCE(SUM(amount),0) AS a FROM virtual_transactions
+    WHERE user_id = ? AND type = 'initial_credit'`).get(userId).a;
+  const amount = Math.min(promo, w.balance);
   if (amount <= 0) return null;
   const newBalance = w.balance - amount;
   updateBalance(d, w.id, w.version, newBalance);
   return insertTransaction(d, {
     walletId: w.id, userId, type: 'admin_debit', amount, direction: 'debit',
     balanceAfter: newBalance,
-    description: 'หักเครดิตแถม ฿50 ก่อนอนุญาตถอน',
+    description: 'หักเครดิตแถมก่อนอนุญาตถอน',
     idempotencyKey: key, createdBy: adminId,
   });
 }
