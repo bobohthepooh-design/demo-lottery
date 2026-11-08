@@ -9,6 +9,25 @@ router.get('/types', (req, res) => {
   res.json({ types: svc.listLotteryTypes() });
 });
 
+// รายการ "ตลาดหวย" แยกย่อย — type ที่มี category จะกลายเป็นหลาย market
+// key = "<type_id>:<category_id|0>" ใช้เป็น query param ?market=...
+router.get('/markets', (req, res) => {
+  const db = getDb();
+  const types = db.prepare('SELECT id, code, name_th FROM lottery_types WHERE is_active = 1 ORDER BY id').all();
+  const cats = db.prepare('SELECT id, lottery_type_id, code, name_th FROM lottery_categories ORDER BY id').all();
+  const markets = [];
+  for (const t of types) {
+    const tCats = cats.filter(c => c.lottery_type_id === t.id);
+    if (!tCats.length) {
+      markets.push({ key: `${t.id}:0`, type_id: t.id, category_id: null, type_code: t.code, category_code: null, name_th: t.name_th });
+    }
+    for (const c of tCats) {
+      markets.push({ key: `${t.id}:${c.id}`, type_id: t.id, category_id: c.id, type_code: t.code, category_code: c.code, name_th: c.name_th });
+    }
+  }
+  res.json({ markets });
+});
+
 router.get('/types/:id', (req, res, next) => {
   try {
     const t = svc.getLotteryType(Number(req.params.id));
@@ -19,8 +38,17 @@ router.get('/types/:id', (req, res, next) => {
 
 router.get('/draws', (req, res, next) => {
   try {
+    // ?market=<type_id>:<category_id|0> — กรองระดับตลาดหวย (ละเอียดกว่า type)
+    let lotteryTypeId = req.query.type ? Number(req.query.type) : null;
+    let categoryId = undefined;
+    if (req.query.market) {
+      const [t, c] = String(req.query.market).split(':');
+      lotteryTypeId = Number(t);
+      categoryId = c === '0' || c === undefined ? null : Number(c);
+    }
     const draws = svc.listDraws({
-      lotteryTypeId: req.query.type ? Number(req.query.type) : null,
+      lotteryTypeId,
+      categoryId,
       upcoming: req.query.upcoming === '1',
     });
     res.json({ draws });

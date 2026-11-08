@@ -5,28 +5,35 @@ import ResultLine from '../components/ResultLine.jsx';
 import Countdown from '../components/Countdown.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
+const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 export default function Lotteries() {
-  const [types, setTypes] = useState([]);
+  const [markets, setMarkets] = useState([]);
   const [draws, setDraws] = useState([]);
   const [results, setResults] = useState([]);
   const [params] = useSearchParams();
-  const selType = params.get('type');
+  const selMarket = params.get('market');
+  const selType = params.get('type'); // legacy link จากหน้าแรก
 
   useEffect(() => {
-    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
+    api('/lottery/markets').then(r => setMarkets(r.markets)).catch(() => {});
     api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const q = `upcoming=1${selType ? `&type=${selType}` : ''}`;
+    const q = `upcoming=1${selMarket ? `&market=${selMarket}` : selType ? `&type=${selType}` : ''}`;
     api(`/lottery/draws?${q}`).then(r => setDraws(r.draws)).catch(() => {});
-  }, [selType]);
+  }, [selMarket, selType]);
 
-  // ผล 3 ครั้งล่าสุด (กรองตามประเภทที่เลือกอยู่ ถ้ามี)
-  const selCode = types.find(t => String(t.id) === String(selType))?.code;
+  // ผล 3 ครั้งล่าสุด — กรองตามตลาดที่เลือก (type + category)
+  const selM = markets.find(m => m.key === selMarket);
+  const selTypeCode = selM?.type_code || markets.find(m => String(m.type_id) === String(selType))?.type_code;
   const recentResults = results
-    .filter(r => !selCode || r.type_code === selCode)
+    .filter(r => {
+      if (selM) return r.type_code === selM.type_code && (selM.category_code ? r.category_code === selM.category_code : !r.category_code);
+      if (selTypeCode) return r.type_code === selTypeCode;
+      return true;
+    })
     .slice(0, 3);
 
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -75,6 +82,8 @@ export default function Lotteries() {
     );
   };
 
+  const menuCls = (active) => `px-4 py-2 rounded-lg text-sm ${active ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700 hover:border-gold-500/40'}`;
+
   return (
     <div className="space-y-6">
       {/* ผลรางวัล 3 ครั้งล่าสุด — อยู่ด้านบนเสมอ */}
@@ -100,12 +109,12 @@ export default function Lotteries() {
         </section>
       )}
 
+      {/* เมนูแยกตามตลาดหวยของแต่ละประเทศ/หมวด */}
       <div className="flex flex-wrap items-center gap-2">
-        <Link to="/lotteries" className={`px-4 py-2 rounded-lg text-sm ${!selType ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700'}`}>ทั้งหมด</Link>
-        {types.map(t => (
-          <Link key={t.id} to={`/lotteries?type=${t.id}`}
-            className={`px-4 py-2 rounded-lg text-sm ${selType == t.id ? 'bg-gold-500 text-navy-950 font-bold' : 'bg-navy-800 text-navy-200 border border-navy-700 hover:border-gold-500/40'}`}>
-            {t.name_th}
+        <Link to="/lotteries" className={menuCls(!selMarket && !selType)}>ทั้งหมด</Link>
+        {markets.map(m => (
+          <Link key={m.key} to={`/lotteries?market=${m.key}`} className={menuCls(selMarket === m.key)}>
+            {TYPE_EMOJI[m.type_code] ? `${TYPE_EMOJI[m.type_code]} ` : ''}{m.name_th}
           </Link>
         ))}
       </div>

@@ -41,7 +41,7 @@ export function rulesForDraw(drawId) {
   return { draw, rules: listRules(draw.lottery_type_id, { categoryId: draw.category_id }) };
 }
 
-export function listDraws({ lotteryTypeId = null, status = null, upcoming = false } = {}) {
+export function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false } = {}) {
   const db = getDb();
   let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th,
                     c.code AS category_code, c.name_th AS category_name_th
@@ -51,6 +51,10 @@ export function listDraws({ lotteryTypeId = null, status = null, upcoming = fals
              WHERE 1=1`;
   const args = [];
   if (lotteryTypeId) { sql += ' AND d.lottery_type_id = ?'; args.push(lotteryTypeId); }
+  if (categoryId !== undefined) {
+    if (categoryId === null) sql += ' AND d.category_id IS NULL';
+    else { sql += ' AND d.category_id = ?'; args.push(categoryId); }
+  }
   if (status) { sql += ' AND d.status = ?'; args.push(status); }
   if (upcoming) sql += ` AND d.status IN ('scheduled','open') AND d.close_at > '${nowSql()}'`;
   sql += ' ORDER BY d.draw_at DESC LIMIT 200';
