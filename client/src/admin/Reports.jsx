@@ -57,8 +57,7 @@ export default function AdminReports() {
           sub="ความเสี่ยงที่ยังไม่ settle" />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* ยอดแทงตามประเภทการแทง */}
+      {/* ยอดแทงตามประเภทการแทง */}
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <h2 className="font-bold text-white mb-3">ยอดแทงตามประเภทการแทง</h2>
           <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
@@ -117,7 +116,6 @@ export default function AdminReports() {
             </tbody>
           </table></div>
         </div>
-      </div>
 
       {/* ผู้ชนะรางวัลสูงสุด */}
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
