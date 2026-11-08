@@ -6,18 +6,18 @@
   --color-navy-950: #fff1f4;   /* blush white — จบ gradient การ์ด */
   --color-navy-900: #fffcf8;   /* warm white — input/panel */
   --color-navy-800: #ffffff;   /* การ์ดหลัก */
-  --color-navy-700: #f0e6ec;   /* เส้นขอบ/active chip — rose-gray */
-  --color-navy-600: #e2d2da;   /* เส้นขอบเข้มขึ้น */
-  --color-navy-500: #c9b8c4;   /* ข้อความ/ขอบอ่อน */
-  --color-navy-400: #a99fb0;   /* secondary text อ่อน */
-  --color-navy-300: #918a9d;   /* secondary text (spec) */
-  --color-navy-200: #6e6579;   /* text เด่นขึ้น/hover */
+  --color-navy-700: #ecdee6;   /* เส้นขอบ/active chip — rose-gray (ชัดขึ้น) */
+  --color-navy-600: #d9c6d1;   /* เส้นขอบเข้มขึ้น (input border ชัด) */
+  --color-navy-500: #bfaebd;   /* ข้อความ/ขอบอ่อน */
+  --color-navy-400: #94899f;   /* secondary text อ่อน */
+  --color-navy-300: #7e7690;   /* secondary text — เข้มขึ้นเพื่อ contrast */
+  --color-navy-200: #655d75;   /* text เด่นขึ้น/hover */
   --color-navy-100: #d9d0e0;   /* พื้นอ่อนมาก */
 
   /* โทน gold เดิม → ชมพูโรสพาสเทล */
   --color-gold-100: #fbe9f0;
   --color-gold-200: #fbd9e4;
-  --color-gold-300: #e58aa8;   /* accent text อ่านได้บนพื้นขาว */
+  --color-gold-300: #dd7f9f;   /* accent text อ่านได้ชัดบนพื้นขาว */
   --color-gold-400: #d96c8f;   /* หัวข้อ/ลิงก์/ยอดเงิน */
   --color-gold-500: #c75b7f;   /* ปุ่ม/ขอบหลัก */
   --color-gold-600: #b04a6b;   /* gradient end */
@@ -66,11 +66,14 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 
 /* ================= Kawaii component layer ================= */
 
-/* การ์ด — มุมมน + เงาสีชมพูอ่อน */
+/* การ์ด — มุมมน + ขอบชัด + เงาชมพู */
 .rounded-2xl, .rounded-xl { border-radius: 1.25rem; }
 [class*="bg-navy-800"], [class*="bg-navy-900"] {
-  box-shadow: 0 2px 12px rgba(201, 162, 185, 0.12), 0 1px 3px rgba(142, 58, 86, 0.06);
+  box-shadow: 0 2px 10px rgba(190, 150, 175, 0.16), 0 1px 3px rgba(142, 58, 86, 0.08);
 }
+/* เส้นขอบการ์ดชัดขึ้นเล็กน้อย */
+.border-navy-700 { border-color: #ecdee6; }
+.border-navy-600 { border-color: #d9c6d1; }
 
 /* ปุ่ม — นุ่ม + press feedback */
 button, a[class*="rounded"] {
@@ -111,15 +114,27 @@ a[class*="from-gold-500"]::after {
 .hoverable { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
 .hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(199, 91, 127, 0.14); }
 
-/* ตาราง — minimal สไตล์พาสเทล */
+/* ตาราง — minimal สไตล์พาสเทล เส้นแบ่งชัดขึ้น */
 main table thead th {
-  background: #f7eff4;
+  background: #f8eff5;
   font-family: var(--font-display);
   letter-spacing: .02em;
-  color: #6e6579;
+  color: #655d75;
 }
 main table tbody tr:hover { background: #faf3f7; }
-main table tbody tr { border-color: #f0e6ec; }
+main table tbody tr { border-color: #ecdde6; }
+main table td, main table th { border-color: #ecdde6; }
+
+/* ตัวหนังสือขนาดเล็กมาก — ขยายให้อ่านง่ายขึ้น (10px→11px, 11px→12px) */
+.text-\[10px\] { font-size: 11px; }
+.text-\[11px\] { font-size: 12px; }
+
+/* placeholder เข้มขึ้นเล็กน้อย */
+::placeholder { color: #b7abbd; opacity: 1; }
+
+/* หัวข้อ — หนาและชัดขึ้น */
+h1, h2, h3 { font-weight: 700; }
+main h2 { letter-spacing: 0.005em; }
 
 /* skeleton — พาสเทล shimmer */
 .skeleton {
@@ -264,7 +279,7 @@ input.font-mono, input[inputmode="numeric"] {
 }
 
 /* เส้นแบ่งบาง */
-.divide-navy-700 > * + * { border-color: #f0e6ec; }
+.divide-navy-700 > * + * { border-color: #ecdde6; }
 
 /* Touch target ≥ 44px บนมือถือ */
 @media (max-width: 1023px) {
