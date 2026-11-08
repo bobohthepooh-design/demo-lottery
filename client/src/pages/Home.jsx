@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, satang, fmtDateTime } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 import { useAuth } from '../auth.jsx';
 
@@ -36,17 +36,68 @@ function ResultLine({ r }) {
   );
 }
 
+// นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
+function useNow() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+function countdownText(closeAtSql, now) {
+  // close_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS'
+  const close = new Date(String(closeAtSql).replace(' ', 'T') + 'Z').getTime();
+  const diff = close - now;
+  if (diff <= 0) return 'ปิดรับแล้ว';
+  const h = Math.floor(diff / 3600e3), m = Math.floor(diff % 3600e3 / 60e3), s = Math.floor(diff % 60e3 / 1000);
+  const p = n => String(n).padStart(2, '0');
+  return h >= 24 ? `อีก ${Math.floor(h / 24)} วัน ${p(h % 24)}:${p(m)}:${p(s)}` : `${p(h)}:${p(m)}:${p(s)}`;
+}
+
+// แถวรอบหวยของแต่ละประเทศ/หมวด — แสดงเวลาออกรางวัล + นับถอยหลังปิดรับ
+function DrawLine({ d, now }) {
+  const closed = d.status !== 'open';
+  return (
+    <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+      <span className="text-xs shrink-0">{TYPE_EMOJI[d.type_code] || '🎟️'}</span>
+      <span className="text-[11px] font-semibold text-white shrink-0">
+        {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+      </span>
+      <span className="text-[10px] text-navy-400 shrink-0">ออก {fmtDateTime(d.draw_at)}</span>
+      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${closed ? 'bg-navy-700 text-navy-400' : 'bg-gold-500/15 text-gold-300'}`}>
+        {closed ? 'ปิดรับแล้ว' : `⏳ ${countdownText(d.close_at, now)}`}
+      </span>
+    </div>
+  );
+}
+
 export default function Home() {
-  const { user, balance } = useAuth();
+  const { user } = useAuth();
+  const now = useNow();
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
   const [results, setResults] = useState([]);
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
-    api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws.slice(0, 6))).catch(() => {});
+    api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
     api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
   }, [user]);
+
+  // รอบเปิดรับที่ใกล้ปิดสุดของแต่ละประเทศ/หมวด
+  const openByCategory = [];
+  const seenDraw = new Set();
+  const sorted = [...draws]
+    .filter(d => d.status === 'open' || d.status === 'scheduled')
+    .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)));
+  for (const d of sorted) {
+    const key = `${d.type_code}:${d.category_code || ''}`;
+    if (seenDraw.has(key)) continue;
+    seenDraw.add(key);
+    openByCategory.push(d);
+  }
 
   // ผลล่าสุดของแต่ละประเทศ/หมวด (results เรียง published_at DESC อยู่แล้ว)
   const latestByCategory = [];
@@ -73,37 +124,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 border border-gold-500/30 p-5 md:p-12">
-        <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-gold-500/10 blur-3xl" />
-        <div className="relative">
-          <div className="inline-block text-xs bg-gold-500/20 text-gold-300 border border-gold-500/40 rounded-full px-3 py-1 mb-4">DEMO ONLY — ระบบจำลองเพื่อการศึกษา</div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
-            ทดลองระบบหวย<span className="text-gold-400">ออนไลน์</span><br />อย่างปลอดภัย
-          </h1>
-          <p className="mt-3 text-navy-200 max-w-xl">
-            ระบบจำลองสำหรับการศึกษา รองรับหวยไทย หวยลาว และหวยฮานอย
-            ใช้เครดิตเสมือนเท่านั้น ไม่มีการใช้เงินจริง
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            {user ? (
-              <Link to="/lotteries" className="bg-gold-500 text-navy-950 font-bold px-6 py-3 rounded-xl hover:bg-gold-400">เริ่มแทงหวย</Link>
-            ) : (
-              <>
-                <Link to="/register" className="bg-gold-500 text-navy-950 font-bold px-6 py-3 rounded-xl hover:bg-gold-400">สมัครสมาชิกฟรี</Link>
-                <Link to="/login" className="border border-navy-600 text-navy-100 px-6 py-3 rounded-xl hover:bg-navy-800">เข้าสู่ระบบ</Link>
-              </>
-            )}
-          </div>
-          {user && (
-            <div className="mt-6 inline-flex items-center gap-3 bg-navy-900/70 border border-gold-500/30 rounded-xl px-5 py-3">
-              <span className="text-sm text-navy-300">เครดิตจำลองของคุณ</span>
-              <span className="text-2xl font-bold text-gold-400">฿{satang(balance)}</span>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* Lottery types */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4">ประเภทหวยที่รองรับ</h2>
@@ -120,29 +140,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Upcoming draws */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">รอบหวยที่เปิดรับ</h2>
-          <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูทั้งหมด →</Link>
-        </div>
-        <div className="grid md:grid-cols-2 gap-3">
-          {draws.map(d => (
-            <div key={d.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <div className="font-semibold text-white">{d.type_name_th} — {d.draw_code}</div>
-                <div className="text-xs text-navy-300 mt-1">
-                  ออกรางวัล: {fmtDateTime(d.draw_at)} • ปิดรับ: {fmtDateTime(d.close_at)}
-                </div>
-              </div>
-              <span className={`text-xs font-bold px-2 py-1 rounded ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-navy-700 text-navy-300'}`}>
-                {d.status === 'open' ? 'เปิดรับ' : d.status}
-              </span>
-            </div>
-          ))}
-          {!draws.length && <div className="text-navy-300">ยังไม่มีรอบหวยที่เปิดรับ</div>}
-        </div>
-      </section>
+      {/* รอบหวยที่เปิดรับ — นับถอยหลังปิดรับของแต่ละประเทศ */}
+      {openByCategory.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">รอบหวยที่เปิดรับ</h2>
+            <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูทั้งหมด →</Link>
+          </div>
+          <div className="space-y-1">
+            {openByCategory.map(d => <DrawLine key={d.id} d={d} now={now} />)}
+          </div>
+        </section>
+      )}
 
     </div>
   );

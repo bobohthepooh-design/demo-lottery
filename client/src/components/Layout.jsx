@@ -2,7 +2,7 @@ import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const nav = [
   { to: '/', label: 'หน้าแรก', end: true },
@@ -16,7 +16,24 @@ const nav = [
 export default function Layout() {
   const { user, balance, logout, isAdmin, mfaRequired } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // แสดงวันที่+เวลาปัจจุบันบน title tab ด้านบนของเบราว์เซอร์ด้วย
+  useEffect(() => {
+    const p = n => String(n).padStart(2, '0');
+    const dateStr = `${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()}`;
+    const timeStr = `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+    document.title = `Demo Lottery — ${dateStr} ${timeStr}`;
+  }, [now]);
+
+  const dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const doLogout = async () => { await logout(); navigate('/'); };
 
@@ -42,6 +59,10 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-right leading-tight" title="วันที่และเวลาปัจจุบัน">
+              <div className="text-[10px] text-navy-300">{dateStr}</div>
+              <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
+            </div>
             {user ? (
               <>
                 <div className="hidden sm:block text-right">
@@ -58,6 +79,7 @@ export default function Layout() {
                 <Link to="/register" className="text-sm px-3 py-1.5 rounded-lg bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">สมัครสมาชิก</Link>
               </div>
             )}
+            <div className="sm:hidden text-xs font-mono font-bold text-gold-300">{timeStr}</div>
             <button className="md:hidden text-navy-200 text-xl" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
           </div>
         </div>
