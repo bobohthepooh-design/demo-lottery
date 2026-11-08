@@ -63,6 +63,15 @@ export default function AdminLotteries() {
     load();
   };
 
+  const setResultMode = async (t, mode) => {
+    if (!(await confirmAction({
+      title: 'ยืนยันเปลี่ยนโหมดผลรางวัล',
+      message: `ตั้งผลรางวัลของ "${t.name_th}" เป็น "${mode === 'auto' ? 'อัตโนมัติ (ดึงจากแหล่งข้อมูล)' : 'กรอกเองโดย admin'}" ใช่หรือไม่?`,
+    }))) return;
+    await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { result_mode: mode } });
+    load();
+  };
+
   const saveRule = async () => {
     if (!(await confirmAction({ title: editRule.id ? 'ยืนยันแก้ไขกติกา' : 'ยืนยันเพิ่มกติกา', message: `${editRule.id ? 'บันทึกการแก้ไข' : 'เพิ่ม'}กติกา "${editRule.name_th}" ใช่หรือไม่?` }))) return;
     try {
@@ -117,6 +126,14 @@ export default function AdminLotteries() {
               </button>
             </div>
             <div className="text-xs text-navy-300 mt-1">{t.description}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[11px] text-navy-400">ผลรางวัล:</span>
+              <select value={t.result_mode || 'auto'} onChange={e => setResultMode(t, e.target.value)}
+                className="bg-navy-900 border border-navy-600 rounded px-2 py-1 text-xs text-gold-300">
+                <option value="auto">อัตโนมัติ</option>
+                <option value="manual">กรอกเอง</option>
+              </select>
+            </div>
             <div className="text-xs text-navy-400 mt-2">{rules.filter(r => r.lottery_type_id === t.id && r.is_active).length} ประเภทการแทงที่ใช้งาน</div>
           </div>
         ))}

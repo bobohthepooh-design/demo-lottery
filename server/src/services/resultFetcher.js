@@ -149,7 +149,7 @@ function drawLocalDate(draw) {
 function pendingDraws() {
   const db = getDb();
   const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  return db.prepare(`SELECT d.*, lt.code AS type_code, c.code AS cat_code
+  return db.prepare(`SELECT d.*, lt.code AS type_code, lt.result_mode AS result_mode, c.code AS cat_code
     FROM lottery_draws d JOIN lottery_types lt ON lt.id=d.lottery_type_id
     LEFT JOIN lottery_categories c ON c.id=d.category_id
     WHERE d.status IN ('open','scheduled','closed') AND d.draw_at <= ?
@@ -169,6 +169,7 @@ export async function autoSettleResults() {
   try { lao = await fetchLaoResult(); } catch (e) { out.errors.push(`LA fetch: ${e.message}`); }
 
   for (const d of draws) {
+    if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
     let src = null, srcLabel = d.type_code;
     if (d.type_code === 'TH') src = thai;
     else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(laodl)'; }

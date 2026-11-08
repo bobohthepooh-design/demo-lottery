@@ -163,13 +163,14 @@ const typeSchema = z.object({
   name_en: z.string().max(200).optional(),
   description: z.string().max(500).optional(),
   is_active: z.number().int().min(0).max(1).optional(),
+  result_mode: z.enum(['auto', 'manual']).optional(),
 });
 
 router.post('/lottery/types', requirePerm('lottery.manage'), (req, res, next) => {
   try {
     const t = typeSchema.parse(req.body);
-    const r = db().prepare('INSERT INTO lottery_types (code,name_th,name_en,description,is_active) VALUES (?,?,?,?,?)')
-      .run(t.code, t.name_th, t.name_en || null, t.description || null, t.is_active ?? 1);
+    const r = db().prepare('INSERT INTO lottery_types (code,name_th,name_en,description,is_active,result_mode) VALUES (?,?,?,?,?,?)')
+      .run(t.code, t.name_th, t.name_en || null, t.description || null, t.is_active ?? 1, t.result_mode ?? 'auto');
     audit({ userId: req.user.id, action: 'admin.lottery_type_create', entityType: 'lottery_type', entityId: String(r.lastInsertRowid), req });
     res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) });
   } catch (e) { next(e); }

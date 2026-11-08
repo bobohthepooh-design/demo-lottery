@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime, thaiTime } from '../api.js';
+import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { TYPE_EMOJI } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
@@ -70,7 +70,8 @@ function tickerText(r) {
     const vals = Array.isArray(v) ? v.join(', ') : v;
     return vals ? `${f.short || f.label} ${vals}` : null;
   }).filter(Boolean);
-  return `${r.type_name_th}${r.category_name_th ? ` ${r.category_name_th}` : ''}: ${parts.join(' • ') || '—'}`;
+  const upd = r.published_at ? ` • อัปเดต ${thaiDate(r.published_at)} ${thaiTime(r.published_at)} น.` : '';
+  return `${r.type_name_th}${r.category_name_th ? ` ${r.category_name_th}` : ''}: ${parts.join(' • ') || '—'}${upd}`;
 }
 
 export default function Home() {
