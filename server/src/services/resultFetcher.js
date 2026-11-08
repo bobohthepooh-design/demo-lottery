@@ -81,6 +81,22 @@ export function generateHanoiResult(drawCode) {
   };
 }
 
+/** ผลหวยไทยจำลอง deterministic ตาม draw_code — fallback เมื่อ GLO ยังไม่เผยแพร่ผลของวันออกรางวัล */
+export function generateThaiResult(drawCode) {
+  const rng = mulberry32(hashSeed(`thai:${drawCode}`));
+  const n3 = () => pad(rnd(rng, 100, 999), 3);
+  return {
+    date: null, // ใส่วันของรอบตอนใช้งาน
+    winning: {
+      first: pad(rnd(rng, 100000, 999999), 6),
+      front3: [n3(), n3()],
+      top3: [n3(), n3()],
+      bottom2: pad(rnd(rng, 0, 99), 2),
+      near1: [pad(rnd(rng, 0, 9), 1)],
+    },
+  };
+}
+
 /** ผลฮานอยของหมวดหนึ่งๆ — HNN ใช้ XSMB จริง, อื่น ๆ สุ่ม deterministic */
 async function hanoiResultFor(draw) {
   if (draw.cat_code === 'HNN') return fetchHanoiResult();
@@ -171,7 +187,12 @@ export async function autoSettleResults() {
   for (const d of draws) {
     if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
     let src = null, srcLabel = d.type_code;
-    if (d.type_code === 'TH') src = thai;
+    if (d.type_code === 'TH') {
+      // ใช้ผล GLO จริงเฉพาะเมื่อเป็นผลของวันออกรางวัล — ถ้า GLO ยังไม่อัปเดต/ล่าช้า
+      // fallback เป็นผล deterministic ของรอบนั้น (admin แก้ผลย้อนหลังได้เสมอ)
+      if (thai && thai.date === drawLocalDate(d)) { src = thai; srcLabel = 'TH(GLO)'; }
+      else { const g = generateThaiResult(d.draw_code); src = { winning: g.winning, date: drawLocalDate(d) }; srcLabel = 'TH(gen)'; }
+    }
     else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(laodl)'; }
     else if (d.type_code === 'HN') {
       // HNN (ปกติ): ใช้ XSMB จริงเฉพาะเมื่อผลของวันตรงกับวันออกรางวัล —

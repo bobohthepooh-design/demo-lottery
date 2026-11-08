@@ -318,9 +318,19 @@ export function settleDraw(adminId, drawId, winningNumbers) {
 
     // credit winners & update slip status
     const updSlip = d.prepare(`UPDATE bet_slips SET status = ?, total_payout = ?, settled_at = datetime('now') WHERE id = ?`);
-    const itemsBySlip = d.prepare(`SELECT COUNT(*) c, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) w FROM bet_items WHERE slip_id = ?`);
+    // นับสถานะทั้งโพยด้วย GROUP BY ครั้งเดียว (กัน N+1)
+    const slipIds = [...slipStats.keys()];
+    const countsBySlip = new Map();
+    if (slipIds.length) {
+      const qs = slipIds.map(() => '?').join(',');
+      for (const r of d.prepare(`SELECT slip_id, COUNT(*) AS c,
+          SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END) AS w
+          FROM bet_items WHERE slip_id IN (${qs}) GROUP BY slip_id`).all(...slipIds)) {
+        countsBySlip.set(r.slip_id, r);
+      }
+    }
     for (const [slipId, st] of slipStats) {
-      const counts = itemsBySlip.get(slipId);
+      const counts = countsBySlip.get(slipId) || { c: 0, w: 0 };
       const status = counts.w === 0 ? 'lost' : (counts.w === counts.c ? 'won' : 'partial');
       updSlip.run(status, st.payout, slipId);
       if (st.payout > 0) {
