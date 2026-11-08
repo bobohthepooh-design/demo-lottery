@@ -13,7 +13,7 @@ export default function AdminSettings() {
     r.settings.forEach(s => { m[s.key] = typeof s.value === 'object' ? JSON.stringify(s.value) : String(s.value); });
     setEdits(m);
   }).catch(e => alert(e.message));
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const save = async (key) => {
     if (!(await confirmAction({ title: 'ยืนยันบันทึกการตั้งค่า', message: `บันทึกการเปลี่ยนแปลง "${key}" ใช่หรือไม่?` }))) return;

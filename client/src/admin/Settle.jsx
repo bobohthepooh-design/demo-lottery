@@ -17,7 +17,7 @@ export default function AdminSettle() {
   const [editMsg, setEditMsg] = useState('');
 
   const load = () => api('/admin/draws').then(r => setDraws(r.draws)).catch(e => alert(e.message));
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
   const settled = draws.filter(d => d.status === 'settled');
