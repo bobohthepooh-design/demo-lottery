@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
+import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
+import Countdown from '../components/Countdown.jsx';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
@@ -21,6 +22,7 @@ export default function PlaceBet() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
+  const [confirming, setConfirming] = useState(false);
 
   // current entry
   const [selRule, setSelRule] = useState('');
@@ -78,7 +80,7 @@ export default function PlaceBet() {
   };
 
   const submit = async () => {
-    setErr(''); setBusy(true);
+    setErr(''); setBusy(true); setConfirming(false);
     try {
       const r = await api('/bets', { method: 'POST', body: {
         drawId: Number(drawId),
@@ -113,12 +115,14 @@ export default function PlaceBet() {
       {/* left: entry form */}
       <div className="lg:col-span-3 space-y-4">
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold text-white">{draw.type_name_th}{draw.category_name_th ? ` — ${draw.category_name_th}` : ''}</h1>
+              <Link to="/lotteries" className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่น</Link>
+              <h1 className="text-xl font-bold text-white mt-1">{drawLabel(draw)}</h1>
               <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)} • ปิด {fmtDateTime(draw.close_at)}</div>
+              {!closed && <div className="text-sm mt-1"><Countdown closeAt={draw.close_at} /></div>}
             </div>
-            <span className={`text-xs font-bold px-3 py-1 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
+            <span className={`text-xs font-bold px-3 py-1 rounded-full shrink-0 ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
               {closed ? 'ปิดรับแล้ว' : 'เปิดรับ'}
             </span>
           </div>
@@ -197,13 +201,45 @@ export default function PlaceBet() {
             <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
             <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
           </div>
-          <button onClick={submit} disabled={!slip.length || busy || closed || totalSatang > balance}
+          <button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
             className="mt-4 w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-40">
-            {busy ? 'กำลังส่ง...' : 'ยืนยันส่งโพย'}
+            ตรวจสอบและยืนยันโพย
           </button>
           {!user && <div className="text-center text-sm text-navy-300 mt-2"><Link to="/login" className="text-gold-400">เข้าสู่ระบบ</Link> เพื่อแทง</div>}
         </div>
       </div>
+
+      {/* confirm modal */}
+      {confirming && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setConfirming(false)}>
+          <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-white mb-1">ยืนยันโพยหวย</h2>
+            <p className="text-sm text-navy-300 mb-4">{drawLabel(draw)}</p>
+            <div className="space-y-1.5 max-h-56 overflow-y-auto mb-4">
+              {slip.map((i, idx) => (
+                <div key={idx} className="flex justify-between text-sm bg-navy-900 rounded-lg px-3 py-2">
+                  <span><span className="font-mono text-gold-300 text-base">{i.number}</span> <span className="text-navy-300">{i.name}</span></span>
+                  <span className="text-gold-300">฿{satang(i.stakeSatang)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-navy-700 pt-3 space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-navy-300">ยอดแทงรวม ({slip.length} รายการ)</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
+              <div className="flex justify-between"><span className="text-navy-300">เครดิตคงเหลือหลังแทง</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setConfirming(false)} disabled={busy}
+                className="flex-1 border border-navy-600 text-navy-200 py-2.5 rounded-lg hover:bg-navy-700 disabled:opacity-40">
+                แก้ไขต่อ
+              </button>
+              <button onClick={submit} disabled={busy}
+                className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400 disabled:opacity-40">
+                {busy ? 'กำลังส่ง...' : 'ยืนยันส่งโพย'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

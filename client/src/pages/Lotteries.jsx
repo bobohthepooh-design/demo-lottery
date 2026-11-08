@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api, fmtDateTime } from '../api.js';
+import { api, fmtDateTime, drawLabel } from '../api.js';
 import ResultLine from '../components/ResultLine.jsx';
+import Countdown from '../components/Countdown.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -47,8 +48,8 @@ export default function Lotteries() {
     <div className={`bg-navy-800 border rounded-xl p-5 ${featured ? 'border-green-500/60 animate-online-border' : 'border-navy-700'}`}>
       <div className="flex items-start justify-between">
         <div>
-          <div className="font-bold text-white text-lg">{d.type_name_th}{d.category_name_th ? ` — ${d.category_name_th}` : ''}</div>
-          <div className="text-sm text-navy-300">{d.draw_code}</div>
+          <div className="font-bold text-white text-lg leading-snug">{drawLabel(d)}</div>
+          <div className="text-xs text-navy-400 mt-0.5">{d.draw_code}</div>
         </div>
         {featured ? (
           <span className="animate-online inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-green-500/20 text-green-300 border border-green-500/50">
@@ -64,6 +65,7 @@ export default function Lotteries() {
       <div className="mt-3 text-sm text-navy-300 space-y-1">
         <div>🕐 ออกรางวัล: <span className="text-white">{fmtDateTime(d.draw_at)}</span></div>
         <div>⏱️ ปิดรับโพย: <span className="text-white">{fmtDateTime(d.close_at)}</span></div>
+        {live && <div className="text-sm"><Countdown closeAt={d.close_at} /></div>}
       </div>
       {live && (
         <Link to={`/bet/${d.id}`} className="mt-4 block text-center bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400">
