@@ -143,7 +143,7 @@ export default function Home() {
   // แจ้งเตือนรอบที่ใกล้ปิดรับสุด (สูงสุด 3 รอบ) — กระพริบแดงเมื่อเหลือ < 1 ชม.
   const alertDraws = sorted
     .filter(d => d.status === 'open' && msLeft(d.close_at, now) > 0)
-    .slice(0, 3);
+    .slice(0, 5);
 
   const openCount = draws.filter(d => d.status === 'open').length;
   const b = mergeBanner(banner);
@@ -287,35 +287,37 @@ export default function Home() {
         </div>
       )}
 
-      {/* แจ้งเตือนเวลาปิดรับโพย — แบบข้อความวิ่งประหยัดพื้นที่ */}
+      {/* รอบที่จะปิดรับเร็วที่สุด — 5 รายการล่าสุด */}
       {alertDraws.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-500/15 to-red-500/10 border border-amber-500/40 rounded-xl overflow-hidden">
-          <div className="flex items-center">
-            <span className="shrink-0 px-3 py-1.5 text-[11px] font-bold text-amber-300 bg-amber-500/15 border-r border-amber-500/30">
-              🔔 ใกล้ปิดรับ
-            </span>
-            <div className="overflow-hidden flex-1 py-1.5">
-              <div className="flex w-max animate-marquee-fast gap-10 px-4">
-                {[...alertDraws, ...alertDraws].map((d, i) => {
-                  const left = msLeft(d.close_at, now);
-                  const urgent = left > 0 && left < 3600e3;
-                  return (
-                    <span key={i} className="text-xs whitespace-nowrap flex items-center gap-1.5">
-                      <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
-                      <span className="font-semibold text-white">
-                        {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
-                      </span>
-                      <span className="text-navy-400">ปิด {thaiTime(d.close_at)} น.</span>
-                      <span className={`font-bold px-1.5 py-0.5 rounded ${urgent ? 'bg-red-500/25 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>
-                        {durationText(d.close_at, now)}
-                      </span>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
+        <section className="bg-navy-800/80 border border-amber-500/30 rounded-xl p-4">
+          <h2 className="text-sm font-bold text-amber-300 mb-3 flex items-center gap-2">
+            ⏰ รอบที่จะปิดรับเร็วที่สุด
+            <span className="text-[10px] text-navy-400 font-normal">(เรียงตามเวลาปิดรับ)</span>
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {alertDraws.slice(0, 5).map((d, i) => {
+              const ac = typeAccent(d.type_code);
+              const left = msLeft(d.close_at, now);
+              const urgent = left > 0 && left < 3600e3;
+              return (
+                <Link key={d.id} to={user ? `/bet/${d.id}` : '/login'}
+                  className="flex items-center gap-2 bg-navy-900/70 border border-navy-700/60 rounded-lg px-3 py-2 hover:border-gold-500/40 transition">
+                  <span className="text-[10px] font-mono text-navy-500 w-4 shrink-0">{i + 1}.</span>
+                  <FlagIcon code={d.type_code} className="w-5 h-5 text-[8px] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-semibold truncate ${ac.text}`}>
+                      {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                    </div>
+                    <div className="text-[10px] text-navy-400">ปิด {thaiTime(d.close_at)} น. • ออก {fmtDateTime(d.draw_at)}</div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${urgent ? 'bg-red-500/25 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                    {durationText(d.close_at, now)}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
-        </div>
+        </section>
       )}
 
       {/* ประเภทหวยที่รองรับ + รอบที่เปิดรับ/นับถอยหลังของแต่ละประเทศ */}
