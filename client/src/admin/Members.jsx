@@ -79,7 +79,7 @@ export default function AdminMembers() {
                   onChange={e => setEdit({ ...edit, withdrawUnlocked: e.target.checked })}
                   className="mt-0.5 accent-gold-500" />
                 <label htmlFor="wd-unlock" className="text-xs text-navy-200 leading-relaxed">
-                  💸 <b>อนุญาตให้ถอนเครดิต</b> — admin กำหนดให้สมาชิกคนนี้ถอนได้เต็มยอดคงเหลือโดยไม่ต้องเช็คเงื่อนไขเงินฝาก/เงินรางวัล
+                  💸 <b>อนุญาตให้ถอนเครดิต</b> — ถอนได้เต็มยอดคงเหลือ แต่ระบบจะ<b>หักเครดิตแถม ฿50 ออก</b> และต้องเหลืออย่างน้อย ฿50 จึงจะถอนได้
                 </label>
               </div>
               <div>

@@ -70,9 +70,11 @@ const WITHDRAW_UNLOCK_SATANG = 10000; // ต้องเติมเครดิ
  *  ระบบ/adjust/เงินฝากไม่สามารถถอนได้โดยตรง) */
 function withdrawableInfo(d, userId, balance) {
   const u = d.prepare('SELECT withdraw_unlocked FROM users WHERE id = ?').get(userId);
-  // admin ปลดล็อกให้รายคน → ถอนได้เต็มยอดคงเหลือโดยไม่ต้องเช็คเงินฝาก/เงินรางวัล
+  // admin ปลดล็อกให้รายคน → ถอนได้เต็มยอดคงเหลือ แต่ต้องเหลืออย่างน้อย ฿50
+  // และระบบหักเครดิตแถม ฿50 ของขวัญสมัครออกแล้วตอนปลดล็อก (ดู clawbackSignupCreditTx)
   if (u?.withdraw_unlocked) {
-    return { deposited: 0, won: 0, withdrawn: 0, withdrawable: Math.max(0, balance), unlocked: true, override: true };
+    return { deposited: 0, won: 0, withdrawn: 0,
+      withdrawable: balance >= 5000 ? balance : 0, unlocked: true, override: true };
   }
   const row = d.prepare(`SELECT
       COALESCE(SUM(CASE WHEN type='deposit' THEN amount END),0) AS deposited,
@@ -119,6 +121,23 @@ export function memberWalletAction(userId, { direction, amount, description }) {
     audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
       detail: { amount }, req: null });
     return { transaction: t, balance: newBalance };
+  });
+}
+
+/** หักเครดิตแถม ฿50 ตอนสมัคร (ครั้งเดียวต่อ user) — เรียกใน transaction ของ admin ตอนปลดล็อกถอน */
+export function clawbackSignupCreditTx(d, { userId, adminId }) {
+  const key = `free-credit-clawback-${userId}`;
+  if (d.prepare('SELECT id FROM virtual_transactions WHERE idempotency_key = ?').get(key)) return null;
+  const w = getWalletTx(d, userId);
+  const amount = Math.min(5000, w.balance);
+  if (amount <= 0) return null;
+  const newBalance = w.balance - amount;
+  updateBalance(d, w.id, w.version, newBalance);
+  return insertTransaction(d, {
+    walletId: w.id, userId, type: 'admin_debit', amount, direction: 'debit',
+    balanceAfter: newBalance,
+    description: 'หักเครดิตแถม ฿50 ก่อนอนุญาตถอน',
+    idempotencyKey: key, createdBy: adminId,
   });
 }
 
