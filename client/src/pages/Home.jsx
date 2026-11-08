@@ -39,7 +39,7 @@ function DrawLine({ d, now }) {
     <div className={`bg-navy-800/70 border rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap ${isOpen ? 'border-navy-700/60' : 'border-navy-700/40 opacity-75'}`}>
       <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
       <span className={`text-[11px] font-semibold shrink-0 ${typeAccent(d.type_code).text}`}>
-        {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+        {d.category_name_th || d.type_name_th}
       </span>
       <span className="text-[10px] text-navy-400 shrink-0">ออก {fmtDateTime(d.draw_at)}</span>
       <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${isOpen ? 'bg-gold-500/15 text-gold-600' : isScheduled ? 'bg-lav-100 text-lav-500 border border-lav-100' : 'bg-navy-100 text-navy-400'}`}>
@@ -199,7 +199,7 @@ export default function Home() {
                   <FlagIcon code={d.type_code} className="w-10 h-10 text-xs" />
                   <div>
                     <div className={`font-bold text-lg ${ac.text}`}>
-                      {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                      {d.category_name_th || d.type_name_th}
                     </div>
                     <div className="text-xs text-navy-300">ออกรางวัล {fmtDateTime(d.draw_at)} • ปิดรับ {thaiTime(d.close_at)} น.</div>
                   </div>
@@ -237,7 +237,7 @@ export default function Home() {
                       <FlagIcon code={d.type_code} className="w-6 h-6 text-[8px] shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className={`text-xs font-semibold truncate ${ac.text}`}>
-                          {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                          {d.category_name_th || d.type_name_th}
                         </div>
                         <div className="text-[10px] text-navy-400">ปิด {thaiTime(d.close_at)} น.</div>
                       </div>

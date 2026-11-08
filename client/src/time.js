@@ -31,9 +31,10 @@ export function thaiTime(s) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// ชื่อรอบแบบคนอ่าน: "หวยฮานอย — ฮานอยปกติ • งวด 8 พ.ย. 2569 เวลา 18:00 น."
+// ชื่อรอบแบบคนอ่าน: "หวยฮานอยปกติ • งวด 8 พ.ย. 2569 เวลา 18:00 น."
+// ถ้ามีชื่อหมวด (เช่น หวยลาวพัฒนา, ฮานอย VIP) ใช้ชื่อหมวดอย่างเดียว — ไม่ต่อท้ายชื่อประเภทซ้ำ
 export function drawLabel(d) {
   if (!d) return '';
-  const name = [d.type_name_th, d.category_name_th].filter(Boolean).join(' — ');
+  const name = d.category_name_th || d.type_name_th || '';
   return `${name} • งวด ${thaiDate(d.draw_at)} เวลา ${thaiTime(d.draw_at)} น.`;
 }

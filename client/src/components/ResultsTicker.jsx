@@ -16,7 +16,7 @@ function tickerText(r) {
   }).filter(Boolean);
   const upd = r.published_at ? ` • อัปเดต ${thaiDate(r.published_at)} ${thaiTime(r.published_at)} น.` : '';
   const src = r.source === 'manual' ? ' • ✏️ กรอกเอง' : r.source === 'auto' ? ' • 🤖 อัตโนมัติ' : '';
-  return `${r.type_name_th}${r.category_name_th ? ` ${r.category_name_th}` : ''}: ${parts.join(' • ') || '—'}${src}${upd}`;
+  return `${r.category_name_th || r.type_name_th}: ${parts.join(' • ') || '—'}${src}${upd}`;
 }
 
 // Ticker ผลรางวัลล่าสุด — แสดงใต้แถบประกาศทุกหน้า

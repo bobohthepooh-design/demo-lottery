@@ -65,7 +65,7 @@ export default function ResultLine({ r }) {
     <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-2">
       <div className="flex items-center gap-2 text-[11px]">
         <FlagIcon code={r.type_code} className="w-6 h-6 text-[10px]" />
-        <span className="font-semibold text-white">{r.type_name_th}{r.category_name_th ? ` ${r.category_name_th}` : ''}</span>
+        <span className="font-semibold text-navy-950">{r.category_name_th || r.type_name_th}</span>
         {r.source && (
           <span className={`text-[9px] px-1.5 py-0.5 rounded ${r.source === 'manual' ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
             {r.source === 'manual' ? '✏️ กรอกเอง' : '🤖 อัตโนมัติ'}
