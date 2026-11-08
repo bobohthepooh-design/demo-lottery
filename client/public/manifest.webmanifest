@@ -1,0 +1,14 @@
+{
+  "name": "Demo Lottery Platform",
+  "short_name": "Demo Lottery",
+  "description": "ระบบจำลองหวยออนไลน์เพื่อการศึกษา — ใช้เครดิตเสมือน",
+  "lang": "th",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#060d1a",
+  "theme_color": "#060d1a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

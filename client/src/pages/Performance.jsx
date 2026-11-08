@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, satang, fmtDateTime } from '../api.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
+import { SkeletonCard, SkeletonTable } from '../components/Skeleton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 function Kpi({ label, value, sub, tone = 'text-white' }) {
   return (
@@ -21,7 +23,15 @@ export default function Performance() {
     api('/bets/stats').then(r => setStats(r.stats)).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center text-navy-300 py-10">กำลังโหลด...</div>;
+  if (loading) return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <SkeletonCard className="h-9 w-56" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {Array.from({ length: 6 }, (_, i) => <SkeletonCard key={i} className="h-24" />)}
+      </div>
+      <SkeletonTable rows={4} />
+    </div>
+  );
   if (!stats) return <div className="text-center text-navy-300 py-10">โหลดข้อมูลไม่สำเร็จ</div>;
 
   const { totals, items, byType, best } = stats;
@@ -90,9 +100,9 @@ export default function Performance() {
             })}
           </div>
         ) : (
-          <div className="p-6 text-center text-navy-400 text-sm">
-            ยังไม่มีข้อมูล — <Link to="/lotteries" className="text-gold-400">ไปแทงหวยเลย</Link>
-          </div>
+          <EmptyState emoji="📊" title="ยังไม่มีข้อมูลการเล่น"
+            hint="เริ่มแทงหวยเพื่อดูสถิติและผลการเล่นของคุณที่นี่"
+            to="/lotteries" cta="ไปแทงหวยเลย" />
         )}
       </section>
 

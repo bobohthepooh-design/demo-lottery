@@ -3,6 +3,7 @@ import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
+import ToastHost from './ToastHost.jsx';
 import { FlagIcon } from './ResultLine.jsx';
 import { useEffect, useState } from 'react';
 
@@ -158,6 +159,7 @@ export default function Layout() {
         Demo Lottery Platform — เพื่อการศึกษาเท่านั้น • ใช้เครดิตเสมือน ไม่เกี่ยวข้องกับการพนันเงินจริง
       </footer>
 
+      <ToastHost />
       {mfaRequired && user && <MfaModal />}
     </div>
   );

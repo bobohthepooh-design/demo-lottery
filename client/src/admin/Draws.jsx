@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
+import { toast } from '../components/toast.js';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -22,7 +23,7 @@ export default function AdminDraws() {
   const [editDraw, setEditDraw] = useState(null);
 
   const load = () => {
-    api('/admin/draws').then(r => setDraws(r.draws)).catch(e => alert(e.message));
+    api('/admin/draws').then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
     api('/admin/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/admin/lottery/categories').then(r => setCats(r.categories)).catch(() => {});
   };
@@ -38,7 +39,7 @@ export default function AdminDraws() {
         draw_at: form.draw_at.replace('T', ' '), close_at: form.close_at.replace('T', ' '),
       }});
       setShowForm(false); setForm({ lottery_type_id: '', category_id: '', draw_code: '', draw_at: '', close_at: '' }); load();
-    } catch (e2) { alert(e2.message); }
+    } catch (e2) { toast(e2.message, 'error'); }
   };
 
   const setStatus = async (id, status) => {
@@ -48,7 +49,7 @@ export default function AdminDraws() {
       : { title: 'ยืนยันเปลี่ยนสถานะ', message: `เปลี่ยนสถานะรอบ "${d?.draw_code}" เป็น "${STATUS_TH[status]}" ใช่หรือไม่?` };
     if (!(await confirmAction(warn))) return;
     try { await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } }); load(); }
-    catch (e) { alert(e.message); }
+    catch (e) { toast(e.message, 'error'); }
   };
 
   const openEdit = (d) => setEditDraw({
@@ -65,7 +66,7 @@ export default function AdminDraws() {
         close_at: editDraw.close_at.replace('T', ' '),
       }});
       setEditDraw(null); load();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   return (

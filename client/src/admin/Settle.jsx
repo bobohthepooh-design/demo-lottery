@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 import { confirmAction } from './confirm.jsx';
+import { toast } from '../components/toast.js';
 
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
@@ -21,7 +22,7 @@ export default function AdminSettle() {
   const [legacyFields, setLegacyFields] = useState({});
   const [legacyMsg, setLegacyMsg] = useState('');
 
-  const load = () => api('/admin/draws').then(r => setDraws(r.draws)).catch(e => alert(e.message));
+  const load = () => api('/admin/draws').then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
   useEffect(() => { load(); }, []);
 
   // สั่งระบบตรวจสอบ+ออกผลทุกผลที่ถึงเวลาแล้วทันที (ไม่ต้องรอ scheduler 15 นาที)
@@ -75,7 +76,7 @@ export default function AdminSettle() {
       const r = await api(`/admin/draws/${sel}/fetch-result`, { method: 'POST', body: {} });
       fillFields(r.winning, setFields);
       setErr('');
-      alert(`ดึงผลสำเร็จ (วันที่ ${r.date || '-'}) — ตรวจสอบแล้วกดยืนยันออกผล`);
+      toast(`ดึงผลสำเร็จ (วันที่ ${r.date || '-'}) — ตรวจสอบแล้วกดยืนยันออกผล`, 'success');
     } catch (e) { setErr(e.message); }
   };
 

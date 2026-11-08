@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { confirmAction } from './confirm.jsx';
+import { toast } from '../components/toast.js';
 
 export default function AdminRoles() {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ export default function AdminRoles() {
     const m = {};
     r.roles.forEach(role => { m[role.id] = new Set(role.permissions); });
     setSel(m);
-  }).catch(e => alert(e.message));
+  }).catch(e => toast(e.message, 'error'));
   useEffect(() => { load(); }, []);
   if (!data) return <div className="text-navy-300">กำลังโหลด...</div>;
 
@@ -30,8 +31,8 @@ export default function AdminRoles() {
     if (!(await confirmAction({ title: 'ยืนยันบันทึกสิทธิ์', message: `บันทึกสิทธิ์การใช้งานของ role "${role?.name}" ใช่หรือไม่?` }))) return;
     try {
       await api('/admin/roles/permissions', { method: 'PUT', body: { roleId, permissionIds: [...sel[roleId]] } });
-      alert('บันทึกสิทธิ์แล้ว');
-    } catch (e) { alert(e.message); }
+      toast('บันทึกสิทธิ์แล้ว', 'success');
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   return (

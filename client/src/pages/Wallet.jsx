@@ -104,8 +104,8 @@ export default function Wallet() {
                   <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
                 </tr>
               ))}
-              {!loading && !txs.length && <tr><td colSpan="6" className="px-4 py-8 text-center text-navy-400">ยังไม่มีธุรกรรม</td></tr>}
-              {loading && <tr><td colSpan="6" className="px-4 py-8 text-center text-navy-400">กำลังโหลด...</td></tr>}
+              {!loading && !txs.length && <tr><td colSpan="6" className="px-4 py-8 text-center"><span className="text-3xl">📭</span><div className="text-navy-300 mt-1">ยังไม่มีธุรกรรม — เติมเครดิตเพื่อเริ่มใช้งาน</div></td></tr>}
+              {loading && <tr><td colSpan="6" className="px-4 py-4"><div className="space-y-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-8 w-full" />)}</div></td></tr>}
             </tbody>
           </table>
         </div>

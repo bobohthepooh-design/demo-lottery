@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
 import { confirmAction } from './confirm.jsx';
+import { toast } from '../components/toast.js';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([]);
@@ -8,7 +9,7 @@ export default function AdminMembers() {
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
 
-  const load = () => api(`/admin/members?q=${encodeURIComponent(q)}`).then(r => setMembers(r.members)).catch(e => alert(e.message));
+  const load = () => api(`/admin/members?q=${encodeURIComponent(q)}`).then(r => setMembers(r.members)).catch(e => toast(e.message, 'error'));
   useEffect(() => { load(); }, []);
 
   const save = async () => {
@@ -16,14 +17,14 @@ export default function AdminMembers() {
     try {
       await api(`/admin/members/${edit.id}`, { method: 'PATCH', body: edit });
       setEdit(null); load();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const remove = async () => {
     try {
       await api(`/admin/members/${del.id}`, { method: 'DELETE' });
       setDel(null); load();
-    } catch (e) { alert(e.message); setDel(null); }
+    } catch (e) { toast(e.message, 'error'); setDel(null); }
   };
 
   return (

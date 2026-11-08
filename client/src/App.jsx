@@ -27,7 +27,7 @@ import AdminBanner from './admin/Banner.jsx';
 
 function Protected({ children, admin = false }) {
   const { user, loading, isAdmin } = useAuth();
-  if (loading) return <div className="p-10 text-center text-navy-300">กำลังโหลด...</div>;
+  if (loading) return <div className="p-10"><div className="skeleton h-8 w-48 mx-auto mb-6" /><div className="skeleton h-64 w-full max-w-3xl mx-auto" /></div>;
   if (!user) return <Navigate to="/login" replace />;
   if (admin && !isAdmin) return <Navigate to="/" replace />;
   return children;

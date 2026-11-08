@@ -5,6 +5,7 @@ import { confirmAction } from './confirm.jsx';
 import { resultSchema } from '../lotterySchema.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import AdminSettle from './Settle.jsx';
+import { toast } from '../components/toast.js';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
@@ -46,7 +47,7 @@ export default function AdminLotteries() {
   const setTab = (t) => setParams(t === 'settle' ? { tab: 'settle' } : {});
 
   const load = () => {
-    api('/admin/lottery/types').then(r => setTypes(r.types)).catch(e => alert(e.message));
+    api('/admin/lottery/types').then(r => setTypes(r.types)).catch(e => toast(e.message, 'error'));
     api('/admin/lottery/rules').then(r => setRules(r.rules)).catch(() => {});
     api('/admin/lottery/categories').then(r => setCategories(r.categories)).catch(() => {});
   };
@@ -56,7 +57,7 @@ export default function AdminLotteries() {
     e.preventDefault();
     if (!(await confirmAction({ title: 'ยืนยันเพิ่มประเภทหวย', message: `เพิ่มประเภทหวย "${typeForm.name_th}" (${typeForm.code}) ใช่หรือไม่?` }))) return;
     try { await api('/admin/lottery/types', { method: 'POST', body: typeForm }); setShowTypeForm(false); setTypeForm({ code:'', name_th:'', name_en:'', description:'' }); load(); }
-    catch (e2) { alert(e2.message); }
+    catch (e2) { toast(e2.message, 'error'); }
   };
 
   const toggleType = async (t) => {
@@ -86,7 +87,7 @@ export default function AdminLotteries() {
       if (editRule.id) await api(`/admin/lottery/rules/${editRule.id}`, { method: 'PATCH', body });
       else await api('/admin/lottery/rules', { method: 'POST', body });
       setEditRule(null); load();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const typeName = (id) => types.find(t => t.id === id)?.name_th || `#${id}`;

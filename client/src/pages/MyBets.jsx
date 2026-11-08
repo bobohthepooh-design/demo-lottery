@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api, satang, drawLabel, fmtDateTime } from '../api.js';
 import { BET_TYPE_LABELS } from '../lotterySchema.js';
+import { toast } from '../components/toast.js';
+import { SkeletonSlip } from '../components/Skeleton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 const STATUS_TH = {
   pending: 'รอผล',
@@ -39,7 +41,7 @@ function ShareButtons({ s }) {
   const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${encodeURIComponent(text)}`;
   const copy = async () => {
     try { await navigator.clipboard.writeText(`${text} ${window.location.origin}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }
-    catch { alert('คัดลอกไม่สำเร็จ — ลองคัดลอกเอง'); }
+    catch { toast('คัดลอกไม่สำเร็จ — ลองคัดลอกเอง', 'error'); }
   };
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -149,8 +151,11 @@ export default function MyBets() {
           </div>
         );
       })}
-      {!loading && !slips.length && <div className="text-center text-navy-400 py-10">ยังไม่มีโพย — <Link to="/lotteries" className="text-gold-400">ไปแทงเลย</Link></div>}
-      {loading && <div className="text-center text-navy-400 py-10">กำลังโหลด...</div>}
+      {!loading && !slips.length && (
+        <EmptyState emoji="🎟️" title="ยังไม่มีโพยที่ส่ง" hint="เลือกประเภทหวยและใส่เลขเพื่อเริ่มแทงครั้งแรก"
+          to="/lotteries" cta="ไปเลือกหวยเลย" />
+      )}
+      {loading && <div className="space-y-3">{[0,1,2].map(i => <SkeletonSlip key={i} />)}</div>}
     </div>
   );
 }

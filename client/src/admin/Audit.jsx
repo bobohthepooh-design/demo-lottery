@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
+import { toast } from '../components/toast.js';
 
 const ACTION_TH = {
   'user.login': 'เข้าสู่ระบบ', 'user.login_line': 'เข้าสู่ระบบ (LINE)',
@@ -22,7 +23,7 @@ const ACTION_TH = {
 
 export default function AdminAudit() {
   const [logs, setLogs] = useState([]);
-  useEffect(() => { api('/admin/audit?limit=300').then(r => setLogs(r.logs)).catch(e => alert(e.message)); }, []);
+  useEffect(() => { api('/admin/audit?limit=300').then(r => setLogs(r.logs)).catch(e => toast(e.message, 'error')); }, []);
 
   return (
     <div className="space-y-4">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { confirmAction } from './confirm.jsx';
+import { toast } from '../components/toast.js';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState([]);
@@ -12,7 +13,7 @@ export default function AdminSettings() {
     const m = {};
     r.settings.forEach(s => { m[s.key] = typeof s.value === 'object' ? JSON.stringify(s.value) : String(s.value); });
     setEdits(m);
-  }).catch(e => alert(e.message));
+  }).catch(e => toast(e.message, 'error'));
   useEffect(() => { load(); }, []);
 
   const save = async (key) => {

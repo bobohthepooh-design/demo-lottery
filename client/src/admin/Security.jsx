@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
+import { toast } from '../components/toast.js';
 
 const SEV = { info: 'text-blue-300', warning: 'text-yellow-300', critical: 'text-red-400' };
 
@@ -13,7 +14,7 @@ const EVENT_TH = {
 
 export default function AdminSecurity() {
   const [events, setEvents] = useState([]);
-  useEffect(() => { api('/admin/security-events?limit=300').then(r => setEvents(r.events)).catch(e => alert(e.message)); }, []);
+  useEffect(() => { api('/admin/security-events?limit=300').then(r => setEvents(r.events)).catch(e => toast(e.message, 'error')); }, []);
 
   return (
     <div className="space-y-4">

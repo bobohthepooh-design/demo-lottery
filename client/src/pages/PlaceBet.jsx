@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
+import { SkeletonCard } from '../components/Skeleton.jsx';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
@@ -145,7 +146,7 @@ export default function PlaceBet() {
   );
 
   if (err && !draw) return <div className="text-red-400 text-center py-10">{err}</div>;
-  if (!draw) return <div className="text-navy-300 text-center py-10">กำลังโหลด...</div>;
+  if (!draw) return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard className="h-28" /><SkeletonCard className="h-64" /></div>;
 
   const closed = draw.status !== 'open' || draw.close_at <= new Date().toISOString().slice(0,19).replace('T',' ');
 
@@ -272,6 +273,17 @@ export default function PlaceBet() {
           {!user && <div className="text-center text-sm text-navy-300 mt-2"><Link to="/login" className="text-gold-400">เข้าสู่ระบบ</Link> เพื่อแทง</div>}
         </div>
       </div>
+
+      {/* floating bet bar — มือถือ/แท็บเล็ต (slip panel อยู่ล่างจอ) */}
+      {!closed && slip.length > 0 && !done && (
+        <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-4">
+          <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
+            className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-5 disabled:opacity-50">
+            <span className="text-sm">🧾 {slip.length} รายการ • ฿{satang(totalSatang)}</span>
+            <span className="text-sm">ตรวจสอบโพย →</span>
+          </button>
+        </div>
+      )}
 
       {/* confirm modal */}
       {confirming && (

@@ -4,6 +4,7 @@ import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
+import { SkeletonGrid } from '../components/Skeleton.jsx';
 import { mergeBanner } from '../bannerConfig.js';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -238,7 +239,7 @@ export default function Home() {
               </div>
             );
           })}
-          {!types.length && <div className="text-navy-300">กำลังโหลด...</div>}
+          {!types.length && <SkeletonGrid count={3} />}
         </div>
         <div className="mt-3 text-right">
           <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
