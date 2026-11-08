@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime, thaiDate, thaiTime, satang } from '../api.js';
+import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
 import { SkeletonGrid } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
+import Countdown from '../components/Countdown.jsx';
 import { mergeBanner } from '../bannerConfig.js';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -111,7 +112,7 @@ function BigCountdown({ closeAt }) {
 }
 
 export default function Home() {
-  const { user, balance } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const now = useNow();
   const [types, setTypes] = useState([]);
@@ -201,7 +202,7 @@ export default function Home() {
             const d = alertDraws[0];
             const ac = typeAccent(d.type_code);
             return (
-              <div className={`lg:col-span-2 relative overflow-hidden rounded-2xl border ${ac.border} bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-5 sm:p-6`}>
+              <div className={`relative overflow-hidden rounded-2xl border ${ac.border} bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-5 sm:p-6 ${alertDraws.length > 1 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
                 <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full ${ac.bar} opacity-10 blur-3xl pointer-events-none`} />
                 <div className="flex items-center gap-2 text-xs font-bold text-navy-300 mb-3">
                   <span className="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse" />
@@ -234,24 +235,33 @@ export default function Home() {
             );
           })()}
 
-          {/* กระเป๋าเครดิต — เฉพาะสมาชิก */}
-          {user && (
-            <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/40 rounded-2xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="text-xs text-navy-300">เครดิตของคุณ</div>
-                <div className="text-3xl font-black text-gold-400 mt-1">฿{satang(balance)}</div>
+          {/* รอบที่จะปิดรับถัดไป — สูงสุด 3 อันดับถัดจากรอบหลัก */}
+          {alertDraws.length > 1 && (
+            <div className="bg-navy-800/80 border border-navy-700 rounded-2xl p-4">
+              <div className="text-xs font-bold text-navy-300 mb-3 flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                รอบที่จะปิดรับถัดไป
               </div>
-              <div className="flex gap-2 mt-4">
-                <button onClick={() => navigate('/wallet?action=deposit')}
-                  className="flex-1 bg-gold-500 text-navy-950 text-xs font-bold py-2.5 rounded-lg hover:bg-gold-400">
-                  ＋ เติมเครดิต
-                </button>
-                <button onClick={() => navigate('/wallet?action=withdraw')}
-                  className="flex-1 border border-navy-500 text-navy-200 text-xs font-semibold py-2.5 rounded-lg hover:bg-navy-700">
-                  － ถอนเครดิต
-                </button>
+              <div className="space-y-2">
+                {alertDraws.slice(1, 4).map(d => {
+                  const ac = typeAccent(d.type_code);
+                  return (
+                    <Link key={d.id} to={user ? `/bet/${d.id}` : '/login'}
+                      className="flex items-center gap-2 bg-navy-900/70 border border-navy-700/60 rounded-lg px-3 py-2 hover:border-gold-500/40 transition group">
+                      <FlagIcon code={d.type_code} className="w-6 h-6 text-[8px] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-xs font-semibold truncate ${ac.text}`}>
+                          {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                        </div>
+                        <div className="text-[10px] text-navy-400">ปิด {thaiTime(d.close_at)} น.</div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-amber-300 shrink-0">
+                        <Countdown closeAt={d.close_at} />
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
-              <Link to="/wallet" className="block text-center text-[11px] text-navy-400 hover:text-gold-300 mt-2">ดูประวัติธุรกรรม →</Link>
             </div>
           )}
         </section>
