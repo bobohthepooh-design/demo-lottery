@@ -10,6 +10,7 @@ import Lotteries from './pages/Lotteries.jsx';
 import PlaceBet from './pages/PlaceBet.jsx';
 import Wallet from './pages/Wallet.jsx';
 import MyBets from './pages/MyBets.jsx';
+import Performance from './pages/Performance.jsx';
 import AdminLayout from './admin/AdminLayout.jsx';
 import AdminOverview from './admin/Overview.jsx';
 import AdminMembers from './admin/Members.jsx';
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/bet/:drawId" element={<Protected><PlaceBet /></Protected>} />
           <Route path="/wallet" element={<Protected><Wallet /></Protected>} />
           <Route path="/my-bets" element={<Protected><MyBets /></Protected>} />
+          <Route path="/performance" element={<Protected><Performance /></Protected>} />
           <Route path="/admin" element={<Protected admin><AdminLayout /></Protected>}>
             <Route index element={<AdminOverview />} />
             <Route path="members" element={<AdminMembers />} />

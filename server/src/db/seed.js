@@ -100,6 +100,7 @@ export function seed() {
     setSetting('initial_credit', config.initialCredit, null);
     setSetting('maintenance_mode', false, null);
     setSetting('demo_notice', 'ระบบจำลองเพื่อการศึกษาเท่านั้น ใช้เครดิตเสมือน ไม่มีเงินจริง', null);
+    setSetting('announcement', { enabled: true, text: '🎉 ยินดีต้อนรับสู่ Demo Lottery — หวยไทย • หวยลาว • ฮานอย อัตราจ่ายสูงสุด x1,000 ใช้เครดิตจำลองเพื่อการศึกษา' }, null);
   });
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   seedRulesV2();

@@ -14,8 +14,11 @@ const FIELDS = [
   { key: 'show_stats', label: 'แสดงแถบสถิติ (รอบเปิดรับ/ตลาด/อัตราจ่าย)', type: 'checkbox' },
 ];
 
+const DEFAULT_ANNOUNCEMENT = { enabled: true, text: '' };
+
 export default function AdminBanner() {
   const [form, setForm] = useState(DEFAULT_BANNER);
+  const [announce, setAnnounce] = useState(DEFAULT_ANNOUNCEMENT);
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -23,16 +26,19 @@ export default function AdminBanner() {
     api('/admin/settings').then(r => {
       const s = r.settings.find(x => x.key === 'homepage_banner');
       if (s?.value && typeof s.value === 'object') setForm({ ...DEFAULT_BANNER, ...s.value });
+      const a = r.settings.find(x => x.key === 'announcement');
+      if (a?.value && typeof a.value === 'object') setAnnounce({ ...DEFAULT_ANNOUNCEMENT, ...a.value });
     }).catch(e => setMsg('ERROR: ' + e.message))
       .finally(() => setLoading(false));
   }, []);
 
   const save = async () => {
     setMsg('');
-    if (!(await confirmAction({ title: 'ยืนยันบันทึกแบนเนอร์', message: 'บันทึกการเปลี่ยนแปลงแบนเนอร์หน้าแรก?\nการเปลี่ยนจะมีผลกับผู้ใช้ทุกคนทันที' }))) return;
+    if (!(await confirmAction({ title: 'ยืนยันบันทึกแบนเนอร์', message: 'บันทึกการเปลี่ยนแปลงแบนเนอร์หน้าแรกและประกาศ?\nการเปลี่ยนจะมีผลกับผู้ใช้ทุกคนทันที' }))) return;
     try {
       await api('/admin/settings/homepage_banner', { method: 'PUT', body: { value: form } });
-      setMsg('บันทึกแบนเนอร์แล้ว — หน้าแรกจะอัปเดตทันที');
+      await api('/admin/settings/announcement', { method: 'PUT', body: { value: announce } });
+      setMsg('บันทึกแบนเนอร์และประกาศแล้ว — หน้าแรกจะอัปเดตทันที');
     } catch (e) { setMsg('ERROR: ' + e.message); }
   };
 
@@ -61,6 +67,31 @@ export default function AdminBanner() {
             <span className="text-xs border border-gold-500/50 text-gold-300 px-4 py-1.5 rounded-lg">{form.cta_register}</span>
           </div>
         </div>
+      </div>
+
+      {/* แถบประกาศวิ่ง */}
+      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4 space-y-3">
+        <div className="text-sm font-bold text-white">📢 แถบประกาศ (ข้อความวิ่งใต้เมนู)</div>
+        <label className="flex items-center gap-2 text-sm text-navy-200">
+          <input type="checkbox" checked={!!announce.enabled} onChange={e => setAnnounce(a => ({ ...a, enabled: e.target.checked }))}
+            className="w-5 h-5 accent-gold-500" />
+          แสดงแถบประกาศ
+        </label>
+        <input value={announce.text ?? ''} onChange={e => setAnnounce(a => ({ ...a, text: e.target.value }))}
+          placeholder="เช่น ยินดีต้อนรับสู่ Demo Lottery —Experiences..."
+          className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" />
+        {announce.enabled && announce.text && (
+          <div className="bg-navy-900/60 border border-gold-500/20 rounded-lg overflow-hidden">
+            <div className="flex items-center">
+              <span className="shrink-0 px-3 py-1 text-[10px] font-bold text-gold-300 bg-gold-500/15 border-r border-gold-500/30">📢 ประกาศ</span>
+              <div className="overflow-hidden flex-1 py-1">
+                <div className="flex w-max animate-marquee gap-12 px-3">
+                  {[0, 1].map(n => <span key={n} className="text-[11px] text-navy-100 whitespace-nowrap">{announce.text}</span>)}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl divide-y divide-navy-700">

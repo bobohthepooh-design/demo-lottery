@@ -24,6 +24,42 @@ const ITEM_EMOJI = { won: '🎉', lost: '😢', pending: '⏳', cancelled: '🚫
 // เงินรางวัลที่จะได้ถ้าถูก = เงินเดิมพัน × อัตราจ่าย (สูตรเดียวกับตอน settle)
 const potential = (i) => Math.floor(i.amount * Number(i.payout_multiplier || 0));
 
+// แสดงปุ่มแชร์เมื่อชนะรางวัลตั้งแต่ ฿500 ขึ้นไป
+const SHARE_THRESHOLD = 50000; // สตางค์
+
+function shareText(s) {
+  return `🎉 ฉันถูกรางวัล ฿${satang(s.total_payout)} จาก ${s.type_name_th || ''} ${s.draw_code || ''} บน Demo Lottery! (เครดิตจำลอง เพื่อการศึกษา)`;
+}
+
+function ShareButtons({ s }) {
+  const [copied, setCopied] = useState(false);
+  const text = shareText(s);
+  const url = encodeURIComponent(window.location.origin);
+  const lineUrl = `https://social-plugins.line.me/lineit/share?url=${url}&text=${encodeURIComponent(text)}`;
+  const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${encodeURIComponent(text)}`;
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(`${text} ${window.location.origin}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch { alert('คัดลอกไม่สำเร็จ — ลองคัดลอกเอง'); }
+  };
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xs text-navy-300">แชร์ความสำเร็จ:</span>
+      <a href={lineUrl} target="_blank" rel="noreferrer"
+        className="text-xs bg-green-600 hover:bg-green-500 text-white font-bold px-3 py-1.5 rounded-lg">
+        LINE
+      </a>
+      <a href={fbUrl} target="_blank" rel="noreferrer"
+        className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg">
+        Facebook
+      </a>
+      <button onClick={copy}
+        className="text-xs border border-navy-500 text-navy-200 hover:bg-navy-700 px-3 py-1.5 rounded-lg">
+        {copied ? '✓ คัดลอกแล้ว' : '📋 คัดลอกข้อความ'}
+      </button>
+    </div>
+  );
+}
+
 function ItemRow({ i }) {
   const emoji = ITEM_EMOJI[i.status] || '⏳';
   const anim = i.status === 'won' ? 'animate-win' : i.status === 'lost' ? 'animate-lose' : '';
@@ -101,6 +137,11 @@ export default function MyBets() {
                     <div className={`text-xs font-semibold ${net >= 0 ? 'text-gold-300' : 'text-navy-400'}`}>
                       {net >= 0 ? `กำไรสุทธิ ฿${satang(net)}` : `ขาดทุนสุทธิ ฿${satang(-net)}`}
                     </div>
+                  </div>
+                )}
+                {s.total_payout >= SHARE_THRESHOLD && (
+                  <div className="pt-1 border-t border-navy-700/60">
+                    <ShareButtons s={s} />
                   </div>
                 )}
               </div>

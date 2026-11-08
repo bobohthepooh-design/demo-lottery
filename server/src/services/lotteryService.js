@@ -202,6 +202,75 @@ export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
   return slips.map(s => ({ ...s, items: itemStmt.all(s.id) }));
 }
 
+// สรุปผลการเล่นของสมาชิก — ใช้หน้า "ผลงานของฉัน"
+export function myStats(userId) {
+  const db = getDb();
+  const totals = db.prepare(`SELECT
+      COUNT(*) AS slips,
+      COALESCE(SUM(total_stake),0) AS stake,
+      COALESCE(SUM(total_payout),0) AS payout,
+      COALESCE(SUM(CASE WHEN status = 'pending' THEN total_stake ELSE 0 END),0) AS pending_stake,
+      SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END) AS won_slips,
+      SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) AS lost_slips,
+      SUM(CASE WHEN status = 'partial' THEN 1 ELSE 0 END) AS partial_slips
+    FROM bet_slips WHERE user_id = ? AND status NOT IN ('cancelled','refunded')`).get(userId);
+
+  const items = db.prepare(`SELECT
+      COUNT(*) AS total,
+      SUM(CASE WHEN bi.status = 'won' THEN 1 ELSE 0 END) AS won,
+      SUM(CASE WHEN bi.status = 'lost' THEN 1 ELSE 0 END) AS lost,
+      SUM(CASE WHEN bi.status = 'pending' THEN 1 ELSE 0 END) AS pending,
+      COALESCE(SUM(bi.payout),0) AS payout,
+      COALESCE(SUM(bi.amount),0) AS stake
+    FROM bet_items bi JOIN bet_slips bs ON bs.id = bi.slip_id
+    WHERE bs.user_id = ? AND bi.status != 'cancelled' AND bs.status NOT IN ('cancelled','refunded')`).get(userId);
+
+  const byType = db.prepare(`SELECT lt.name_th AS type_name_th, lt.code AS type_code,
+        COUNT(DISTINCT bs.id) AS slips,
+        COALESCE(SUM(bi.amount),0) AS stake,
+        COALESCE(SUM(bi.payout),0) AS payout,
+        SUM(CASE WHEN bi.status = 'won' THEN 1 ELSE 0 END) AS won_items
+      FROM bet_items bi
+      JOIN bet_slips bs ON bs.id = bi.slip_id
+      JOIN lottery_draws d ON d.id = bs.draw_id
+      JOIN lottery_types lt ON lt.id = d.lottery_type_id
+      WHERE bs.user_id = ? AND bi.status != 'cancelled' AND bs.status NOT IN ('cancelled','refunded')
+      GROUP BY lt.id ORDER BY stake DESC`).all(userId);
+
+  const best = db.prepare(`SELECT bs.slip_ref, bs.total_payout, d.draw_code,
+        lt.name_th AS type_name_th, bs.settled_at
+      FROM bet_slips bs
+      JOIN lottery_draws d ON d.id = bs.draw_id
+      JOIN lottery_types lt ON lt.id = d.lottery_type_id
+      WHERE bs.user_id = ? AND bs.status IN ('won','partial') AND bs.total_payout > 0
+      ORDER BY bs.total_payout DESC LIMIT 1`).get(userId);
+
+  const settledItems = (items.won || 0) + (items.lost || 0);
+  return {
+    totals: {
+      slips: totals.slips || 0,
+      stake: totals.stake || 0,
+      payout: totals.payout || 0,
+      net: (totals.payout || 0) - (totals.stake || 0),
+      pendingStake: totals.pending_stake || 0,
+      wonSlips: totals.won_slips || 0,
+      lostSlips: totals.lost_slips || 0,
+      partialSlips: totals.partial_slips || 0,
+    },
+    items: {
+      total: items.total || 0,
+      won: items.won || 0,
+      lost: items.lost || 0,
+      pending: items.pending || 0,
+      payout: items.payout || 0,
+      stake: items.stake || 0,
+      winRate: settledItems ? Math.round((items.won / settledItems) * 1000) / 10 : 0,
+    },
+    byType,
+    best: best || null,
+  };
+}
+
 export function getMySlip(userId, slipRef) {
   const db = getDb();
   const slip = db.prepare(`SELECT bs.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th,

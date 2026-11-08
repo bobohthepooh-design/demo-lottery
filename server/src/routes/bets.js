@@ -32,6 +32,10 @@ router.get('/mine', (req, res) => {
   res.json({ slips: svc.listMyBets(req.user.id, { limit, offset }) });
 });
 
+router.get('/stats', (req, res) => {
+  res.json({ stats: svc.myStats(req.user.id) });
+});
+
 router.get('/slips/:ref', (req, res, next) => {
   try {
     res.json({ slip: svc.getMySlip(req.user.id, req.params.ref) });

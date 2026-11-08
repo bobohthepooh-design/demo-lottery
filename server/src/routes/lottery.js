@@ -12,7 +12,7 @@ router.get('/types', (req, res) => {
 
 // public config สำหรับหน้าแรก (ไม่ต้อง login) — เฉพาะ key ที่ปลอดภัย
 router.get('/public-config', (req, res) => {
-  res.json({ banner: settings.getSetting('homepage_banner', null) });
+  res.json({ banner: settings.getSetting('homepage_banner', null), announcement: settings.getSetting('announcement', null) });
 });
 
 // รายการ "ตลาดหวย" แยกย่อย — type ที่มี category จะกลายเป็นหลาย market

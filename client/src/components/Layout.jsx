@@ -2,11 +2,13 @@ import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-do
 import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
+import AnnouncementBar from './AnnouncementBar.jsx';
 import { FlagIcon } from './ResultLine.jsx';
 import { useEffect, useState } from 'react';
 
 const nav = [
   { to: '/my-bets', label: 'โพยของฉัน', auth: true, memberOnly: true },
+  { to: '/performance', label: 'ผลงาน', auth: true, memberOnly: true },
   { to: '/wallet', label: 'กระเป๋าเครดิต', auth: true, memberOnly: true },
   { to: '/profile', label: 'โปรไฟล์', auth: true },
   { to: '/admin', label: 'ผู้ดูแลระบบ', auth: true, admin: true },
@@ -122,11 +124,37 @@ export default function Layout() {
         )}
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+      <AnnouncementBar />
+
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 lg:pb-6">
         <Outlet />
       </main>
 
-      <footer className="border-t border-navy-800 py-4 text-center text-xs text-navy-300">
+      {/* Bottom navigation — มือถือ/แท็บเล็ต (แสดงเฉพาะจอ < lg) */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-navy-900/95 backdrop-blur border-t border-gold-500/30"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex h-16">
+          {[
+            { to: '/', label: 'หน้าแรก', icon: '🏠', end: true, show: true },
+            { to: '/lotteries', label: 'หวย', icon: '🎫', show: true },
+            ...(user ? [
+              { to: '/my-bets', label: 'โพยของฉัน', icon: '🧾', show: true },
+              { to: '/performance', label: 'ผลงาน', icon: '📊', show: !isAdmin },
+              { to: '/wallet', label: 'กระเป๋า', icon: '💰', show: !isAdmin },
+            ] : [
+              { to: '/login', label: 'เข้าสู่ระบบ', icon: '🔑', show: true },
+            ]),
+          ].filter(i => i.show).map(i => (
+            <NavLink key={i.to} to={i.to} end={i.end}
+              className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] ${isActive ? 'text-gold-300' : 'text-navy-300'}`}>
+              <span className="text-lg leading-none">{i.icon}</span>
+              {i.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+
+      <footer className="border-t border-navy-800 py-4 pb-20 lg:pb-4 text-center text-xs text-navy-300">
         Demo Lottery Platform — เพื่อการศึกษาเท่านั้น • ใช้เครดิตเสมือน ไม่เกี่ยวข้องกับการพนันเงินจริง
       </footer>
 
