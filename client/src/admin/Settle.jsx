@@ -3,6 +3,7 @@ import { api, satang } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
+import { FlagIcon } from '../components/ResultLine.jsx';
 
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
@@ -17,6 +18,7 @@ export default function AdminSettle() {
   const [editFields, setEditFields] = useState({});
   const [editMsg, setEditMsg] = useState('');
   const [autoMsg, setAutoMsg] = useState('');
+  const [autoSources, setAutoSources] = useState([]); // [{code,label,ok,error}]
   const [autoBusy, setAutoBusy] = useState(false);
   const [legacySel, setLegacySel] = useState(null);   // รอบเก่าที่ยังไม่ออกผล (แก้ไข/ออกผลย้อนหลัง)
   const [legacyFields, setLegacyFields] = useState({});
@@ -27,9 +29,10 @@ export default function AdminSettle() {
 
   // สั่งระบบตรวจสอบ+ออกผลทุกผลที่ถึงเวลาแล้วทันที (ไม่ต้องรอ scheduler 15 นาที)
   const runAutoSettle = async () => {
-    setAutoBusy(true); setAutoMsg('');
+    setAutoBusy(true); setAutoMsg(''); setAutoSources([]);
     try {
       const r = await api('/admin/draws/auto-settle', { method: 'POST', body: {} });
+      setAutoSources(r.sources || []);
       const parts = [];
       if (r.settled?.length) parts.push(`ออกผลแล้ว ${r.settled.length} รอบ: ${r.settled.join(', ')}`);
       if (r.skipped?.length) parts.push(`ข้าม ${r.skipped.length} รอบ`);
@@ -154,6 +157,18 @@ export default function AdminSettle() {
           {autoBusy ? 'กำลังตรวจสอบ...' : '⚡ ตรวจผลอัตโนมัติทั้งหมดตอนนี้'}
         </button>
         <span className="text-xs text-navy-400">ออกผลทุกประเภทที่ตั้งเป็น "อัตโนมัติ" และถึงเวลาแล้วทันที — ไม่ต้องรอรอบเช็ค 15 นาที</span>
+        {autoSources.length > 0 && (
+          <div className="w-full flex flex-wrap items-center gap-2 mt-1">
+            <span className="text-xs text-navy-400">สถานะการดึงผล:</span>
+            {autoSources.map(s => (
+              <span key={s.code} title={s.error || 'ดึงข้อมูลสำเร็จ'}
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${s.ok ? 'bg-green-500/10 border-green-500/40 text-green-300' : 'bg-red-500/10 border-red-500/40 text-red-300'}`}>
+                <FlagIcon code={s.code} className="w-4 h-3" />
+                {s.label} {s.ok ? '✓' : '✗'}
+              </span>
+            ))}
+          </div>
+        )}
         {autoMsg && <div className={`w-full text-xs mt-1 ${autoMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{autoMsg}</div>}
       </div>
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">

@@ -175,14 +175,18 @@ function pendingDraws() {
 
 /** ลองดึงผล + settle ให้อัตโนมัติทุกประเภทที่มีแหล่งข้อมูล */
 export async function autoSettleResults() {
-  const out = { settled: [], skipped: [], errors: [] };
+  const out = { settled: [], skipped: [], errors: [], sources: [] };
   const draws = pendingDraws();
   if (!draws.length) return out;
 
+  const tryFetch = async (code, label, fn) => {
+    try { const r = await fn(); out.sources.push({ code, label, ok: true }); return r; }
+    catch (e) { out.sources.push({ code, label, ok: false, error: e.message }); out.errors.push(`${code} fetch: ${e.message}`); return null; }
+  };
   let thai = null, hanoi = null, lao = null;
-  try { thai = await fetchThaiResult(); } catch (e) { out.errors.push(`TH fetch: ${e.message}`); }
-  try { hanoi = await fetchHanoiResult(); } catch (e) { out.errors.push(`HN fetch: ${e.message}`); }
-  try { lao = await fetchLaoResult(); } catch (e) { out.errors.push(`LA fetch: ${e.message}`); }
+  thai = await tryFetch('TH', 'GLO (glo.or.th)', fetchThaiResult);
+  hanoi = await tryFetch('HN', 'XSMB (GitHub)', fetchHanoiResult);
+  lao = await tryFetch('LA', 'laodl.com', fetchLaoResult);
 
   for (const d of draws) {
     if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
