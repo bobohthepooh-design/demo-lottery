@@ -12,7 +12,7 @@ export default function AdminReports() {
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <h2 className="font-bold text-white mb-3">ยอดแทงตามประเภท</h2>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
             <thead className="text-navy-300 text-xs"><tr><th className="text-left py-1">ประเภท</th><th className="text-right">จำนวน</th><th className="text-right">ยอดแทง</th><th className="text-right">จ่ายออก</th></tr></thead>
             <tbody className="divide-y divide-navy-700">
               {d.betsByType.map(b => (
@@ -23,11 +23,11 @@ export default function AdminReports() {
               ))}
               {!d.betsByType.length && <tr><td colSpan="4" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <h2 className="font-bold text-white mb-3">โพยรายวัน (30 วันล่าสุด)</h2>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
             <thead className="text-navy-300 text-xs"><tr><th className="text-left py-1">วันที่</th><th className="text-right">โพย</th><th className="text-right">ยอดแทง</th></tr></thead>
             <tbody className="divide-y divide-navy-700">
               {d.betsByDay.map(b => (
@@ -37,12 +37,12 @@ export default function AdminReports() {
               ))}
               {!d.betsByDay.length && <tr><td colSpan="3" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
         <h2 className="font-bold text-white mb-3">ผู้ชนะรางวัลสูงสุด</h2>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
           <thead className="text-navy-300 text-xs"><tr><th className="text-left py-1">สมาชิก</th><th className="text-left">เลขโพย</th><th className="text-right">เงินรางวัล</th></tr></thead>
           <tbody className="divide-y divide-navy-700">
             {d.topWinners.map(w => (
@@ -52,11 +52,11 @@ export default function AdminReports() {
             ))}
             {!d.topWinners.length && <tr><td colSpan="3" className="py-4 text-center text-navy-400">ยังไม่มีผู้ชนะ</td></tr>}
           </tbody>
-        </table>
+        </table></div>
       </div>
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
         <h2 className="font-bold text-white mb-3">สถานะรอบหวยล่าสุด</h2>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
           <thead className="text-navy-300 text-xs"><tr><th className="text-left py-1">รอบ</th><th className="text-left">ประเภท</th><th className="text-center">สถานะ</th><th className="text-right">รายการ</th><th className="text-right">จ่ายรวม</th></tr></thead>
           <tbody className="divide-y divide-navy-700">
             {d.drawsSummary.map(x => (
@@ -67,7 +67,7 @@ export default function AdminReports() {
             ))}
             {!d.drawsSummary.length && <tr><td colSpan="5" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

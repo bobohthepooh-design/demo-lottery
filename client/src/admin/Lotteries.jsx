@@ -134,7 +134,8 @@ export default function AdminLotteries() {
                 <div className="px-5 py-2 bg-navy-800/60 text-xs font-semibold text-gold-400/90">
                   {g.name}
                 </div>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead className="bg-navy-900/40 text-navy-400 text-xs">
                     <tr>
                       <th className="text-left px-5 py-2">ประเภทการแทง</th>
@@ -168,6 +169,7 @@ export default function AdminLotteries() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             ))}
           </div>
