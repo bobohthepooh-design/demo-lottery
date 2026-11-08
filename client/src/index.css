@@ -1,39 +1,147 @@
 @import "tailwindcss";
 
 @theme {
-  /* Premium dark: obsidian + royal blue/purple + gold gradient */
-  --color-navy-950: #0f1117;
-  --color-navy-900: #161922;
-  --color-navy-800: #1b2033;
-  --color-navy-700: #232a45;
-  --color-navy-600: #2e3a5c;
-  --color-gold-300: #ffe9a3;
-  --color-gold-400: #f7d060;
-  --color-gold-500: #d4af37;
-  --color-gold-600: #f7a600;
-  --color-gold-700: #b8860b;
-  --font-sans: 'Sarabun', 'Segoe UI', 'Noto Sans Thai', system-ui, sans-serif;
-  --font-display: 'Kanit', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
+  /* Korean Kawaii Modern — พาสเทลครีม/ชมพู + plum ink */
+  /* โทน navy เดิมถูก map เป็นสี neutrals พาสเทล — class เดิมทั้งหมดเปลี่ยนหน้าตาอัตโนมัติ */
+  --color-navy-950: #fff1f4;   /* blush white — จบ gradient การ์ด */
+  --color-navy-900: #fffcf8;   /* warm white — input/panel */
+  --color-navy-800: #ffffff;   /* การ์ดหลัก */
+  --color-navy-700: #f0e6ec;   /* เส้นขอบ/active chip — rose-gray */
+  --color-navy-600: #e2d2da;   /* เส้นขอบเข้มขึ้น */
+  --color-navy-500: #c9b8c4;   /* ข้อความ/ขอบอ่อน */
+  --color-navy-400: #a99fb0;   /* secondary text อ่อน */
+  --color-navy-300: #918a9d;   /* secondary text (spec) */
+  --color-navy-200: #6e6579;   /* text เด่นขึ้น/hover */
+  --color-navy-100: #d9d0e0;   /* พื้นอ่อนมาก */
+
+  /* โทน gold เดิม → ชมพูโรสพาสเทล */
+  --color-gold-100: #fbe9f0;
+  --color-gold-200: #fbd9e4;
+  --color-gold-300: #e58aa8;   /* accent text อ่านได้บนพื้นขาว */
+  --color-gold-400: #d96c8f;   /* หัวข้อ/ลิงก์/ยอดเงิน */
+  --color-gold-500: #c75b7f;   /* ปุ่ม/ขอบหลัก */
+  --color-gold-600: #b04a6b;   /* gradient end */
+  --color-gold-700: #8e3a56;
+
+  /* พาสเทลเสริม — mint / lavender / sky / cream (ใช้ผ่าน class โดยตรง) */
+  --color-mint-100: #d5f0e3;
+  --color-mint-300: #8bc9a8;
+  --color-lav-100: #dcd6f7;
+  --color-lav-300: #a99ede;
+  --color-sky2-100: #d9ecfa;
+  --color-cream-100: #fff0d9;
+
+  --font-sans: 'Sarabun', 'Nunito', 'Segoe UI', 'Noto Sans Thai', system-ui, sans-serif;
+  --font-display: 'Prompt', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Nunito', 'Sarabun', ui-monospace, monospace;
 }
 
 body {
-  background-color: var(--color-navy-950);
-  color: #e8ecf4;
+  background-color: #fff9f5;
+  /* พาสเทล blobs ลอยหลังการ์ด — kawaii depth */
+  background-image:
+    radial-gradient(600px 400px at 85% -5%, rgba(220, 214, 247, 0.55), transparent 60%),
+    radial-gradient(500px 380px at -10% 30%, rgba(246, 184, 200, 0.35), transparent 60%),
+    radial-gradient(520px 420px at 60% 110%, rgba(213, 240, 227, 0.5), transparent 60%);
+  background-attachment: fixed;
+  color: #383344;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.01em; }
 
-/* animation แสดงความรู้สึกถูก/ไม่ถูกรางวัล */
+/* text-navy-950 / text-white เดิม = "ตัวหนังสือสีอ่อนบนพื้นเข้ม" → ในธีมพาสเทลให้เป็นสีหมึก plum เข้ม */
+.text-navy-950 { color: #383344 !important; }
+.text-white { color: #383344 !important; }
+.text-white\/80, .text-white\/70, .text-white\/60 { color: rgba(56, 51, 68, 0.75) !important; }
+/* ข้อยกเว้น: ตัวหนังสือขาวบนพื้นสีเข้มจริง (ปุ่ม danger/success ฯลฯ) */
+[class*="bg-red-"][class*="text-white"],
+[class*="bg-green-"][class*="text-white"],
+[class*="bg-emerald-"][class*="text-white"],
+[class*="bg-blue-"][class*="text-white"],
+[class*="bg-sky-"][class*="text-white"],
+[class*="bg-amber-"][class*="text-white"],
+[class*="bg-navy-950"][class*="text-white"] { color: #ffffff !important; }
+
+/* ================= Kawaii component layer ================= */
+
+/* การ์ด — มุมมน + เงาสีชมพูอ่อน */
+.rounded-2xl, .rounded-xl { border-radius: 1.25rem; }
+[class*="bg-navy-800"], [class*="bg-navy-900"] {
+  box-shadow: 0 2px 12px rgba(201, 162, 185, 0.12), 0 1px 3px rgba(142, 58, 86, 0.06);
+}
+
+/* ปุ่ม — นุ่ม + press feedback */
+button, a[class*="rounded"] {
+  transition-property: transform, box-shadow, filter, background-color, border-color, color;
+  transition-duration: .15s;
+  transition-timing-function: ease;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px) scale(.985);
+  filter: brightness(1.05);
+}
+
+/* ปุ่มหลัก (rose gradient / bg-gold-500) — shine sweep */
+button[class*="from-gold-500"], a[class*="from-gold-500"],
+button.bg-gold-500, a.bg-gold-500 {
+  position: relative;
+  overflow: hidden;
+}
+button[class*="from-gold-500"]::after,
+a[class*="from-gold-500"]::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -70%;
+  width: 45%;
+  height: 140%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transform: skewX(-18deg);
+  animation: gold-shine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes gold-shine {
+  0% { left: -70%; }
+  45%, 100% { left: 130%; }
+}
+
+/* การ์ดยกขึ้นตอน hover + เงาชมพู */
+.hoverable { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(199, 91, 127, 0.14); }
+
+/* ตาราง — minimal สไตล์พาสเทล */
+main table thead th {
+  background: #f7eff4;
+  font-family: var(--font-display);
+  letter-spacing: .02em;
+  color: #6e6579;
+}
+main table tbody tr:hover { background: #faf3f7; }
+main table tbody tr { border-color: #f0e6ec; }
+
+/* skeleton — พาสเทล shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #f3e6ec 25%, #faf1f5 50%, #f3e6ec 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 0.75rem;
+}
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* animation แสดงความรู้สึกถูก/ไม่ถูกรางวัล — โทนชมพู */
 @keyframes win-pop {
   0% { transform: scale(0.4); opacity: 0; }
   60% { transform: scale(1.25); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
 @keyframes win-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55); }
-  50% { box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.35); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 108, 143, 0.45); }
+  50% { box-shadow: 0 0 18px 4px rgba(217, 108, 143, 0.3); }
 }
 @keyframes lose-shake {
   0%, 100% { transform: translateX(0); }
@@ -52,34 +160,26 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 .animate-coin { animation: coin-float 1.2s ease-in-out infinite; }
 .animate-wait { animation: coin-float 2s ease-in-out infinite; }
 
-/* badge ONLINE แบบมีชีวิตชีวา */
+/* badge ONLINE */
 @keyframes online-ping {
   0% { transform: scale(1); opacity: 0.9; }
   80%, 100% { transform: scale(2.6); opacity: 0; }
 }
 @keyframes online-glow {
-  0%, 100% { box-shadow: 0 0 4px 1px rgba(34, 197, 94, 0.5); }
-  50% { box-shadow: 0 0 14px 4px rgba(34, 197, 94, 0.75); }
-}
-@keyframes online-flicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 1; }
-  93% { opacity: 0.6; }
-  94% { opacity: 1; }
-  97% { opacity: 0.75; }
-  98% { opacity: 1; }
+  0%, 100% { box-shadow: 0 0 4px 1px rgba(139, 201, 168, 0.5); }
+  50% { box-shadow: 0 0 14px 4px rgba(139, 201, 168, 0.7); }
 }
 .online-dot { position: relative; }
 .online-dot::before {
   content: ''; position: absolute; inset: 0; border-radius: 9999px;
-  background: #22c55e; animation: online-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  background: #8bc9a8; animation: online-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
-@keyframes online-border-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-  50% { box-shadow: 0 0 16px 2px rgba(34, 197, 94, 0.35); }
-}
-.animate-online { animation: online-glow 1.8s ease-in-out infinite, online-flicker 5s linear infinite; }
+.animate-online { animation: online-glow 1.8s ease-in-out infinite; }
 .animate-online-border { animation: online-border-glow 2.2s ease-in-out infinite; }
+@keyframes online-border-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 201, 168, 0); }
+  50% { box-shadow: 0 0 16px 2px rgba(139, 201, 168, 0.3); }
+}
 
 /* ticker เลื่อนผลรางวัลล่าสุด */
 @keyframes marquee {
@@ -88,7 +188,6 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 }
 .animate-marquee { animation: marquee 450s linear infinite; }
 .animate-marquee:hover { animation-play-state: paused; }
-/* เร็วขึ้น 15% — ใช้กับแถบแจ้งเตือนใกล้ปิดรับ */
 .animate-marquee-fast { animation: marquee 391s linear infinite; }
 .animate-marquee-fast:hover { animation-play-state: paused; }
 
@@ -99,7 +198,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 }
 .animate-float { animation: float-slow 5s ease-in-out infinite; }
 
-/* confetti ฉลองถูกรางวัล */
+/* confetti ฉลองถูกรางวัล — โทนพาสเทล */
 @keyframes confetti-fall {
   0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0.6; }
@@ -118,7 +217,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 .tear-drop {
   position: absolute; top: -5vh; width: 6px; height: 10px;
   border-radius: 50% 50% 60% 60%;
-  background: linear-gradient(#7dd3fc, #0284c7);
+  background: linear-gradient(#a99ede, #7f74c9);
   animation: tear-fall linear infinite;
 }
 
@@ -136,126 +235,53 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 }
 .animate-toast { animation: toast-in 0.25s ease-out both; }
 
-/* skeleton loading shimmer */
-@keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-.skeleton {
-  background: linear-gradient(90deg, #0f1f3a 25%, #16294d 50%, #0f1f3a 75%);
-  background-size: 800px 100%;
-  animation: shimmer 1.4s linear infinite;
-  border-radius: 0.5rem;
-}
-
-/* การ์ดยกขึ้นตอน hover + เงาทองเบาๆ */
-.hoverable { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-.hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(212,175,55,.10); }
-
-/* ตาราง admin — หัวตารางเข้ม + แถว hover เด่น */
-main table thead th {
-  background: #0a1628;
-  font-family: 'Kanit', sans-serif;
-  letter-spacing: .02em;
-}
-main table tbody tr:hover { background: rgba(30, 58, 102, .25); }
-
-/* ================= Premium Theme Layer (CSS-only) ================= */
-
-/* Glassmorphism — การ์ด bg-navy-800 เรียบๆ กลายเป็นกระจกฝ้า */
-.bg-navy-800:not([class*="gradient"]):not(.skeleton) {
-  background-color: rgba(255, 255, 255, 0.045);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-/* เส้นขอบการ์ดละเอียดขึ้น */
-.border-navy-700 { border-color: rgba(255, 255, 255, 0.09); }
-.border-navy-600 { border-color: rgba(255, 255, 255, 0.14); }
-
-/* การ์ดมีเงาลึกพรีเมียม */
-.bg-navy-800, .bg-navy-900 {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-}
-
-/* ปุ่มทุกตัว — press 3D feel นุ่มนวล */
-button, a[class*="rounded"] {
-  transition-property: transform, box-shadow, filter, background-color, border-color, color;
-  transition-duration: .15s;
-  transition-timing-function: ease;
-}
-button:active:not(:disabled) {
-  transform: translateY(1px) scale(.985);
-  filter: brightness(1.08);
-}
-
-/* ปุ่มตัวเลข/ช่องกรอก (keypad) — glow เมื่อเลือก + press depth */
+/* keypad — ปุ่มกดมีมิติ + glow โทนชมพูเมื่อเลือก */
 .grid button {
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 0 rgba(142, 58, 86, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 .grid button:active:not(:disabled) {
   transform: translateY(2px) scale(.97);
-  box-shadow: 0 0px 0 rgba(0, 0, 0, 0.45), 0 0 14px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 0px 0 rgba(142, 58, 86, 0.15), 0 0 14px rgba(217, 108, 143, 0.35);
 }
 .grid button.bg-gold-500,
 .grid button[class*="gold-500"] {
-  box-shadow: 0 2px 0 #b8860b, 0 0 16px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 2px 0 #8e3a56, 0 0 16px rgba(217, 108, 143, 0.35);
 }
 
-/* ปุ่ม CTA ทอง — แสงสะท้อนวิ่ง (shine sweep) */
-button[class*="from-gold-500"], a[class*="from-gold-500"] {
-  position: relative;
-  overflow: hidden;
-}
-button[class*="from-gold-500"]::after,
-a[class*="from-gold-500"]::after {
-  content: '';
-  position: absolute;
-  top: -20%;
-  left: -70%;
-  width: 45%;
-  height: 140%;
-  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  transform: skewX(-18deg);
-  animation: gold-shine 3.2s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes gold-shine {
-  0% { left: -70%; }
-  45%, 100% { left: 130%; }
-}
-
-/* ตัวเลข countdown — neon glow ทอง */
+/* ตัวเลข countdown — glow โทนชมพูอ่อน */
 .font-mono.font-black {
-  text-shadow: 0 0 12px rgba(247, 208, 96, 0.55), 0 0 30px rgba(212, 175, 55, 0.3);
+  text-shadow: 0 0 12px rgba(229, 138, 168, 0.6), 0 0 30px rgba(217, 108, 143, 0.3);
 }
 
-/* ตัวเลขในช่องกรอกเลข (PlaceBet input) — คมชัด */
+/* ตัวเลขในช่องกรอกเลข — letter-spacing คมชัด */
 input.font-mono, input[inputmode="numeric"] {
-  text-shadow: 0 0 10px rgba(247, 208, 96, 0.25);
   letter-spacing: 0.35em;
 }
 
-/* Badge/สถานะเรืองแสงเบาๆ */
-.rounded-full.bg-green-500\/20,
+/* badge/สถานะเรืองแสงเบาๆ โทนมิ้นต์ */
 [class*="bg-green-500/20"] {
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 0 12px rgba(139, 201, 168, 0.3);
 }
 
-/* เส้นแบ่งบางลง ดูพรีเมียม */
-.divide-navy-700 > * + * { border-color: rgba(255, 255, 255, 0.06); }
+/* เส้นแบ่งบาง */
+.divide-navy-700 > * + * { border-color: #f0e6ec; }
 
-/* Touch target ≥ 44px บนมือถือสำหรับปุ่มใน grid (keypad/ตัวเลข) */
+/* Touch target ≥ 44px บนมือถือ */
 @media (max-width: 1023px) {
   .grid button { min-height: 44px; }
 }
 
-/* Selection highlight โทนทอง */
-::selection { background: rgba(212, 175, 55, 0.35); color: #fff; }
+/* Selection highlight โทนชมพู */
+::selection { background: rgba(246, 184, 200, 0.55); color: #383344; }
 
-/* glass สำหรับแถบ /80 (ticker ผลรางวัล + ประกาศ) */
-.bg-navy-800\/80 {
-  background-color: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Input focus — glow ชมพูอ่อน (แทน outline เดิม) */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(246, 184, 200, 0.35);
 }
+
+/* badge DEMO — ติดสะท้านเล็กน้อยให้สะดุดตาแต่ไม่รบกวน */
+@keyframes demo-badge-wiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+.animate-demo-badge { animation: demo-badge-wiggle 3s ease-in-out infinite; }

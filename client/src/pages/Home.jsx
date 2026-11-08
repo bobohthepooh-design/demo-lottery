@@ -82,7 +82,7 @@ function BigCountdown({ closeAt }) {
 }
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, demoNotice } = useAuth();
   const navigate = useNavigate();
   const now = useNow();
   const [types, setTypes] = useState([]);
@@ -118,6 +118,23 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
+      {/* Welcome + DEMO badge — member เท่านั้น */}
+      {user && (
+        <div className="flex items-center gap-3 bg-white/80 border border-navy-700 rounded-2xl px-4 py-3">
+          <span className="text-3xl animate-float">🌸</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-bold text-navy-950 text-base sm:text-lg">
+              สวัสดีค่ะ {user.displayName || user.username} ~
+            </div>
+            <div className="text-xs text-navy-400 truncate">
+              {demoNotice || 'โหมดทดลอง — ใช้เครดิตเสมือนเท่านั้น'}
+            </div>
+          </div>
+          <span className="animate-demo-badge shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-white border border-gold-400/60 shadow-sm">
+            DEMO MODE
+          </span>
+        </div>
+      )}
       {/* Hero — ดึงดูดให้เข้ามาแทง (ข้อความแก้ไขได้ที่ /admin/banner) */}
       {b.enabled && (
       <section className="relative overflow-hidden rounded-2xl border border-gold-500/40 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 px-5 py-8 sm:px-10 sm:py-12 text-center">

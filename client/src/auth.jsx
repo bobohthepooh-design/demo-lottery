@@ -8,12 +8,14 @@ export function AuthProvider({ children }) {
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [demoNotice, setDemoNotice] = useState('');
 
   const refresh = useCallback(async () => {
     try {
       const me = await api('/auth/me');
       setUser(me.user);
       setBalance(me.balance);
+      setDemoNotice(me.demoNotice || '');
       const admin = (me.user.roles || []).some(r => ['admin', 'super_admin'].includes(r));
       setMfaRequired(admin && !me.user.mfaVerified);
     } catch {
@@ -50,7 +52,7 @@ export function AuthProvider({ children }) {
   const isAdmin = !!user && (user.roles || []).some(r => ['admin', 'super_admin'].includes(r));
 
   return (
-    <AuthCtx.Provider value={{ user, balance, setBalance, loading, login, logout, refresh, verifyMfa, mfaRequired, isAdmin }}>
+    <AuthCtx.Provider value={{ user, balance, setBalance, loading, login, logout, refresh, verifyMfa, mfaRequired, isAdmin, demoNotice }}>
       {children}
     </AuthCtx.Provider>
   );
