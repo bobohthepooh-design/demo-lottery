@@ -1,4 +1,4 @@
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
@@ -17,10 +17,11 @@ const nav = [
 export default function Layout() {
   const { user, balance, logout, isAdmin, mfaRequired } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lotOpen, setLotOpen] = useState(false);
   const [types, setTypes] = useState([]);
   const [now, setNow] = useState(() => new Date());
   const navigate = useNavigate();
+  const location = useLocation();
+  const selType = new URLSearchParams(location.search).get('type');
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
@@ -57,27 +58,16 @@ export default function Layout() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <div className="relative" onMouseEnter={() => setLotOpen(true)} onMouseLeave={() => setLotOpen(false)}>
-              <NavLink to="/lotteries"
-                className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition inline-block ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
-                หวยทั้งหมด ▾
-              </NavLink>
-              {lotOpen && (
-                <div className="absolute top-full left-0 mt-1 w-60 bg-navy-800 border border-navy-600 rounded-xl shadow-2xl py-2 z-50">
-                  <div className="px-3 py-1 text-[10px] text-navy-400">เลือกประเภทหวย</div>
-                  <Link to="/lotteries" onClick={() => setLotOpen(false)}
-                    className="block px-3 py-2 text-sm font-semibold text-gold-300 hover:bg-navy-700">
-                    🎟️ หวยทั้งหมด — ทุกประเทศ
-                  </Link>
-                  {types.map(t => (
-                    <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setLotOpen(false)}
-                      className="block px-3 py-2 text-sm text-navy-200 hover:bg-navy-700 hover:text-gold-300">
-                      {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            <NavLink to="/lotteries" end
+              className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive && !selType ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
+              หวยทั้งหมด
+            </NavLink>
+            {types.map(t => (
+              <Link key={t.id} to={`/lotteries?type=${t.id}`}
+                className={`px-3 py-2 rounded-lg text-sm transition ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
+                {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
+              </Link>
+            ))}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end}
                 className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
@@ -114,12 +104,12 @@ export default function Layout() {
         {menuOpen && (
           <nav className="md:hidden border-t border-navy-700 bg-navy-900 px-4 py-2 space-y-1">
             <NavLink to="/lotteries" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
+              className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive && !selType ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
               หวยทั้งหมด
             </NavLink>
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 pl-6 rounded-lg text-sm text-navy-300 hover:bg-navy-800">
+                className={`block px-3 py-2 rounded-lg text-sm ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-300 hover:bg-navy-800'}`}>
                 {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
               </Link>
             ))}
