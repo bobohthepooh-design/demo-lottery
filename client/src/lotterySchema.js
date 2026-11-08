@@ -24,11 +24,12 @@ const LA = {
   ],
 };
 
-// หวยลาวพัฒนา (ค่ำ/เช้า) — เลข 3 ตัวบน + 2 ตัวล่าง
+// หวยลาวพัฒนา (ค่ำ/เช้า) — เลข 4 ตัว + 3 ตัวบน + 2 ตัวล่าง
 const LAD = {
   hero: 'main',
   fields: [
     { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
+    { key: 'num4',    label: 'เลข 4 ตัว',         short: '4ตัว',    digits: 4, prizes: 1 },
     { key: 'top3',    label: 'เลข 3 ตัวบน',       short: '3บน',    digits: 3, prizes: 1 },
     { key: 'bottom2', label: 'เลข 2 ตัวล่าง',     short: '2ล่าง',  digits: 2, prizes: 1 },
   ],
