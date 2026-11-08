@@ -148,7 +148,7 @@ export default function Home() {
             <div className="w-px h-6 bg-navy-600 hidden sm:block" />
             <div><span className="text-gold-300 font-bold text-lg">{types.length}</span> <span className="text-navy-300">ตลาดหวย</span></div>
             <div className="w-px h-6 bg-navy-600 hidden sm:block" />
-            <div><span className="text-gold-300 font-bold text-lg">x6,000</span> <span className="text-navy-300">อัตราจ่ายสูงสุด</span></div>
+            <div><span className="text-gold-300 font-bold text-lg">x1,000</span> <span className="text-navy-300">อัตราจ่ายสูงสุด</span></div>
           </div>
           )}
         </div>

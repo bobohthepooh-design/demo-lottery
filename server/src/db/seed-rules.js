@@ -44,44 +44,44 @@ export function seedRulesV2() {
     d.prepare(`UPDATE lottery_categories SET draw_pattern='mon-fri' WHERE code='LA' AND lottery_type_id=?`).run(LA_ID);
     d.prepare(`UPDATE lottery_categories SET name_th='หวยลาวพัฒนา', draw_pattern='mon-fri 20:30' WHERE code='LAD' AND lottery_type_id=?`).run(LA_ID);
 
-    // ---------- ปิดกติกาเดิมที่ยัง active (rename กัน unique index ชน) ----------
-    d.prepare(`UPDATE lottery_rules SET is_active = 0, bet_type = bet_type || '_old'
-               WHERE is_active = 1 AND bet_type NOT LIKE '%\\_old' ESCAPE '\\'`).run();
+    // ---------- ปิดกติกาเดิมที่ยัง active — เปลี่ยนชื่อให้ unique ต่อ row (กันชน idx_rules_uniq) ----------
+    d.prepare(`UPDATE lottery_rules SET is_active = 0, bet_type = bet_type || '_old_' || id
+               WHERE is_active = 1`).run();
 
     const rules = [];
     const push = (...a) => rules.push(rule(...a));
 
     // ===== หวยไทย =====
     // ผล: { first:'123456', front3:['123','321'], top3:['456','654'], bottom2:'56' }
-    push(TH, null, 'first',    'รางวัลที่ 1',      6, 'first',    'exact',   60000);
-    push(TH, null, 'front3',   'เลขหน้า 3 ตัว',    3, 'front3',   'exact',    4000);
-    push(TH, null, 'top3',     'เลขท้าย 3 ตัวบน',  3, 'top3',     'exact',     900);
-    push(TH, null, 'bottom2',  'เลขท้าย 2 ตัว',    2, 'bottom2',  'exact',     100);
+    push(TH, null, 'first',    'รางวัลที่ 1',      6, 'first',    'exact', 1000);
+    push(TH, null, 'front3',   'เลขหน้า 3 ตัว',    3, 'front3',   'exact', 500);
+    push(TH, null, 'top3',     'เลขท้าย 3 ตัวบน',  3, 'top3',     'exact', 500);
+    push(TH, null, 'bottom2',  'เลขท้าย 2 ตัว',    2, 'bottom2',  'exact', 60);
 
     // ===== หวยลาว (LA) =====
     // ผล: { main:'123456', last4:'3456', last3:'456', last2:'56' }
-    push(LA_ID, LA, 'last4', 'เลขท้าย 4 ตัว', 4, 'last4', 'exact', 6000);
-    push(LA_ID, LA, 'last3', 'เลขท้าย 3 ตัว', 3, 'last3', 'exact',  900);
-    push(LA_ID, LA, 'last2', 'เลขท้าย 2 ตัว', 2, 'last2', 'exact',  100);
+    push(LA_ID, LA, 'last4', 'เลขท้าย 4 ตัว', 4, 'last4', 'exact', 600);
+    push(LA_ID, LA, 'last3', 'เลขท้าย 3 ตัว', 3, 'last3', 'exact', 500);
+    push(LA_ID, LA, 'last2', 'เลขท้าย 2 ตัว', 2, 'last2', 'exact', 60);
 
     // ===== หวยลาวพัฒนา (LAD) — ค่ำ จ–ศ 20:30 | เลข 4 ตัว + 3 ตัวบน + 2 ตัวล่าง =====
     // ผล: { main:'123456', num4:'1234', top3:'456', bottom2:'56' }
-    push(LA_ID, LAD, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 6000);
-    push(LA_ID, LAD, 'top3',    'เลข 3 ตัวบน',  3, 'top3',    'exact',  900);
-    push(LA_ID, LAD, 'bottom2', 'เลข 2 ตัวล่าง', 2, 'bottom2', 'exact',  100);
+    push(LA_ID, LAD, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 600);
+    push(LA_ID, LAD, 'top3',    'เลข 3 ตัวบน',  3, 'top3',    'exact', 500);
+    push(LA_ID, LAD, 'bottom2', 'เลข 2 ตัวล่าง', 2, 'bottom2', 'exact', 60);
 
     // ===== หวยลาวพัฒนาเช้า (LADAM) — ทุกวัน 09:00 ตลาดแยก =====
-    push(LA_ID, LADAM, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 6000);
-    push(LA_ID, LADAM, 'top3',    'เลข 3 ตัวบน',  3, 'top3',    'exact',  900);
-    push(LA_ID, LADAM, 'bottom2', 'เลข 2 ตัวล่าง', 2, 'bottom2', 'exact',  100);
+    push(LA_ID, LADAM, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 600);
+    push(LA_ID, LADAM, 'top3',    'เลข 3 ตัวบน',  3, 'top3',    'exact', 500);
+    push(LA_ID, LADAM, 'bottom2', 'เลข 2 ตัวล่าง', 2, 'bottom2', 'exact', 60);
 
     // ===== ฮานอย (HN) — กติกาเดียวกันทุก category =====
     // ผล: { main:'123456', num4:'3456', top3:'456', top2:'56', bottom2:'78' }
     const hnRules = (catId) => {
-      push(HN, catId, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 6000);
-      push(HN, catId, 'top3',     'เลข 3 ตัวบน',    3, 'top3',     'exact',  900);
-      push(HN, catId, 'top2',     'เลข 2 ตัวบน',    2, 'top2',     'exact',  100);
-      push(HN, catId, 'bottom2',  'เลข 2 ตัวล่าง',  2, 'bottom2',  'exact',  100);
+      push(HN, catId, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 600);
+      push(HN, catId, 'top3',     'เลข 3 ตัวบน',    3, 'top3',     'exact', 500);
+      push(HN, catId, 'top2',     'เลข 2 ตัวบน',    2, 'top2',     'exact', 60);
+      push(HN, catId, 'bottom2',  'เลข 2 ตัวล่าง',  2, 'bottom2',  'exact', 60);
     };
     hnRules(HNS); hnRules(HNP); hnRules(HNN); hnRules(HNV);
 

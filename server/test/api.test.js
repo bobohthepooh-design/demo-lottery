@@ -136,14 +136,14 @@ describe('betting', () => {
     expect(r.status).toBe(400);
   });
   it('settles draw and pays winner', async () => {
-    // winning bottom2 = '42' → bottom2 bet wins x100; place another losing bet
+    // winning bottom2 = '42' → bottom2 bet wins x60 (standard payout); place another losing bet
     await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleTop3.id, number: '999', amount: 500 }] });
     const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '542', bottom2: '42' } });
     expect(r.status).toBe(200);
     expect(r.body.winningItems).toBe(1);
-    // balance: 10000 -1000 -500 + 1000*100 = 108500
+    // balance: 10000 -1000 -500 + 1000*60 = 68500
     const me = await member.agent.get('/auth/me');
-    expect(me.body.balance).toBe(108500);
+    expect(me.body.balance).toBe(68500);
   });
   it('double settle rejected', async () => {
     const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '111' } });
@@ -159,7 +159,7 @@ describe('wallet', () => {
       userId: m.id, amount: 5000, direction: 'credit', reason: 'test credit', idempotencyKey: `test-${ts}`,
     });
     expect(r.status).toBe(200);
-    expect(r.body.balance).toBe(113500);
+    expect(r.body.balance).toBe(73500);
   });
   it('duplicate idempotency key rejected', async () => {
     const members = await adminAgent.get('/admin/members');
