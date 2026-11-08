@@ -4,6 +4,7 @@ import { api, fmtDateTime, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { TYPE_EMOJI } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
+import { mergeBanner } from '../bannerConfig.js';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
 function useNow() {
@@ -78,11 +79,13 @@ export default function Home() {
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
   const [results, setResults] = useState([]);
+  const [banner, setBanner] = useState(null);
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
     api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
+    api('/lottery/public-config').then(r => setBanner(mergeBanner(r.banner))).catch(() => {});
   }, [user]);
 
   // รอบเปิดรับที่ใกล้ปิดสุดของแต่ละประเทศ/หมวด
@@ -104,39 +107,42 @@ export default function Home() {
     .slice(0, 3);
 
   const openCount = draws.filter(d => d.status === 'open').length;
+  const b = mergeBanner(banner);
 
   return (
     <div className="space-y-8">
-      {/* Hero — ดึงดูดให้เข้ามาแทง */}
+      {/* Hero — ดึงดูดให้เข้ามาแทง (ข้อความแก้ไขได้ที่ /admin/banner) */}
+      {b.enabled && (
       <section className="relative overflow-hidden rounded-2xl border border-gold-500/40 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 px-5 py-8 sm:px-10 sm:py-12 text-center">
         <div className="absolute -top-16 -left-16 w-56 h-56 rounded-full bg-gold-500/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -right-16 w-56 h-56 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
         <div className="relative">
-          <div className="text-4xl sm:text-5xl mb-2 animate-float">🎰</div>
+          <div className="text-4xl sm:text-5xl mb-2 animate-float">{b.emoji}</div>
           <h1 className="text-2xl sm:text-4xl font-black leading-tight">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500">
-              หวยออนไลน์ ครบทุกตลาด
+              {b.title}
             </span>
           </h1>
           <p className="text-navy-200 text-sm sm:text-base mt-2">
-            🇹🇭 หวยรัฐบาลไทย • 🇱🇦 หวยลาว & ลาวพัฒนา • 🇻🇳 ฮานอย 4 รอบ/วัน
+            {b.markets}
           </p>
           <p className="text-gold-300/90 text-xs sm:text-sm mt-1 font-semibold">
-            ✨ แทงง่ายๆ จ่ายสูงสุด <span className="text-gold-300">x6,000 เท่า</span> — รับเครดิตทดลองเมื่อสมัคร ✨
+            ✨ {b.promo} ✨
           </p>
           <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
             <Link to="/lotteries"
               className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-7 py-3 rounded-xl text-sm sm:text-base shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
-              🎟️ แทงหวยเลย
+              {b.cta_bet}
             </Link>
             {!user && (
               <Link to="/register"
                 className="border border-gold-500/50 text-gold-300 font-semibold px-6 py-3 rounded-xl text-sm sm:text-base hover:bg-navy-700/60 transition">
-                สมัครรับเครดิตทดลอง
+                {b.cta_register}
               </Link>
             )}
           </div>
           {/* สถิติสด */}
+          {b.show_stats && (
           <div className="flex items-center justify-center gap-4 sm:gap-8 mt-6 text-xs sm:text-sm flex-wrap">
             <div><span className="text-gold-300 font-bold text-lg">{openCount}</span> <span className="text-navy-300">รอบเปิดรับ</span></div>
             <div className="w-px h-6 bg-navy-600 hidden sm:block" />
@@ -144,8 +150,10 @@ export default function Home() {
             <div className="w-px h-6 bg-navy-600 hidden sm:block" />
             <div><span className="text-gold-300 font-bold text-lg">x6,000</span> <span className="text-navy-300">อัตราจ่ายสูงสุด</span></div>
           </div>
+          )}
         </div>
       </section>
+      )}
 
       {/* Ticker ผลรางวัลล่าสุดแบบเลื่อน */}
       {results.length > 0 && (

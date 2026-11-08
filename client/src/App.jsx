@@ -23,6 +23,7 @@ import AdminReports from './admin/Reports.jsx';
 import AdminAudit from './admin/Audit.jsx';
 import AdminSecurity from './admin/Security.jsx';
 import AdminSettings from './admin/Settings.jsx';
+import AdminBanner from './admin/Banner.jsx';
 
 function Protected({ children, admin = false }) {
   const { user, loading, isAdmin } = useAuth();
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="audit" element={<AdminAudit />} />
             <Route path="security" element={<AdminSecurity />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="banner" element={<AdminBanner />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

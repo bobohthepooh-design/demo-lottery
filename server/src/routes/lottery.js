@@ -2,11 +2,17 @@ import { Router } from 'express';
 import * as svc from '../services/lotteryService.js';
 import { getDb } from '../db/index.js';
 import { requireAuth } from '../services/authService.js';
+import * as settings from '../services/settingsService.js';
 
 const router = Router();
 
 router.get('/types', (req, res) => {
   res.json({ types: svc.listLotteryTypes() });
+});
+
+// public config สำหรับหน้าแรก (ไม่ต้อง login) — เฉพาะ key ที่ปลอดภัย
+router.get('/public-config', (req, res) => {
+  res.json({ banner: settings.getSetting('homepage_banner', null) });
 });
 
 // รายการ "ตลาดหวย" แยกย่อย — type ที่มี category จะกลายเป็นหลาย market

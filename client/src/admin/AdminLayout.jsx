@@ -13,6 +13,7 @@ const items = [
   { to: '/admin/audit', label: 'Audit Log' },
   { to: '/admin/security', label: 'Security Events' },
   { to: '/admin/settings', label: 'ตั้งค่าระบบ' },
+  { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก' },
 ];
 
 export default function AdminLayout() {
