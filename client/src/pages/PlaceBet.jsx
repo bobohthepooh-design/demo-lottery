@@ -5,6 +5,7 @@ import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonCard } from '../components/Skeleton.jsx';
+import { typeAccent } from '../typeAccent.js';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
@@ -150,6 +151,8 @@ export default function PlaceBet() {
   if (!draw) return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard className="h-28" /><SkeletonCard className="h-64" /></div>;
 
   const closed = draw.status !== 'open' || draw.close_at <= new Date().toISOString().slice(0,19).replace('T',' ');
+  const ac = draw ? typeAccent(draw.type_code) : null;
+  const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;
 
   return (
     <div className="grid lg:grid-cols-5 gap-6">
@@ -161,7 +164,7 @@ export default function PlaceBet() {
               <Link to={`/lotteries?type=${draw.lottery_type_id}`} className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่นในหมวดนี้</Link>
               <div className="flex items-center gap-2 mt-1">
                 <FlagIcon code={draw.type_code} className="w-9 h-6 text-[10px]" />
-                <h1 className="text-xl font-bold text-navy-950">{drawLabel(draw)}</h1>
+                <h1 className={`text-xl font-bold ${ac?.text || 'text-navy-950'}`}>{drawLabel(draw)}</h1>
               </div>
               <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)}</div>
               <div className="text-sm mt-1">⏱️ ปิดรับโพย: {!closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
@@ -174,7 +177,7 @@ export default function PlaceBet() {
 
         {!closed && (
           <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 space-y-4 shadow-lg shadow-black/20">
-            <h2 className="font-bold text-white">เลือกประเภทการแทง</h2>
+            <h2 className="font-bold text-navy-950">{headBar}เลือกประเภทการแทง</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {rules.map(r => (
                 <button key={r.id} onClick={() => setSelRule(String(r.id))}
@@ -250,7 +253,7 @@ export default function PlaceBet() {
       {/* right: bet slip */}
       <div className="lg:col-span-2">
         <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-5 sticky top-24 shadow-xl shadow-gold-500/5">
-          <h2 className="font-bold text-gold-400 mb-3">โพยของฉัน ({slip.length})</h2>
+          <h2 className={`font-bold mb-3 ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {slip.map((i, idx) => (
               <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm">
@@ -293,7 +296,7 @@ export default function PlaceBet() {
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setConfirming(false)}>
           <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-1">ยืนยันโพยหวย</h2>
+            <h2 className="text-lg font-bold text-navy-950 mb-1">{headBar}ยืนยันโพยหวย</h2>
             <p className="text-sm text-navy-300 mb-4">{drawLabel(draw)}</p>
             <div className="space-y-1.5 max-h-56 overflow-y-auto mb-4">
               {slip.map((i, idx) => (
