@@ -10,7 +10,7 @@ const BET_TYPE_STYLE = {
 };
 
 // เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
-const BET_ORDER = ['first', 'num4', 'front3', 'last4', 'top3', 'last3', 'top2', 'bottom2', 'last2'];
+const BET_ORDER = ['first', 'num4', 'front3', 'last4', 'top3', 'last3', 'top2', 'bottom2', 'last2', 'run_top', 'run_bottom'];
 
 export default function PlaceBet() {
   const { drawId } = useParams();

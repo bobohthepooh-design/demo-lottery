@@ -57,6 +57,9 @@ export function seedRulesV2() {
     push(TH, null, 'front3',   'เลขหน้า 3 ตัว',    3, 'front3',   'exact', 500);
     push(TH, null, 'top3',     'เลขท้าย 3 ตัวบน',  3, 'top3',     'exact', 500);
     push(TH, null, 'bottom2',  'เลขท้าย 2 ตัว',    2, 'bottom2',  'exact', 60);
+    // เลขวิ่ง —stake 1 หลัก ตรงกับ digit ใดก็ได้ในผล (บน=top3, ล่าง=bottom2) จ่าย x3
+    push(TH, null, 'run_top',  'เลขวิ่งบน',        1, 'top3',     'digit_contains', 3);
+    push(TH, null, 'run_bottom','เลขวิ่งล่าง',     1, 'bottom2',  'digit_contains', 3);
 
     // ===== หวยลาว (LA) =====
     // ผล: { main:'123456', last4:'3456', last3:'456', last2:'56' }
