@@ -185,6 +185,8 @@ export default function PlaceBet() {
                 </div>
                 {picks.length > 0 && <div className="mt-2 text-sm font-mono text-gold-300">เลือก: {[...picks].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('-')}</div>}
               </div>
+            ) : !rule ? (
+            <div className="sm:col-span-2 text-navy-400 text-sm py-4 text-center">กำลังโหลดประเภทการแทง...</div>
             ) : (
             <>
             <div className="sm:col-span-2">
