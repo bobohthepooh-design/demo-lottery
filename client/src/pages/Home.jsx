@@ -1,8 +1,44 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
-import WinningBoard from '../components/WinningBoard.jsx';
+import WinningBoard, { DigitBoxes } from '../components/WinningBoard.jsx';
+import { resultSchema } from '../lotterySchema.js';
 import { useAuth } from '../auth.jsx';
+
+const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
+
+// การ์ดผลรางวัลแบบย่อ — แสดงเฉพาะเลขหลัก กดเพื่อกางดูทุกรางวัล
+function ResultCard({ r }) {
+  const [open, setOpen] = useState(false);
+  let data = r.winning_numbers;
+  if (typeof data === 'string') { try { data = JSON.parse(data); } catch { data = {}; } }
+  const schema = resultSchema(r.type_code, r.category_code);
+  const heroKey = schema?.hero || schema?.fields?.[0]?.key;
+  const heroRaw = heroKey ? data?.[heroKey] : null;
+  const heroVal = Array.isArray(heroRaw) ? heroRaw[0] : heroRaw;
+  const prizeTypes = schema?.fields?.filter(f => !f.optional).length || Object.keys(data || {}).length;
+
+  return (
+    <div className="bg-navy-800 border border-gold-500/30 rounded-xl overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left active:bg-navy-700/50">
+        <span className="text-base shrink-0">{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-white text-xs font-semibold truncate">
+            {r.type_name_th}{r.category_name_th ? ` — ${r.category_name_th}` : ''}
+          </div>
+          <div className="text-[9px] text-navy-400">{fmtDateTime(r.draw_at)} • {prizeTypes} ประเภทรางวัล</div>
+        </div>
+        {heroVal && <DigitBoxes value={heroVal} hero compact />}
+        <span className={`text-navy-400 text-xs transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+      {open && (
+        <div className="border-t border-navy-700/60 px-3 py-2.5">
+          <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   const { user, balance } = useAuth();
@@ -35,18 +71,8 @@ export default function Home() {
             <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
             <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {latestByCategory.map(r => (
-              <div key={r.id} className="bg-navy-800 border border-gold-500/30 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="font-semibold text-white text-xs sm:text-sm">
-                    {r.type_name_th}{r.category_name_th ? ` — ${r.category_name_th}` : ''}
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] text-navy-400 shrink-0 ml-2">{fmtDateTime(r.draw_at)}</span>
-                </div>
-                <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {latestByCategory.map(r => <ResultCard key={r.id} r={r} />)}
           </div>
         </section>
       )}

@@ -3,7 +3,7 @@ import { resultSchema } from '../lotterySchema.js';
 // แสดงผลรางวัลสไตล์เว็บออกผลทางการ — แสดงทุกรางวัลของประเทศนั้นครบถ้วน
 // field ที่ยังไม่มีผลจะแสดง "—" (รอประกาศ)
 
-function DigitBoxes({ value, hero = false, pending = false, compact = false }) {
+export function DigitBoxes({ value, hero = false, pending = false, compact = false }) {
   if (pending) {
     return <span className="inline-block px-2 py-1 rounded-lg bg-navy-900/50 border border-dashed border-navy-600 text-navy-500 text-[10px]">รอประกาศ</span>;
   }
