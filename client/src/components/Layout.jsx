@@ -68,7 +68,7 @@ export default function Layout() {
               const ac = typeAccent(t.code);
               return (
                 <Link key={t.id} to={`/lotteries?type=${t.id}`}
-                  className={`px-3 py-2 rounded-lg text-sm transition inline-flex items-center gap-1.5 ${ac.text} ${selType === String(t.id) ? 'bg-navy-700 font-semibold' : 'hover:bg-navy-800'} ${ac.glow}`}>
+                  className={`px-3 py-2 rounded-lg text-sm transition inline-flex items-center gap-1.5 text-white ${selType === String(t.id) ? 'bg-navy-700 font-semibold' : 'hover:bg-navy-800 hover:text-gold-300'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${ac.bar}`} />
                   <FlagIcon code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
                 </Link>
@@ -117,7 +117,7 @@ export default function Layout() {
               const ac = typeAccent(t.code);
               return (
                 <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${selType === String(t.id) ? `bg-navy-700 ${ac.text}` : `text-navy-300 hover:bg-navy-800 ${ac.text} hover:brightness-125`}`}>
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white ${selType === String(t.id) ? 'bg-navy-700 font-semibold' : 'hover:bg-navy-800'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${ac.bar}`} />
                   <FlagIcon code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
                 </Link>
