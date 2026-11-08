@@ -391,17 +391,37 @@ router.put('/settings/:key', requirePerm('settings.manage'), (req, res, next) =>
 router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
   const d = db();
   res.json({
-    betsByType: d.prepare(`SELECT bi.bet_type, COUNT(*) c, SUM(bi.amount) stake, SUM(bi.payout) payout
-                           FROM bet_items bi GROUP BY bi.bet_type ORDER BY stake DESC`).all(),
-    betsByDay: d.prepare(`SELECT date(bs.created_at) day, COUNT(*) slips, SUM(bs.total_stake) stake
-                          FROM bet_slips bs GROUP BY day ORDER BY day DESC LIMIT 30`).all(),
-    topWinners: d.prepare(`SELECT u.username, bs.slip_ref, SUM(bi.payout) payout
+    totals: {
+      stake: d.prepare(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`).get().s,
+      payout: d.prepare(`SELECT COALESCE(SUM(payout),0) p FROM bet_items WHERE status='won'`).get().p,
+      pendingExposure: d.prepare(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status='pending'`).get().s,
+      items: d.prepare(`SELECT COUNT(*) c, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) w FROM bet_items WHERE status IN ('won','lost')`).get(),
+      slips: d.prepare(`SELECT COUNT(*) c FROM bet_slips`).get().c,
+    },
+    betsByType: d.prepare(`SELECT r.name_th AS rule_name, r.bet_type,
+                             COUNT(*) c,
+                             SUM(CASE WHEN bi.status='won' THEN 1 ELSE 0 END) won,
+                             SUM(bi.amount) stake, SUM(bi.payout) payout
+                           FROM bet_items bi JOIN lottery_rules r ON r.id = bi.rule_id
+                           WHERE bi.status != 'cancelled'
+                           GROUP BY bi.rule_id ORDER BY stake DESC`).all(),
+    betsByDay: d.prepare(`SELECT date(bs.created_at) day, COUNT(DISTINCT bs.id) slips,
+                             COALESCE(SUM(bi.amount),0) stake,
+                             COALESCE(SUM(CASE WHEN bi.status='won' THEN bi.payout ELSE 0 END),0) payout
+                          FROM bet_slips bs JOIN bet_items bi ON bi.slip_id = bs.id
+                          WHERE bs.status NOT IN ('cancelled','refunded')
+                          GROUP BY day ORDER BY day DESC LIMIT 30`).all(),
+    topWinners: d.prepare(`SELECT u.username, bs.slip_ref, d.draw_code, lt.name_th AS type_name_th,
+                             SUM(bi.payout) payout, COUNT(*) items
                            FROM bet_items bi JOIN bet_slips bs ON bs.id=bi.slip_id
                            JOIN users u ON u.id=bs.user_id
+                           JOIN lottery_draws d ON d.id=bs.draw_id
+                           JOIN lottery_types lt ON lt.id=d.lottery_type_id
                            WHERE bi.status='won' GROUP BY bs.id ORDER BY payout DESC LIMIT 20`).all(),
-    drawsSummary: d.prepare(`SELECT d.draw_code, lt.name_th, d.status,
-                             (SELECT COUNT(*) FROM bet_items bi WHERE bi.draw_id=d.id) items,
-                             (SELECT COALESCE(SUM(bi.payout),0) FROM bet_items bi WHERE bi.draw_id=d.id) payout
+    drawsSummary: d.prepare(`SELECT d.draw_code, lt.name_th, d.status, d.draw_at,
+                             (SELECT COUNT(*) FROM bet_items bi WHERE bi.draw_id=d.id AND bi.status != 'cancelled') items,
+                             (SELECT COALESCE(SUM(bi.amount),0) FROM bet_items bi WHERE bi.draw_id=d.id AND bi.status != 'cancelled') stake,
+                             (SELECT COALESCE(SUM(bi.payout),0) FROM bet_items bi WHERE bi.draw_id=d.id AND bi.status='won') payout
                              FROM lottery_draws d JOIN lottery_types lt ON lt.id=d.lottery_type_id
                              ORDER BY d.id DESC LIMIT 30`).all(),
   });
