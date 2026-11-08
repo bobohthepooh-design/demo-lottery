@@ -37,7 +37,7 @@ const ROLE_PERMS = {
   admin: [
     'dashboard.admin', 'members.manage', 'lottery.manage', 'draws.manage',
     'results.publish', 'wallet.adjust', 'bets.view_all', 'reports.view',
-    'audit.view', 'security.view', 'lottery.view', 'results.view',
+    'lottery.view', 'results.view',
   ],
   member: ['lottery.view', 'bet.place', 'bet.view_own', 'wallet.view_own', 'results.view'],
 };
