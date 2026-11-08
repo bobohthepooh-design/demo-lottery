@@ -7,8 +7,8 @@ import { useEffect, useState } from 'react';
 const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 const nav = [
-  { to: '/my-bets', label: 'โพยของฉัน', auth: true },
-  { to: '/wallet', label: 'กระเป๋าเครดิต', auth: true },
+  { to: '/my-bets', label: 'โพยของฉัน', auth: true, memberOnly: true },
+  { to: '/wallet', label: 'กระเป๋าเครดิต', auth: true, memberOnly: true },
   { to: '/profile', label: 'โปรไฟล์', auth: true },
   { to: '/admin', label: 'ผู้ดูแลระบบ', auth: true, admin: true },
 ];
@@ -67,7 +67,7 @@ export default function Layout() {
                 {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
               </Link>
             ))}
-            {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).map(n => (
+            {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end}
                 className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
                 {n.label}
@@ -112,7 +112,7 @@ export default function Layout() {
                 {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
               </Link>
             ))}
-            {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).map(n => (
+            {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
                 className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
                 {n.label}
