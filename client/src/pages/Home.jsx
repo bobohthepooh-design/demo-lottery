@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
+import { api, fmtDateTime, thaiDate, thaiTime, satang } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
@@ -77,8 +77,42 @@ function tickerText(r) {
   return `${r.type_name_th}${r.category_name_th ? ` ${r.category_name_th}` : ''}: ${parts.join(' • ') || '—'}${src}${upd}`;
 }
 
+// นับถอยหลังแบบตัวเลขใหญ่สำหรับ hero card
+function BigCountdown({ closeAt }) {
+  const [left, setLeft] = useState(() => {
+    const t = new Date(String(closeAt).replace(' ', 'T') + 'Z').getTime();
+    return isNaN(t) ? 0 : Math.max(0, Math.floor((t - Date.now()) / 1000));
+  });
+  useEffect(() => {
+    const t = setInterval(() => {
+      const tt = new Date(String(closeAt).replace(' ', 'T') + 'Z').getTime();
+      setLeft(isNaN(tt) ? 0 : Math.max(0, Math.floor((tt - Date.now()) / 1000)));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [closeAt]);
+  if (left <= 0) return <span className="text-red-400 font-bold">ปิดรับแล้ว</span>;
+  const d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600);
+  const m = Math.floor(left % 3600 / 60), s = left % 60;
+  const p = n => String(n).padStart(2, '0');
+  const cells = d > 0
+    ? [[d, 'วัน'], [h, 'ชม.'], [m, 'นาที'], [s, 'วิ']]
+    : [[h, 'ชม.'], [m, 'นาที'], [s, 'วิ']];
+  return (
+    <div className="flex items-end gap-2 justify-center">
+      {cells.map(([v, label], i) => (
+        <div key={i} className="text-center">
+          <div className="font-mono font-black text-3xl sm:text-4xl text-gold-300"
+            style={{ textShadow: '0 0 18px rgba(212,175,55,.45)' }}>{p(v)}</div>
+          <div className="text-[10px] text-navy-300">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
-  const { user } = useAuth();
+  const { user, balance } = useAuth();
+  const navigate = useNavigate();
   const now = useNow();
   const [types, setTypes] = useState([]);
   const [draws, setDraws] = useState([]);
@@ -157,6 +191,70 @@ export default function Home() {
           )}
         </div>
       </section>
+      )}
+
+      {/* รอบที่ใกล้ปิดรับที่สุด + กระเป๋าเครดิต (login) */}
+      {alertDraws.length > 0 && (
+        <section className="grid lg:grid-cols-3 gap-4">
+          {/* countdown ใหญ่ — รอบปิดเร็วสุด */}
+          {(() => {
+            const d = alertDraws[0];
+            const ac = typeAccent(d.type_code);
+            return (
+              <div className={`lg:col-span-2 relative overflow-hidden rounded-2xl border ${ac.border} bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-5 sm:p-6`}>
+                <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full ${ac.bar} opacity-10 blur-3xl pointer-events-none`} />
+                <div className="flex items-center gap-2 text-xs font-bold text-navy-300 mb-3">
+                  <span className="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                  รอบที่ใกล้ปิดรับที่สุด
+                  {alertDraws.length > 1 && <span className="text-navy-500 font-normal">(และอีก {alertDraws.length - 1} รอบ)</span>}
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <FlagIcon code={d.type_code} className="w-10 h-10 text-xs" />
+                  <div>
+                    <div className={`font-bold text-lg ${ac.text}`}>
+                      {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
+                    </div>
+                    <div className="text-xs text-navy-300">ออกรางวัล {fmtDateTime(d.draw_at)} • ปิดรับ {thaiTime(d.close_at)} น.</div>
+                  </div>
+                </div>
+                <div className="my-4"><BigCountdown closeAt={d.close_at} /></div>
+                <div className="flex justify-center">
+                  {user ? (
+                    <button onClick={() => navigate(`/bet/${d.id}`)}
+                      className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
+                      🎟️ แทงรอบนี้เลย
+                    </button>
+                  ) : (
+                    <Link to="/login" className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
+                      เข้าสู่ระบบเพื่อแทง
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* กระเป๋าเครดิต — เฉพาะสมาชิก */}
+          {user && (
+            <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/40 rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div className="text-xs text-navy-300">เครดิตของคุณ</div>
+                <div className="text-3xl font-black text-gold-400 mt-1">฿{satang(balance)}</div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => navigate('/wallet?action=deposit')}
+                  className="flex-1 bg-gold-500 text-navy-950 text-xs font-bold py-2.5 rounded-lg hover:bg-gold-400">
+                  ＋ เติมเครดิต
+                </button>
+                <button onClick={() => navigate('/wallet?action=withdraw')}
+                  className="flex-1 border border-navy-500 text-navy-200 text-xs font-semibold py-2.5 rounded-lg hover:bg-navy-700">
+                  － ถอนเครดิต
+                </button>
+              </div>
+              <Link to="/wallet" className="block text-center text-[11px] text-navy-400 hover:text-gold-300 mt-2">ดูประวัติธุรกรรม →</Link>
+            </div>
+          )}
+        </section>
       )}
 
       {/* Ticker ผลรางวัลล่าสุดแบบเลื่อน */}

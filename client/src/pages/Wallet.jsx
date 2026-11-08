@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 
@@ -21,9 +22,16 @@ export default function Wallet() {
   const [err, setErr] = useState('');
   const [celebration, setCelebration] = useState(null); // { kind:'win'|'lose', slip }
 
+  const [params, setParams] = useSearchParams();
   const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
     .catch(() => {}).finally(() => setLoading(false));
   useEffect(() => {
+    // ?action=deposit|withdraw — เปิด modal จากปุ่มลัดหน้าแรก
+    const act = params.get('action');
+    if (act === 'deposit' || act === 'withdraw') {
+      setModal(act); setAmount(''); setErr('');
+      setParams({}, { replace: true });
+    }
     load();
     // ดึงโพยล่าสุดที่ออกผลแล้วมาแสดงอารมณ์ถูก/ไม่ถูก
     api('/bets/mine?limit=10').then(r => {
