@@ -281,8 +281,8 @@ const statusSchema = z.object({ status: z.enum(['scheduled', 'open', 'closed', '
 router.patch('/draws/:id/status', requirePerm('draws.manage'), (req, res, next) => {
   try {
     const { status } = statusSchema.parse(req.body);
-    lottery.updateDrawStatus(req.user.id, Number(req.params.id), status);
-    res.json({ ok: true });
+    const result = lottery.updateDrawStatus(req.user.id, Number(req.params.id), status);
+    res.json({ ok: true, ...result });
   } catch (e) { next(e); }
 });
 

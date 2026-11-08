@@ -102,9 +102,11 @@ export function validateBetNumber(rule, number) {
  * Place a bet slip. items: [{ ruleId, number, amount }] — amount in satang, multiple of stake_unit.
  * All-or-nothing inside one DB transaction.
  */
-export function placeBet(userId, { drawId, items }) {
+export function placeBet(userId, { drawId, items, idempotencyKey = null }) {
   if (!Array.isArray(items) || items.length === 0) throw new HttpError(400, 'กรุณาเลือกอย่างน้อย 1 รายการ');
   if (items.length > 50) throw new HttpError(400, 'สูงสุด 50 รายการต่อโพย');
+  if (idempotencyKey !== null && (typeof idempotencyKey !== 'string' || idempotencyKey.length > 64))
+    throw new HttpError(400, 'idempotencyKey ไม่ถูกต้อง');
 
   const db = getDb();
   const draw = getDraw(drawId);
@@ -130,27 +132,57 @@ export function placeBet(userId, { drawId, items }) {
 
   const totalStake = resolved.reduce((s, r) => s + r.amount, 0);
 
-  return tx((d) => {
-    const slip = d.prepare(`INSERT INTO bet_slips (slip_ref, user_id, draw_id, status, total_stake)
-                            VALUES (?, ?, ?, 'pending', ?)`).run(slipRef, userId, drawId, totalStake);
-    const slipId = Number(slip.lastInsertRowid);
+  const lookupExisting = (d) => idempotencyKey
+    ? d.prepare(`SELECT id, slip_ref, total_stake FROM bet_slips WHERE user_id = ? AND idempotency_key = ?`)
+        .get(userId, idempotencyKey)
+    : null;
 
-    const insItem = d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount)
-                               VALUES (?, ?, ?, ?, ?, ?)`);
-    for (const r of resolved) {
-      insItem.run(slipId, drawId, r.rule.id, r.rule.bet_type, r.number, r.amount);
-    }
+  try {
+    return tx((d) => {
+      // idempotent retry: same key returns the already-created slip
+      const existing = lookupExisting(d);
+      if (existing) {
+        return { slipRef: existing.slip_ref, slipId: existing.id, totalStake: existing.total_stake,
+          balance: getBalance(userId), duplicate: true };
+      }
 
-    debitForBetTx(d, {
-      userId, slipRef, totalStake,
-      idempotencyKey: `bet-debit-${slipRef}`,
+      // re-check draw is still open inside the transaction (TOCTOU guard)
+      const cur = d.prepare('SELECT status, close_at FROM lottery_draws WHERE id = ?').get(drawId);
+      if (!cur || cur.status !== 'open' || cur.close_at <= nowSql())
+        throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพยแล้ว', 'DRAW_CLOSED');
+
+      const slip = d.prepare(`INSERT INTO bet_slips (slip_ref, user_id, draw_id, status, total_stake, idempotency_key)
+                              VALUES (?, ?, ?, 'pending', ?, ?)`)
+        .run(slipRef, userId, drawId, totalStake, idempotencyKey);
+      const slipId = Number(slip.lastInsertRowid);
+
+      const insItem = d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount)
+                                 VALUES (?, ?, ?, ?, ?, ?)`);
+      for (const r of resolved) {
+        insItem.run(slipId, drawId, r.rule.id, r.rule.bet_type, r.number, r.amount);
+      }
+
+      debitForBetTx(d, {
+        userId, slipRef, totalStake,
+        idempotencyKey: `bet-debit-${slipRef}`,
+      });
+
+      audit({ userId, action: 'bet.place', entityType: 'bet_slip', entityId: slipRef,
+        detail: { drawId, totalStake, items: resolved.map(r => ({ t: r.rule.bet_type, n: r.number, a: r.amount })) } });
+
+      return { slipRef, slipId, totalStake, balance: getBalance(userId) };
     });
-
-    audit({ userId, action: 'bet.place', entityType: 'bet_slip', entityId: slipRef,
-      detail: { drawId, totalStake, items: resolved.map(r => ({ t: r.rule.bet_type, n: r.number, a: r.amount })) } });
-
-    return { slipRef, slipId, totalStake, balance: getBalance(userId) };
-  });
+  } catch (e) {
+    // concurrent same-key submit: unique index rejected the insert — return the winner's slip
+    if (idempotencyKey && /UNIQUE|constraint/i.test(String(e.message))) {
+      const db = getDb();
+      const existing = db.prepare(`SELECT id, slip_ref, total_stake FROM bet_slips WHERE user_id = ? AND idempotency_key = ?`)
+        .get(userId, idempotencyKey);
+      if (existing) return { slipRef: existing.slip_ref, slipId: existing.id,
+        totalStake: existing.total_stake, balance: getBalance(userId), duplicate: true };
+    }
+    throw e;
+  }
 }
 
 export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
@@ -349,6 +381,33 @@ export function updateDrawStatus(adminId, drawId, status) {
   const draw = getDraw(drawId);
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
   if (draw.status === 'settled') throw new HttpError(400, 'รอบที่ออกผลแล้วไม่สามารถเปลี่ยนสถานะได้');
+
+  // ยกเลิกรอบ → คืนเครดิตโพยที่ยัง pending ทั้งหมดใน transaction เดียว
+  if (status === 'cancelled' && draw.status !== 'cancelled') {
+    return tx((d) => {
+      const slips = d.prepare(`SELECT id, slip_ref, user_id, total_stake FROM bet_slips
+                               WHERE draw_id = ? AND status = 'pending'`).all(drawId);
+      let refundedSlips = 0, refundedAmount = 0;
+      const cancelItems = d.prepare(`UPDATE bet_items SET status = 'cancelled' WHERE slip_id = ? AND status = 'pending'`);
+      for (const s of slips) {
+        if (s.total_stake > 0) {
+          creditTx(d, {
+            userId: s.user_id, type: 'bet_refund', amount: s.total_stake,
+            description: `คืนเครดิตโพย ${s.slip_ref} (ยกเลิกรอบหวย)`,
+            idempotencyKey: `refund-${s.slip_ref}`,
+          });
+        }
+        cancelItems.run(s.id);
+        d.prepare(`UPDATE bet_slips SET status = 'refunded', settled_at = datetime('now') WHERE id = ?`).run(s.id);
+        refundedSlips++; refundedAmount += s.total_stake;
+      }
+      d.prepare(`UPDATE lottery_draws SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, drawId);
+      audit({ userId: adminId, action: 'draw.status', entityType: 'draw', entityId: String(drawId),
+        detail: { from: draw.status, to: status, refundedSlips, refundedAmount } });
+      return { refundedSlips, refundedAmount };
+    });
+  }
+
   db.prepare(`UPDATE lottery_draws SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, drawId);
   audit({ userId: adminId, action: 'draw.status', entityType: 'draw', entityId: String(drawId), detail: { from: draw.status, to: status } });
 }

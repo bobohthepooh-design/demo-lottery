@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
@@ -23,12 +23,18 @@ export default function PlaceBet() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  // idempotency key: คงเดิมตลอดการพยายามส่งโพยเดียวกัน (กันโพยซ้ำตอน retry/เน็ตหลุด)
+  const idemKey = useRef(null);
+  const newIdemKey = () => { idemKey.current = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`); };
 
   // current entry
   const [selRule, setSelRule] = useState('');
   const [number, setNumber] = useState('');
   const [picks, setPicks] = useState([]);   // pattana5: เลขที่เลือก 1-45
   const [amount, setAmount] = useState('');
+
+  // เปลี่ยนเนื้อหาโพย → key ใหม่ เพื่อไม่ให้โพยคนละชุดใช้ key เดียวกัน
+  useEffect(() => { idemKey.current = null; }, [slip]);
 
   useEffect(() => {
     api(`/lottery/draws/${drawId}`).then(async r => {
@@ -111,13 +117,16 @@ export default function PlaceBet() {
 
   const submit = async () => {
     setErr(''); setBusy(true); setConfirming(false);
+    if (!idemKey.current) newIdemKey();
     try {
       const r = await api('/bets', { method: 'POST', body: {
         drawId: Number(drawId),
         items: slip.map(i => ({ ruleId: i.ruleId, number: i.number, amount: i.stakeSatang })),
+        idempotencyKey: idemKey.current,
       }});
       setBalance(r.balance);
       setDone(r);
+      idemKey.current = null; // โพยถัดไปใช้ key ใหม่
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };

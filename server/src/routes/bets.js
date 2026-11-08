@@ -12,9 +12,10 @@ const betSchema = z.object({
   drawId: z.number().int().positive(),
   items: z.array(z.object({
     ruleId: z.number().int().positive(),
-    number: z.string().min(1).max(10),
+    number: z.string().min(1).max(20),
     amount: z.number().int().positive(),
   })).min(1).max(50),
+  idempotencyKey: z.string().max(64).optional(),
 });
 
 router.post('/', (req, res, next) => {
