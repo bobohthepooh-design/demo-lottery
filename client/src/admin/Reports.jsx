@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { thaiDate } from '../time.js';
+import { FlagIcon } from '../components/ResultLine.jsx';
 
 const DRAW_STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ',
@@ -62,14 +63,21 @@ export default function AdminReports() {
           <h2 className="font-bold text-white mb-3">ยอดแทงตามประเภทการแทง</h2>
           <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
             <thead><tr className="border-b border-navy-700">
-              <Th>ประเภท</Th><Th right>รายการ</Th><Th right>ถูก</Th><Th right>เรทถูก</Th><Th right>ยอดแทง</Th><Th right>จ่ายออก</Th>
+              <Th>ประเทศ/ประเภทหวย</Th><Th>หมวด</Th><Th>ประเภทการแทง</Th><Th right>รายการ</Th><Th right>ถูก</Th><Th right>เรทถูก</Th><Th right>ยอดแทง</Th><Th right>จ่ายออก</Th>
             </tr></thead>
             <tbody className="divide-y divide-navy-700/60">
-              {d.betsByType.map(b => {
+              {d.betsByType.map((b, i) => {
                 const rate = b.c ? Math.round((b.won / b.c) * 1000) / 10 : 0;
                 return (
-                  <tr key={b.rule_name + b.bet_type}>
-                    <td className="py-2 text-white">{b.rule_name}</td>
+                  <tr key={`${b.rule_name}-${b.type_code}-${b.category_name_th}-${i}`}>
+                    <td className="py-2 text-white whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5">
+                        <FlagIcon code={b.type_code} className="w-5 h-3.5" />
+                        {b.type_name_th}
+                      </span>
+                    </td>
+                    <td className="text-navy-300 text-xs">{b.category_name_th || '—'}</td>
+                    <td className="text-navy-200">{b.rule_name}</td>
                     <td className="text-right text-navy-300">{b.c}</td>
                     <td className="text-right text-navy-300">{b.won}</td>
                     <td className="text-right text-navy-300">{rate}%</td>
@@ -78,7 +86,7 @@ export default function AdminReports() {
                   </tr>
                 );
               })}
-              {!d.betsByType.length && <tr><td colSpan="6" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
+              {!d.betsByType.length && <tr><td colSpan="8" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
             </tbody>
           </table></div>
         </div>

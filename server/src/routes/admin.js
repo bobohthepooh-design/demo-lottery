@@ -408,12 +408,19 @@ router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
       slips: d.prepare(`SELECT COUNT(*) c FROM bet_slips`).get().c,
     },
     betsByType: d.prepare(`SELECT r.name_th AS rule_name, r.bet_type,
+                             lt.code AS type_code, lt.name_th AS type_name_th,
+                             lc.name_th AS category_name_th,
                              COUNT(*) c,
                              SUM(CASE WHEN bi.status='won' THEN 1 ELSE 0 END) won,
                              SUM(bi.amount) stake, SUM(bi.payout) payout
-                           FROM bet_items bi JOIN lottery_rules r ON r.id = bi.rule_id
+                           FROM bet_items bi
+                           JOIN lottery_rules r ON r.id = bi.rule_id
+                           JOIN lottery_draws ld ON ld.id = bi.draw_id
+                           JOIN lottery_types lt ON lt.id = ld.lottery_type_id
+                           LEFT JOIN lottery_categories lc ON lc.id = ld.category_id
                            WHERE bi.status != 'cancelled'
-                           GROUP BY bi.rule_id ORDER BY stake DESC`).all(),
+                           GROUP BY bi.rule_id, ld.lottery_type_id, ld.category_id
+                           ORDER BY stake DESC`).all(),
     betsByDay: d.prepare(`SELECT date(bs.created_at) day, COUNT(DISTINCT bs.id) slips,
                              COALESCE(SUM(bi.amount),0) stake,
                              COALESCE(SUM(CASE WHEN bi.status='won' THEN bi.payout ELSE 0 END),0) payout
