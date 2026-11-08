@@ -23,6 +23,31 @@ const schedule = [
   { drawInH: 98.5, closeInH: 98.0, status: 'scheduled', seq: '03' },
 ];
 
+// หวยรัฐบาลไทยออกทุกวันที่ 1 และ 16 ของเดือน — ออกรางวัล 15:00 น. (เวลาท้องถิ่น)
+const TH_DRAW_HOUR = 15;
+const TH_CLOSE_HOUR = 14;
+const TH_UPCOMING = 4; // สร้างล่วงหน้า 4 งวด (1, 16 ของเดือนถัด ๆ ไป)
+
+function thaiDrawDates() {
+  const dates = [];
+  const now = new Date();
+  let y = now.getFullYear(), m = now.getMonth();
+  while (dates.length < TH_UPCOMING) {
+    for (const day of [1, 16]) {
+      const dt = new Date(y, m, day, TH_DRAW_HOUR, 0, 0);
+      if (dt > now) dates.push(dt);
+      if (dates.length >= TH_UPCOMING) break;
+    }
+    m += 1; if (m > 11) { m = 0; y += 1; }
+  }
+  return dates;
+}
+
+function localDateSql(d, hour) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(hour)}:00:00`;
+}
+
 export function seedDemoDraws() {
   const db = getDb();
   const types = db.prepare('SELECT id, code FROM lottery_types WHERE is_active = 1').all();
@@ -32,6 +57,28 @@ export function seedDemoDraws() {
   for (const t of types) {
     const cats = db.prepare('SELECT id, code FROM lottery_categories WHERE lottery_type_id = ?').all(t.id);
     const targets = cats.length ? cats : [{ id: null, code: t.code }];
+
+    // หวยไทย: ออกทุกวันที่ 1 และ 16 ของเดือน
+    if (t.code === 'TH') {
+      for (const c of targets) {
+        for (const dt of thaiDrawDates()) {
+          const p = n => String(n).padStart(2, '0');
+          const yyyymm = `${dt.getFullYear()}${p(dt.getMonth() + 1)}`;
+          const drawCode = `TH-DEMO-${yyyymm}-${p(dt.getDate())}`;
+          if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
+          const drawAt = toUtcSql(localDateSql(dt, TH_DRAW_HOUR));
+          const closeAt = toUtcSql(localDateSql(dt, TH_CLOSE_HOUR));
+          const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
+          const status = closeAt > nowUtc ? 'open' : 'scheduled';
+          db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
+                      VALUES (?, ?, ?, ?, ?, ?)`)
+            .run(t.id, c.id, drawCode, drawAt, closeAt, status);
+          created++;
+        }
+      }
+      continue;
+    }
+
     for (const c of targets) {
       for (const s of schedule) {
         const drawCode = `${c.code}-DEMO-${ymd}-${s.seq}`;
