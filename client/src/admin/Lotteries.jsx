@@ -4,6 +4,8 @@ import { api } from '../api.js';
 export default function AdminLotteries() {
   const [types, setTypes] = useState([]);
   const [rules, setRules] = useState([]);
+  const [showInactive, setShowInactive] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [editRule, setEditRule] = useState(null);
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [typeForm, setTypeForm] = useState({ code: '', name_th: '', name_en: '', description: '' });
@@ -11,6 +13,7 @@ export default function AdminLotteries() {
   const load = () => {
     api('/admin/lottery/types').then(r => setTypes(r.types)).catch(e => alert(e.message));
     api('/admin/lottery/rules').then(r => setRules(r.rules)).catch(() => {});
+    api('/admin/lottery/categories').then(r => setCategories(r.categories)).catch(() => {});
   };
   useEffect(load, []);
 
@@ -32,6 +35,10 @@ export default function AdminLotteries() {
       setEditRule(null); load();
     } catch (e) { alert(e.message); }
   };
+
+  const typeName = (id) => types.find(t => t.id === id)?.name_th || `#${id}`;
+  const catName = (id) => categories.find(c => c.id === id)?.name_th || '';
+  const visibleRules = showInactive ? rules : rules.filter(r => r.is_active);
 
   return (
     <div className="space-y-6">
@@ -60,25 +67,31 @@ export default function AdminLotteries() {
               </button>
             </div>
             <div className="text-xs text-navy-300 mt-1">{t.description}</div>
-            <div className="text-xs text-navy-400 mt-2">{rules.filter(r => r.lottery_type_id === t.id).length} ประเภทการแทง</div>
+            <div className="text-xs text-navy-400 mt-2">{rules.filter(r => r.lottery_type_id === t.id && r.is_active).length} ประเภทการแทงที่ใช้งาน</div>
           </div>
         ))}
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
-        <div className="px-5 py-4 border-b border-navy-700 flex items-center justify-between">
-          <h2 className="font-bold text-white">ตารางกติกา (Lottery Rules)</h2>
-          <button onClick={() => setEditRule({ lottery_type_id: types[0]?.id, bet_type: '', name_th: '', digits: 2, match_config: '{"source":"top3","mode":"tail"}', payout_multiplier: 100, stake_unit: 100, min_amount: 100, is_active: 1 })}
-            className="text-sm text-gold-400 hover:underline">+ เพิ่มกติกา</button>
+        <div className="px-5 py-4 border-b border-navy-700 flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-bold text-white">ตารางกติกา (Lottery Rules) <span className="text-xs text-navy-400 font-normal">— {visibleRules.length} รายการ</span></h2>
+          <div className="flex items-center gap-4">
+            <label className="text-xs text-navy-300 flex items-center gap-1.5">
+              <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="accent-gold-500" />
+              แสดงกติกาที่ปิดใช้งาน ({rules.filter(r => !r.is_active).length})
+            </label>
+            <button onClick={() => setEditRule({ lottery_type_id: types[0]?.id, bet_type: '', name_th: '', digits: 2, match_config: '{"source":"top3","mode":"tail"}', payout_multiplier: 100, stake_unit: 100, min_amount: 100, is_active: 1 })}
+              className="text-sm text-gold-400 hover:underline">+ เพิ่มกติกา</button>
+          </div>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
             <tr><th className="text-left px-4 py-3">หวย</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-left px-4 py-3">ชื่อ</th><th className="text-center px-4 py-3">หลัก</th><th className="text-left px-4 py-3">Match Config</th><th className="text-right px-4 py-3">จ่าย x</th><th className="text-right px-4 py-3">ขั้นต่ำ</th><th className="text-center px-4 py-3">เปิด</th><th className="px-4 py-3"></th></tr>
           </thead>
           <tbody className="divide-y divide-navy-700">
-            {rules.map(r => (
-              <tr key={r.id} className="hover:bg-navy-700/40">
-                <td className="px-4 py-2 text-navy-300">#{r.lottery_type_id}</td>
+            {visibleRules.map(r => (
+              <tr key={r.id} className={`hover:bg-navy-700/40 ${r.is_active ? '' : 'opacity-50'}`}>
+                <td className="px-4 py-2 text-navy-300">{typeName(r.lottery_type_id)}{r.category_id ? ` — ${catName(r.category_id)}` : ''}</td>
                 <td className="px-4 py-2"><code className="text-gold-300 text-xs">{r.bet_type}</code></td>
                 <td className="px-4 py-2 text-white">{r.name_th}</td>
                 <td className="px-4 py-2 text-center">{r.digits}</td>
