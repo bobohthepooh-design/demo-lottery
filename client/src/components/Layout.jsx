@@ -50,7 +50,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/20">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-black via-navy-950 to-black backdrop-blur-md border-b border-royal/40 shadow-lg shadow-black/40">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 font-bold text-lg">฿</div>
@@ -143,7 +143,7 @@ export default function Layout() {
       </main>
 
       {/* Bottom navigation — มือถือ/แท็บเล็ต (แสดงเฉพาะจอ < lg) */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-navy-900/95 backdrop-blur border-t border-gold-500/30"
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-black/95 backdrop-blur border-t border-royal/40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex h-16">
           {[
@@ -158,7 +158,7 @@ export default function Layout() {
             ]),
           ].filter(i => i.show).map(i => (
             <NavLink key={i.to} to={i.to} end={i.end}
-              className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] ${isActive ? 'text-gold-300' : 'text-navy-300'}`}>
+              className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] ${isActive ? 'text-royal-soft' : 'text-navy-300'}`}>
               <span className="text-lg leading-none">{i.icon}</span>
               {i.label}
             </NavLink>

@@ -138,7 +138,7 @@ export default function Home() {
           </p>
           <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
             <Link to="/lotteries"
-              className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-7 py-3 rounded-xl text-sm sm:text-base shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
+              className="bg-gradient-to-r from-gold-500 to-royal text-navy-950 font-bold px-7 py-3 rounded-xl text-sm sm:text-base shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
               {b.cta_bet}
             </Link>
             {!user && (
@@ -190,11 +190,11 @@ export default function Home() {
                 <div className="flex justify-center">
                   {user ? (
                     <button onClick={() => navigate(`/bet/${d.id}`)}
-                      className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
+                      className="bg-gradient-to-r from-gold-500 to-royal text-navy-950 font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
                       🎟️ แทงรอบนี้เลย
                     </button>
                   ) : (
-                    <Link to="/login" className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
+                    <Link to="/login" className="bg-gradient-to-r from-gold-500 to-royal text-navy-950 font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-gold-500/25 hover:brightness-110 transition">
                       เข้าสู่ระบบเพื่อแทง
                     </Link>
                   )}
@@ -284,7 +284,7 @@ export default function Home() {
                     <div className="text-[11px] text-navy-500 py-3">ไม่มีรอบที่เปิดรับ</div>
                   )}
                   <Link to={`/lotteries?type=${t.id}`}
-                    className="mt-3 block text-center text-xs font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-lg py-2 hover:brightness-110 transition shadow-md shadow-gold-500/20">
+                    className="mt-3 block text-center text-xs font-bold bg-gradient-to-r from-gold-500 to-royal text-navy-950 rounded-lg py-2 hover:brightness-110 transition shadow-md shadow-gold-500/20">
                     🎟️ แทงรอบนี้เลย
                   </Link>
                 </div>
