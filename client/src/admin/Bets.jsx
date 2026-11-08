@@ -7,9 +7,12 @@ export default function AdminBets() {
   const [slips, setSlips] = useState([]);
   const [status, setStatus] = useState('');
   const [open, setOpen] = useState(null);
+  const [err, setErr] = useState('');
 
-  const load = () => api(`/admin/bets?limit=200${status ? `&status=${status}` : ''}`).then(r => setSlips(r.slips)).catch(e => alert(e.message));
-  useEffect(load, [status]);
+  const load = () => api(`/admin/bets?limit=200${status ? `&status=${status}` : ''}`)
+    .then(r => { setSlips(Array.isArray(r?.slips) ? r.slips : []); setErr(''); })
+    .catch(e => { setSlips([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); });
+  useEffect(() => { load(); }, [status]);
 
   return (
     <div className="space-y-4">
@@ -20,8 +23,9 @@ export default function AdminBets() {
           {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </div>
+      {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>}
       <div className="space-y-2">
-        {slips.map(s => (
+        {(Array.isArray(slips) ? slips : []).map(s => (
           <div key={s.id} className="bg-navy-800 border border-navy-700 rounded-xl">
             <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-navy-700/40">
               <div>
@@ -36,7 +40,7 @@ export default function AdminBets() {
             </button>
             {open === s.id && (
               <div className="border-t border-navy-700 px-5 py-3 grid sm:grid-cols-2 gap-2">
-                {s.items.map(i => (
+                {(Array.isArray(s.items) ? s.items : []).map(i => (
                   <div key={i.id} className="flex justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm">
                     <span><code className="text-gold-300">{i.number}</code> <span className="text-navy-300">{i.bet_name_th}</span></span>
                     <span className="text-navy-300">฿{satang(i.amount)} {i.payout > 0 && <b className="text-green-400"> +฿{satang(i.payout)}</b>}</span>
