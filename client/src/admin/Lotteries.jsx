@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { resultSchema } from '../lotterySchema.js';
+import { TypeBadge } from '../components/ResultLine.jsx';
 import AdminSettle from './Settle.jsx';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
@@ -200,7 +201,7 @@ export default function AdminLotteries() {
         {sections.map(({ type, groups }) => (
           <div key={type.id} className="bg-navy-800 border border-navy-700 rounded-xl overflow-hidden">
             <div className="px-5 py-3.5 bg-navy-900/60 border-b border-navy-700 flex items-center gap-2">
-              <span className="text-lg">{type.code === 'TH' ? '🇹🇭' : type.code === 'LA' ? '🇱🇦' : '🇻🇳'}</span>
+              <TypeBadge code={type.code} className="w-7 h-7 text-[10px]" />
               <span className="font-bold text-white">{type.name_th}</span>
               <span className="text-xs text-navy-400">({type.code})</span>
             </div>

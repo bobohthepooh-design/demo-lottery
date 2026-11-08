@@ -1,7 +1,20 @@
 import { fmtDate, thaiTime } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 
-export const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
+// badge ประเทศ — ใช้ตัวอักษรแทน flag emoji เพราะ Windows desktop ไม่ render flag emoji
+const BADGE_STYLE = {
+  TH: 'bg-red-600 text-white',
+  LA: 'bg-blue-700 text-white',
+  HN: 'bg-yellow-400 text-navy-950',
+};
+export function TypeBadge({ code, className = '' }) {
+  if (!code) return <span className={className}>🎟️</span>;
+  return (
+    <span className={`inline-flex items-center justify-center rounded font-black shrink-0 ${BADGE_STYLE[code] || 'bg-navy-700 text-navy-200'} ${className}`}>
+      {code}
+    </span>
+  );
+}
 
 // การ์ดผลรางวัล 1 ประเทศ — หัวข้อ + คอลัมน์แยกตามประเภทรางวัล
 export default function ResultLine({ r }) {
@@ -24,7 +37,7 @@ export default function ResultLine({ r }) {
   return (
     <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-2">
       <div className="flex items-center gap-2 text-[11px]">
-        <span>{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
+        <TypeBadge code={r.type_code} className="w-6 h-6 text-[10px]" />
         <span className="font-semibold text-white">{r.type_name_th}{r.category_name_th ? ` ${r.category_name_th}` : ''}</span>
         {r.source && (
           <span className={`text-[9px] px-1.5 py-0.5 rounded ${r.source === 'manual' ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'}`}>

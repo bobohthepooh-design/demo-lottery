@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import { TYPE_EMOJI } from '../components/ResultLine.jsx';
+import { TypeBadge } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
 import { mergeBanner } from '../bannerConfig.js';
 
@@ -47,7 +47,7 @@ function DrawLine({ d, now }) {
   const closed = d.status !== 'open';
   return (
     <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
-      <span className="text-xs shrink-0">{TYPE_EMOJI[d.type_code] || '🎟️'}</span>
+      <TypeBadge code={d.type_code} className="w-5 h-5 text-[9px]" />
       <span className="text-[11px] font-semibold text-white shrink-0">
         {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
       </span>
@@ -168,7 +168,7 @@ export default function Home() {
             <div className="flex w-max animate-marquee gap-8 px-4">
               {[...results, ...results].map((r, i) => (
                 <span key={i} className="text-xs text-navy-200 whitespace-nowrap flex items-center gap-1.5">
-                  <span>{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
+                  <TypeBadge code={r.type_code} className="w-5 h-5 text-[9px]" />
                   {tickerText(r)}
                 </span>
               ))}
@@ -189,7 +189,7 @@ export default function Home() {
               const urgent = left < 3600e3;
               return (
                 <div key={d.id} className="flex items-center gap-2 flex-wrap bg-navy-900/60 rounded-lg px-3 py-2">
-                  <span className="text-xs">{TYPE_EMOJI[d.type_code] || '🎟️'}</span>
+                  <TypeBadge code={d.type_code} className="w-5 h-5 text-[9px]" />
                   <span className="text-xs font-semibold text-white">
                     {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
                   </span>
@@ -213,13 +213,16 @@ export default function Home() {
             return (
               <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-col hover:border-gold-500/40 hover:-translate-y-0.5 transition">
                 <Link to={`/lotteries?type=${t.id}`} className="group">
-                  <div className="text-3xl mb-1">{t.code === 'TH' ? '🇹🇭' : t.code === 'LA' ? '🇱🇦' : '🇻🇳'}</div>
+                  <TypeBadge code={t.code} className="w-9 h-9 text-xs mb-1" />
                   <div className="font-bold text-white group-hover:text-gold-300">{t.name_th}</div>
                   <div className="text-xs text-navy-300 mt-1 mb-3">{t.description}</div>
                 </Link>
                 {typeDraws.length > 0 ? (
                   <div className="space-y-1 mt-auto pt-3">
-                    {typeDraws.map(d => <DrawLine key={d.id} d={d} now={now} />)}
+                    {typeDraws.slice(0, 3).map(d => <DrawLine key={d.id} d={d} now={now} />)}
+                    {typeDraws.length > 3 && (
+                      <div className="text-[10px] text-navy-500 text-center">+อีก {typeDraws.length - 3} รอบ</div>
+                    )}
                     <Link to={`/lotteries?type=${t.id}`}
                       className="block mt-2 text-center text-xs font-bold bg-gold-500/15 text-gold-300 border border-gold-500/40 rounded-lg py-1.5 hover:bg-gold-500/25 transition">
                       🎟️ แทงรอบนี้เลย →

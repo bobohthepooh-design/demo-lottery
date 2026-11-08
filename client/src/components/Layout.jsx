@@ -2,9 +2,8 @@ import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-do
 import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
+import { TypeBadge } from './ResultLine.jsx';
 import { useEffect, useState } from 'react';
-
-const TYPE_EMOJI = { TH: '🇹🇭', LA: '🇱🇦', HN: '🇻🇳' };
 
 const nav = [
   { to: '/my-bets', label: 'โพยของฉัน', auth: true, memberOnly: true },
@@ -64,7 +63,7 @@ export default function Layout() {
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`}
                 className={`px-3 py-2 rounded-lg text-sm transition ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
-                {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
+                <TypeBadge code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
               </Link>
             ))}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
@@ -109,7 +108,7 @@ export default function Layout() {
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-sm ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-300 hover:bg-navy-800'}`}>
-                {TYPE_EMOJI[t.code] ? `${TYPE_EMOJI[t.code]} ` : ''}{t.name_th}
+                <TypeBadge code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
               </Link>
             ))}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
