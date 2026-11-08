@@ -122,7 +122,8 @@ export function login({ username, password, ip, userAgent }) {
 
   audit({ userId: user.id, action: 'user.login', entityType: 'user', entityId: String(user.id), req: { ip, headers: { 'user-agent': userAgent } } });
 
-  return { token, user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name, roles, mfaEnabled: !!user.mfa_enabled }, requiresMfa: roles.some(r => ['admin', 'super_admin'].includes(r)) && config.adminMfaRequired && !user.mfa_enabled ? false : (!!user.mfa_enabled) };
+  const isAdmin = roles.some(r => ['admin', 'super_admin'].includes(r));
+  return { token, user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name, roles, mfaEnabled: !!user.mfa_enabled }, requiresMfa: isAdmin && !!user.mfa_enabled };
 }
 
 export function logout(req) {
@@ -157,7 +158,14 @@ export function forgotPassword({ email }) {
   return true;
 }
 
+function assertAdminForMfa(userId) {
+  const isAdmin = getDb().prepare(`SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+    WHERE ur.user_id = ? AND r.name IN ('admin','super_admin')`).get(userId);
+  if (!isAdmin) throw new HttpError(403, 'MFA ใช้ได้เฉพาะบัญชีผู้ดูแลระบบ');
+}
+
 export function setupMfa(userId) {
+  assertAdminForMfa(userId);
   const db = getDb();
   const user = db.prepare('SELECT username, mfa_secret, mfa_enabled FROM users WHERE id = ?').get(userId);
   if (user.mfa_enabled) throw new HttpError(400, 'MFA เปิดใช้งานแล้ว');
@@ -167,6 +175,7 @@ export function setupMfa(userId) {
 }
 
 export function enableMfa(userId, code) {
+  assertAdminForMfa(userId);
   const db = getDb();
   const user = db.prepare('SELECT mfa_secret FROM users WHERE id = ?').get(userId);
   if (!user?.mfa_secret) throw new HttpError(400, 'กรุณาสร้าง MFA secret ก่อน');

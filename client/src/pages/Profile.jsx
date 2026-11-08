@@ -4,6 +4,7 @@ import { useAuth } from '../auth.jsx';
 
 export default function Profile() {
   const { user, refresh } = useAuth();
+  const isAdmin = (user?.roles || []).some(r => ['admin', 'super_admin'].includes(r));
   const [pw, setPw] = useState({ oldPassword: '', newPassword: '', confirm: '' });
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
@@ -57,8 +58,9 @@ export default function Profile() {
         </form>
       </div>
 
+      {isAdmin && (
       <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-2">การยืนยันตัวตน 2 ชั้น (MFA/TOTP)</h2>
+        <h2 className="text-lg font-bold text-white mb-2">การยืนยันตัวตน 2 ชั้น (MFA/TOTP) — สำหรับบัญชี Admin</h2>
         <p className="text-sm text-navy-300 mb-4">{user?.mfaEnabled ? 'เปิดใช้งานแล้ว — ปลอดภัยยิ่งขึ้น' : 'ยังไม่ได้เปิดใช้งาน (แนะนำสำหรับบัญชี Admin)'}</p>
         {!mfa ? (
           <button onClick={setupMfa} className="border border-gold-500/50 text-gold-300 px-5 py-2 rounded-lg hover:bg-navy-700">
@@ -79,6 +81,7 @@ export default function Profile() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
