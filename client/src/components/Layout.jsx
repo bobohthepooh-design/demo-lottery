@@ -69,8 +69,7 @@ export default function Layout() {
               const ac = typeAccent(t.code);
               return (
                 <Link key={t.id} to={`/lotteries?type=${t.id}`}
-                  className={`px-3 py-2 rounded-lg text-sm transition inline-flex items-center gap-1.5 text-white ${selType === String(t.id) ? 'bg-navy-700 font-semibold' : 'hover:bg-navy-800 hover:text-gold-300'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${ac.bar}`} />
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition inline-flex items-center gap-1.5 shadow-sm ${ac.chip} ${selType === String(t.id) ? 'ring-2 ring-offset-1 ring-navy-400 font-black' : 'hover:shadow-md hover:-translate-y-0.5'}`}>
                   <FlagIcon code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
                 </Link>
               );
@@ -118,8 +117,7 @@ export default function Layout() {
               const ac = typeAccent(t.code);
               return (
                 <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white ${selType === String(t.id) ? 'bg-navy-700 font-semibold' : 'hover:bg-navy-800'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${ac.bar}`} />
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold border shadow-sm ${ac.chip} ${selType === String(t.id) ? 'ring-2 ring-offset-1 ring-navy-400 font-black' : ''}`}>
                   <FlagIcon code={t.code} className="w-5 h-5 text-[9px]" /> {t.name_th}
                 </Link>
               );
