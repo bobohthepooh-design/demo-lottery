@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy-950: #060d1a;
-  --color-navy-900: #0a1628;
-  --color-navy-800: #0f1f3a;
-  --color-navy-700: #16294d;
-  --color-navy-600: #1e3a66;
-  --color-gold-300: #f0d98c;
-  --color-gold-400: #e3c565;
+  /* Premium dark: obsidian + royal blue/purple + gold gradient */
+  --color-navy-950: #0f1117;
+  --color-navy-900: #161922;
+  --color-navy-800: #1b2033;
+  --color-navy-700: #232a45;
+  --color-navy-600: #2e3a5c;
+  --color-gold-300: #ffe9a3;
+  --color-gold-400: #f7d060;
   --color-gold-500: #d4af37;
-  --color-gold-600: #b8941f;
+  --color-gold-600: #f7a600;
+  --color-gold-700: #b8860b;
   --font-sans: 'Sarabun', 'Segoe UI', 'Noto Sans Thai', system-ui, sans-serif;
   --font-display: 'Kanit', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
 }
@@ -157,3 +159,103 @@ main table thead th {
   letter-spacing: .02em;
 }
 main table tbody tr:hover { background: rgba(30, 58, 102, .25); }
+
+/* ================= Premium Theme Layer (CSS-only) ================= */
+
+/* Glassmorphism — การ์ด bg-navy-800 เรียบๆ กลายเป็นกระจกฝ้า */
+.bg-navy-800:not([class*="gradient"]):not(.skeleton) {
+  background-color: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+/* เส้นขอบการ์ดละเอียดขึ้น */
+.border-navy-700 { border-color: rgba(255, 255, 255, 0.09); }
+.border-navy-600 { border-color: rgba(255, 255, 255, 0.14); }
+
+/* การ์ดมีเงาลึกพรีเมียม */
+.bg-navy-800, .bg-navy-900 {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ปุ่มทุกตัว — press 3D feel นุ่มนวล */
+button, a[class*="rounded"] {
+  transition-property: transform, box-shadow, filter, background-color, border-color, color;
+  transition-duration: .15s;
+  transition-timing-function: ease;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px) scale(.985);
+  filter: brightness(1.08);
+}
+
+/* ปุ่มตัวเลข/ช่องกรอก (keypad) — glow เมื่อเลือก + press depth */
+.grid button {
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.grid button:active:not(:disabled) {
+  transform: translateY(2px) scale(.97);
+  box-shadow: 0 0px 0 rgba(0, 0, 0, 0.45), 0 0 14px rgba(212, 175, 55, 0.35);
+}
+.grid button.bg-gold-500,
+.grid button[class*="gold-500"] {
+  box-shadow: 0 2px 0 #b8860b, 0 0 16px rgba(212, 175, 55, 0.4);
+}
+
+/* ปุ่ม CTA ทอง — แสงสะท้อนวิ่ง (shine sweep) */
+button[class*="from-gold-500"], a[class*="from-gold-500"] {
+  position: relative;
+  overflow: hidden;
+}
+button[class*="from-gold-500"]::after,
+a[class*="from-gold-500"]::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -70%;
+  width: 45%;
+  height: 140%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-18deg);
+  animation: gold-shine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes gold-shine {
+  0% { left: -70%; }
+  45%, 100% { left: 130%; }
+}
+
+/* ตัวเลข countdown — neon glow ทอง */
+.font-mono.font-black {
+  text-shadow: 0 0 12px rgba(247, 208, 96, 0.55), 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* ตัวเลขในช่องกรอกเลข (PlaceBet input) — คมชัด */
+input.font-mono, input[inputmode="numeric"] {
+  text-shadow: 0 0 10px rgba(247, 208, 96, 0.25);
+  letter-spacing: 0.35em;
+}
+
+/* Badge/สถานะเรืองแสงเบาๆ */
+.rounded-full.bg-green-500\/20,
+[class*="bg-green-500/20"] {
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+}
+
+/* เส้นแบ่งบางลง ดูพรีเมียม */
+.divide-navy-700 > * + * { border-color: rgba(255, 255, 255, 0.06); }
+
+/* Touch target ≥ 44px บนมือถือสำหรับปุ่มใน grid (keypad/ตัวเลข) */
+@media (max-width: 1023px) {
+  .grid button { min-height: 44px; }
+}
+
+/* Selection highlight โทนทอง */
+::selection { background: rgba(212, 175, 55, 0.35); color: #fff; }
+
+/* glass สำหรับแถบ /80 (ticker ผลรางวัล + ประกาศ) */
+.bg-navy-800\/80 {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
