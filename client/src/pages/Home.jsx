@@ -5,6 +5,7 @@ import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
 import { SkeletonGrid } from '../components/Skeleton.jsx';
+import { typeAccent } from '../typeAccent.js';
 import { mergeBanner } from '../bannerConfig.js';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -49,7 +50,7 @@ function DrawLine({ d, now }) {
   return (
     <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
       <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
-      <span className="text-[11px] font-semibold text-white shrink-0">
+      <span className={`text-[11px] font-semibold shrink-0 ${typeAccent(d.type_code).text}`}>
         {d.type_name_th}{d.category_name_th ? ` ${d.category_name_th}` : ''}
       </span>
       <span className="text-[10px] text-navy-400 shrink-0">ออก {fmtDateTime(d.draw_at)}</span>
@@ -215,11 +216,13 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {types.map(t => {
             const typeDraws = openByCategory.filter(d => d.type_code === t.code);
+            const ac = typeAccent(t.code);
             return (
-              <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-col hover:border-gold-500/40 hover:-translate-y-0.5 transition">
+              <div key={t.id} className={`bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-4 pt-3 flex flex-col hoverable ${ac.glow}`}>
+                <div className={`h-1 w-10 rounded-full mb-2 ${ac.bar}`} />
                 <Link to={`/lotteries?type=${t.id}`} className="group">
                   <FlagIcon code={t.code} className="w-9 h-9 text-xs mb-1" />
-                  <div className="font-bold text-white group-hover:text-gold-300">{t.name_th}</div>
+                  <div className={`font-bold ${ac.text} group-hover:brightness-125`}>{t.name_th}</div>
                   <div className="text-xs text-navy-300 mt-1 mb-3">{t.description}</div>
                 </Link>
                 {typeDraws.length > 0 ? (

@@ -114,7 +114,7 @@ export default function MyBets() {
         const cardAnim = s.status === 'won' ? 'animate-win' : lost && s.status === 'lost' ? 'animate-lose' : '';
         const net = (s.total_payout || 0) - (s.total_stake || 0);
         return (
-          <div key={s.id} className={`bg-navy-800 border rounded-xl overflow-hidden ${s.status === 'won' ? 'border-green-500/40' : 'border-navy-700'} ${cardAnim}`}>
+          <div key={s.id} className={`bg-gradient-to-b from-navy-800 to-navy-900 border rounded-xl overflow-hidden hoverable ${s.status === 'won' ? 'border-green-500/40' : 'border-navy-700'} ${cardAnim}`}>
             <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-4 flex items-center justify-between hover:bg-navy-700/40">
               <div className="text-left">
                 <div className="font-mono text-gold-300">{s.slip_ref}</div>

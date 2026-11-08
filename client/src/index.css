@@ -10,13 +10,18 @@
   --color-gold-400: #e3c565;
   --color-gold-500: #d4af37;
   --color-gold-600: #b8941f;
+  --font-sans: 'Sarabun', 'Segoe UI', 'Noto Sans Thai', system-ui, sans-serif;
+  --font-display: 'Kanit', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
 }
 
 body {
   background-color: var(--color-navy-950);
   color: #e8ecf4;
-  font-family: 'Segoe UI', 'Noto Sans Thai', system-ui, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.01em; }
 
 /* animation แสดงความรู้สึกถูก/ไม่ถูกรางวัล */
 @keyframes win-pop {
@@ -140,3 +145,15 @@ body {
   animation: shimmer 1.4s linear infinite;
   border-radius: 0.5rem;
 }
+
+/* การ์ดยกขึ้นตอน hover + เงาทองเบาๆ */
+.hoverable { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(212,175,55,.10); }
+
+/* ตาราง admin — หัวตารางเข้ม + แถว hover เด่น */
+main table thead th {
+  background: #0a1628;
+  font-family: 'Kanit', sans-serif;
+  letter-spacing: .02em;
+}
+main table tbody tr:hover { background: rgba(30, 58, 102, .25); }

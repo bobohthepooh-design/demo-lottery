@@ -48,7 +48,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-navy-900 border-b border-gold-500/30 sticky top-0 z-40">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/20">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 font-bold text-lg">฿</div>

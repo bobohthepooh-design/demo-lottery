@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, fmtDateTime, drawLabel } from '../api.js';
 import Countdown from '../components/Countdown.jsx';
+import { typeAccent } from '../typeAccent.js';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -35,8 +36,10 @@ export default function Lotteries() {
 
   const DrawCard = ({ d, featured }) => {
     const live = isLive(d);
+    const ac = typeAccent(d.type_code);
     return (
-    <div className={`bg-navy-800 border rounded-xl p-5 ${featured ? 'border-green-500/60 animate-online-border' : 'border-navy-700'}`}>
+    <div className={`bg-gradient-to-b from-navy-800 to-navy-900 border rounded-xl p-5 pt-4 hoverable ${featured ? 'border-green-500/60 animate-online-border' : 'border-navy-700 hover:border-navy-500'}`}>
+      <div className={`h-1 w-10 rounded-full mb-2 ${featured ? 'bg-green-400' : ac.bar}`} />
       <div className="flex items-start justify-between">
         <div>
           <div className="font-bold text-white text-lg leading-snug">{drawLabel(d)}</div>

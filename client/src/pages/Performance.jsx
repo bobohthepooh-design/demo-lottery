@@ -4,6 +4,7 @@ import { api, satang, fmtDateTime } from '../api.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonCard, SkeletonTable } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import { typeAccent } from '../typeAccent.js';
 
 function Kpi({ label, value, sub, tone = 'text-white' }) {
   return (
@@ -84,7 +85,7 @@ export default function Performance() {
                 <div key={t.type_code} className="px-4 py-3 flex items-center gap-3">
                   <FlagIcon code={t.type_code} className="w-8 h-8 text-[10px]" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">{t.type_name_th}</div>
+                    <div className={`text-sm font-semibold truncate ${typeAccent(t.type_code).text}`}>{t.type_name_th}</div>
                     <div className="text-[11px] text-navy-400">
                       {t.slips} โพย • ถูก {t.won_items} รายการ
                     </div>
