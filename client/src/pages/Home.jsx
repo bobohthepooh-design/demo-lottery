@@ -28,6 +28,29 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
+      {/* ผลรางวัลล่าสุด — ไว้บนสุดเสมอ ครบทุกประเทศ/หมวด */}
+      {latestByCategory.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
+            <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {latestByCategory.map(r => (
+              <div key={r.id} className="bg-navy-800 border border-gold-500/30 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-semibold text-white text-sm">
+                    {r.type_name_th}{r.category_name_th ? ` — ${r.category_name_th}` : ''}
+                  </div>
+                  <span className="text-[10px] text-navy-400">{fmtDateTime(r.draw_at)}</span>
+                </div>
+                <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 border border-gold-500/30 p-8 md:p-12">
         <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-gold-500/10 blur-3xl" />
@@ -99,28 +122,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ผลรางวัลล่าสุด — แสดงทุกประเทศ/หมวดบนหน้าแรก */}
-      {latestByCategory.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
-            <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {latestByCategory.map(r => (
-              <div key={r.id} className="bg-navy-800 border border-gold-500/30 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-semibold text-white text-sm">
-                    {r.type_name_th}{r.category_name_th ? ` — ${r.category_name_th}` : ''}
-                  </div>
-                  <span className="text-[10px] text-navy-400">{fmtDateTime(r.draw_at)}</span>
-                </div>
-                <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
