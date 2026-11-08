@@ -37,9 +37,56 @@ export async function fetchThaiResult() {
   };
 }
 
-// ---------- HN: XSMB (GitHub dataset อัปเดตอัตโนมัติทุกวัน) ----------
+// ---------- HN: 4 รอบอิสระต่อวัน ----------
+// หวยฮานอย 4 หมวด (เฉพาะกิจ/พิเศษ/ปกติ/VIP) เป็นรอบที่เจ้ามือกำหนดเอง ผลแต่ละรอบอิสระกัน
+// - HNN (ปกติ 18:00): ใช้ผล XSMB จริง (ตรงเวลาจับฉลากเวียดนาม)
+// - หมวดอื่น: สุ่มแบบกำหนดได้ (deterministic ตาม draw_code) — คงที่ตรวจสอบได้ย้อนหลัง
 const XSMB_URL = 'https://raw.githubusercontent.com/AnhTuPhi/xsmb-vietnam-lottery-analysis/master/data/xsmb.json';
 let xsmbCache = { at: 0, rows: null };
+
+// PRNG deterministic จาก string (mulberry32)
+function hashSeed(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rnd = (rng, min, max) => min + Math.floor(rng() * (max - min + 1));
+const pad = (n, l) => String(n).padStart(l, '0');
+
+/** สุ่มผลฮานอยของรอบที่กำหนดเอง — deterministic ตาม draw_code (ตรวจสอบย้อนหลังได้) */
+export function generateHanoiResult(drawCode) {
+  const rng = mulberry32(hashSeed(`hanoi:${drawCode}`));
+  const special = rnd(rng, 10000, 99999);
+  const p1 = rnd(rng, 10000, 99999);
+  const p2 = rnd(rng, 10000, 99999);
+  const p7 = rnd(rng, 0, 99);
+  const s5 = pad(special, 5);
+  return {
+    date: null, // ไม่ผูกวันที่ภายนอก — ใช้วันของรอบ
+    winning: {
+      num4: s5.slice(0, 4),
+      top3: pad(p1, 5).slice(-3),
+      top2: pad(p2, 5).slice(-2),
+      bottom2: pad(p7, 2),
+      db5: s5,
+    },
+  };
+}
+
+/** ผลฮานอยของหมวดหนึ่งๆ — HNN ใช้ XSMB จริง, อื่น ๆ สุ่ม deterministic */
+async function hanoiResultFor(draw) {
+  if (draw.cat_code === 'HNN') return fetchHanoiResult();
+  const g = generateHanoiResult(draw.draw_code);
+  return { date: drawLocalDate(draw), winning: g.winning };
+}
 
 async function xsmbRows() {
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD เวลาไทย
@@ -100,7 +147,12 @@ export async function autoSettleResults() {
   try { hanoi = await fetchHanoiResult(); } catch (e) { out.errors.push(`HN fetch: ${e.message}`); }
 
   for (const d of draws) {
-    const src = d.type_code === 'TH' ? thai : d.type_code === 'HN' ? hanoi : null;
+    let src = null, srcLabel = d.type_code;
+    if (d.type_code === 'TH') src = thai;
+    else if (d.type_code === 'HN') {
+      if (d.cat_code === 'HNN') { src = hanoi; srcLabel = 'HN(XSMB)'; }
+      else { const g = generateHanoiResult(d.draw_code); src = { winning: g.winning, date: drawLocalDate(d) }; srcLabel = 'HN(gen)'; }
+    }
     if (!src) { out.skipped.push(`${d.draw_code}: no source`); continue; }
     if (src.date && drawLocalDate(d) !== src.date) {
       out.skipped.push(`${d.draw_code}: result date ${src.date} != draw date ${drawLocalDate(d)}`);
@@ -108,8 +160,8 @@ export async function autoSettleResults() {
     }
     try {
       settleDraw(null, d.id, src.winning);
-      out.settled.push(d.draw_code);
-      audit({ action: 'draw.auto_settle', entityType: 'draw', entityId: String(d.id), detail: { source: d.type_code, winning: src.winning } });
+      out.settled.push(`${d.draw_code}(${srcLabel})`);
+      audit({ action: 'draw.auto_settle', entityType: 'draw', entityId: String(d.id), detail: { source: srcLabel, winning: src.winning } });
     } catch (e) {
       out.errors.push(`${d.draw_code}: ${e.message}`);
     }
@@ -123,7 +175,7 @@ export async function fetchResultForDraw(drawId) {
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
   let src = null;
   if (draw.type_code === 'TH') src = await fetchThaiResult();
-  else if (draw.type_code === 'HN') src = await fetchHanoiResult();
+  else if (draw.type_code === 'HN') src = await hanoiResultFor(draw);
   else throw new HttpError(400, 'หวยลาวยังไม่มีแหล่งข้อมูลอัตโนมัติ — กรุณากรอกผลเอง');
   if (src.date && drawLocalDate(draw) !== src.date) {
     throw new HttpError(409, `ผลที่ดึงได้เป็นของวันที่ ${src.date} ไม่ตรงกับรอบนี้ (${drawLocalDate(draw)})`);
