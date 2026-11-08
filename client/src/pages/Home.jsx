@@ -208,11 +208,11 @@ export default function Home() {
                 <div className="flex justify-center">
                   {user ? (
                     <button onClick={() => navigate(`/bet/${d.id}`)}
-                      className={`bg-gradient-to-r ${ac.btn} text-white font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
+                      className={`bg-gradient-to-r ${ac.btnLive} font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
                       🎟️ แทงรอบนี้เลย
                     </button>
                   ) : (
-                    <Link to="/login" className={`bg-gradient-to-r ${ac.btn} text-white font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
+                    <Link to="/login" className={`bg-gradient-to-r ${ac.btnLive} font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
                       เข้าสู่ระบบเพื่อแทง
                     </Link>
                   )}
@@ -302,7 +302,7 @@ export default function Home() {
                     <div className="text-[11px] text-navy-500 py-3">ไม่มีรอบที่เปิดรับ</div>
                   )}
                   <Link to={`/lotteries?type=${t.id}`}
-                    className={`mt-3 block text-center text-xs font-bold bg-gradient-to-r ${ac.btn} text-white rounded-lg py-2 hover:brightness-110 transition shadow-md`}>
+                    className={`mt-3 block text-center text-xs font-bold bg-gradient-to-r ${ac.btn} rounded-lg py-2 hover:brightness-110 transition shadow-md`}>
                     🎟️ แทงรอบนี้เลย
                   </Link>
                 </div>
