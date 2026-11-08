@@ -119,8 +119,8 @@ export default function PlaceBet() {
             <div>
               <Link to="/lotteries" className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่น</Link>
               <h1 className="text-xl font-bold text-white mt-1">{drawLabel(draw)}</h1>
-              <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)} • ปิด {fmtDateTime(draw.close_at)}</div>
-              {!closed && <div className="text-sm mt-1"><Countdown closeAt={draw.close_at} /></div>}
+              <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)}</div>
+              <div className="text-sm mt-1">⏱️ ปิดรับโพย: {!closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
             </div>
             <span className={`text-xs font-bold px-3 py-1 rounded-full shrink-0 ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
               {closed ? 'ปิดรับแล้ว' : 'เปิดรับ'}

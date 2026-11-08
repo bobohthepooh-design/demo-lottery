@@ -64,8 +64,7 @@ export default function Lotteries() {
       </div>
       <div className="mt-3 text-sm text-navy-300 space-y-1">
         <div>🕐 ออกรางวัล: <span className="text-white">{fmtDateTime(d.draw_at)}</span></div>
-        <div>⏱️ ปิดรับโพย: <span className="text-white">{fmtDateTime(d.close_at)}</span></div>
-        {live && <div className="text-sm"><Countdown closeAt={d.close_at} /></div>}
+        <div>⏱️ ปิดรับโพย: <Countdown closeAt={d.close_at} /></div>
       </div>
       {live && (
         <Link to={`/bet/${d.id}`} className="mt-4 block text-center bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400">
