@@ -26,6 +26,11 @@ export default function ResultLine({ r }) {
       <div className="flex items-center gap-2 text-[11px]">
         <span>{TYPE_EMOJI[r.type_code] || '🎟️'}</span>
         <span className="font-semibold text-white">{r.type_name_th}{r.category_name_th ? ` ${r.category_name_th}` : ''}</span>
+        {r.source && (
+          <span className={`text-[9px] px-1.5 py-0.5 rounded ${r.source === 'manual' ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+            {r.source === 'manual' ? '✏️ กรอกเอง' : '🤖 อัตโนมัติ'}
+          </span>
+        )}
         <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.</span>
       </div>
       <div className="flex gap-5 mt-1.5 overflow-x-auto pb-0.5">

@@ -252,8 +252,8 @@ export function settleDraw(adminId, drawId, winningNumbers) {
     const cur = d.prepare('SELECT status FROM lottery_draws WHERE id = ?').get(drawId);
     if (cur.status === 'settled') throw new HttpError(400, 'รอบนี้ออกผลแล้ว', 'ALREADY_SETTLED');
 
-    d.prepare(`INSERT INTO lottery_results (draw_id, winning_numbers, published_by) VALUES (?, ?, ?)`)
-      .run(drawId, JSON.stringify(winningNumbers), adminId);
+    d.prepare(`INSERT INTO lottery_results (draw_id, winning_numbers, published_by, source) VALUES (?, ?, ?, ?)`)
+      .run(drawId, JSON.stringify(winningNumbers), adminId, adminId ? 'manual' : 'auto');
     d.prepare(`UPDATE lottery_draws SET status = 'settled', result_numbers = ?, updated_at = datetime('now') WHERE id = ?`)
       .run(JSON.stringify(winningNumbers), drawId);
 

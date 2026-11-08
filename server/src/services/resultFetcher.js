@@ -222,7 +222,7 @@ export function updateDrawResult(adminId, drawId, winningNumbers) {
   const ruleById = new Map(rules.map(r => [r.id, r]));
 
   return tx((d) => {
-    d.prepare('UPDATE lottery_results SET winning_numbers = ? WHERE draw_id = ?')
+    d.prepare(`UPDATE lottery_results SET winning_numbers = ?, source = 'manual' WHERE draw_id = ?`)
       .run(JSON.stringify(winningNumbers), drawId);
     d.prepare(`UPDATE lottery_draws SET result_numbers = ?, updated_at = datetime('now') WHERE id = ?`)
       .run(JSON.stringify(winningNumbers), drawId);
