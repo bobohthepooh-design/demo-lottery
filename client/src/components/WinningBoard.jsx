@@ -3,16 +3,18 @@ import { resultSchema } from '../lotterySchema.js';
 // แสดงผลรางวัลสไตล์เว็บออกผลทางการ — แสดงทุกรางวัลของประเทศนั้นครบถ้วน
 // field ที่ยังไม่มีผลจะแสดง "—" (รอประกาศ)
 
-function DigitBoxes({ value, hero = false, pending = false }) {
+function DigitBoxes({ value, hero = false, pending = false, compact = false }) {
   if (pending) {
-    return <span className="inline-block px-3 py-1.5 rounded-lg bg-navy-900/50 border border-dashed border-navy-600 text-navy-500 text-sm">รอประกาศ</span>;
+    return <span className="inline-block px-2 py-1 rounded-lg bg-navy-900/50 border border-dashed border-navy-600 text-navy-500 text-[10px]">รอประกาศ</span>;
   }
   const cls = hero
     ? 'bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 shadow-lg shadow-gold-500/40'
     : 'bg-navy-900 border border-gold-500/40 text-gold-300';
-  const size = hero ? 'w-10 h-14 md:w-14 md:h-20 text-3xl md:text-5xl' : 'w-8 h-11 md:w-10 md:h-14 text-xl md:text-3xl';
+  const size = hero
+    ? (compact ? 'w-8 h-11 md:w-12 md:h-16 text-xl md:text-4xl' : 'w-10 h-14 md:w-14 md:h-20 text-3xl md:text-5xl')
+    : (compact ? 'w-6 h-8 md:w-8 md:h-11 text-sm md:text-xl' : 'w-8 h-11 md:w-10 md:h-14 text-xl md:text-3xl');
   return (
-    <div className="flex gap-1.5 flex-wrap">
+    <div className="flex gap-1 flex-wrap">
       {String(value).split('').map((d, i) => (
         <div key={i} className={`${size} rounded-lg flex items-center justify-center font-black font-mono ${cls}`}>{d}</div>
       ))}
@@ -35,10 +37,12 @@ export default function WinningBoard({ winningNumbers, typeCode, categoryCode, c
   const rows = [...fields, ...extra];
   if (!rows.length) return null;
 
-  const labelCls = compact ? 'text-[11px] md:text-xs w-28 shrink-0' : 'text-xs md:text-sm w-32 md:w-40 shrink-0';
+  // compact = หน้าบ้าน/มือถือ — กล่องเล็กลงอีก
+  const labelCls = compact ? 'text-[10px] w-20 shrink-0 leading-tight' : 'text-xs md:text-sm w-32 md:w-40 shrink-0';
+  const rowGap = compact ? 'space-y-1' : 'space-y-2 md:space-y-3';
 
   return (
-    <div className={`space-y-2 ${compact ? '' : 'md:space-y-3'}`}>
+    <div className={rowGap}>
       {rows.map(f => {
         const raw = data[f.key];
         const hasValue = raw !== undefined && raw !== null && raw !== '';
@@ -53,11 +57,11 @@ export default function WinningBoard({ winningNumbers, typeCode, categoryCode, c
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               {!hasValue ? (
-                <DigitBoxes pending />
+                <DigitBoxes pending compact={compact} />
               ) : values.map((v, i) => (
                 <div key={i} className="flex flex-col items-center gap-0.5">
                   {prizeCount > 1 && <span className="text-[9px] text-navy-500">รางวัลที่ {i + 1}</span>}
-                  <DigitBoxes value={v} hero={isHero && values.length === 1} />
+                  <DigitBoxes value={v} hero={isHero && values.length === 1} compact={compact} />
                 </div>
               ))}
             </div>

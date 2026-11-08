@@ -35,14 +35,14 @@ export default function Home() {
             <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
             <Link to="/lotteries" className="text-sm text-gold-400 hover:underline">ดูรอบหวยทั้งหมด →</Link>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {latestByCategory.map(r => (
-              <div key={r.id} className="bg-navy-800 border border-gold-500/30 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-semibold text-white text-sm">
+              <div key={r.id} className="bg-navy-800 border border-gold-500/30 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="font-semibold text-white text-xs sm:text-sm">
                     {r.type_name_th}{r.category_name_th ? ` — ${r.category_name_th}` : ''}
                   </div>
-                  <span className="text-[10px] text-navy-400">{fmtDateTime(r.draw_at)}</span>
+                  <span className="text-[9px] sm:text-[10px] text-navy-400 shrink-0 ml-2">{fmtDateTime(r.draw_at)}</span>
                 </div>
                 <WinningBoard winningNumbers={r.winning_numbers} typeCode={r.type_code} categoryCode={r.category_code} compact />
               </div>
@@ -52,7 +52,7 @@ export default function Home() {
       )}
 
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 border border-gold-500/30 p-8 md:p-12">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 border border-gold-500/30 p-5 md:p-12">
         <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-gold-500/10 blur-3xl" />
         <div className="relative">
           <div className="inline-block text-xs bg-gold-500/20 text-gold-300 border border-gold-500/40 rounded-full px-3 py-1 mb-4">DEMO ONLY — ระบบจำลองเพื่อการศึกษา</div>
