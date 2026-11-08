@@ -1,5 +1,6 @@
 import { getDb, tx, makeReference } from '../db/index.js';
 import { HttpError, audit } from '../lib/audit.js';
+import { getSetting } from './settingsService.js';
 
 function getWalletTx(d, userId) {
   const w = d.prepare('SELECT * FROM virtual_wallets WHERE user_id = ?').get(userId);
@@ -81,7 +82,8 @@ function withdrawableInfo(d, userId, balance) {
   // แต่ห้ามรวมในยอดถอนได้: promoLeft = ส่วนที่ยังไม่ถูกหักไปแล้วและยังเหลือในยอด
   const clawed = d.prepare(`SELECT COALESCE(SUM(amount),0) AS a FROM virtual_transactions
     WHERE user_id = ? AND idempotency_key LIKE 'free-credit-clawback-%'`).get(userId).a;
-  const promoLeft = Math.min(Math.max(0, row.promo - clawed), balance);
+  const promoCap = Number(getSetting('initial_credit', 5000)) || 5000;
+  const promoLeft = Math.min(Math.max(0, row.promo - clawed), promoCap, balance);
   // admin ปลดล็อกให้รายคน → ถอนได้ยอดสุทธิ − เครดิตแถมที่เหลือ (เช่น 1310 − 50 = 1260)
   if (u?.withdraw_unlocked) {
     const w = balance - promoLeft;
