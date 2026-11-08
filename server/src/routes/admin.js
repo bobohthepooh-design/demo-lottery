@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getDb, tx } from '../db/index.js';
 import { requireAuth, requireMfaVerified } from '../services/authService.js';
 import { requirePerm, requireRole, invalidatePermCache } from '../middleware/rbac.js';
-import { audit } from '../lib/audit.js';
+import { audit, securityEvent } from '../lib/audit.js';
 import { hashPassword } from '../lib/password.js';
 import * as lottery from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
@@ -99,9 +99,13 @@ router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => 
     if (data.password) {
       db().prepare(`UPDATE users SET password_hash=?, updated_at=datetime('now') WHERE id=?`).run(hashPassword(data.password), id);
       db().prepare(`UPDATE user_sessions SET revoked_at=datetime('now') WHERE user_id=? AND revoked_at IS NULL`).run(id);
+      securityEvent({ eventType: 'admin.member_password_reset', severity: 'warning', userId: id,
+        ip: req.ip, detail: { by: req.user.id } });
     }
     invalidatePermCache(id);
-    audit({ userId: req.user.id, action: 'admin.member_update', entityType: 'user', entityId: String(id), detail: data, req });
+    // ห้ามบันทึกรหัสผ่านลง audit detail — เก็บแค่สถานะว่ามีการเปลี่ยน
+    const auditDetail = { ...data, password: data.password ? '(changed)' : undefined };
+    audit({ userId: req.user.id, action: 'admin.member_update', entityType: 'user', entityId: String(id), detail: auditDetail, req });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

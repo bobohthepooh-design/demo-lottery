@@ -82,7 +82,7 @@ router.get('/me', auth.requireAuth, (req, res) => {
 router.post('/change-password', auth.requireAuth, (req, res, next) => {
   try {
     const data = changePwSchema.parse(req.body);
-    auth.changePassword(req.user.id, data.oldPassword, data.newPassword);
+    auth.changePassword(req.user.id, data.oldPassword, data.newPassword, req);
     res.json({ ok: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่' });
   } catch (e) { next(e); }
 });

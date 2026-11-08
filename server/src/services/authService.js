@@ -135,7 +135,7 @@ export function logout(req) {
   }
 }
 
-export function changePassword(userId, oldPassword, newPassword) {
+export function changePassword(userId, oldPassword, newPassword, req = null) {
   const db = getDb();
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user || !verifyPassword(oldPassword, user.password_hash)) throw new HttpError(400, 'รหัสผ่านเดิมไม่ถูกต้อง');
@@ -143,7 +143,9 @@ export function changePassword(userId, oldPassword, newPassword) {
   db.prepare(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(hashPassword(newPassword), userId);
   db.prepare(`UPDATE user_sessions SET revoked_at = datetime('now') WHERE user_id = ? AND revoked_at IS NULL`).run(userId);
-  audit({ userId, action: 'user.change_password', entityType: 'user', entityId: String(userId) });
+  audit({ userId, action: 'user.change_password', entityType: 'user', entityId: String(userId), req });
+  securityEvent({ eventType: 'password.changed', userId, ip: req?.ip || null,
+    detail: { sessions_revoked: true } });
 }
 
 export function forgotPassword({ email }) {
@@ -183,6 +185,7 @@ export function enableMfa(userId, code) {
   if (!verifyTotp(user.mfa_secret, code)) throw new HttpError(400, 'รหัส MFA ไม่ถูกต้อง');
   db.prepare('UPDATE users SET mfa_enabled = 1 WHERE id = ?').run(userId);
   audit({ userId, action: 'user.mfa_enabled', entityType: 'user', entityId: String(userId) });
+  securityEvent({ eventType: 'mfa.enabled', userId, detail: { admin_only: true } });
 }
 
 export function verifyMfa(sessionId, code) {
