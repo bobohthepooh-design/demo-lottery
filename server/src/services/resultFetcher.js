@@ -176,17 +176,19 @@ function pendingDraws() {
 /** ลองดึงผล + settle ให้อัตโนมัติทุกประเภทที่มีแหล่งข้อมูล */
 export async function autoSettleResults() {
   const out = { settled: [], skipped: [], errors: [], sources: [] };
-  const draws = pendingDraws();
-  if (!draws.length) return out;
 
   const tryFetch = async (code, label, fn) => {
     try { const r = await fn(); out.sources.push({ code, label, ok: true }); return r; }
     catch (e) { out.sources.push({ code, label, ok: false, error: e.message }); out.errors.push(`${code} fetch: ${e.message}`); return null; }
   };
+  // ดึงผลทุกแหล่งเสมอ เพื่อให้ admin เห็นสถานะการเชื่อมต่อแม้ยังไม่มีรอบถึงเวลาออกผล
   let thai = null, hanoi = null, lao = null;
   thai = await tryFetch('TH', 'GLO (glo.or.th)', fetchThaiResult);
   hanoi = await tryFetch('HN', 'XSMB (GitHub)', fetchHanoiResult);
   lao = await tryFetch('LA', 'laodl.com', fetchLaoResult);
+
+  const draws = pendingDraws();
+  if (!draws.length) return out;
 
   for (const d of draws) {
     if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
