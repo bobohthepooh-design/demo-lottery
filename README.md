@@ -41,6 +41,8 @@ npm run dev
 ## Member Flow
 
 1. สมัครสมาชิก → ได้เครดิตเริ่มต้น (default 100.00 บาท = 10000 สตางค์)
+   - กรอกแค่ username + password ก็ได้ (email/ชื่อแสดงไม่บังคับ) — สมัครแล้วเข้าระบบให้อัตโนมัติ
+   - **LINE Login**: ถ้าตั้งค่า `LINE_CHANNEL_ID`/`LINE_CHANNEL_SECRET` ใน `.env` (สร้าง channel ฟรีที่ developers.line.biz) จะมีปุ่ม "เข้าสู่ระบบด้วย LINE" — callback URL ที่ต้อง whitelist: `<โดเมน>/api/auth/line/callback`
 2. ดูรอบหวย `/lotteries` → เลือกรอบที่ status = open
 3. เลือกประเภท (2 ตัวบน/ล่าง, 3 ตัวบน/โต๊ด, วิ่งบน/ล่าง) + ใส่เลข + จำนวนเงิน → เพิ่มลงโพย
 4. ยืนยันส่งโพย → ระบบหักเครดิตใน transaction เดียว (atomic)

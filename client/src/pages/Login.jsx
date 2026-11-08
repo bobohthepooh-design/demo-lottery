@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
+import LineLoginButton from '../components/LineLoginButton.jsx';
 
 export default function Login() {
   const { login, verifyMfa } = useAuth();
@@ -56,6 +57,14 @@ export default function Login() {
             <Link to="/register" className="text-gold-400 hover:underline">สมัครสมาชิกใหม่</Link>
           </div>
         </form>
+      )}
+      {!needsMfa && (
+        <div className="mt-5">
+          <div className="flex items-center gap-3 text-xs text-navy-400 mb-3">
+            <div className="flex-1 h-px bg-navy-700" />หรือ<div className="flex-1 h-px bg-navy-700" />
+          </div>
+          <LineLoginButton />
+        </div>
       )}
     </div>
   );

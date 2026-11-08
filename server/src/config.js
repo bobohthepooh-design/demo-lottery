@@ -31,6 +31,11 @@ export const config = {
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '300', 10),
   loginRateLimitMax: parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '10', 10),
   adminMfaRequired: process.env.ADMIN_MFA_REQUIRED !== 'false',
+  line: {
+    channelId: process.env.LINE_CHANNEL_ID || '',
+    channelSecret: process.env.LINE_CHANNEL_SECRET || '',
+    callbackUrl: process.env.LINE_CALLBACK_URL || '',
+  },
   isProd: (process.env.NODE_ENV || 'development') === 'production',
 };
 

@@ -45,7 +45,7 @@ app.use('/api/', (req, res, next) => { ensureCsrf(req, res); next(); });
 app.get('/api/csrf-token', csrfTokenEndpoint);
 app.use('/api/', csrfProtection);
 
-app.get('/api/health', (req, res) => res.json({ ok: true, service: 'demo-lottery', env: config.env }));
+app.get('/api/health', (req, res) => res.json({ ok: true, service: 'demo-lottery', env: config.env, features: { lineLogin: !!config.line.channelId } }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/lottery', lotteryRoutes);
