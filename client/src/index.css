@@ -315,3 +315,19 @@ input:focus, select:focus, textarea:focus {
 .text-yellow-200, .text-yellow-300, .text-yellow-400 { color: #a16207 !important; }
 .text-orange-300, .text-orange-400 { color: #c2410c !important; }
 .text-rose-300 { color: #be123c !important; }
+
+/* ===== ปุ่มหลัก — พาสเทลชมพู (soft rose) แทนสีทึบ ===== */
+button.bg-gold-500, a.bg-gold-500,
+button[class*="from-gold-500"], a[class*="from-gold-500"] {
+  background-image: linear-gradient(135deg, #f6b8c8 0%, #fbd9e4 100%) !important;
+  background-color: #f6b8c8 !important;
+  color: #8e3a56 !important;
+  border-color: #eec3d2 !important;
+  box-shadow: 0 2px 10px rgba(217, 108, 143, 0.25);
+}
+button.bg-gold-500:hover, a.bg-gold-500:hover,
+button[class*="from-gold-500"]:hover, a[class*="from-gold-500"]:hover {
+  background-image: linear-gradient(135deg, #e58aa8 0%, #f6b8c8 100%) !important;
+  color: #6e2c44 !important;
+}
+button.bg-gold-500:disabled, a.bg-gold-500:disabled { opacity: .55; }
