@@ -208,11 +208,11 @@ export default function Home() {
                 <div className="flex justify-center">
                   {user ? (
                     <button onClick={() => navigate(`/bet/${d.id}`)}
-                      className={`bg-gradient-to-r ${ac.btnLive} font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
+                      className={`bg-gradient-to-r ${ac.btn} font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
                       🎟️ แทงรอบนี้เลย
                     </button>
                   ) : (
-                    <Link to="/login" className={`bg-gradient-to-r ${ac.btnLive} font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
+                    <Link to="/login" className={`bg-gradient-to-r ${ac.btn} font-bold px-8 py-3 rounded-xl text-sm shadow-lg hover:brightness-110 transition`}>
                       เข้าสู่ระบบเพื่อแทง
                     </Link>
                   )}
