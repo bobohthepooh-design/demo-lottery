@@ -58,10 +58,6 @@ export default function Layout() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavLink to="/lotteries" end
-              className={({ isActive }) => `px-3 py-2 rounded-lg text-sm transition ${isActive && !selType ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
-              หวยทั้งหมด
-            </NavLink>
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`}
                 className={`px-3 py-2 rounded-lg text-sm transition ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-200 hover:bg-navy-800'}`}>
@@ -103,10 +99,6 @@ export default function Layout() {
         </div>
         {menuOpen && (
           <nav className="md:hidden border-t border-navy-700 bg-navy-900 px-4 py-2 space-y-1">
-            <NavLink to="/lotteries" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `block px-3 py-2 rounded-lg text-sm ${isActive && !selType ? 'bg-navy-700 text-gold-300' : 'text-navy-200'}`}>
-              หวยทั้งหมด
-            </NavLink>
             {types.map(t => (
               <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-sm ${selType === String(t.id) ? 'bg-navy-700 text-gold-300' : 'text-navy-300 hover:bg-navy-800'}`}>

@@ -121,9 +121,6 @@ export default function Lotteries() {
 
       {/* เมนูประเภทหวย — ปุ่มใหญ่เลือกง่าย */}
       <div className="flex flex-wrap items-center gap-3">
-        <TypeButton to="/lotteries" active={!selType} badge={Object.values(liveCountByType).reduce((a, b) => a + b, 0)}>
-          🎟️ หวยทั้งหมด
-        </TypeButton>
         {types.map(t => (
           <TypeButton key={t.id} to={`/lotteries?type=${t.id}`} active={selType == t.id}
             badge={liveCountByType[t.id] || 0}>
