@@ -77,13 +77,12 @@ function withdrawableInfo(d, userId, balance) {
       COALESCE(SUM(CASE WHEN type='initial_credit' THEN amount END),0) AS promo
     FROM virtual_transactions WHERE user_id = ?`).get(userId);
   const netWon = Math.max(0, row.won - row.withdrawn);
-  // เครดิตแถมสมัครใหม่ (initial_credit — จำนวนตาม settings) ถอนได้เฉพาะเงินรางวัล
-  // ต้องไม่รวมในยอดถอนได้: promoLeft = ส่วนที่ยังไม่ถูก clawback และยังเหลือในยอด
+  // เครดิตแถมสมัครใหม่ (initial_credit) ไม่หักออกจากยอด/ประวัติธุรกรรม
+  // แต่ห้ามรวมในยอดถอนได้: promoLeft = ส่วนที่ยังไม่ถูกหักไปแล้วและยังเหลือในยอด
   const clawed = d.prepare(`SELECT COALESCE(SUM(amount),0) AS a FROM virtual_transactions
-    WHERE user_id = ? AND idempotency_key = ?`).get(userId, `free-credit-clawback-${userId}`).a;
-  const promoLeft = Math.min(Math.max(0, row.promo - clawed), Math.max(0, balance - netWon));
-  // admin ปลดล็อกให้รายคน → ถอนได้เกือบเต็มยอดคงเหลือ แต่ต้องเหลืออย่างน้อย ฿50
-  // และระบบหักเครดิตแถม ฿50 ของขวัญสมัครออก (ดู clawbackSignupCreditTx)
+    WHERE user_id = ? AND idempotency_key LIKE 'free-credit-clawback-%'`).get(userId).a;
+  const promoLeft = Math.min(Math.max(0, row.promo - clawed), balance);
+  // admin ปลดล็อกให้รายคน → ถอนได้ยอดสุทธิ − เครดิตแถมที่เหลือ (เช่น 1310 − 50 = 1260)
   if (u?.withdraw_unlocked) {
     const w = balance - promoLeft;
     return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn,
@@ -129,26 +128,6 @@ export function memberWalletAction(userId, { direction, amount, description }) {
     audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
       detail: { amount }, req: null });
     return { transaction: t, balance: newBalance };
-  });
-}
-
-/** หักเครดิตแถม ฿50 ตอนสมัคร (ครั้งเดียวต่อ user) — เรียกใน transaction ของ admin ตอนปลดล็อกถอน */
-export function clawbackSignupCreditTx(d, { userId, adminId }) {
-  const key = `free-credit-clawback-${userId}`;
-  if (d.prepare('SELECT id FROM virtual_transactions WHERE idempotency_key = ?').get(key)) return null;
-  const w = getWalletTx(d, userId);
-  // หักเท่ายอด initial_credit จริงของ user นี้ (ตาม settings ตอนสมัคร อาจไม่ใช่ ฿50)
-  const promo = d.prepare(`SELECT COALESCE(SUM(amount),0) AS a FROM virtual_transactions
-    WHERE user_id = ? AND type = 'initial_credit'`).get(userId).a;
-  const amount = Math.min(promo, w.balance);
-  if (amount <= 0) return null;
-  const newBalance = w.balance - amount;
-  updateBalance(d, w.id, w.version, newBalance);
-  return insertTransaction(d, {
-    walletId: w.id, userId, type: 'admin_debit', amount, direction: 'debit',
-    balanceAfter: newBalance,
-    description: 'หักเครดิตแถมก่อนอนุญาตถอน',
-    idempotencyKey: key, createdBy: adminId,
   });
 }
 

@@ -90,11 +90,7 @@ router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => 
     if (data.status) db().prepare(`UPDATE users SET status=?, updated_at=datetime('now') WHERE id=?`).run(data.status, id);
     if (data.displayName) db().prepare(`UPDATE users SET display_name=?, updated_at=datetime('now') WHERE id=?`).run(data.displayName, id);
     if (data.withdrawUnlocked !== undefined) {
-      tx((d) => {
-        d.prepare(`UPDATE users SET withdraw_unlocked=?, updated_at=datetime('now') WHERE id=?`).run(data.withdrawUnlocked ? 1 : 0, id);
-        // ปลดล็อก → หักเครดิตแถม ฿50 ออกครั้งเดียว (ถ้ายอดพอ)
-        if (data.withdrawUnlocked) wallet.clawbackSignupCreditTx(d, { userId: id, adminId: req.user.id });
-      });
+      db().prepare(`UPDATE users SET withdraw_unlocked=?, updated_at=datetime('now') WHERE id=?`).run(data.withdrawUnlocked ? 1 : 0, id);
     }
     if (data.password) {
       db().prepare(`UPDATE users SET password_hash=?, updated_at=datetime('now') WHERE id=?`).run(hashPassword(data.password), id);
