@@ -185,7 +185,7 @@ export default function Home() {
               🔔 ใกล้ปิดรับ
             </span>
             <div className="overflow-hidden flex-1 py-1.5">
-              <div className="flex w-max animate-marquee gap-10 px-4">
+              <div className="flex w-max animate-marquee-fast gap-10 px-4">
                 {[...alertDraws, ...alertDraws].map((d, i) => {
                   const left = msLeft(d.close_at, now);
                   const urgent = left > 0 && left < 3600e3;
