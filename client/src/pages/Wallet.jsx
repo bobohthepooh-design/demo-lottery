@@ -8,7 +8,7 @@ const TYPE_TH = {
   deposit: 'เติมเครดิต', withdraw: 'ถอนเครดิต',
 };
 
-const PRESETS = [100, 500, 1000, 5000];
+const PRESETS = [100, 500, 1000, 5000, 10000];
 
 export default function Wallet() {
   const { balance, setBalance } = useAuth();
@@ -90,16 +90,18 @@ export default function Wallet() {
           <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 ถอนเครดิตจำลอง'}</h2>
             <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน ฿{satang(balance)} • สำหรับ Demo เท่านั้น</p>
-            <div className="flex gap-2 mb-3 flex-wrap">
+            <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'}:</div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
               {PRESETS.map(p => (
                 <button key={p} type="button" onClick={() => setAmount(String(p))}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300">
+                  className={`py-2.5 rounded-lg text-sm font-bold border transition ${Number(amount) === p ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-700 border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300'}`}>
                   ฿{p.toLocaleString()}
                 </button>
               ))}
             </div>
+            <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง (ขั้นต่ำ ฿1 สูงสุด ฿10,000):</div>
             <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
-              inputMode="decimal" placeholder="จำนวนเงิน (บาท)" autoFocus
+              inputMode="decimal" placeholder="0.00" autoFocus
               className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
             {err && <div className="text-red-400 text-sm mt-2">{err}</div>}
             <div className="flex gap-3 mt-5">
