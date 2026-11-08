@@ -17,9 +17,9 @@ export default function AnnouncementBar() {
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 pt-3">
-      <div className="bg-navy-800/80 border border-royal/40 rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-1.5 bg-royal/15 border-b border-royal/30">
-          <span className="text-xs font-bold text-royal-soft">📢 ประกาศ</span>
+      <div className="bg-navy-800/80 border border-gold-500/30 rounded-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-gold-500/10 border-b border-gold-500/20">
+          <span className="text-xs font-bold text-gold-300">📢 ประกาศ</span>
           <span className="text-[10px] text-navy-400">(ชี้เพื่อหยุดเลื่อน)</span>
         </div>
         <div className="overflow-hidden py-1.5">

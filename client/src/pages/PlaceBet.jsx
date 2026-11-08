@@ -278,7 +278,7 @@ export default function PlaceBet() {
       {!closed && slip.length > 0 && !done && (
         <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-4">
           <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
-            className="w-full bg-gradient-to-r from-gold-500 to-royal text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-5 disabled:opacity-50">
+            className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-5 disabled:opacity-50">
             <span className="text-sm">🧾 {slip.length} รายการ • ฿{satang(totalSatang)}</span>
             <span className="text-sm">ตรวจสอบโพย →</span>
           </button>
