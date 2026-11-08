@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js';
 import lotteryRoutes from './routes/lottery.js';
 import betRoutes from './routes/bets.js';
 import adminRoutes from './routes/admin.js';
+import { autoSettleResults } from './services/resultFetcher.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +30,13 @@ if (config.env !== 'test') {
   setInterval(() => {
     try { seedDemoDraws(); } catch (e) { console.error('[demo-data] periodic seed failed:', e.message); }
   }, 6 * 3600 * 1000).unref();
+
+  // ดึงผลรางวัลอัตโนมัติทุก 15 นาที (ไทย=GLO, ฮานอย=XSMB; ลาว=manual)
+  const autoSettle = () => autoSettleResults()
+    .then(r => { if (r.settled.length || r.errors.length) console.log('[auto-settle]', JSON.stringify(r)); })
+    .catch(e => console.error('[auto-settle] failed:', e.message));
+  setTimeout(autoSettle, 20000).unref();
+  setInterval(autoSettle, 15 * 60 * 1000).unref();
 }
 
 const app = express();

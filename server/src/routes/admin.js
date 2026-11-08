@@ -8,6 +8,7 @@ import { hashPassword } from '../lib/password.js';
 import * as lottery from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
 import * as settings from '../services/settingsService.js';
+import * as fetcher from '../services/resultFetcher.js';
 import { config } from '../config.js';
 
 const router = Router();
@@ -268,6 +269,23 @@ router.post('/draws/:id/settle', requirePerm('results.publish'), (req, res, next
     const { winning_numbers } = settleSchema.parse(req.body);
     const result = lottery.settleDraw(req.user.id, Number(req.params.id), winning_numbers);
     res.json({ ok: true, ...result });
+  } catch (e) { next(e); }
+});
+
+// ดึงผลอัตโนมัติจากแหล่งข้อมูล (ไทย=GLO, ฮานอย=XSMB) — admin review แล้วค่อย settle
+router.post('/draws/:id/fetch-result', requirePerm('results.publish'), async (req, res, next) => {
+  try {
+    const preview = await fetcher.fetchResultForDraw(Number(req.params.id));
+    res.json({ ok: true, ...preview });
+  } catch (e) { next(e); }
+});
+
+// แก้ไขผลหลังออกผลแล้ว — ระบบคำนวณเครดิต/เดบิตส่วนต่างใหม่ทั้งโพย
+router.post('/draws/:id/result', requirePerm('results.publish'), (req, res, next) => {
+  try {
+    const { winning_numbers } = settleSchema.parse(req.body);
+    const result = fetcher.updateDrawResult(req.user.id, Number(req.params.id), winning_numbers);
+    res.json(result);
   } catch (e) { next(e); }
 });
 
