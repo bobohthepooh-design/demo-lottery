@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
 
 const SEV = { info: 'text-blue-300', warning: 'text-yellow-300', critical: 'text-red-400' };
 
@@ -18,7 +18,7 @@ export default function AdminSecurity() {
           <tbody className="divide-y divide-navy-700">
             {events.map(e => (
               <tr key={e.id} className="hover:bg-navy-700/40">
-                <td className="px-4 py-2 text-navy-300 whitespace-nowrap text-xs">{e.created_at}</td>
+                <td className="px-4 py-2 text-navy-300 whitespace-nowrap text-xs">{fmtDateTime(e.created_at)}</td>
                 <td className="px-4 py-2"><code className="text-gold-300 text-xs">{e.event_type}</code></td>
                 <td className={`px-4 py-2 text-xs font-bold ${SEV[e.severity] || ''}`}>{e.severity}</td>
                 <td className="px-4 py-2 text-navy-300 text-xs">{e.username || '—'}</td>

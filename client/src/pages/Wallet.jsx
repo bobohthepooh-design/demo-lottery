@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, satang, bahtToSatang } from '../api.js';
+import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 
 const TYPE_TH = {
@@ -96,7 +96,7 @@ export default function Wallet() {
                     {t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}
                   </td>
                   <td className="px-4 py-3 text-right text-gold-300">฿{satang(t.balance_after)}</td>
-                  <td className="px-4 py-3 text-xs text-navy-300 whitespace-nowrap">{t.created_at}</td>
+                  <td className="px-4 py-3 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
                   <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
                 </tr>
               ))}

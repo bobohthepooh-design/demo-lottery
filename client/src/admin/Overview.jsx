@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, satang } from '../api.js';
+import { api, satang, fmtDateTime } from '../api.js';
 
 const fmt = (satangVal) => `฿${satang(satangVal)}`;
 
@@ -114,7 +114,7 @@ export default function AdminOverview() {
             {d.recentAudit.map(a => (
               <div key={a.id} className="flex justify-between gap-2 text-navy-300 border-b border-navy-700/50 pb-1">
                 <span><span className="text-gold-300">{a.action}</span> โดย {a.username || a.user_id || 'system'}</span>
-                <span className="text-navy-500 shrink-0">{a.created_at}</span>
+                <span className="text-navy-500 shrink-0">{fmtDateTime(a.created_at)}</span>
               </div>
             ))}
             {!d.recentAudit.length && <div className="text-navy-400">ไม่มีรายการ</div>}
@@ -126,7 +126,7 @@ export default function AdminOverview() {
             {d.recentSecurity.map(s => (
               <div key={s.id} className={`flex justify-between gap-2 border-b border-navy-700/50 pb-1 ${s.severity === 'critical' ? 'text-red-400' : 'text-navy-300'}`}>
                 <span>{s.event_type} • {s.username || s.ip || ''}</span>
-                <span className="text-navy-500 shrink-0">{s.created_at}</span>
+                <span className="text-navy-500 shrink-0">{fmtDateTime(s.created_at)}</span>
               </div>
             ))}
             {!d.recentSecurity.length && <div className="text-navy-400">ไม่มีเหตุการณ์</div>}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, satang } from '../api.js';
+import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 
 const TYPE_TH = {
@@ -73,7 +73,7 @@ export default function AdminWallet() {
                 <td className="px-4 py-2 text-xs text-navy-300">{TYPE_TH[t.type] || t.type}</td>
                 <td className={`px-4 py-2 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>{t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}</td>
                 <td className="px-4 py-2 text-right text-gold-300">฿{satang(t.balance_after)}</td>
-                <td className="px-4 py-2 text-xs text-navy-300 whitespace-nowrap">{t.created_at}</td>
+                <td className="px-4 py-2 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
                 <td className="px-4 py-2 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
               </tr>
             ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
 
 export default function AdminAudit() {
   const [logs, setLogs] = useState([]);
@@ -16,7 +16,7 @@ export default function AdminAudit() {
           <tbody className="divide-y divide-navy-700">
             {logs.map(l => (
               <tr key={l.id} className="hover:bg-navy-700/40">
-                <td className="px-3 py-2 text-navy-300 whitespace-nowrap">{l.created_at}</td>
+                <td className="px-3 py-2 text-navy-300 whitespace-nowrap">{fmtDateTime(l.created_at)}</td>
                 <td className="px-3 py-2 text-white">{l.username || `#${l.user_id}`}</td>
                 <td className="px-3 py-2"><code className="text-gold-300">{l.action}</code></td>
                 <td className="px-3 py-2 text-navy-300">{l.entity_type} {l.entity_id}</td>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, satang, drawLabel } from '../api.js';
+import { api, satang, drawLabel, fmtDateTime } from '../api.js';
 
 const STATUS_TH = { pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก', partial: 'บางส่วน', cancelled: 'ยกเลิก' };
 
@@ -35,7 +35,7 @@ export default function AdminBets() {
               <div className="text-right">
                 <span className="text-white font-bold">฿{satang(s.total_stake)}</span>
                 {s.total_payout > 0 && <span className="text-green-400 text-sm ml-2">+฿{satang(s.total_payout)}</span>}
-                <div className="text-xs text-navy-400">{STATUS_TH[s.status]} • {s.created_at}</div>
+                <div className="text-xs text-navy-400">{STATUS_TH[s.status]} • {fmtDateTime(s.created_at)}</div>
               </div>
             </button>
             {open === s.id && (

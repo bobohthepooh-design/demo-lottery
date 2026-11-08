@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, satang, drawLabel } from '../api.js';
+import { api, satang, drawLabel, fmtDateTime } from '../api.js';
 import { BET_TYPE_LABELS } from '../lotterySchema.js';
 
 const STATUS_TH = {
@@ -81,7 +81,7 @@ export default function MyBets() {
               <div className="text-left">
                 <div className="font-mono text-gold-300">{s.slip_ref}</div>
                 <div className="text-sm text-navy-300">{drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}</div>
-                <div className="text-[11px] text-navy-500">แทงเมื่อ {s.created_at}</div>
+                <div className="text-[11px] text-navy-500">แทงเมื่อ {fmtDateTime(s.created_at)}</div>
               </div>
               <div className="text-right">
                 <div className="font-bold text-white">฿{satang(s.total_stake)}</div>
