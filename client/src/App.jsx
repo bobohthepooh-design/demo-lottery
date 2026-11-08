@@ -16,7 +16,6 @@ import AdminMembers from './admin/Members.jsx';
 import AdminRoles from './admin/Roles.jsx';
 import AdminLotteries from './admin/Lotteries.jsx';
 import AdminDraws from './admin/Draws.jsx';
-import AdminSettle from './admin/Settle.jsx';
 import AdminWallet from './admin/WalletAdmin.jsx';
 import AdminBets from './admin/Bets.jsx';
 import AdminReports from './admin/Reports.jsx';
@@ -53,7 +52,7 @@ export default function App() {
             <Route path="roles" element={<AdminRoles />} />
             <Route path="lotteries" element={<AdminLotteries />} />
             <Route path="draws" element={<AdminDraws />} />
-            <Route path="settle" element={<AdminSettle />} />
+            <Route path="settle" element={<Navigate to="/admin/lotteries?tab=settle" replace />} />
             <Route path="wallet" element={<AdminWallet />} />
             <Route path="bets" element={<AdminBets />} />
             <Route path="reports" element={<AdminReports />} />

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { confirmAction } from './confirm.jsx';
+import { resultSchema } from '../lotterySchema.js';
+import AdminSettle from './Settle.jsx';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
@@ -37,6 +40,9 @@ export default function AdminLotteries() {
   const [editRule, setEditRule] = useState(null);
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [typeForm, setTypeForm] = useState({ code: '', name_th: '', name_en: '', description: '' });
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'settle' ? 'settle' : 'rules';
+  const setTab = (t) => setParams(t === 'settle' ? { tab: 'settle' } : {});
 
   const load = () => {
     api('/admin/lottery/types').then(r => setTypes(r.types)).catch(e => alert(e.message));
@@ -99,8 +105,34 @@ export default function AdminLotteries() {
     return { type: t, groups };
   }).filter(Boolean);
 
+  // ฟิลด์ผลรางวัลที่ admin ต้องกรอกเอง สำหรับประเภทที่ตั้งเป็น "กรอกเอง" (แยกตามหมวดหวย)
+  const manualFields = (t) => {
+    const cats = categories.filter(c => c.lottery_type_id === t.id);
+    const groups = (cats.length ? cats : [null])
+      .map(c => {
+        const s = resultSchema(t.code, c?.code);
+        return s ? { cat: c?.name_th || '', fields: s.fields.filter(f => !f.optional) } : null;
+      })
+      .filter(Boolean);
+    const seen = new Set(); const out = [];
+    for (const g of groups) {
+      const k = g.fields.map(f => f.key).join(',');
+      if (!seen.has(k)) { seen.add(k); out.push(g); }
+    }
+    return out;
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex gap-1 border-b border-navy-700">
+        {[{ id: 'rules', label: 'ประเภทหวย & กติกา' }, { id: 'settle', label: 'ออกผลรางวัล' }].map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)}
+            className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 -mb-px transition ${tab === tb.id ? 'border-gold-500 text-gold-300 bg-navy-800' : 'border-transparent text-navy-300 hover:text-white'}`}>
+            {tb.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'settle' ? <AdminSettle /> : (<>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">ประเภทหวย & กติกา</h1>
         <button onClick={() => setShowTypeForm(!showTypeForm)} className="bg-gold-500 text-navy-950 font-bold px-4 py-2 rounded-lg text-sm">+ เพิ่มประเภทหวย</button>
@@ -134,6 +166,19 @@ export default function AdminLotteries() {
                 <option value="manual">กรอกเอง</option>
               </select>
             </div>
+            {(t.result_mode || 'auto') === 'manual' && (
+              <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-200/90">
+                <div className="font-semibold text-amber-300 mb-1">✏️ โหมดกรอกผลเอง — admin ต้องกรอกผล:</div>
+                {manualFields(t).map((g, i) => (
+                  <div key={i} className="leading-relaxed">
+                    {g.cat && <span className="text-navy-300">[{g.cat}] </span>}
+                    {g.fields.map(f => `${f.label}${f.prizes > 1 ? ` ×${f.prizes} เลข` : ` (${f.digits} หลัก)`}`).join(', ')}
+                  </div>
+                ))}
+                {!manualFields(t).length && <div className="text-navy-400">ไม่พบโครงสร้างผลรางวัลของประเภทนี้</div>}
+                <div className="text-navy-400 mt-1">กรอกที่แท็บ "ออกผลรางวัล" ด้านบนของหน้านี้</div>
+              </div>
+            )}
             <div className="text-xs text-navy-400 mt-2">{rules.filter(r => r.lottery_type_id === t.id && r.is_active).length} ประเภทการแทงที่ใช้งาน</div>
           </div>
         ))}
@@ -274,6 +319,7 @@ export default function AdminLotteries() {
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 }

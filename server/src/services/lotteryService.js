@@ -43,7 +43,7 @@ export function rulesForDraw(drawId) {
 
 export function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false } = {}) {
   const db = getDb();
-  let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th,
+  let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th, lt.result_mode AS result_mode,
                     c.code AS category_code, c.name_th AS category_name_th
              FROM lottery_draws d
              JOIN lottery_types lt ON lt.id = d.lottery_type_id
@@ -63,7 +63,7 @@ export function listDraws({ lotteryTypeId = null, categoryId = undefined, status
 
 export function getDraw(id) {
   const db = getDb();
-  return db.prepare(`SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th,
+  return db.prepare(`SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th, lt.result_mode AS result_mode,
                             c.code AS category_code, c.name_th AS category_name_th
                      FROM lottery_draws d
                      JOIN lottery_types lt ON lt.id = d.lottery_type_id

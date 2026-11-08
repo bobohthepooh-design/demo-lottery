@@ -117,7 +117,7 @@ export default function AdminSettle() {
           <select value={sel || ''} onChange={e => setSel(e.target.value ? Number(e.target.value) : null)}
             className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 mt-1">
             <option value="">— เลือกรอบ —</option>
-            {unsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.status}</option>)}
+            {unsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'} — {d.status}</option>)}
           </select>
         </div>
         {sel && selDraw && schema && (
@@ -147,8 +147,13 @@ export default function AdminSettle() {
                 ออกผลสำเร็จ: ตรวจ {result.settledItems} รายการ • ถูกรางวัล {result.winningItems} รายการ • จ่ายรวม ฿{satang(result.totalPayout)}
               </div>
             )}
+            {selDraw?.result_mode === 'manual' && (
+              <div className="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-lg p-3">
+                ✏️ ประเภทนี้ตั้งเป็น <b>กรอกผลเอง</b> — กรอกผลตามช่องด้านบนแล้วกดยืนยันออกผล (ระบบจะตรวจสอบกับโพยที่แทงและคำนวณเครดิตทั้งระบบอัตโนมัติ)
+              </div>
+            )}
             <div className="flex gap-2">
-              {(selDraw?.type_code === 'TH' || selDraw?.type_code === 'HN') && (
+              {(selDraw?.type_code === 'TH' || selDraw?.type_code === 'HN') && selDraw?.result_mode !== 'manual' && (
                 <button onClick={fetchAuto} className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-500">
                   ดึงผลอัตโนมัติ
                 </button>
@@ -178,7 +183,7 @@ export default function AdminSettle() {
           }}
           className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
           <option value="">— เลือกรอบที่ออกผลแล้ว —</option>
-          {settled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''})</option>)}
+          {settled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
         </select>
         {editDraw && (() => {
           const s = resultSchema(editDraw.type_code, editDraw.category_code);

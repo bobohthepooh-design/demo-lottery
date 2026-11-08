@@ -7,7 +7,6 @@ const items = [
   { to: '/admin/roles', label: 'สิทธิ์การใช้งาน' },
   { to: '/admin/lotteries', label: 'ประเภทหวย/กติกา' },
   { to: '/admin/draws', label: 'รอบหวย' },
-  { to: '/admin/settle', label: 'ออกผลรางวัล' },
   { to: '/admin/wallet', label: 'จัดการเครดิต' },
   { to: '/admin/bets', label: 'ตรวจโพย' },
   { to: '/admin/reports', label: 'รายงาน' },
