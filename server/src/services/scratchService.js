@@ -5,42 +5,80 @@ import { debitForBetTx, creditTx, getBalance } from './walletService.js';
 import { getSetting, setSetting } from './settingsService.js';
 
 /**
- * หวยขูด Match-3 — ซื้อบัตรแล้วขูดทันที (instant win)
- * - ราคา/รางวัลกำหนดตอนซื้อฝั่ง server (กัน client รู้ผลก่อนขูด)
+ *สล็อต 5 รีล × 3 แถว — 20 เพย์ไลน์แบบ video slot จริง
+ * - ราคา/ผลกำหนดตอนซื้อฝั่ง server (กัน client รู้ผลก่อนสปิน)
+ * - grid 15 ช่อง (3 แถว × 5 รีล) — 20 เพย์ไลน์: แต่ละเส้นเลือก 1 ช่องต่อรีล
+ * - ชนะเมื่อสัญลักษณ์เดิมซ้ำกันติดกันตั้งแต่รีลซ้าย ≥3 รีล บนเพย์ไลน์ใดก็ได้
+ * - จ่ายรวมทุกเพย์ไลน์ที่ถูก (สูงสุด 20 เส้นพร้อมกัน) — เหมือนตู้จริง
  * - ทุกการซื้อสร้าง bet_slip + bet_item ปกติ → แสดงใน "โพยของฉัน"/ประวัติ-wallet อัตโนมัติ
- * - reveal: คำนวณผลจาก grid อีกครั้ง (recount) → ถูก = เครดิต win_credit ทันที
+ * - reveal: คำนวณผลจาก grid อีกครั้ง → ถูก = เครดิต win_credit ทันที
  */
 
 const CARD_PRICE_SATANG = () => parseInt(getSetting('scratch_price', '5000'), 10) || 5000;
 
-// สัญลักษณ์ + รางวัล (สตางค์) + weight ต่อ 1000 — น้ำหนักรวมต้อง = 1000
-// ความน่าจะเป็นชนะรวม ~15.3% → RTP ≈ 64% (มาตรฐาน scratch)
+// สัญลักษณ์คาสิโนคลาสสิคสากล — weight ต่อช่อง (รวม 1000)
+// pay3 = จ่ายเมื่อสัญลักษณ์ซ้ำ 3 รีลแรกบน "1 เพย์ไลน์" (สตางค์) — 4 ตัว ×4, 5 ตัว ×15
+// (paytable หารสเกลลงตามจำนวนเพย์ไลน์ เพื่อให้ RTP รวม ~35% เท่าเดิม)
 const SYMBOLS = [
-  { icon: '🍒', name: 'เชอร์รี่', prize: 7500,   weight: 70  },  // ฿75
-  { icon: '🍋', name: 'เลมอน',   prize: 12500,  weight: 45  },  // ฿125
-  { icon: '🔔', name: 'กระดิ่ง', prize: 25000,  weight: 25  },  // ฿250
-  { icon: '⭐', name: 'ดาว',     prize: 75000,  weight: 10  },  // ฿750
-  { icon: '💎', name: 'เพชร',   prize: 250000, weight: 3   },  // ฿2,500
+  { icon: '🍒', name: 'เชอร์รี่', weight: 330, pay3: 150    },  // ฿1.50/เส้น
+  { icon: '🍋', name: 'เลมอน',   weight: 150, pay3: 300    },  // ฿3
+  { icon: '🍊', name: 'ส้ม',     weight: 130, pay3: 500    },  // ฿5
+  { icon: '🍇', name: 'องุ่น',   weight: 110, pay3: 900    },  // ฿9
+  { icon: '🔔', name: 'กระดิ่ง', weight: 100, pay3: 2000   },  // ฿20
+  { icon: '⭐', name: 'ดาว',     weight: 80,  pay3: 6000   },  // ฿60
+  { icon: '💎', name: 'เพชร',   weight: 60,  pay3: 18000  },  // ฿180
+  { icon: '7️⃣', name: 'เจ็ด',   weight: 40,  pay3: 80000  },  // ฿800 jackpot
+];
+const TIER = { 3: 1, 4: 4, 5: 15 }; // ตัวคูณตามจำนวนรีลที่ซ้ำบนเพย์ไลน์
+
+// 20 เพย์ไลน์มาตรฐาน — แต่ละเส้นคือ [แถวของรีล0, รีล1, รีล2, รีล3, รีล4] (แถว 0=บน, 1=กลาง, 2=ล่าง)
+// เส้นตรง 3 แนวนอน + เส้นทแยง/ซิกแซก/หน่ำเหมือนตู้ video slot จริง
+export const PAYLINES = [
+  [1, 1, 1, 1, 1], // 1 กลาง
+  [0, 0, 0, 0, 0], // 2 บน
+  [2, 2, 2, 2, 2], // 3 ล่าง
+  [0, 1, 2, 1, 0], // 4 V
+  [2, 1, 0, 1, 2], // 5 ∧
+  [0, 1, 1, 1, 0], // 6 หน่ำบน
+  [2, 1, 1, 1, 2], // 7 หน่ำล่าง
+  [1, 0, 0, 0, 1], // 8 ขอบบน
+  [1, 2, 2, 2, 1], // 9 ขอบล่าง
+  [0, 0, 1, 0, 0], // 10 หยักบน
+  [2, 2, 1, 2, 2], // 11 หยักล่าง
+  [1, 0, 1, 0, 1], // 12 ซิกแซก A
+  [1, 2, 1, 2, 1], // 13 ซิกแซก B
+  [0, 1, 0, 1, 0], // 14 ซิกแซก C
+  [2, 1, 2, 1, 2], // 15 ซิกแซก D
+  [0, 2, 0, 2, 0], // 16 ซิกแซก E
+  [2, 0, 2, 0, 2], // 17 ซิกแซก F
+  [1, 0, 0, 1, 0], // 18 เฉียงบน
+  [1, 2, 2, 1, 2], // 19 เฉียงล่าง
+  [0, 1, 2, 2, 1], // 20 เฉียงทแยง
 ];
 
 /** รางวัลที่มีผลจริง — admin ปรับได้ผ่าน system_settings 'scratch_prizes' (JSON [{icon,prize}])
- *  fallback = SYMBOLS hardcode; น้ำหนัก/โครงสร้าง grid ยังใช้ SYMBOLS เดิมเสมอ */
+ *  prize = จ่ายเมื่อซ้ำ 3 ตัวแรกของแถว (4 ตัว ×4, 5 ตัว ×15 อัตโนมัติ)
+ *  fallback = SYMBOLS hardcode; น้ำหนักยังใช้ SYMBOLS เดิมเสมอ */
 function effectiveSymbols() {
   let ov = {};
   try {
     const j = JSON.parse(getSetting('scratch_prizes', '[]') || '[]');
     if (Array.isArray(j)) for (const p of j) if (p?.icon && Number(p.prize) > 0) ov[p.icon] = Math.floor(Number(p.prize));
   } catch {}
-  return SYMBOLS.map(s => ({ ...s, prize: ov[s.icon] ?? s.prize }));
+  return SYMBOLS.map(s => ({ ...s, pay3: ov[s.icon] ?? s.pay3 }));
 }
 
-/** ตารางรางวัล (สตางค์) — ให้ public-config ดึงไปแสดงบนหน้าบ้าน ไม่ให้ hardcode ฝั่ง client */
+/** ตารางรางวัลสำหรับแสดงผล — min = จ่าย 3 ตัว, max = จ่าย 5 ตัว (สูงสุดต่อสัญลักษณ์) */
 export function prizeTable() {
-  return effectiveSymbols().map(({ icon, name, prize }) => ({ icon, name, prize }));
+  return effectiveSymbols().map(s => ({
+    icon: s.icon, name: s.name,
+    prize: s.pay3,
+    max: s.pay3 * TIER[5],
+  }));
 }
-const LOSE_WEIGHT = 847; // 1000 - (70+45+25+10+3)
-const GRID_SIZE = 9;
-const WIN_COUNT = 3;
+const GRID_SIZE = 15;  // 3 แถว × 5 รีล
+const ROWS = 3;
+const REELS = 5;
 
 function hashSeed(str) {
   let h = 2166136261;
@@ -61,73 +99,49 @@ const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 // server_seed เผยเฉพาะหลัง reveal ให้ใครก็ได้ตรวจว่า grid ไม่ถูกสลับ
 const commitOf = (seed) => createHash('sha256').update(String(seed)).digest('hex');
 
-function shuffle(arr, rng) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
-/** สุ่มสัญลักษณ์ที่ยังไม่ครบ weight — ใช้เติมช่องที่เหลือโดยไม่ให้สัญลักษณ์ไหนถึง 3 ตัวเผลอ */
-function fillCell(grid, counts, rng) {
-  const ok = SYMBOLS.filter(s => (counts[s.icon] || 0) < WIN_COUNT - 1); // cap 2 → ไม่มีตัวไหนโดน 3 โดยไม่ตั้งใจ
-  const s = pick(rng, ok.length ? ok : SYMBOLS);
-  grid.push(s.icon);
-  counts[s.icon] = (counts[s.icon] || 0) + 1;
-}
+const pickIcon = (rng) => {
+  let r = Math.floor(rng() * 1000);
+  for (const s of SYMBOLS) { r -= s.weight; if (r < 0) return s.icon; }
+  return SYMBOLS[0].icon;
+};
 
-/** สร้าง grid 3x3 — deterministic ตาม seed (เก็บแค่ grid; outcome คำนวณตอน reveal) */
+/** สร้าง grid 3 แถว × 5 รีล (15 ช่อง) — deterministic ตาม seed
+ *  สุ่มอิสระทุกช่องเหมือนช่องบนสายพานสล็อต — ผลคำนวณจากแถวซ้ายไปขวา */
 export function genGrid(seed) {
   const rng = mulberry32(hashSeed(`scratch:${seed}`));
-  const roll = Math.floor(rng() * 1000);
-  const counts = {};
-
-  let winSym = null;
-  if (roll < LOSE_WEIGHT) {
-    winSym = null; // แพ้ — เติมให้ไม่มีสัญลักษณ์ไหนครบ 3
-  } else {
-    let cum = LOSE_WEIGHT;
-    for (const s of SYMBOLS) { cum += s.weight; if (roll < cum) { winSym = s; break; } }
-    if (!winSym) winSym = SYMBOLS[0];
-  }
-
-  if (winSym) {
-    // วางผู้ชนะ 3 ช่องสุ่ม แล้วเติมช่องว่าง — สัญลักษณ์อื่น cap 2 ไม่ให้ครบ 3 โดยไม่ตั้งใจ
-    const positions = new Set(shuffle([...Array(GRID_SIZE).keys()], rng).slice(0, WIN_COUNT));
-    const out = [];
-    const fillCounts = {};
-    for (let i = 0; i < GRID_SIZE; i++) {
-      if (positions.has(i)) { out.push(winSym.icon); continue; }
-      const ok = SYMBOLS.filter(s => s.icon !== winSym.icon && (fillCounts[s.icon] || 0) < WIN_COUNT - 1);
-      const pool = ok.length ? ok : SYMBOLS.filter(x => x.icon !== winSym.icon);
-      const s = pick(rng, pool);
-      out.push(s.icon);
-      fillCounts[s.icon] = (fillCounts[s.icon] || 0) + 1;
-    }
-    return out;
-  }
-
-  // แพ้ — เติม 9 ช่อง cap 2 ต่อสัญลักษณ์
   const out = [];
-  for (let i = 0; i < GRID_SIZE; i++) fillCell(out, counts, rng);
+  for (let i = 0; i < GRID_SIZE; i++) out.push(pickIcon(rng));
   return out;
 }
 
-/** คำนวณผลจาก grid — สัญลักษณ์ที่มากสุด ≥3 = ถูกรางวัลตามราคา */
+/** cell(row, reel) ของ grid row-major 15 ช่อง — แถว r, รีล c → index r*5 + c */
+const cell = (grid, r, c) => grid[r * REELS + c];
+
+/** คำนวณผลจาก grid — 20 เพย์ไลน์: แต่ละเส้นดูการซ้ำของสัญลักษณ์ตัวแรกจากซ้าย
+ *  ซ้ำ k รีล (k≥3) = ถูก — จ่าย pay3 × TIER[k] ต่อเส้น, รวมทุกเส้นที่ถูก
+ *  คืน cells = พิกัด [row, reel] ที่ชนะ เพื่อให้ client ไฮไลต์เฉพาะช่องนั้น */
 export function evaluateGrid(grid) {
-  const counts = {};
-  for (const s of grid) counts[s] = (counts[s] || 0) + 1;
   const syms = effectiveSymbols();
-  let best = null;
-  for (const [icon, n] of Object.entries(counts)) {
-    if (n >= WIN_COUNT) {
-      const sym = syms.find(s => s.icon === icon);
-      if (sym && (!best || sym.prize > best.prize)) best = { ...sym, count: n };
-    }
-  }
-  return best ? { win: true, symbol: best.icon, prize: best.prize, count: best.count } : { win: false };
+  const byIcon = Object.fromEntries(syms.map(s => [s.icon, s]));
+  const lines = [];
+  let total = 0, best = null;
+  PAYLINES.forEach((path, li) => {
+    const first = cell(grid, path[0], 0);
+    const sym = byIcon[first];
+    if (!sym) return;
+    let k = 1;
+    while (k < REELS && cell(grid, path[k], k) === first) k++;
+    if (k < 3) return;
+    const prize = sym.pay3 * (TIER[k] || 1);
+    const cellsWin = [];
+    for (let c = 0; c < k; c++) cellsWin.push([path[c], c]);
+    lines.push({ line: li + 1, symbol: sym.icon, name: sym.name, prize, count: k, cells: cellsWin });
+    total += prize;
+    if (!best || prize > best.prize) best = { ...sym, prize, count: k };
+  });
+  if (!lines.length) return { win: false };
+  return { win: true, symbol: best.icon, name: best.name, prize: total, count: lines.length, lines };
 }
 
 // ---------- infra: lottery type SC + rule + standing draw (idempotent) ----------
@@ -138,7 +152,7 @@ export function ensureInfra() {
   let type = db.prepare(`SELECT id FROM lottery_types WHERE code = 'SC'`).get();
   if (!type) {
     db.prepare(`INSERT INTO lottery_types (code, name_th, name_en, description, is_active, result_mode)
-                VALUES ('SC','หวยขูด','Scratch Card','สลากขูด instantaneous — ซื้อแล้วขูดรู้ผลทันที',1,'manual')`)
+                VALUES ('SC','สล็อต','Slot Machine','สล็อต 5 รีล 3 แถว 20 เพย์ไลน์ — สปินแล้วรอลุ้นผลทันที',1,'manual')`)
       .run();
     type = db.prepare(`SELECT id FROM lottery_types WHERE code = 'SC'`).get();
   }
@@ -146,7 +160,7 @@ export function ensureInfra() {
   if (!db.prepare(`SELECT id FROM lottery_rules WHERE lottery_type_id = ? AND bet_type = 'scratch'`).get(typeId)) {
     db.prepare(`INSERT INTO lottery_rules
       (lottery_type_id, category_id, bet_type, name_th, name_en, digits, match_config, payout_multiplier, stake_unit, min_amount, max_amount, is_active)
-      VALUES (?, NULL, 'scratch', 'สลากขูด Match-3', 'Scratch Match-3', 0, '{"mode":"scratch"}', 0, 1, 5000, 5000, 1)`)
+      VALUES (?, NULL, 'scratch', 'สล็อต 5 รีล 3 แถว 20 เพย์ไลน์', 'Slot 5-Reel 20-Paylines', 0, '{"mode":"scratch"}', 0, 1, 5000, 5000, 1)`)
       .run(typeId);
   }
   // standing draw — status 'closed' เพื่อไม่ให้โผล่ในรายการรอบ (สลากขูดไม่มีรอบ)
@@ -154,10 +168,13 @@ export function ensureInfra() {
     db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
                 VALUES (?, NULL, 'SC-STANDING', '2026-01-01 00:00:00', '2026-01-01 00:00:00', 'closed')`).run(typeId);
   }
+  // sync ชื่อ/คำอธิบายเป็นสล็อต (idempotent — กัน description เก่าค้างใน DB)
+  db.prepare(`UPDATE lottery_types SET name_th='สล็อต', name_en='Slot Machine', description='สล็อต 5 รีล 3 แถว 20 เพย์ไลน์ — สปินแล้วรอลุ้นผลทันที' WHERE code = 'SC'`).run();
+  db.prepare(`UPDATE lottery_rules SET name_th='สล็อต 5 รีล 3 แถว 20 เพย์ไลน์', name_en='Slot 5-Reel 20-Paylines' WHERE bet_type = 'scratch'`).run();
   // ค่าเริ่มต้นราคา/ตารางรางวัล — admin แก้ได้ใน /admin/settings (scratch_price, scratch_prizes)
   if (getSetting('scratch_price') == null) setSetting('scratch_price', 5000);
   if (getSetting('scratch_prizes') == null) {
-    setSetting('scratch_prizes', JSON.stringify(SYMBOLS.map(s => ({ icon: s.icon, prize: s.prize }))));
+    setSetting('scratch_prizes', JSON.stringify(SYMBOLS.map(s => ({ icon: s.icon, prize: s.pay3 }))));
   }
   infraReady = true;
 }
@@ -187,10 +204,11 @@ const cardView = (c, revealOutcome = false) => ({
   slipRef: c.slip_ref,
   status: c.status,
   createdAt: c.created_at,
-  grid: JSON.parse(c.grid),
+  // grid เผยเฉพาะหลัง reveal — ก่อนสปิน client เห็นแค่ commit (กันรู้ผลล่วงหน้า)
+  grid: c.status === 'revealed' ? JSON.parse(c.grid) : null,
   // fairness: commit เผยตั้งแต่ซื้อ (พิสูจน์ว่าไม่ได้เปลี่ยนผลทีหลัง) — seed เผยหลัง reveal เท่านั้น
   ...(c.commit_hash ? { fairness: {
-    algo: 'sha256(server_seed) → grid 3x3 (mulberry32)',
+    algo: 'sha256(server_seed) → grid 5 รีล × 3 แถว, จ่ายตาม 20 เพย์ไลน์ (mulberry32)',
     commit: c.commit_hash,
     seed: c.status === 'revealed' ? c.server_seed : null,
   } } : {}),
@@ -205,7 +223,7 @@ export function buyCard(userId) {
   const price = cardPrice();
   const draw = standingDraw();
   const rule = scratchRule();
-  if (!draw || !rule) throw new HttpError(500, 'ระบบหวยขูดยังไม่พร้อมใช้งาน');
+  if (!draw || !rule) throw new HttpError(500, 'ระบบสล็อตยังไม่พร้อมใช้งาน');
 
   // server_seed สุ่มด้วย crypto — grid derive จาก seed เดียว (deterministic ตรวจย้อนได้)
   const serverSeed = randomBytes(32).toString('hex');
@@ -245,7 +263,7 @@ export function getCard(userId, cardId) {
   const c = getDb().prepare(`SELECT c.*, s.slip_ref, s.created_at, s.status AS slip_status
     FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
     WHERE c.id = ? AND c.user_id = ?`).get(cardId, userId);
-  if (!c) throw new HttpError(404, 'ไม่พบบัตรขูด');
+  if (!c) throw new HttpError(404, 'ไม่พบบัตรสล็อต');
   return cardView(c);
 }
 
@@ -261,7 +279,7 @@ export function revealCard(userId, cardId) {
   const card = getDb().prepare(`SELECT c.*, s.slip_ref, s.status AS slip_status
     FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
     WHERE c.id = ? AND c.user_id = ?`).get(cardId, userId);
-  if (!card) throw new HttpError(404, 'ไม่พบบัตรขูด');
+  if (!card) throw new HttpError(404, 'ไม่พบบัตรสล็อต');
   if (card.status === 'revealed') return { ...cardView(card), balance: getBalance(userId), duplicate: true };
   if (card.slip_status !== 'pending') throw new HttpError(400, 'โพยนี้ถูกยกเลิกแล้ว');
 
@@ -278,7 +296,7 @@ export function revealCard(userId, cardId) {
         .run(outcome.prize, now, card.slip_id);
       creditTx(d, {
         userId, type: 'win_credit', amount: outcome.prize,
-        description: `รางวัลหวยขูด ${card.slip_ref} — ${outcome.symbol} x${outcome.count}`,
+        description: `รางวัลสล็อต ${card.slip_ref} — ${outcome.symbol} x${outcome.count}`,
         idempotencyKey: `scratch-win-${card.slip_ref}`,
       });
     } else {

@@ -2,6 +2,7 @@ import { getDb, tx, makeReference } from '../db/index.js';
 import { settleDraw, getDraw, evaluateBet, listRules, mergeAnnounce } from './lotteryService.js';
 import { audit, HttpError } from '../lib/audit.js';
 import { broadcast } from './events.js';
+import { notify } from './notifyService.js';
 import { ZODIAC_SIGNS } from '../lib/zodiac.js';
 
 /**
@@ -246,7 +247,8 @@ function pendingDraws() {
     FROM lottery_draws d JOIN lottery_types lt ON lt.id=d.lottery_type_id
     LEFT JOIN lottery_categories c ON c.id=d.category_id
     WHERE d.status IN ('open','scheduled','closed') AND d.draw_at <= ?
-      AND lt.code NOT IN ('SC','HL')
+      AND lt.is_active = 1
+      AND lt.code NOT IN ('SC','HL','KI','CF')
       AND d.id NOT IN (SELECT draw_id FROM lottery_results)
     ORDER BY d.draw_at`).all(nowUtc);
 }
@@ -382,13 +384,19 @@ export function updateDrawResult(adminId, drawId, winningNumbers) {
       WHERE bi.draw_id = ? AND bi.status != 'cancelled' AND bs.status NOT IN ('cancelled','refunded')`).all(drawId);
     const slipMap = new Map();
     const slipItemCount = new Map();
+    const userDiff = new Map(); // user_id -> ผลต่างเครดิตรวมจากการแก้ผล (แจ้งเตือนสมาชิก)
     for (const item of items) {
       slipItemCount.set(item.slip_id, (slipItemCount.get(item.slip_id) || 0) + 1);
       const rule = ruleById.get(item.rule_id);
       if (!rule) continue;
-      const ev = evaluateBet(rule, item.number, winningNumbers);
-      const newPayout = ev.win ? Math.floor(item.amount * Number(ev.multiplier ?? rule.payout_multiplier)) : 0;
+      // snapshot อัตราจ่าย/กติกาตอนแทง — กันการแก้ผลย้อนหลังเปลี่ยนราคาโพย
+      const effRule = item.match_config != null
+        ? { ...rule, match_config: item.match_config, payout_multiplier: item.payout_multiplier ?? rule.payout_multiplier }
+        : rule;
+      const ev = evaluateBet(effRule, item.number, winningNumbers, { todBet: !!item.is_tod });
+      const newPayout = ev.win ? Math.floor(item.amount * Number(ev.multiplier ?? effRule.payout_multiplier)) : 0;
       const diff = newPayout - item.payout;
+      if (diff !== 0) userDiff.set(item.owner_id, (userDiff.get(item.owner_id) || 0) + diff);
       d.prepare(`UPDATE bet_items SET status = ?, payout = ?, result_detail = ? WHERE id = ?`)
         .run(ev.win ? 'won' : 'lost', newPayout, JSON.stringify(ev.detail), item.id);
       if (diff !== 0) {
@@ -414,6 +422,17 @@ export function updateDrawResult(adminId, drawId, winningNumbers) {
       const total = slipItemCount.get(slipId) || 1;
       const status = st.won === 0 ? 'lost' : st.won === total ? 'won' : 'partial';
       d.prepare(`UPDATE bet_slips SET status = ?, total_payout = ? WHERE id = ?`).run(status, st.payout, slipId);
+    }
+    // แจ้งเตือนสมาชิกที่เครดิตเปลี่ยนจากการแก้ผล — กันผู้เล่นงงว่าผล/เงินขยับโดยไม่มีแจ้ง
+    for (const [uid, diff] of userDiff) {
+      if (!diff) continue;
+      const baht = Math.abs(diff) / 100;
+      notify(uid, {
+        type: 'result_update',
+        title: diff > 0 ? `ผลรางวัลปรับใหม่ +฿${baht.toLocaleString('th-TH')}` : `ผลรางวัลปรับใหม่ −฿${baht.toLocaleString('th-TH')}`,
+        body: `ผลรางวัลรอบ ${draw.draw_code} ถูกแก้ไข — เครดิตของคุณ${diff > 0 ? 'เพิ่ม' : 'ลด'} ฿${baht.toLocaleString('th-TH')}`,
+        link: '/my-bets',
+      }, d);
     }
     audit({ userId: adminId, action: 'draw.result_update', entityType: 'draw', entityId: String(drawId), detail: { winningNumbers } });
     return { ok: true };

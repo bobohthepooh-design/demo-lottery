@@ -101,13 +101,14 @@ const walletActionSchema = z.object({
   amount: z.number().int().positive(),
   paymentMethod: z.enum(['bank_transfer', 'qr_promptpay', 'truemoney']).optional(),
   accountNo: z.string().max(50).optional(),
+  idempotencyKey: z.string().max(64).optional(),
 });
 router.post('/wallet/action', (req, res, next) => {
   try {
-    const { direction, amount, paymentMethod, accountNo } = walletActionSchema.parse(req.body);
+    const { direction, amount, paymentMethod, accountNo, idempotencyKey } = walletActionSchema.parse(req.body);
     const methodLabel = DEPOSIT_METHODS[paymentMethod] || 'ช่องทางอื่น';
     const result = wallet.memberWalletAction(req.user.id, {
-      direction, amount,
+      direction, amount, idempotencyKey,
       description: `${direction === 'deposit' ? 'เติมเครดิต' : 'ถอนเครดิต'} — ${methodLabel}${accountNo ? ` • ปลายทาง ${accountNo}` : ''} (DEMO)`,
     });
     res.json({ ok: true, ...result });

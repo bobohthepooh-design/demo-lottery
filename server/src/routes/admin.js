@@ -77,7 +77,7 @@ router.get('/overview', requirePerm('dashboard.admin'), (req, res) => {
     overdueDraws: one(`SELECT COUNT(*) c FROM lottery_draws d
       JOIN lottery_types lt ON lt.id = d.lottery_type_id
       WHERE d.status IN ('open','scheduled','closed') AND d.draw_at <= datetime('now')
-        AND lt.code NOT IN ('SC','HL')
+        AND lt.code NOT IN ('SC','HL','KI')
         AND d.id NOT IN (SELECT draw_id FROM lottery_results)`).c,
     money, daily,
     recentAudit: d.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 10').all(),
@@ -107,6 +107,8 @@ router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => 
     const target = db().prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
     assertCanManageTarget(req, id);
+    if (data.status && id === req.user.id && data.status !== 'active')
+      return res.status(400).json({ error: 'ไม่สามารถเปลี่ยนสถานะบัญชีของตัวเองได้' });
     if (data.status) db().prepare(`UPDATE users SET status=?, updated_at=datetime('now') WHERE id=?`).run(data.status, id);
     if (data.displayName) db().prepare(`UPDATE users SET display_name=?, updated_at=datetime('now') WHERE id=?`).run(data.displayName, id);
     if (data.withdrawUnlocked !== undefined) {
@@ -137,6 +139,8 @@ router.delete('/members/:id', requirePerm('members.manage'), (req, res, next) =>
     if (slips > 0) return res.status(400).json({ error: `ไม่สามารถลบได้ สมาชิกนี้มีประวัติโพย ${slips} รายการ` });
     tx((d) => {
       d.prepare('DELETE FROM virtual_transactions WHERE user_id = ?').run(id);
+      d.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
+      d.prepare('DELETE FROM chat_messages WHERE sender_id = ?').run(id); // FK ไม่ cascade — ลบทิ้งก่อนลบ user
       d.prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?').run(id);
       d.prepare('UPDATE security_events SET user_id = NULL WHERE user_id = ?').run(id);
       d.prepare('UPDATE lottery_results SET published_by = NULL WHERE published_by = ?').run(id);
@@ -199,6 +203,7 @@ const typeSchema = z.object({
 router.post('/lottery/types', requirePerm('lottery.manage'), (req, res, next) => {
   try {
     const t = typeSchema.parse(req.body);
+    if (!/^[A-Z0-9_-]{2,10}$/i.test(t.code)) return res.status(400).json({ error: 'code ต้องเป็นตัวอักษร/ตัวเลข 2-10 ตัว' });
     const r = db().prepare('INSERT INTO lottery_types (code,name_th,name_en,description,is_active,result_mode) VALUES (?,?,?,?,?,?)')
       .run(t.code, t.name_th, t.name_en || null, t.description || null, t.is_active ?? 1, t.result_mode ?? 'auto');
     audit({ userId: req.user.id, action: 'admin.lottery_type_create', entityType: 'lottery_type', entityId: String(r.lastInsertRowid), req });
@@ -211,6 +216,8 @@ router.patch('/lottery/types/:id', requirePerm('lottery.manage'), (req, res, nex
   try {
     const id = Number(req.params.id);
     const t = typeSchema.partial().parse(req.body);
+    // code เป็น identity ที่ service/ผลรางวัลอ้างอิง (SC/HL/KI/HR ฯลฯ) — เปลี่ยนได้ชื่ออย่างเดียว
+    delete t.code;
     const fields = Object.keys(t).filter(k => t[k] !== undefined);
     if (!fields.length) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
     db().prepare(`UPDATE lottery_types SET ${fields.map(f => `${f}=?`).join(',')} WHERE id=?`)
@@ -240,6 +247,12 @@ router.post('/lottery/rules', requirePerm('lottery.manage'), (req, res, next) =>
   try {
     const r = ruleSchema.parse(req.body);
     JSON.parse(r.match_config); // must be valid JSON
+    if (!db().prepare('SELECT id FROM lottery_types WHERE id = ?').get(r.lottery_type_id))
+      return res.status(400).json({ error: 'ประเภทหวยไม่ถูกต้อง' });
+    const dup = db().prepare(`SELECT id FROM lottery_rules
+      WHERE lottery_type_id = ? AND bet_type = ? AND COALESCE(category_id,0) = COALESCE(?,0)`)
+      .get(r.lottery_type_id, r.bet_type, r.category_id ?? null);
+    if (dup) return res.status(409).json({ error: `มีกติกา bet_type "${r.bet_type}" ในหมวดนี้อยู่แล้ว` });
     const x = db().prepare(`INSERT INTO lottery_rules
       (lottery_type_id,category_id,bet_type,name_th,name_en,digits,match_config,payout_multiplier,stake_unit,min_amount,max_amount,is_active)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
@@ -255,16 +268,26 @@ router.post('/lottery/rules', requirePerm('lottery.manage'), (req, res, next) =>
 // แต่ system_settings ยังเป็น fallback — sync ทั้งสองทางกันค่าไม่ตรงกัน
 // เกมหนึ่งมีหลายกติกา (hilo = base + 3 ฝั่งเดิมพัน) → ราคาเป็นราคาคงที่ต่อเกม ต้อง sync min/max ทุกกติกา
 const INSTANT_GAMES = {
-  scratch: { setting: 'scratch_price', rules: ['scratch'] },
-  hilo: { setting: 'hilo_price', rules: ['hilo', 'hilo_low', 'hilo_high', 'hilo_eleven'] },
+  scratch:   { setting: 'scratch_price',      rules: ['scratch'] },
+  hilo:      { setting: 'hilo_price',         rules: ['hilo', 'hilo_low', 'hilo_high', 'hilo_eleven'] },
+  kiwi:      { setting: 'kiwi_price_kiwi',    rules: ['kiwi'] },
+  kiwi_vip:  { setting: 'kiwi_price_kiwi_vip', rules: ['kiwi_vip'] },
+  kiwi_dice: { setting: 'kiwi_price_kiwi_dice', rules: ['kiwi_dice'] },
 };
-const INSTANT_GAME_OF = (bt) => bt === 'scratch' ? 'scratch' : (bt && bt.startsWith('hilo') ? 'hilo' : null);
+const INSTANT_GAME_OF = (bt) => {
+  if (bt === 'scratch') return 'scratch';
+  if (bt && bt.startsWith('hilo')) return 'hilo';
+  if (bt === 'kiwi' || bt === 'kiwi_vip' || bt === 'kiwi_dice') return bt;
+  return null;
+};
 const INSTANT_MULT_KEY = { hilo_mult_low: 'hilo_low', hilo_mult_high: 'hilo_high', hilo_mult_11: 'hilo_eleven' };
 
 router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const r = ruleSchema.partial().parse(req.body);
+    // identity fields — เปลี่ยน type/category/bet_type ไม่ได้ (โพยเก่าอ้างอิง rule_id ไว้แล้ว)
+    delete r.lottery_type_id; delete r.category_id; delete r.bet_type;
     if (r.match_config) JSON.parse(r.match_config);
     const fields = Object.keys(r).filter(k => r[k] !== undefined);
     if (!fields.length) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
@@ -303,7 +326,8 @@ router.get('/lottery/rules', requirePerm('lottery.manage'), (req, res) => {
 
 // ---------- draws ----------
 router.get('/draws', requirePerm('draws.manage'), (req, res) => {
-  res.json({ draws: lottery.listDraws({ lotteryTypeId: req.query.type ? Number(req.query.type) : null }) });
+  // includeInactiveTypes — admin ต้องเห็น/ยกเลิก/ออกผลรอบของประเภทที่ปิดอยู่ด้วย (โพยค้างต้องจัดการได้)
+  res.json({ draws: lottery.listDraws({ lotteryTypeId: req.query.type ? Number(req.query.type) : null, includeInactiveTypes: true }) });
 });
 
 // สถานะการอัปเดตผลรางวัลล่าสุดของทุกประเภท/หมวด — ล่าสุดต่อ type+category
@@ -326,7 +350,7 @@ router.get('/results/status', requirePerm('results.publish'), (req, res) => {
     LEFT JOIN lottery_categories c ON c.lottery_type_id = lt.id
     LEFT JOIN latest l ON l.tid = lt.id AND l.cid = COALESCE(c.id, 0) AND l.rn = 1
     LEFT JOIN lottery_draws dr ON dr.id = l.draw_id
-    WHERE lt.is_active = 1 AND lt.code NOT IN ('SC','HL')
+    WHERE lt.is_active = 1 AND lt.code NOT IN ('SC','HL','KI')
     ORDER BY lt.id, cat_key`).all();
   res.json({ status: rows });
 });
@@ -351,14 +375,22 @@ router.post('/draws', requirePerm('draws.manage'), (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// announce รองรับทุกรูปแบบที่ annEntries() อ่านได้: string '123'/'123:400' หรือ array ของ string/{num,mult}
+const annSide = z.union([
+  z.string().max(500),
+  z.array(z.union([
+    z.string().max(20),
+    z.object({ num: z.string().max(10), mult: z.number().positive().max(1000000).optional() }),
+  ])).max(20),
+]);
 const drawUpdateSchema = z.object({
   draw_code: z.string().min(1).max(100).optional(),
   draw_at: z.string().min(10).optional(),
   close_at: z.string().min(10).optional(),
   announce: z.union([
     z.object({
-      top: z.string().max(10).optional(),
-      bottom: z.string().max(10).optional(),
+      top: annSide.optional(),
+      bottom: annSide.optional(),
     }),
     z.null(),
   ]).optional(),
@@ -419,7 +451,7 @@ router.post('/draws/:id/settle-preview', requirePerm('results.publish'), (req, r
     let wn = { ...winning };
     try { lottery.mergeAnnounce?.(wn, draw.announce); } catch {}
     const items = db().prepare(`
-      SELECT bi.id, bi.rule_id, bi.number, bi.amount, bi.is_tod, r.payout_multiplier
+      SELECT bi.id, bi.rule_id, bi.number, bi.amount, bi.is_tod, bi.payout_multiplier AS snap_mult, bi.match_config AS snap_cfg, r.payout_multiplier
       FROM bet_items bi
       JOIN bet_slips bs ON bs.id = bi.slip_id
       JOIN lottery_rules r ON r.id = bi.rule_id
@@ -433,9 +465,12 @@ router.post('/draws/:id/settle-preview', requirePerm('results.publish'), (req, r
         ruleCache.set(it.rule_id, rule);
       }
       try {
-        const ev = lottery.evaluateBet(rule, it.number, wn, { todBet: !!it.is_tod });
+        const effRule = it.snap_cfg != null
+          ? { ...rule, match_config: it.snap_cfg, payout_multiplier: it.snap_mult ?? rule.payout_multiplier }
+          : rule;
+        const ev = lottery.evaluateBet(effRule, it.number, wn, { todBet: !!it.is_tod });
         evaluated++;
-        if (ev.win) { wins++; payout += Math.floor(it.amount * Number(ev.multiplier ?? rule.payout_multiplier)); }
+        if (ev.win) { wins++; payout += Math.floor(it.amount * Number(ev.multiplier ?? effRule.payout_multiplier)); }
       } catch { errors++; }
     }
     res.json({ ok: true, pending: items.length, evaluated, errors, winningItems: wins, totalPayout: payout });
@@ -474,7 +509,9 @@ router.get('/bets', requirePerm('bets.view_all'), (req, res) => {
   if (req.query.userId) { sql += ' AND bs.user_id = ?'; args.push(Number(req.query.userId)); }
   sql += ' ORDER BY bs.id DESC LIMIT ?'; args.push(limit);
   const slips = db().prepare(sql).all(...args);
-  const items = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th, r.payout_multiplier FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
+  const items = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th,
+                                    COALESCE(bi.payout_multiplier, r.payout_multiplier) AS payout_multiplier
+                             FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
   res.json({ slips: slips.map(s => ({ ...s, items: items.all(s.id) })) });
 });
 
@@ -561,15 +598,22 @@ router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
     totals: {
       stake: d.prepare(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`).get().s,
       payout: d.prepare(`SELECT COALESCE(SUM(payout),0) p FROM bet_items WHERE status='won'`).get().p,
-      pendingExposure: d.prepare(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status='pending'`).get().s,
+      pendingExposure: d.prepare(`SELECT COALESCE(SUM(bs.total_stake),0) s
+                                   FROM bet_slips bs JOIN lottery_draws dr ON dr.id = bs.draw_id
+                                   WHERE bs.status='pending' AND dr.draw_code NOT LIKE '%-STANDING'`).get().s,
+      unplayedInstant: d.prepare(`SELECT COALESCE(SUM(bs.total_stake),0) s
+                                   FROM bet_slips bs JOIN lottery_draws dr ON dr.id = bs.draw_id
+                                   WHERE bs.status='pending' AND dr.draw_code LIKE '%-STANDING'`).get().s,
       items: d.prepare(`SELECT COUNT(*) c, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) w FROM bet_items WHERE status IN ('won','lost')`).get(),
-      slips: d.prepare(`SELECT COUNT(*) c FROM bet_slips`).get().c,
+      slips: d.prepare(`SELECT COUNT(*) c FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`).get().c,
     },
-    betsByType: d.prepare(`SELECT r.name_th AS rule_name, r.bet_type,
+    // รายการ = ทุกรายการที่ยังไม่ยกเลิก / ถูก = เฉพาะที่ settle แล้ว — frontend คำนวณเรทจาก won/(won+lost)
+    betsByType: d.prepare(`SELECT r.name_th AS rule_name, MIN(r.bet_type) AS bet_type,
                              lt.code AS type_code, lt.name_th AS type_name_th,
                              lc.name_th AS category_name_th,
                              COUNT(*) c,
                              SUM(CASE WHEN bi.status='won' THEN 1 ELSE 0 END) won,
+                             SUM(CASE WHEN bi.status='lost' THEN 1 ELSE 0 END) lost,
                              SUM(bi.amount) stake, SUM(bi.payout) payout
                            FROM bet_items bi
                            JOIN lottery_rules r ON r.id = bi.rule_id
@@ -577,7 +621,8 @@ router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
                            JOIN lottery_types lt ON lt.id = ld.lottery_type_id
                            LEFT JOIN lottery_categories lc ON lc.id = ld.category_id
                            WHERE bi.status != 'cancelled'
-                           GROUP BY bi.rule_id, ld.lottery_type_id, ld.category_id
+                             AND r.bet_type NOT IN ('kiwi_zodiac','kiwi_animal') -- เกมยี่กีที่ถูกถอดแล้ว
+                           GROUP BY lt.code, lc.id, r.name_th
                            ORDER BY stake DESC`).all(),
     betsByDay: d.prepare(`SELECT date(bs.created_at) day, COUNT(DISTINCT bs.id) slips,
                              COALESCE(SUM(bi.amount),0) stake,
@@ -591,13 +636,23 @@ router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
                            JOIN users u ON u.id=bs.user_id
                            JOIN lottery_draws d ON d.id=bs.draw_id
                            JOIN lottery_types lt ON lt.id=d.lottery_type_id
-                           WHERE bi.status='won' GROUP BY bs.id ORDER BY payout DESC LIMIT 20`).all(),
-    drawsSummary: d.prepare(`SELECT d.draw_code, lt.name_th, d.status, d.draw_at,
-                             (SELECT COUNT(*) FROM bet_items bi WHERE bi.draw_id=d.id AND bi.status != 'cancelled') items,
-                             (SELECT COALESCE(SUM(bi.amount),0) FROM bet_items bi WHERE bi.draw_id=d.id AND bi.status != 'cancelled') stake,
-                             (SELECT COALESCE(SUM(bi.payout),0) FROM bet_items bi WHERE bi.draw_id=d.id AND bi.status='won') payout
-                             FROM lottery_draws d JOIN lottery_types lt ON lt.id=d.lottery_type_id
-                             ORDER BY d.id DESC LIMIT 30`).all(),
+                           JOIN lottery_rules rl ON rl.id=bi.rule_id
+                           WHERE bi.status='won' AND rl.bet_type NOT IN ('kiwi_zodiac','kiwi_animal')
+                           GROUP BY bs.id ORDER BY payout DESC LIMIT 20`).all(),
+    // รอบล่าสุด 1 รอบต่อประเภท/หมวด — กันรอบรายชั่วโมง (เช่น หวยราศี) ล้นตาราง
+    drawsSummary: d.prepare(`WITH ranked AS (
+                               SELECT d.id, d.draw_code, lt.name_th, d.status, d.draw_at,
+                                      ROW_NUMBER() OVER (PARTITION BY d.lottery_type_id, COALESCE(d.category_id, 0)
+                                                         ORDER BY d.draw_at DESC, d.id DESC) AS rn
+                               FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                               WHERE d.draw_code NOT LIKE '%-STANDING'
+                             )
+                             SELECT x.draw_code, x.name_th, x.status, x.draw_at,
+                                    (SELECT COUNT(*) FROM bet_items bi WHERE bi.draw_id=x.id AND bi.status != 'cancelled') items,
+                                    (SELECT COALESCE(SUM(bi.amount),0) FROM bet_items bi WHERE bi.draw_id=x.id AND bi.status != 'cancelled') stake,
+                                    (SELECT COALESCE(SUM(bi.payout),0) FROM bet_items bi WHERE bi.draw_id=x.id AND bi.status='won') payout
+                             FROM ranked x WHERE x.rn = 1
+                             ORDER BY x.draw_at DESC`).all(),
   });
 });
 

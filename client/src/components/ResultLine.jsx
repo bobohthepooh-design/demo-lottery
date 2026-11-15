@@ -34,7 +34,7 @@ function FlagVN() {
   );
 }
 function FlagHR() {
-  // หวยราศี — โลโก้สัญลักษณ์ราศี ♈ บนพื้นไล่สีม่วง-ทอง
+  // หวยปีนักษัตร — โลโก้สัตว์ชวด 🐀 + จุดวงล้อนักษัตร 12 ตัว บนพื้นไล่สีม่วง-ทอง
   return (
     <svg viewBox="0 0 30 20" className="w-full h-full" aria-label="HR">
       <defs>
@@ -44,16 +44,23 @@ function FlagHR() {
         </linearGradient>
       </defs>
       <rect width="30" height="20" fill="url(#hr-flag-g)" />
-      <circle cx="15" cy="10" r="8" fill="#ffffff" opacity="0.92" />
-      <text x="15" y="14.5" fontSize="10" textAnchor="middle" fill="#6d28d9">♈</text>
+      {/* วงล้อนักษัตร 12 จุด */}
+      {Array.from({ length: 12 }, (_, i) => {
+        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        return <circle key={i} cx={15 + Math.cos(a) * 12.5} cy={10 + Math.sin(a) * 8.5} r="0.7"
+          fill={i % 3 === 0 ? '#fde68a' : '#c4b5fd'} opacity={i % 3 === 0 ? 0.95 : 0.6} />;
+      })}
+      <circle cx="15" cy="10" r="6.5" fill="#ffffff" opacity="0.95" />
+      <text x="15" y="14.6" fontSize="9" textAnchor="middle">🐀</text>
     </svg>
   );
 }
 const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN, HR: FlagHR };
 
+const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲' };
 export function FlagIcon({ code, className = '' }) {
   const F = FLAGS[code];
-  if (!F) return <span className={className}>🎟️</span>;
+  if (!F) return <span className={className}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
   return (
     <span className={`inline-block overflow-hidden rounded-[3px] ring-1 ring-white/20 shrink-0 ${className}`}>
       <F />

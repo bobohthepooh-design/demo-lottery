@@ -44,7 +44,9 @@ export default function Lotteries() {
 
   // กรองรอบตามประเภทประเทศที่เลือก (client-side — pool มีทุกประเภทที่มองเห็นอยู่แล้ว)
   const draws = selType ? pool.filter(d => String(d.lottery_type_id) === String(selType)) : pool;
-  const visibleTypes = types.filter(t => isAdmin || !hiddenSet.has(t.code));
+  // เกมด่วน (ขูด/ไฮโล/ยี่กี) ไม่มีรอบแทง — ไม่แสดงในเมนูประเภทหวย (เล่นที่หน้าเกมของตัวเอง)
+  const INSTANT = new Set(['SC', 'HL', 'KI']);
+  const visibleTypes = types.filter(t => (isAdmin || !hiddenSet.has(t.code)) && !INSTANT.has(t.code));
 
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const isLive = d => d.status === 'open' && d.close_at > nowSql;
@@ -64,7 +66,7 @@ export default function Lotteries() {
   const drawingDraws = otherDraws.filter(d => d.status === 'closed');
   const upcomingOthers = otherDraws.filter(d => !isLive(d) && d.status !== 'closed');
 
-  const ZODIAC_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+  const ZODIAC_GLYPHS = ['🐭', '🐂', '🐯', '🐰', '🐉', '🐍', '🐴', '🐐', '🐵', '🐓', '🐕', '🐷'];
 
   const DrawCard = ({ d, featured, soft }) => {
     const live = isLive(d);
@@ -104,7 +106,7 @@ export default function Lotteries() {
           {isHR && (
             <div className="mt-1.5">
               <span className="animate-hr-badge inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-200 border border-violet-400/40">
-                ✨ ออกผลทุกชั่วโมง • ทายราศี 1 ใน 12
+                ✨ ออกผลทุกชั่วโมง • ทายปีนักษัตร 1 ใน 12
               </span>
             </div>
           )}
@@ -149,7 +151,7 @@ export default function Lotteries() {
       {/* ปุ่มแทงด่วนทุกการ์ด — เปิดรับกดได้เลย, ปิด/ยังไม่เปิดแสดงสถานะเป็นปุ่ม disabled */}
       {live ? (
         <Link to={`/bet/${d.id}`} className={`mt-4 block text-center ${isHR ? 'hr-shine text-white' : `bg-gradient-to-r ${featured ? ac.btnLive : ac.btn}`} font-bold py-2.5 rounded-lg hover:brightness-110 transition`}>
-          {isHR ? '🔮 แทงราศีรอบนี้' : '🎯 แทงหวยรอบนี้'}
+          {isHR ? '🔮 แทงปีนักษัตรรอบนี้' : '🎯 แทงหวยรอบนี้'}
         </Link>
       ) : (
         <button disabled className={`mt-4 w-full border font-semibold py-2.5 rounded-lg cursor-not-allowed ${drawing ? 'border-gold-500/50 text-gold-300 bg-gold-500/10 animate-pulse' : 'border-navy-600 text-navy-400'}`}>

@@ -52,7 +52,7 @@ export default function AdminDraws() {
     try {
       const r = await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } });
       if (status === 'cancelled' && r?.refundedSlips) {
-        toast(`คืนเครดิตอัตโนมัติ ${r.refundedSlips} โพย รวม ฿${satang(r.refundedAmount)} + แจ้งเตือนสมาชิกแล้ว`, 'success');
+        toast(`คืนเครดิตอัตโนมัติ ${r.refundedSlips} โพย รวม ${satang(r.refundedAmount)} บาท + แจ้งเตือนสมาชิกแล้ว`, 'success');
       }
       load();
     }
@@ -100,7 +100,7 @@ export default function AdminDraws() {
         <form onSubmit={create} className="bg-navy-800 border border-navy-700 rounded-xl p-5 grid sm:grid-cols-2 gap-3">
           <select required value={form.lottery_type_id} onChange={e => setForm({...form, lottery_type_id: e.target.value, category_id: ''})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2">
             <option value="">— เลือกประเภทหวย —</option>
-            {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
+            {types.filter(t => t.is_active && !['SC', 'HL', 'KI'].includes(t.code)).map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
           </select>
           <select value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2">
             <option value="">— ไม่ระบุหมวด —</option>

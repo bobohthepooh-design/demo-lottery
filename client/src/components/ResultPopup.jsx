@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, fmtDate, thaiTime } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 import { FlagIcon } from './ResultLine.jsx';
-import { ZodiacChip, zodiacList, ZODIAC_GLYPH } from './ZodiacChip.jsx';
+import { ZodiacChip, zodiacList, zodiacGlyph, isZodiacEmoji } from './ZodiacChip.jsx';
 import { sourceBadge } from '../resultSource.js';
 
 // Popup ประกาศผลรางวัล "ฉบับย่อ" — การ์ดเล็กมุมขวาล่างเด้งเมื่อผลใหม่ออก
@@ -15,7 +15,7 @@ function parseData(r) {
 }
 
 // ค่าเซลล์ → tokens (ตัวเลข = lotto-ball, อย่างอื่น = text)
-function ValueTokens({ raw, ballSize = '0.85em' }) {
+function ValueTokens({ raw, ballSize = '0.95em' }) {
   const vals = Array.isArray(raw) ? raw.join(', ') : (raw ?? '—');
   return (
     <span className="inline-flex flex-wrap gap-1 justify-center items-center">
@@ -41,7 +41,7 @@ function HeroValue({ f, raw }) {
   return (
     <span className="inline-flex gap-1 flex-wrap">
       {vals.flatMap(v => String(v).split('')).filter(c => c.trim()).map((c, i) => (
-        <span key={i} className="lotto-ball" style={{ fontSize: '1em', minWidth: '1.85em', height: '1.85em' }}>{c}</span>
+        <span key={i} className="lotto-ball" style={{ fontSize: '1.15em', minWidth: '1.9em', height: '1.9em' }}>{c}</span>
       ))}
     </span>
   );
@@ -49,9 +49,9 @@ function HeroValue({ f, raw }) {
 
 function PrizeChip({ f, raw }) {
   return (
-    <span className="inline-flex flex-col items-center bg-navy-900/90 border border-gold-400/40 rounded-lg px-2 py-1">
-      <span className="text-[9px] text-navy-400 leading-none">{f.short || f.label}</span>
-      <span className="font-mono font-bold text-gold-300 text-xs mt-0.5">
+    <span className="inline-flex flex-col items-center bg-navy-900/90 border border-gold-400/40 rounded-xl px-3 py-1.5">
+      <span className="text-[10px] text-navy-400 leading-none">{f.short || f.label}</span>
+      <span className="font-mono font-bold text-gold-300 text-sm mt-1">
         {f.zodiac || f.seq ? <SeqSigns raw={raw} /> : <ValueTokens raw={raw} />}
       </span>
     </span>
@@ -66,15 +66,19 @@ function SeqSigns({ raw }) {
     <span className="inline-flex gap-0.5 flex-wrap justify-center">
       {signs.map((s, i) => (
         <span key={i} className="inline-flex flex-col items-center">
-          <span className="w-5 h-6 rounded text-[10px] font-black flex items-center justify-center text-navy-950"
-            style={{ background: 'linear-gradient(180deg,#fde68a,#f59e0b)' }}>{ZODIAC_GLYPH[s] || '✦'}</span>
+          <span className="w-7 h-8 rounded-md text-lg font-black flex items-center justify-center text-navy-950"
+            style={{ background: 'linear-gradient(180deg,#fde68a,#f59e0b)' }}>
+            {isZodiacEmoji(s)
+              ? <span className="leading-none text-xl">{zodiacGlyph(s)}</span>
+              : <span className="leading-none">{zodiacGlyph(s)}</span>}
+          </span>
         </span>
       ))}
     </span>
   );
 }
 
-// ตัวนับถอยหลังวินาที — auto-close 9 วิ
+// ตัวนับถอยหลังวินาที — auto-close 8 วิ
 function CountdownText({ seconds }) {
   const [left, setLeft] = useState(seconds);
   useEffect(() => {
@@ -82,16 +86,17 @@ function CountdownText({ seconds }) {
     const t = setInterval(() => setLeft(v => Math.max(0, v - 1)), 1000);
     return () => clearInterval(t);
   }, [seconds]);
-  return <span className="text-[9px] text-navy-500">ปิดใน {left} วิ</span>;
+  return <span className="text-[10px] text-navy-500">ปิดใน {left} วิ</span>;
 }
 
 function MiniCard({ r, remaining, onClose, onNext }) {
   useEffect(() => {
-    const t = setTimeout(onClose, 9000); // auto-close 9 วิ
+    const t = setTimeout(onClose, 8000); // auto-close 8 วิ
     return () => clearTimeout(t);
   }, [r.id, onClose]);
 
   const data = parseData(r);
+  const isHR = r.type_code === 'HR';
   const schema = resultSchema(r.type_code, r.category_code);
   const fields = (schema?.fields || []).filter(f => !f.optional);
   const known = new Set(fields.map(f => f.key));
@@ -101,46 +106,50 @@ function MiniCard({ r, remaining, onClose, onNext }) {
   ).slice(0, 4);
 
   return (
-    <div className="fixed bottom-4 right-4 z-[90] w-[300px] max-w-[calc(100vw-2rem)] animate-result-pop">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
+      {/* backdrop จางๆ — ไม่บล็อกคลิก (pointer-events-none) */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+      <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto animate-result-pop pointer-events-auto">
       <div className="bg-gradient-to-b from-navy-800 to-navy-950 border border-gold-500/60 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
-        <div className="hr-shine h-1" />
+        <div className="hr-shine h-1.5" />
         {/* head */}
-        <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
-          <FlagIcon code={r.type_code} className="w-7 h-5 text-[9px]" />
+        <div className="flex items-center gap-3 px-5 pt-4 pb-2">
+          <FlagIcon code={r.type_code} className="w-10 h-7 text-[11px]" />
           <div className="min-w-0">
-            <div className="text-[11px] font-bold text-white leading-tight truncate">
+            <div className="text-base font-bold text-white leading-tight truncate">
               {r.category_name_th || r.type_name_th} <span className="text-navy-400 font-normal">• ผลออกแล้ว</span>
             </div>
-            <div className="text-[9px] text-navy-500">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.{(() => { const b = sourceBadge(r.source); return b ? ` • ${b.short}` : ''; })()}</div>
+            <div className="text-[11px] text-navy-500 mt-0.5">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.{(() => { const b = sourceBadge(r.source); return b ? ` • ${b.short}` : ''; })()}</div>
           </div>
           <button onClick={onClose} aria-label="ปิด"
-            className="ml-auto w-5 h-5 rounded-md bg-navy-700 text-navy-400 text-[10px] hover:text-white hover:bg-navy-600 shrink-0">✕</button>
+            className="ml-auto w-8 h-8 rounded-lg bg-navy-700 text-navy-400 text-sm hover:text-white hover:bg-navy-600 shrink-0">✕</button>
         </div>
         {/* body */}
-        <div className="px-3 pb-2">
+        <div className="px-5 pb-3">
           {hero && (
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-[9px] text-navy-400 w-14 shrink-0">{hero.short || hero.label}</span>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <span className="text-xs text-navy-400 w-16 shrink-0">{hero.short || hero.label}</span>
               <HeroValue f={hero} raw={data[hero.key]} />
             </div>
           )}
           {subs.length > 0 && (
-            <div className="flex gap-1 flex-wrap mt-1.5">
+            <div className="flex gap-2 flex-wrap mt-3">
               {subs.map(f => <PrizeChip key={f.key} f={f} raw={data[f.key]} />)}
             </div>
           )}
         </div>
         {/* foot */}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-navy-700/70 bg-navy-900/60">
+        <div className="flex items-center gap-3 px-5 py-3 border-t border-navy-700/70 bg-navy-900/60">
           {remaining > 1 ? (
             <button onClick={onNext}
-              className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-gradient-to-r from-gold-400 to-gold-600 text-navy-950 hover:brightness-110">
+              className="text-xs font-bold px-4 py-1.5 rounded-lg bg-gradient-to-r from-gold-400 to-gold-600 text-navy-950 hover:brightness-110">
               ผลถัดไป ▶
             </button>
           ) : null}
-          {remaining > 1 && <span className="text-[9px] text-navy-400">อีก {remaining - 1} ผล</span>}
-          <span className="ml-auto"><CountdownText seconds={9} /></span>
+          {remaining > 1 && <span className="text-[11px] text-navy-400">อีก {remaining - 1} ผล</span>}
+          <span className="ml-auto"><CountdownText seconds={11} /></span>
         </div>
+      </div>
       </div>
     </div>
   );

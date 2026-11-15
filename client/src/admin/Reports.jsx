@@ -48,13 +48,13 @@ export default function AdminReports() {
       {/* KPI รวมทั้งระบบ */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <Kpi label="โพยทั้งหมด" value={t.slips ?? 0} sub="ไม่รวมที่ยกเลิก/คืนเงิน" />
-        <Kpi label="ยอดแทงรวม" value={`฿${satang(t.stake || 0)}`} tone="text-gold-300" />
-        <Kpi label="จ่ายรางวัลรวม" value={`฿${satang(t.payout || 0)}`} tone="text-green-400" />
-        <Kpi label="กำไรระบบ (Net)" value={`฿${satang(houseNet)}`} tone={houseNet >= 0 ? 'text-green-400' : 'text-red-400'}
+        <Kpi label="ยอดแทงรวม" value={`${satang(t.stake || 0)} บาท`} tone="text-gold-300" />
+        <Kpi label="จ่ายรางวัลรวม" value={`${satang(t.payout || 0)} บาท`} tone="text-green-400" />
+        <Kpi label="กำไรระบบ (Net)" value={`${satang(houseNet)} บาท`} tone={houseNet >= 0 ? 'text-green-400' : 'text-red-400'}
           sub="ยอดแทง − เงินรางวัล" />
         <Kpi label="อัตราถูกรางวัล" value={`${winRate}%`} sub={`จาก ${t.items?.c ?? 0} รายการที่ออกผล`} />
-        <Kpi label="ยอดค้างรอผล" value={`฿${satang(t.pendingExposure || 0)}`} tone="text-yellow-300"
-          sub="ความเสี่ยงที่ยังไม่ settle" />
+        <Kpi label="ยอดค้างรอผล" value={`${satang(t.pendingExposure || 0)} บาท`} tone="text-yellow-300"
+          sub={t.unplayedInstant ? `รอผลรอบ ${satang(t.unplayedInstant)} บาท = เกมด่วนซื้อแล้วยังไม่เล่น` : 'ความเสี่ยงที่ยังไม่ settle'} />
       </div>
 
       {/* ยอดแทงตามประเภทการแทง */}
@@ -66,7 +66,8 @@ export default function AdminReports() {
             </tr></thead>
             <tbody className="divide-y divide-navy-700/60">
               {d.betsByType.map((b, i) => {
-                const rate = b.c ? Math.round((b.won / b.c) * 1000) / 10 : 0;
+                const settled = (b.won || 0) + (b.lost || 0);
+                const rate = settled ? Math.round((b.won / settled) * 1000) / 10 : 0;
                 return (
                   <tr key={`${b.rule_name}-${b.type_code}-${b.category_name_th}-${i}`}>
                     <td className="py-2 text-white whitespace-nowrap">
@@ -80,8 +81,8 @@ export default function AdminReports() {
                     <td className="text-right text-navy-300">{b.c}</td>
                     <td className="text-right text-navy-300">{b.won}</td>
                     <td className="text-right text-navy-300">{rate}%</td>
-                    <td className="text-right text-gold-300">฿{satang(b.stake)}</td>
-                    <td className="text-right text-green-400">฿{satang(b.payout)}</td>
+                    <td className="text-right text-gold-300">{satang(b.stake)} บาท</td>
+                    <td className="text-right text-green-400">{satang(b.payout)} บาท</td>
                   </tr>
                 );
               })}
@@ -104,10 +105,10 @@ export default function AdminReports() {
                   <tr key={b.day}>
                     <td className="py-2 text-white">{thaiDate(b.day + ' 00:00:00')}</td>
                     <td className="text-right text-navy-300">{b.slips}</td>
-                    <td className="text-right text-gold-300">฿{satang(b.stake)}</td>
-                    <td className="text-right text-green-400">฿{satang(b.payout)}</td>
+                    <td className="text-right text-gold-300">{satang(b.stake)} บาท</td>
+                    <td className="text-right text-green-400">{satang(b.payout)} บาท</td>
                     <td className={`text-right font-semibold ${net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {net >= 0 ? '+' : ''}฿{satang(net)}
+                      {net >= 0 ? '+' : ''}{satang(net)} บาท
                     </td>
                   </tr>
                 );
@@ -129,9 +130,11 @@ export default function AdminReports() {
               <tr key={w.slip_ref}>
                 <td className="py-2 text-white">{w.username}</td>
                 <td className="font-mono text-gold-300 text-xs">{w.slip_ref}</td>
-                <td className="text-navy-300 text-xs">{w.type_name_th} • {w.draw_code}</td>
+                <td className="text-navy-300 text-xs">
+                  {w.type_name_th}{w.draw_code && !w.draw_code.endsWith('-STANDING') ? ` • ${w.draw_code}` : ''}
+                </td>
                 <td className="text-right text-navy-300">{w.items} รายการ</td>
-                <td className="text-right text-green-400 font-bold">฿{satang(w.payout)}</td>
+                <td className="text-right text-green-400 font-bold">{satang(w.payout)} บาท</td>
               </tr>
             ))}
             {!d.topWinners.length && <tr><td colSpan="5" className="py-4 text-center text-navy-400">ยังไม่มีผู้ชนะ</td></tr>}
@@ -161,10 +164,10 @@ export default function AdminReports() {
                     </span>
                   </td>
                   <td className="text-right text-navy-300">{x.items}</td>
-                  <td className="text-right text-gold-300">฿{satang(x.stake)}</td>
-                  <td className="text-right text-green-400">฿{satang(x.payout)}</td>
+                  <td className="text-right text-gold-300">{satang(x.stake)} บาท</td>
+                  <td className="text-right text-green-400">{satang(x.payout)} บาท</td>
                   <td className={`text-right font-semibold ${settled ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-navy-500'}`}>
-                    {settled ? `${net >= 0 ? '+' : ''}฿${satang(net)}` : '—'}
+                    {settled ? `${net >= 0 ? '+' : ''}${satang(net)} บาท` : '—'}
                   </td>
                 </tr>
               );

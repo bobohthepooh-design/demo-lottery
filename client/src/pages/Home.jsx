@@ -129,23 +129,24 @@ export default function Home() {
     .filter(d => d.type_code === 'HR' && d.status === 'open' && msLeft(d.close_at, now) > 0)
     .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)))[0];
 
-  // instant games (หวยขูด/ไฮโล) + หวยราศี — แสดงการ์ดเด่นบนสุด แถวเดียวกันบน tablet/desktop
-  const instantTypes = visTypes.filter(t => t.code === 'SC' || t.code === 'HL');
+  // instant games (สล็อต/ไฮโล) + หวยราศี — แสดงการ์ดเด่นบนสุด แถวเดียวกันบน tablet/desktop
+  const instantTypes = visTypes.filter(t => ['SC', 'HL', 'KI'].includes(t.code));
   const zodiacType = visTypes.find(t => t.code === 'HR');
   const topRowTypes = [...instantTypes, ...(zodiacType ? [zodiacType] : [])];
-  const instantLink = t => t.code === 'SC' ? '/scratch' : t.code === 'HL' ? '/hilo' : `/lotteries?type=${t.id}`;
-  const baht = (satangVal) => `฿${(satangVal / 100).toLocaleString('th-TH')}`;
+  const instantLink = t => ({ SC: '/scratch', HL: '/hilo', KI: '/kiwi' })[t.code] || `/lotteries?type=${t.id}`;
+  const baht = (satangVal) => `${(satangVal / 100).toLocaleString('th-TH')} บาท`;
   // อัตราจ่าย/รางวัลจากข้อมูลหลังบ้าน (public-config) — admin เปลี่ยนใน /admin/settings มีผลทันที
   const sp = gamePrices.scratchPrizes;
   const prizeMin = sp.length ? Math.min(...sp.map(p => p.prize)) : null;
   const prizeMax = sp.length ? Math.max(...sp.map(p => p.prize)) : null;
-  const scratchPrizeText = prizeMax != null ? `รางวัล ${baht(prizeMin)}–${baht(prizeMax)}` : 'รางวัลสูงสุด ฿2,500';
+  const scratchPrizeText = prizeMax != null ? `รางวัลสูงสุด ${baht(prizeMax)}` : 'รางวัลสูงสุด 120,000 บาท';
   const hm = gamePrices.hiloMult;
   const hiloOddsText = hm ? `ต่ำ ×${hm.low} • สูง ×${hm.high} • 11 ×${hm.eleven}` : '';
   const instantMeta = {
-    SC: { code: 'SC', tag: 'ขูดแล้วรู้ผลทันที', desc: `ซื้อบัตร ${baht(gamePrices.scratch)} → ขูด Match-3 → ${scratchPrizeText}`, cta: 'ซื้อบัตรขูดเลย', grad: 'from-red-700 to-rose-900' },
+    SC: { code: 'SC', tag: 'สปินแล้วรู้ผลทันที', desc: `เล่นเกม ${baht(gamePrices.scratch)} → สปิน 5 รีล 3 แถว 20 เพย์ไลน์ → ${scratchPrizeText}`, cta: 'เล่นเกมเลย', grad: 'from-red-700 to-rose-900' },
     HL: { code: 'HL', tag: 'ทอยเต๋า 3 ลูก รู้ผลทันที', desc: `ทาย สูง/ต่ำ/11 ไฮโล — ${hiloOddsText ? `${hiloOddsText} — ` : ''}แทง ${baht(gamePrices.hilo)}/ครั้ง ตลอด 24 ชม.`, cta: 'เล่นไฮโลเลย', grad: 'from-amber-700 to-orange-900' },
-    HR: { code: '✦', tag: 'ราศีออกผลทุกชั่วโมง', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — mains/ท้าย 2-3 ตัว + ราหู/วิ่ง', cta: 'ดูรอบราศี', grad: 'from-violet-700 to-purple-900' },
+    KI: { code: 'KI', tag: 'เลือกเลขทายผลไว', desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP', cta: 'เล่นยี่กีเลย', grad: 'from-emerald-700 to-green-900' },
+    HR: { code: '✦', tag: 'ปีนักษัตรออกผลทุกชั่วโมง', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — ตัวแรก/ท้าย 2-3 ตัว + วิ่ง', cta: 'ดูรอบปีนักษัตร', grad: 'from-violet-700 to-purple-900' },
   };
 
   const openCount = visDraws.filter(d => d.status === 'open').length;
@@ -181,7 +182,7 @@ export default function Home() {
       )}
       {/* Hero — ดึงดูดให้เข้ามาแทง (ข้อความแก้ไขได้ที่ /admin/banner) */}
       {b.enabled && (
-      <section className="casino-frame suit-pattern relative overflow-hidden rounded-2xl border border-gold-500/50 bg-gradient-to-br from-[#0b241b] via-[#081a24] to-navy-950 px-5 py-10 sm:px-12 sm:py-14 text-center">
+      <section className="casino-frame casino-hero-felt casino-rail relative overflow-hidden rounded-2xl border border-gold-500/50 px-5 py-10 sm:px-12 sm:py-14 text-center">
         <div className="absolute -top-20 left-1/4 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 right-1/4 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl pointer-events-none" />
         {/* ลูกเล่นคาสิโน — ประกายทอง + ชิปโป๊กเกอร์ลอย (decorative) */}
@@ -237,7 +238,7 @@ export default function Home() {
       </section>
       )}
 
-      {/* เกมด่วน — หวยขูด/ไฮโล แสดงก่อนเสมอ เล่นได้ทันทีไม่ต้องรอผลออกรางวัล */}
+      {/* เกมด่วน — สล็อต/ไฮโล แสดงก่อนเสมอ เล่นได้ทันทีไม่ต้องรอผลออกรางวัล */}
       {topRowTypes.length > 0 && (
         <section>
           <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
@@ -296,7 +297,7 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* exclude เกมบนแถวแรก (SC/HL/HR) — แสดงใน section เกมด่วนด้านบนแล้ว */}
-          {visTypes.filter(t => t.code !== 'SC' && t.code !== 'HL' && t.code !== 'HR').map((t, i) => {
+          {visTypes.filter(t => !['SC', 'HL', 'HR', 'KI', 'CF'].includes(t.code)).map((t, i) => {
             const typeDraws = openByCategory.filter(d => d.type_code === t.code);
             const ac = typeAccent(t.code);
             const openN = typeDraws.filter(d => d.status === 'open').length;
@@ -326,7 +327,7 @@ export default function Home() {
                   <div className="text-[11px] text-navy-400 mb-2">{t.description}</div>
                   {isHR && (
                     <div className="flex justify-between text-base leading-none mb-2 select-none" aria-hidden="true">
-                      {['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'].map((g, i) => (
+                      {['🐭','🐂','🐯','🐰','🐉','🐍','🐴','🐐','🐵','🐓','🐕','🐷'].map((g, i) => (
                         <span key={g} className="zodiac-float text-violet-300/80" style={{ animationDelay: `${i * 0.22}s` }}>{g}</span>
                       ))}
                     </div>

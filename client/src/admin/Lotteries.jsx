@@ -12,12 +12,12 @@ const SOURCE_TH = {
   first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน',
   bottom2: 'เลขท้าย 2 ตัว', last4: 'เลขท้าย 4 ตัว', last3: 'เลขท้าย 3 ตัว',
   last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', top2: 'เลข 2 ตัวบน', main: 'เลขหลัก',
-  zodiac: 'ราศีรางวัลใหญ่', seq: 'เลขรางวัล 6 ราศี', hilo: 'เต๋าไฮโล',
+  zodiac: 'ปีนักษัตรรางวัลใหญ่', seq: 'เลขรางวัล 6 ปีนักษัตร', hilo: 'เต๋าไฮโล',
 };
 const MODE_TH = {
   exact: 'ตรงกันเป๊ะ', sorted: 'โต๊ด (สลับหลักได้)', digit_contains: 'วิ่ง (มีเลขนั้น)',
-  tail: 'เทียบท้าย', head: 'เทียบหน้า', seq_tail: 'ราศีท้ายตามลำดับ', contains: 'ราศีอยู่ในผล',
-  hilo: 'ไฮโล 3 ลูก', scratch: 'ขูด Match-3',
+  tail: 'เทียบท้าย', head: 'เทียบหน้า', seq_tail: 'ปีนักษัตรท้ายตามลำดับ', contains: 'ปีนักษัตรอยู่ในผล',
+  hilo: 'ไฮโล 3 ลูก', scratch: 'ขูดสล็อต 5 รีล',
 };
 function matchLabel(cfg) {
   try {
@@ -319,7 +319,7 @@ export default function AdminLotteries() {
               {editRule.bet_type === 'scratch' ? (
                 <div className="sm:col-span-2"><label className="text-navy-300 text-xs">อัตราจ่าย</label>
                   <div className="text-xs text-navy-300 bg-navy-900 border border-navy-700 rounded-lg px-3 py-2 mt-1">
-                    🎫 หวยขูดจ่ายตามตารางรางวัล (🍒–💎) ไม่ใช่ตัวคูณ — แก้รางวัลได้ที่ Settings → <code>scratch_prizes</code> (JSON) • ราคาบัตรแก้ที่ขั้นต่ำ/สูงสุดด้านล่าง (sync อัตโนมัติ)
+                    🎰 สล็อตจ่ายตามตารางรางวัล 20 เพย์ไลน์ (ซ้ำ ≥3 รีลบนเส้นใดก็ได้ • 5 รีล × 3 แถว) ไม่ใช่ตัวคูณ — แก้รางวัล(3 รีล/เส้น)ได้ที่ Settings → <code>scratch_prizes</code> (JSON) • ราคาบัตรแก้ที่ขั้นต่ำ/สูงสุดด้านล่าง (sync อัตโนมัติ)
                   </div></div>
               ) : (
               <div><label className="text-navy-300 text-xs">อัตราจ่าย (จ่ายกี่เท่า)</label>

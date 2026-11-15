@@ -3,7 +3,7 @@ import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { confirmAction } from '../admin/confirm.jsx';
 import { toast } from '../components/toast.js';
-import { getLang, setLang } from '../i18n.js';
+
 import { getTz, setTz } from '../time.js';
 import { pushSupported, subscribePush, unsubscribePush, pushSubscriptionCount } from '../push.js';
 
@@ -74,7 +74,7 @@ function RGCard({ user, onDone }) {
   );
 }
 
-// การตั้งค่าบัญชี — ภาษา / timezone / push notification
+// การตั้งค่าบัญชี — timezone / push notification
 const TZ_OPTIONS = [
   ['', 'อัตโนมัติ (ตามอุปกรณ์)'],
   ['Asia/Bangkok', 'ไทย — Bangkok (UTC+7)'],
@@ -88,16 +88,12 @@ const TZ_OPTIONS = [
 ];
 
 function PrefsCard() {
-  const [lang, setLangState] = useState(getLang());
   const [tz, setTzState] = useState(getTz() || '');
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
 
   useEffect(() => {
     pushSubscriptionCount().then(c => setPushOn(c > 0)).catch(() => {});
-    const h = () => setLangState(getLang());
-    window.addEventListener('langchange', h);
-    return () => window.removeEventListener('langchange', h);
   }, []);
 
   const savePrefs = async (patch) => {
@@ -105,7 +101,6 @@ function PrefsCard() {
     catch (e) { toast(e.message, 'error'); }
   };
 
-  const changeLang = (l) => { setLang(l); setLangState(l); savePrefs({ language: l }); };
   const changeTz = (z) => {
     setTz(z); setTzState(z);
     savePrefs({ timezone: z || Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -128,16 +123,8 @@ function PrefsCard() {
   return (
     <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
       <h2 className="text-lg font-bold text-white mb-1">การตั้งค่าบัญชี</h2>
-      <p className="text-xs text-navy-400 mb-4">ภาษา • เขตเวลา • การแจ้งเตือน</p>
-      <div className="grid sm:grid-cols-3 gap-3">
-        <div>
-          <label className="text-xs text-navy-300">ภาษา / Language</label>
-          <select value={lang} onChange={e => changeLang(e.target.value)}
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 text-sm">
-            <option value="th">ไทย</option>
-            <option value="lo">ລາວ (Lao)</option>
-          </select>
-        </div>
+      <p className="text-xs text-navy-400 mb-4">เขตเวลา • การแจ้งเตือน</p>
+      <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-navy-300">เขตเวลา / Timezone</label>
           <select value={tz} onChange={e => changeTz(e.target.value)}
@@ -214,7 +201,7 @@ export default function Profile() {
         </form>
       </div>
 
-      {/* การตั้งค่าบัญชี — ภาษา/timezone/push */}
+      {/* การตั้งค่าบัญชี — timezone/push */}
       <PrefsCard />
 
       {/* Responsible gambling — วงเงินเดิมพัน + self-exclusion */}

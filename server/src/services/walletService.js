@@ -84,21 +84,28 @@ function withdrawableInfo(d, userId, balance) {
       COALESCE(SUM(CASE WHEN type='withdraw' THEN amount END),0) AS withdrawn,
       COALESCE(SUM(CASE WHEN type='initial_credit' THEN amount END),0) AS promo
     FROM virtual_transactions WHERE user_id = ?`).get(userId);
-  const netWon = Math.max(0, row.won - row.withdrawn);
   // เครดิตแถมสมัครใหม่ (initial_credit) ไม่หักออกจากยอด/ประวัติธุรกรรม
   // แต่ห้ามรวมในยอดถอนได้: promoLeft = ส่วนที่ยังไม่ถูกหักไปแล้วและยังเหลือในยอด
   const clawed = d.prepare(`SELECT COALESCE(SUM(amount),0) AS a FROM virtual_transactions
     WHERE user_id = ? AND idempotency_key LIKE 'free-credit-clawback-%'`).get(userId).a;
   const promoCap = Number(getSetting('initial_credit', 5000)) || 5000;
   const promoLeft = Math.min(Math.max(0, row.promo - clawed), promoCap, balance);
+  // โพยที่ยังไม่ออกผลบนรอบที่ยังเปิดรับ (ยกเลิกได้) — กันถอนจนกว่ายกเลิก/คืนเครดิตก่อน
+  // (stakes ของโพยค้างถูกหักออกจากยอดอยู่แล้ว จึงไม่รวมในยอดถอนได้อยู่ดี — นับเฉพาะที่ยกเลิกได้)
+  const pending = d.prepare(`SELECT COUNT(*) AS c, COALESCE(SUM(s.total_stake),0) AS s
+    FROM bet_slips s JOIN lottery_draws dr ON dr.id = s.draw_id
+    WHERE s.user_id = ? AND s.status = 'pending' AND dr.status = 'open' AND dr.close_at > datetime('now')`).get(userId);
+  const pendingInfo = { pendingSlips: pending.c, pendingStake: pending.s };
+  // กฎถอน (demo): ฝาก+เงินรางวัล ถอนได้ทั้งหมด — ระบบให้เดิมพันกินเงินฝาก/แถมก่อน
+  // เงินรางวัลถูกใช้เป็นลำดับสุดท้าย จึงไม่ต้องแยกยอดถอนได้จากเงินรางวัล
   // admin ปลดล็อกให้รายคน → ถอนได้ยอดสุทธิ − เครดิตแถมที่เหลือ (เช่น 1310 − 50 = 1260)
   if (u?.withdraw_unlocked) {
     const w = balance - promoLeft;
     return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn,
-      withdrawable: w >= 5000 ? w : 0, unlocked: true, override: true };
+      withdrawable: w >= 5000 ? w : 0, unlocked: true, override: true, ...pendingInfo };
   }
-  const withdrawable = Math.max(0, Math.min(netWon, balance));
-  return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn, withdrawable, unlocked: row.deposited >= WITHDRAW_UNLOCK_SATANG };
+  const withdrawable = Math.max(0, balance - promoLeft);
+  return { deposited: row.deposited, won: row.won, withdrawn: row.withdrawn, withdrawable, unlocked: row.deposited >= WITHDRAW_UNLOCK_SATANG, ...pendingInfo };
 }
 
 export function getWithdrawable(userId) {
@@ -108,20 +115,31 @@ export function getWithdrawable(userId) {
 }
 
 /** สมาชิกเติม/ถอนเครดิตจำลองด้วยตนเอง — demo only, ไม่เกี่ยวกับเงินจริง */
-export function memberWalletAction(userId, { direction, amount, description }) {
+export function memberWalletAction(userId, { direction, amount, description, idempotencyKey = null }) {
   if (!['deposit', 'withdraw'].includes(direction)) throw new HttpError(400, 'ประเภทรายการไม่ถูกต้อง');
   if (!Number.isInteger(amount) || amount <= 0) throw new HttpError(400, 'จำนวนเงินไม่ถูกต้อง');
   if (amount < 100) throw new HttpError(400, 'ขั้นต่ำ 1 บาท');
   if (amount > 1000000) throw new HttpError(400, 'สูงสุด 10,000 บาทต่อรายการ');
+  if (idempotencyKey != null && (typeof idempotencyKey !== 'string' || idempotencyKey.length > 64))
+    throw new HttpError(400, 'idempotencyKey ไม่ถูกต้อง');
 
   return tx((d) => {
+    // idempotent retry — key เดิมคืน transaction เดิม ไม่หัก/เพิ่มซ้ำ
+    if (idempotencyKey) {
+      const dup = d.prepare(`SELECT id, reference, amount, balance_after, direction FROM virtual_transactions
+                             WHERE user_id = ? AND idempotency_key = ?`).get(userId, idempotencyKey);
+      if (dup) return { transaction: dup, balance: dup.balance_after, duplicate: true };
+    }
     const w = getWalletTx(d, userId);
     const isCredit = direction === 'deposit';
     if (!isCredit) {
       const info = withdrawableInfo(d, userId, w.balance);
+      if (info.pendingSlips > 0) throw new HttpError(400,
+        `มีโพย ${info.pendingSlips} รายการค้างผล (${(info.pendingStake / 100).toLocaleString('th-TH')} บาท) — กรุณายกเลิกโพยที่ยังเปิดรับหรือรอผลออกก่อนจึงจะถอนได้`,
+        'PENDING_BETS');
       if (!info.unlocked) throw new HttpError(400, 'ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อนจึงจะสามารถถอนเงินได้', 'DEPOSIT_REQUIRED');
       if (amount > info.withdrawable) throw new HttpError(400,
-        info.withdrawable <= 0 ? 'ยังไม่มีเงินรางวัลที่สามารถถอนได้ (ถอนได้เฉพาะเงินรางวัลจากการถูกหวย)' : `ถอนได้สูงสุด ฿${(info.withdrawable / 100).toFixed(2)}`,
+        info.withdrawable <= 0 ? 'ไม่มียอดเครดิตที่สามารถถอนได้' : `ถอนได้สูงสุด ฿${(info.withdrawable / 100).toFixed(2)}`,
         'WITHDRAW_LIMIT');
     }
     const newBalance = isCredit ? w.balance + amount : w.balance - amount;
@@ -132,7 +150,7 @@ export function memberWalletAction(userId, { direction, amount, description }) {
       type: isCredit ? 'deposit' : 'withdraw',
       amount, direction: isCredit ? 'credit' : 'debit',
       balanceAfter: newBalance,
-      description,
+      description, idempotencyKey,
     });
     audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
       detail: { amount }, req: null });

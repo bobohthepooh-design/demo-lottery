@@ -25,6 +25,8 @@ import pushRoutes from './routes/push.js';
 import { maybeDailyCashback } from './services/promoService.js';
 import * as scratchService from './services/scratchService.js';
 import * as hiloService from './services/hiloService.js';
+import * as kiwiService from './services/kiwiService.js';
+import kiwiRoutes from './routes/kiwi.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,7 +36,7 @@ if (getDb().prepare('SELECT COUNT(*) c FROM users').get().c === 0) seed();
 
 // instant games (หวยขูด/ไฮโล) — สร้าง lottery type/rule/standing draw ตอน boot
 // เพื่อให้ type โผล่ใน /lottery/types และเมนูทันที ไม่ต้องรอการซื้อครั้งแรก
-try { scratchService.ensureInfra(); hiloService.ensureInfra(); }
+try { scratchService.ensureInfra(); hiloService.ensureInfra(); kiwiService.ensureInfra(); }
 catch (e) { console.error('[instant-games] infra init failed:', e.message); }
 
 // สร้างรอบหวยตัวอย่างอัตโนมัติ (idempotent — เติมเฉพาะรอบที่ยังไม่มี)
@@ -103,6 +105,7 @@ app.use('/api/bets', betRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/scratch', scratchRoutes);
 app.use('/api/hilo', hiloRoutes);
+app.use('/api/kiwi', kiwiRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/chat', chatMemberRoutes);
 app.use('/api/admin/chat', chatAdminRoutes); // ต้องก่อน /api/admin (admin.js มี requirePerm dashboard.admin)
@@ -113,8 +116,16 @@ app.use('/api/', notFound);
 // serve built client in production
 const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
+  // HTML ต้อง revalidate ทุกครั้ง — กัน browser เสิร์ฟ index.html เก่าที่ชี้ไป bundle เก่า (asset มี hash อยู่แล้ว cache ได้นาน)
+  app.use((req, res, next) => {
+    if (req.path === '/' || req.path.endsWith('.html')) res.set('Cache-Control', 'no-cache');
+    next();
+  });
   app.use(express.static(clientDist));
-  app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  app.get('*', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
 }
 
 app.use(errorHandler);

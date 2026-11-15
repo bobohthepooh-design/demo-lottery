@@ -124,9 +124,9 @@ router.patch('/me/responsible-gambling', auth.requireAuth, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ค่าที่ผู้ใช้ตั้งเอง — ภาษา (th/lo) + timezone (IANA) สำหรับแสดงผล
+// ค่าที่ผู้ใช้ตั้งเอง — ภาษา (th เท่านั้น) + timezone (IANA) สำหรับแสดงผล
 const prefsSchema = z.object({
-  language: z.enum(['th', 'lo']).optional(),
+  language: z.literal('th').optional(),
   timezone: z.string().max(60).optional(),
 });
 router.patch('/me/prefs', auth.requireAuth, (req, res, next) => {
@@ -134,7 +134,6 @@ router.patch('/me/prefs', auth.requireAuth, (req, res, next) => {
     const data = prefsSchema.parse(req.body);
     const db = getDb();
     if (data.language !== undefined) {
-      if (!['th', 'lo'].includes(data.language)) throw new HttpError(400, 'ภาษาไม่ถูกต้อง');
       db.prepare('UPDATE users SET language = ? WHERE id = ?').run(data.language, req.user.id);
     }
     if (data.timezone !== undefined) {

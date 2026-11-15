@@ -179,8 +179,10 @@ export function buyTicket(userId) {
     const slip = d.prepare(`INSERT INTO bet_slips (slip_ref, user_id, draw_id, status, total_stake, idempotency_key)
                             VALUES (?, ?, ?, 'pending', ?, ?)`).run(slipRef, userId, draw.id, price, `hilo-${cardRef}`);
     const slipId = Number(slip.lastInsertRowid);
+    // bet_items.number ห้ามเก็บเต๋าจริง — รั่วให้สมาชิกเห็นผลล่วงหน้าผ่าน /bets/mine
+    // (เต๋าอยู่ใน hilo_tickets + result_detail หลัง reveal เท่านั้น)
     d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount)
-               VALUES (?, ?, ?, 'hilo', ?, ?)`).run(slipId, draw.id, rule.id, dice.join('-'), price);
+               VALUES (?, ?, ?, 'hilo', ?, ?)`).run(slipId, draw.id, rule.id, cardRef, price);
     debitForBetTx(d, { userId, slipRef, totalStake: price, idempotencyKey: `bet-debit-${slipRef}` });
     const t = d.prepare(`INSERT INTO hilo_tickets (user_id, slip_id, die1, die2, die3, status, server_seed, commit_hash)
                          VALUES (?, ?, ?, ?, ?, 'awaiting', ?, ?)`).run(userId, slipId, ...dice, serverSeed, commitHash);

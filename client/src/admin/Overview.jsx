@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { Icon } from '../components/icons.jsx';
 
-const fmt = (satangVal) => `฿${satang(satangVal)}`;
+const fmt = (satangVal) => `${satang(satangVal)} บาท`;
 
 function StatCard({ icon, label, value, sub, tone = 'gold' }) {
   const tones = {
@@ -106,8 +106,8 @@ export default function AdminOverview() {
           {daily.map(x => (
             <div key={x.day} className="flex-1 flex flex-col items-center gap-1 min-w-0">
               <div className="w-full flex gap-0.5 items-end justify-center" style={{ height: '120px' }}>
-                <div className="w-1/2 bg-green-500/70 rounded-t" style={{ height: `${Math.max(2, (x.inn / maxDaily) * 100)}%` }} title={`เข้า ฿${satang(x.inn)}`} />
-                <div className="w-1/2 bg-red-500/70 rounded-t" style={{ height: `${Math.max(2, (x.out / maxDaily) * 100)}%` }} title={`ออก ฿${satang(x.out)}`} />
+                <div className="w-1/2 bg-green-500/70 rounded-t" style={{ height: `${Math.max(2, (x.inn / maxDaily) * 100)}%` }} title={`เข้า ${satang(x.inn)} บาท`} />
+                <div className="w-1/2 bg-red-500/70 rounded-t" style={{ height: `${Math.max(2, (x.out / maxDaily) * 100)}%` }} title={`ออก ${satang(x.out)} บาท`} />
               </div>
               <div className="text-[9px] text-navy-400 truncate w-full text-center">{x.day.slice(5)}</div>
             </div>

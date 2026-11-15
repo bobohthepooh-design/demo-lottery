@@ -28,14 +28,14 @@ export default function AdminWallet() {
     const dir = form.direction === 'credit' ? 'เพิ่ม' : 'หัก';
     if (!(await confirmAction({
       title: 'ยืนยันปรับเครดิต',
-      message: `${dir}เครดิต ฿${form.amount} ให้ "${m?.username || form.userId}"?\nเหตุผล: ${form.reason || '-'}`,
+      message: `${dir}เครดิต ${form.amount} บาท ให้ "${m?.username || form.userId}"?\nเหตุผล: ${form.reason || '-'}`,
       danger: form.direction === 'debit',
     }))) return;
     try {
       const r = await api('/admin/wallet/adjust', { method: 'POST', body: {
         ...form, userId: Number(form.userId), amount: Math.round(parseFloat(form.amount) * 100),
       }});
-      setMsg(`สำเร็จ — ref ${r.transaction.reference} • ยอดใหม่ ฿${satang(r.balance)}`);
+      setMsg(`สำเร็จ — ref ${r.transaction.reference} • ยอดใหม่ ${satang(r.balance)} บาท`);
       setForm({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: newKey() });
       load();
     } catch (e2) { setMsg('ERROR: ' + e2.message); }
@@ -47,7 +47,7 @@ export default function AdminWallet() {
       <form onSubmit={submit} className="bg-navy-800 border border-navy-700 rounded-xl p-5 grid sm:grid-cols-2 gap-3">
         <select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
           <option value="">— เลือกสมาชิก —</option>
-          {members.map(m => <option key={m.id} value={m.id}>{m.username} (฿{satang(m.balance)})</option>)}
+          {members.map(m => <option key={m.id} value={m.id}>{m.username} ({satang(m.balance)} บาท)</option>)}
         </select>
         <input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5" />
         <select value={form.direction} onChange={e => setForm({...form, direction: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
@@ -71,8 +71,8 @@ export default function AdminWallet() {
                 <td className="px-4 py-2 font-mono text-xs text-navy-300">{t.reference}</td>
                 <td className="px-4 py-2 text-white">{t.username}</td>
                 <td className="px-4 py-2 text-xs text-navy-300">{TYPE_TH[t.type] || t.type}</td>
-                <td className={`px-4 py-2 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>{t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}</td>
-                <td className="px-4 py-2 text-right text-gold-300">฿{satang(t.balance_after)}</td>
+                <td className={`px-4 py-2 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>{t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท</td>
+                <td className="px-4 py-2 text-right text-gold-300">{satang(t.balance_after)} บาท</td>
                 <td className="px-4 py-2 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
                 <td className="px-4 py-2 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
               </tr>

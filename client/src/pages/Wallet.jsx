@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
@@ -53,6 +53,7 @@ export default function Wallet() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [celebration, setCelebration] = useState(null); // { kind:'win'|'lose', slip }
+  const idemRef = useRef({ sig: '', key: '' }); // idempotency key ต่อ (ประเภท+จำนวน) กันกดซ้ำ/หลุดแล้วเติม-ถอนซ้ำ
 
   const [params, setParams] = useSearchParams();
   const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
@@ -83,14 +84,16 @@ export default function Wallet() {
     if (!satangAmt || satangAmt < 100) return setErr('กรอกจำนวนเงินอย่างน้อย 1 บาท');
     if (satangAmt > 1000000) return setErr('สูงสุด 10,000 บาทต่อรายการ');
     if (modal === 'withdraw') {
-      if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อนจึงจะสามารถถอนเงินได้');
-      if (wd && satangAmt > wd.withdrawable) return setErr(`ถอนได้สูงสุด ฿${satang(wd.withdrawable)} (เฉพาะเงินรางวัล)`);
+      if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อนจึงจะสามารถถอนเงินได้');
+      if (wd && satangAmt > wd.withdrawable) return setErr(`ถอนได้สูงสุด ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล)`);
     }
     setBusy(true);
     try {
-      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, paymentMethod: payMethod, ...(accountNo ? { accountNo } : {}) } });
+      const sig = `${modal}:${satangAmt}`;
+      if (idemRef.current.sig !== sig) idemRef.current = { sig, key: crypto.randomUUID() };
+      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, paymentMethod: payMethod, idempotencyKey: idemRef.current.key, ...(accountNo ? { accountNo } : {}) } });
       setBalance(r.balance);
-      setModal(null); setAmount('');
+      setModal(null); setAmount(''); idemRef.current = { sig: '', key: '' };
       load();
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -100,7 +103,7 @@ export default function Wallet() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-gold-500/40 rounded-2xl p-8 text-center">
         <div className="text-sm text-navy-300">ยอดเครดิตจำลองคงเหลือ</div>
-        <div className="text-5xl font-bold text-amber-600 mt-2">฿{satang(balance)}</div>
+        <div className="text-5xl font-bold text-amber-600 mt-2">{satang(balance)} บาท</div>
         <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
           <button onClick={() => { setModal('deposit'); setAmount(''); setErr(''); }}
             className="bg-gold-500 text-navy-950 font-bold px-6 py-2.5 rounded-xl hover:bg-gold-400 transition">
@@ -112,14 +115,17 @@ export default function Wallet() {
           </button>
         </div>
         {wd && (
-          <div className={`text-xs mt-3 ${wd.unlocked ? 'text-green-400' : 'text-amber-300'}`}>
+          <div className={`text-xs mt-3 ${wd.pendingSlips > 0 ? 'text-amber-300' : wd.unlocked ? 'text-green-400' : 'text-amber-300'}`}>
+            {wd.pendingSlips > 0 && (
+              <div className="mb-1">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท) — ยกเลิกโพยเพื่อคืนเครดิตก่อนถอนได้</div>
+            )}
             {wd.unlocked
               ? wd.override
                 ? balance < 5000
-                  ? `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — แต่ยอดคงเหลือ ฿${satang(balance)} ต่ำกว่า ฿50 ถอนไม่ได้`
-                  : `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — ถอนได้ ฿${satang(wd.withdrawable)} (ยอดสุทธิหักเครดิตแถม)`
-                : `✅ ถอนได้ ฿${satang(wd.withdrawable)} (จากเงินรางวัล)`
-              : `🔒 ถอนเงินได้หลังเติมเครดิตครบ ฿100 — เติมแล้ว ฿${satang(wd.deposited)}`}
+                  ? `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท ถอนไม่ได้`
+                  : `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — ถอนได้ ${satang(wd.withdrawable)} บาท (ยอดสุทธิหักเครดิตแถม)`
+                : `✅ ถอนได้ ${satang(wd.withdrawable)} บาท (ยอดคงเหลือหักเครดิตแถม)`
+              : `🔒 ถอนเงินได้หลังเติมเครดิตครบ 100 บาท — เติมแล้ว ${satang(wd.deposited)} บาท`}
           </div>
         )}
         <div className="text-xs text-navy-400 mt-2">เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่สามารถแลกเป็นเงินจริงได้</div>
@@ -140,9 +146,9 @@ export default function Wallet() {
                 </div>
                 <div className="text-right shrink-0">
                   <div className={`font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
-                    {t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}
+                    {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
                   </div>
-                  <div className="text-[11px] text-amber-600">คงเหลือ ฿{satang(t.balance_after)}</div>
+                  <div className="text-[11px] text-amber-600">คงเหลือ {satang(t.balance_after)} บาท</div>
                 </div>
               </div>
             </div>
@@ -162,9 +168,9 @@ export default function Wallet() {
                   <td className="px-4 py-3 font-mono text-xs text-navy-300">{t.reference}</td>
                   <td className="px-4 py-3 text-white">{TYPE_TH[t.type] || t.type}</td>
                   <td className={`px-4 py-3 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
-                    {t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}
+                    {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
                   </td>
-                  <td className="px-4 py-3 text-right text-amber-600">฿{satang(t.balance_after)}</td>
+                  <td className="px-4 py-3 text-right text-amber-600">{satang(t.balance_after)} บาท</td>
                   <td className="px-4 py-3 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
                   <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
                 </tr>
@@ -181,16 +187,16 @@ export default function Wallet() {
         <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setModal(null)}>
           <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 ถอนเครดิตจำลอง'}</h2>
-            <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน ฿{satang(balance)} • สำหรับ Demo เท่านั้น</p>
+            <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท • สำหรับ Demo เท่านั้น</p>
             {modal === 'withdraw' && wd && (
               <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
                 {wd.unlocked
                   ? wd.override
                     ? balance < 5000
-                      ? `ได้รับอนุญาตจากแอดมินแล้ว แต่ยอดคงเหลือ ฿${satang(balance)} ต่ำกว่า ฿50 — ถอนไม่ได้`
-                      : `ถอนได้ ฿${satang(wd.withdrawable)} — ยอดสุทธิหักเครดิตแถม (ได้รับอนุญาตจากแอดมิน)`
-                    : `ถอนได้สูงสุด ฿${satang(wd.withdrawable)} — เฉพาะเงินรางวัลจากการถูกหวย (เครดิตโปรโมชั่น/เงินฝากถอนไม่ได้)`
-                  : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ ฿100 ก่อน (เติมแล้ว ฿${satang(wd.deposited)})`}
+                      ? `ได้รับอนุญาตจากแอดมินแล้ว แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท — ถอนไม่ได้`
+                      : `ถอนได้ ${satang(wd.withdrawable)} บาท — ยอดสุทธิหักเครดิตแถม (ได้รับอนุญาตจากแอดมิน)`
+                    : `ถอนได้สูงสุด ${satang(wd.withdrawable)} บาท — ยอดคงเหลือหักเครดิตแถม (เครดิตโปรโมชั่นถอนไม่ได้)`
+                  : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อน (เติมแล้ว ${satang(wd.deposited)} บาท)`}
               </div>
             )}
             {modal && (
@@ -248,11 +254,11 @@ export default function Wallet() {
               {PRESETS.map(p => (
                 <button key={p} type="button" onClick={() => setAmount(String(p))}
                   className={`py-2.5 rounded-lg text-sm font-bold border transition ${Number(amount) === p ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-700 border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300'}`}>
-                  ฿{p.toLocaleString()}
+                  {p.toLocaleString()} บาท
                 </button>
               ))}
             </div>
-            <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง (ขั้นต่ำ ฿1 สูงสุด ฿10,000):</div>
+            <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง (ขั้นต่ำ 1 บาท สูงสุด 10,000 บาท):</div>
             <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
               inputMode="decimal" placeholder="0.00" autoFocus
               className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-amber-600 focus:outline-none focus:border-gold-500" />
@@ -308,7 +314,7 @@ export default function Wallet() {
                 <div className="text-6xl animate-coin mb-2">🎉🏆</div>
                 <h2 className="text-2xl font-bold text-gold-300 mb-1">ยินดีด้วย!</h2>
                 <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ถูกรางวัล</p>
-                <div className="text-3xl font-bold text-green-400 animate-coin mb-1">+฿{satang(celebration.slip.total_payout)}</div>
+                <div className="text-3xl font-bold text-green-400 animate-coin mb-1">+{satang(celebration.slip.total_payout)} บาท</div>
                 <p className="text-xs text-navy-400 mb-5">เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — ถอนได้หลังปลดล็อก</p>
               </>
             ) : (
@@ -316,7 +322,7 @@ export default function Wallet() {
                 <div className="text-6xl mb-2 animate-lose">😢💧</div>
                 <h2 className="text-2xl font-bold text-blue-300 mb-1">เสียใจด้วย...</h2>
                 <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ไม่ถูกรางวัลรอบนี้</p>
-                <div className="text-xl font-bold text-navy-300 mb-1">เสีย ฿{satang(celebration.slip.total_stake)}</div>
+                <div className="text-xl font-bold text-navy-300 mb-1">เสีย {satang(celebration.slip.total_stake)} บาท</div>
                 <p className="text-xs text-navy-400 mb-5">เก็บเครดิตไว้ลองใหม่นะ — ห้องยังเปิดรับแทงทุกวัน</p>
               </>
             )}

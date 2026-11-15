@@ -11,10 +11,8 @@ import ToastHost from './ToastHost.jsx';
 import { isSoundOn, setSoundOn, initSound } from '../sound.js';
 import { Icon } from './icons.jsx';
 import { CasinoIcon } from './CasinoIcons.jsx';
-import { FlagIcon } from './ResultLine.jsx';
-import { GameArt } from './GameArt.jsx';
 import { useEffect, useState } from 'react';
-import { t, getLang, toggleLang, isLao } from '../i18n.js';
+import { t } from '../i18n.js';
 
 const nav = [
   { to: '/winners', k: 'winners' },
@@ -28,37 +26,19 @@ const nav = [
 export default function Layout() {
   const { user, balance, logout, isAdmin, mfaRequired, refresh } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [betMenuOpen, setBetMenuOpen] = useState(false); // dropdown "แทงหวย" บน desktop
-  const [types, setTypes] = useState([]);
   const [bettingMenu, setBettingMenu] = useState(true);
-  const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [now, setNow] = useState(() => new Date());
   const [soundOn, setSoundOnState] = useState(isSoundOn());
-  const [, setLangTick] = useState(0); // re-render เมื่อสลับภาษา
-  useEffect(() => {
-    const h = () => setLangTick(x => x + 1);
-    window.addEventListener('langchange', h);
-    return () => window.removeEventListener('langchange', h);
-  }, []);
   const navigate = useNavigate();
   const location = useLocation();
-  const selType = new URLSearchParams(location.search).get('type');
-  // เกมด่วน/ราศี ใช้ภาพไพ่ casino เดียวกับหน้าแรก แทนธงทั่วไป
-  const TypeIcon = ({ code, cls }) => ['SC', 'HL', 'HR'].includes(code)
-    ? <GameArt code={code} className={cls || 'w-6 h-6'} />
-    : <FlagIcon code={code} className={cls || 'w-6 h-4'} />;
 
   const loadMenuData = () => {
-    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/lottery/public-config').then(r => {
       setBettingMenu(r.bettingMenuEnabled !== false);
-      setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
     }).catch(() => {});
   };
 
   useEffect(() => { loadMenuData(); initSound(); }, []);
-  // ปิด dropdown แทงหวย เมื่อเปลี่ยนหน้า
-  useEffect(() => { setBetMenuOpen(false); }, [location.pathname]);
 
   // SSE — server push เมื่อแอดมินแก้ไข/ผลรางวัลออก → refetch ทันทีไม่ต้อง reload หน้า
   useEffect(() => {
@@ -76,9 +56,7 @@ export default function Layout() {
   }, []);
 
   // admin ปิดเมนูแทงหวย (blind mode) ได้ — admin เองยังเห็นเมนูปกติเสมอ
-  // ซ่อนรายประเภทได้ด้วย: type.code อยู่ใน hiddenBetTypes = ไม่แสดง chip ของประเภทนั้น
   const showBetMenu = bettingMenu || isAdmin;
-  const visibleTypes = types.filter(t => isAdmin || !hiddenBetTypes.includes(t.code));
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -118,28 +96,11 @@ export default function Layout() {
               className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#06C755] text-[#7ce8a8] font-semibold' : 'border-transparent text-navy-300 hover:text-[#7ce8a8]'}`}>
               {t('home')}
             </NavLink>
-            {/* dropdown ประเภทหวย — รวม chip ทั้งหมดไว้ในเมนูเดียว ไม่แน่นแถบบน */}
-            {showBetMenu && visibleTypes.length > 0 && (
-              <div className="relative">
-                <button onClick={() => setBetMenuOpen(o => !o)}
-                  className={`px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1 ${betMenuOpen || selType ? 'border-[#06C755] text-[#7ce8a8] font-semibold' : 'border-transparent text-navy-300 hover:text-[#7ce8a8]'}`}>
-                  {t('betMenu')} ▾
-                </button>
-                {betMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setBetMenuOpen(false)} />
-                    <div className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl border border-gold-500/30 bg-[#0d1628]/98 backdrop-blur-md shadow-2xl shadow-black/60 p-2 grid grid-cols-1 gap-1">
-                      {visibleTypes.map(t => (
-                        <Link key={t.id} to={t.code === 'SC' ? '/scratch' : t.code === 'HL' ? '/hilo' : `/lotteries?type=${t.id}`}
-                          onClick={() => setBetMenuOpen(false)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition ${selType === String(t.id) ? 'border-[#06C755]/70 bg-[#06C755]/10 text-[#7ce8a8]' : 'border-transparent text-navy-200 hover:border-[#06C755]/40 hover:text-[#7ce8a8] hover:bg-navy-800/60'}`}>
-                          <TypeIcon code={t.code} /> {t.name_th}
-                        </Link>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+            {showBetMenu && (
+              <NavLink to="/lotteries"
+                className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#06C755] text-[#7ce8a8] font-semibold' : 'border-transparent text-navy-300 hover:text-[#7ce8a8]'}`}>
+                {t('betMenu')}
+              </NavLink>
             )}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end}
@@ -160,7 +121,7 @@ export default function Layout() {
                 <Link to="/wallet" className="hidden sm:flex items-center gap-2 rounded-full border border-gold-500/40 bg-gold-500/10 px-3.5 py-1.5 hover:border-gold-400/70 transition">
                   <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
                   <span className="text-[10px] text-navy-300 tracking-wider">{t('credit')}</span>
-                  <span className="text-sm font-bold text-gold-300 font-mono">฿{satang(balance)}</span>
+                  <span className="text-sm font-bold text-gold-300 font-mono">{satang(balance)} บาท</span>
                 </Link>
                 <button onClick={doLogout} className="hidden sm:block text-[13px] tracking-wide text-navy-300 hover:text-gold-200 border border-navy-700 rounded-md px-3 py-1.5 transition">
                   {t('logout')}
@@ -173,11 +134,6 @@ export default function Layout() {
               </div>
             )}
             <div className="sm:hidden text-xs font-mono font-bold text-gold-300">{timeStr}</div>
-            {/* สลับภาษา ไทย/ລາວ — เก็บใน localStorage */}
-            <button onClick={toggleLang} title={isLao() ? 'ປ່ຽນເປັນภาษาไทย' : 'ປ່ຽນເປັນພາສາລາວ'}
-              className="text-[11px] font-bold px-2 py-1.5 rounded-lg border border-navy-600 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
-              {isLao() ? 'ລາວ' : 'ไทย'}
-            </button>
             <button
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
               title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
@@ -191,21 +147,18 @@ export default function Layout() {
           <nav className="lg:hidden suit-pattern border-t border-[#06C755]/30 bg-[#0a1220]/95 backdrop-blur-md px-3 py-2 space-y-1">
             <div className="px-3 pt-1 pb-2 flex items-center justify-between">
               <span className="kicker">{t('menu')}</span>
-              {user && <span className="text-[11px] font-mono font-bold text-gold-300">{t('credit')} ฿{satang(balance)}</span>}
+              {user && <span className="text-[11px] font-mono font-bold text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#7ce8a8] font-semibold border-l-2 border-[#06C755]' : 'text-navy-300'}`}>
               {t('home')}
             </NavLink>
-            {showBetMenu && visibleTypes.map(t => {
-              const sel = selType === String(t.id);
-              return (
-                <Link key={t.id} to={t.code === 'SC' ? '/scratch' : t.code === 'HL' ? '/hilo' : `/lotteries?type=${t.id}`} onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold border ${sel ? 'border-[#06C755]/70 bg-[#06C755]/10 text-[#7ce8a8]' : 'border-navy-700/80 bg-navy-900/60 text-navy-300'}`}>
-                  <TypeIcon code={t.code} /> {t.name_th}
-                </Link>
-              );
-            })}
+            {showBetMenu && (
+              <NavLink to="/lotteries" onClick={() => setMenuOpen(false)}
+                className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#7ce8a8] font-semibold border-l-2 border-[#06C755]' : 'text-navy-300'}`}>
+                {t('betMenu')}
+              </NavLink>
+            )}
             {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
               <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
                 className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#7ce8a8] font-semibold border-l-2 border-[#06C755]' : 'text-navy-300'}`}>

@@ -65,17 +65,19 @@ export function resultKindOf(d) {
   return 'web';
 }
 
-export function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false } = {}) {
+export function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false, includeInactiveTypes = false } = {}) {
   const db = getDb();
   // auto-transition: รอบที่เลยเวลาปิดรับ → 'closed' (status ค้าง 'open' ตลอดถ้าไม่มีคนยิง placeBet)
   db.prepare(`UPDATE lottery_draws SET status = 'closed', updated_at = datetime('now')
               WHERE status = 'open' AND close_at <= ?`).run(nowSql());
   let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th, lt.result_mode AS result_mode,
+                    lt.is_active AS type_active,
                     c.code AS category_code, c.name_th AS category_name_th
              FROM lottery_draws d
              JOIN lottery_types lt ON lt.id = d.lottery_type_id
              LEFT JOIN lottery_categories c ON c.id = d.category_id
-             WHERE 1=1`;
+             WHERE ${includeInactiveTypes ? '1=1' : 'lt.is_active = 1'}
+               AND d.draw_code NOT LIKE '%-STANDING'`; // standing draw ของเกมด่วนไม่ใช่รอบจริง — ซ่อนจากทุกรายการ
   const args = [];
   if (lotteryTypeId) { sql += ' AND d.lottery_type_id = ?'; args.push(lotteryTypeId); }
   if (categoryId !== undefined) {
@@ -87,7 +89,7 @@ export function listDraws({ lotteryTypeId = null, categoryId = undefined, status
   //   - ยังรับแทงได้ (scheduled/open และยังไม่ปิดรับ)
   //   - ปิดรับแล้วรอผล (closed, draw_at ไม่เกิน 2 วันก่อนหน้า — กันรอบค้างโบราณรกหน้ารายการ)
   //   ยกเว้นเกมด่วน SC/HL (standing draw ไม่มีรอบจริง)
-  if (upcoming) sql += ` AND lt.code NOT IN ('SC','HL') AND (
+  if (upcoming) sql += ` AND lt.code NOT IN ('SC','HL','KI') AND (
       (d.status IN ('scheduled','open') AND d.close_at > '${nowSql()}')
       OR (d.status = 'closed' AND d.draw_at >= datetime('now','-2 days'))
     )`;
@@ -98,7 +100,8 @@ export function listDraws({ lotteryTypeId = null, categoryId = undefined, status
 export function getDraw(id) {
   const db = getDb();
   const d = db.prepare(`SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th, lt.result_mode AS result_mode,
-                            c.code AS category_code, c.name_th AS category_name_th
+                           lt.is_active AS type_active,
+                           c.code AS category_code, c.name_th AS category_name_th
                      FROM lottery_draws d
                      JOIN lottery_types lt ON lt.id = d.lottery_type_id
                      LEFT JOIN lottery_categories c ON c.id = d.category_id
@@ -109,6 +112,7 @@ export function getDraw(id) {
 
 export function isDrawOpen(draw) {
   if (!draw) return false;
+  if (draw.type_active === 0) return false; // ประเภทหวยที่ปิดให้บริการ (เช่น Stocks/Coin ที่ถูกถอด)
   if (draw.status === 'open' && draw.close_at > nowSql()) return true;
   // auto-transition stale draws
   if (draw.status === 'open' && draw.close_at <= nowSql()) {
@@ -272,10 +276,11 @@ export function placeBet(userId, { drawId, items, idempotencyKey = null }) {
         .run(slipRef, userId, drawId, totalStake, idempotencyKey);
       const slipId = Number(slip.lastInsertRowid);
 
-      const insItem = d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount, is_tod)
-                                 VALUES (?, ?, ?, ?, ?, ?, ?)`);
+      const insItem = d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount, is_tod, payout_multiplier, match_config)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
       for (const r of resolved) {
-        insItem.run(slipId, drawId, r.rule.id, r.rule.bet_type, r.number, r.amount, r.tod ? 1 : 0);
+        insItem.run(slipId, drawId, r.rule.id, r.rule.bet_type, r.number, r.amount, r.tod ? 1 : 0,
+          r.rule.payout_multiplier, r.rule.match_config);
       }
 
       debitForBetTx(d, {
@@ -313,7 +318,9 @@ export function listMyBets(userId, { limit = 50, offset = 0 } = {}) {
                            WHERE bs.user_id = ? ORDER BY bs.id DESC LIMIT ? OFFSET ?`)
     .all(userId, limit, offset);
   const itemStmt = db.prepare(`SELECT bi.id, bi.rule_id, bi.bet_type, bi.number, bi.amount, bi.status, bi.payout, bi.result_detail, bi.is_tod,
-                                     lr.name_th AS rule_name_th, lr.payout_multiplier, lr.match_config
+                                     lr.name_th AS rule_name_th,
+                                     COALESCE(bi.payout_multiplier, lr.payout_multiplier) AS payout_multiplier,
+                                     COALESCE(bi.match_config, lr.match_config) AS match_config
                               FROM bet_items bi JOIN lottery_rules lr ON lr.id = bi.rule_id
                               WHERE bi.slip_id = ?`);
   return slips.map(s => {
@@ -611,6 +618,9 @@ export function settleDraw(adminId, drawId, winningNumbers, sourceLabel = null) 
   const db = getDb();
   const draw = getDraw(drawId);
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+  // เกมด่วน (ขูด/ไฮโล/ยี่กี) settle ผ่าน service ของตัวเอง — ห้ามออกผลผ่าน settleDraw
+  if (['SC', 'HL', 'KI'].includes(draw.type_code))
+    throw new HttpError(400, 'เกมด่วนไม่มีผลออกรางวัล — ระบบ settle อัตโนมัติอยู่แล้ว');
   // หวยราศี — ผลสุ่มโดยระบบ (crypto) admin ออกผล/แก้ไขเองไม่ได้
   if (adminId && draw.type_code === 'HR') throw new HttpError(403, 'ผลหวยราศีสุ่มโดยระบบ — admin แก้ไขผลไม่ได้');
   if (draw.status === 'settled') throw new HttpError(400, 'รอบนี้ออกผลแล้ว', 'ALREADY_SETTLED');
@@ -644,7 +654,7 @@ export function settleDraw(adminId, drawId, winningNumbers, sourceLabel = null) 
     d.prepare(`UPDATE lottery_draws SET status = 'settled', result_numbers = ?, updated_at = datetime('now') WHERE id = ?`)
       .run(JSON.stringify(winningNumbers), drawId);
 
-    const pendingItems = d.prepare(`SELECT bi.*, bs.user_id AS owner_id, bs.slip_ref, r.match_config, r.payout_multiplier, r.bet_type AS rule_bet_type
+    const pendingItems = d.prepare(`SELECT bi.*, bs.user_id AS owner_id, bs.slip_ref, r.match_config AS rule_match_config, r.payout_multiplier AS rule_payout_multiplier, r.bet_type AS rule_bet_type
                                     FROM bet_items bi
                                     JOIN bet_slips bs ON bs.id = bi.slip_id
                                     JOIN lottery_rules r ON r.id = bi.rule_id
@@ -660,8 +670,12 @@ export function settleDraw(adminId, drawId, winningNumbers, sourceLabel = null) 
         rule = d.prepare('SELECT * FROM lottery_rules WHERE id = ?').get(item.rule_id);
         ruleCache.set(item.rule_id, rule);
       }
-      const ev = evaluateBet(rule, item.number, winningNumbers, { todBet: !!item.is_tod });
-      const payout = ev.win ? Math.floor(item.amount * Number(ev.multiplier ?? rule.payout_multiplier)) : 0;
+      // ใช้อัตราจ่าย/กติกาที่ snapshot ไว้ตอนแทง (กัน admin แก้กติกาทีหลังเปลี่ยนราคาโพยค้าง)
+      const effRule = item.match_config != null
+        ? { ...rule, match_config: item.match_config, payout_multiplier: item.payout_multiplier ?? rule.payout_multiplier }
+        : rule;
+      const ev = evaluateBet(effRule, item.number, winningNumbers, { todBet: !!item.is_tod });
+      const payout = ev.win ? Math.floor(item.amount * Number(ev.multiplier ?? effRule.payout_multiplier)) : 0;
       d.prepare(`UPDATE bet_items SET status = ?, payout = ?, result_detail = ? WHERE id = ?`)
         .run(ev.win ? 'won' : 'lost', payout, JSON.stringify(ev.detail), item.id);
       settledCount++;
@@ -713,7 +727,12 @@ export function createDraw(adminId, { lotteryTypeId, categoryId = null, drawCode
   if (!drawCode || !drawAt || !closeAt) throw new HttpError(400, 'กรุณาระบุ draw_code, draw_at, close_at');
   if (new Date(closeAt) >= new Date(drawAt)) throw new HttpError(400, 'เวลาปิดรับโพยต้องอยู่ก่อนเวลาออกรางวัล');
   const db = getDb();
-  if (!db.prepare('SELECT id FROM lottery_types WHERE id = ?').get(lotteryTypeId)) throw new HttpError(400, 'lottery_type ไม่ถูกต้อง');
+  const type = db.prepare('SELECT id, code FROM lottery_types WHERE id = ?').get(lotteryTypeId);
+  if (!type) throw new HttpError(400, 'lottery_type ไม่ถูกต้อง');
+  // เกมด่วน (สล็อต/ไฮโล/ยี่กี) ไม่มีรอบจริง — ใช้ standing draw ที่ service จัดการเอง
+  // การสร้างรอบจริงจะทำให้โพยค้างถาวร (ไม่อยู่ใน pipeline ออกผล)
+  if (['SC', 'HL', 'KI'].includes(type.code))
+    throw new HttpError(400, 'เกมด่วนไม่มีรอบออกรางวัล — ระบบจัดการผลเองอัตโนมัติ');
   try {
     const r = db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
                           VALUES (?, ?, ?, ?, ?, 'scheduled')`)

@@ -81,7 +81,7 @@ export default function AdminSettings() {
     }
     if (!(await confirmAction({
       title: 'ยืนยันบันทึกราคาเกมด่วน',
-      message: `บันทึกราคา/อัตราจ่ายเกมด่วน?\nหวยขูด ฿${gameCfg.scratch_price}/ใบ • ไฮโล ฿${gameCfg.hilo_price}/ครั้ง (ต่ำ ×${gameCfg.hilo_mult_low}, สูง ×${gameCfg.hilo_mult_high}, 11 ×${gameCfg.hilo_mult_11})`,
+      message: `บันทึกราคา/อัตราจ่ายเกมด่วน?\nสล็อต ${gameCfg.scratch_price} บาท/ใบ • ไฮโล ${gameCfg.hilo_price} บาท/ครั้ง (ต่ำ ×${gameCfg.hilo_mult_low}, สูง ×${gameCfg.hilo_mult_high}, 11 ×${gameCfg.hilo_mult_11})`,
     }))) return;
     try {
       for (const [k, v] of Object.entries(payloads)) {
@@ -121,7 +121,7 @@ export default function AdminSettings() {
         const r = await api('/admin/promotions/cashback/run', { method: 'POST', body: { hours: 24 } });
         setCashbackMsg(r.skipped === 'disabled'
           ? 'ERROR: ยังไม่ได้ตั้ง cashback_percent (>0)'
-          : `จ่ายแล้ว — ${r.users} คน รวม ฿${(r.total / 100).toLocaleString('th-TH')}`);
+          : `จ่ายแล้ว — ${r.users} คน รวม ${(r.total / 100).toLocaleString('th-TH')} บาท`);
       }
     } catch (e) { setCashbackMsg('ERROR: ' + e.message); }
   };
@@ -181,16 +181,16 @@ export default function AdminSettings() {
 
       {/* ราคาเกมด่วน — หวยขูด/ไฮโล (แก้ได้เฉพาะตรงนี้ ไม่ต้องแก้ key ดิบ) */}
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-        <div className="text-sm font-bold text-white mb-1">🎰 ราคาเกมด่วน (หวยขูด / ไฮโล)</div>
+        <div className="text-sm font-bold text-white mb-1">🎰 ราคาเกมด่วน (สล็อต / ไฮโล)</div>
         <div className="text-xs text-navy-400 mb-3">มีผลทันทีทั้งหน้าบ้านและหลังบ้าน — ราคาต่อหน่วยเป็นบาท (ระบบเก็บเป็นสตางค์)</div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <label className="block">
-            <span className="text-[11px] text-navy-300">หวยขูด (฿/ใบ)</span>
+            <span className="text-[11px] text-navy-300">สล็อต (บาท/ใบ)</span>
             <input value={gameCfg.scratch_price} onChange={e => setGameCfg({ ...gameCfg, scratch_price: e.target.value })}
               className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="50" />
           </label>
           <label className="block">
-            <span className="text-[11px] text-navy-300">ไฮโล (฿/ครั้ง)</span>
+            <span className="text-[11px] text-navy-300">ไฮโล (บาท/ครั้ง)</span>
             <input value={gameCfg.hilo_price} onChange={e => setGameCfg({ ...gameCfg, hilo_price: e.target.value })}
               className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="50" />
           </label>
@@ -242,7 +242,7 @@ export default function AdminSettings() {
         </div>
         {cashbackPreview && (
           <div className="mt-3 text-xs text-navy-200 bg-navy-900/70 border border-navy-600 rounded-lg px-3 py-2">
-            ย้อนหลัง 24 ชม.: {cashbackPreview.percent}% → จะคืนให้ <b className="text-gold-300">{cashbackPreview.users}</b> คน รวม <b className="text-gold-300">฿{(cashbackPreview.total / 100).toLocaleString('th-TH')}</b>
+            ย้อนหลัง 24 ชม.: {cashbackPreview.percent}% → จะคืนให้ <b className="text-gold-300">{cashbackPreview.users}</b> คน รวม <b className="text-gold-300">{(cashbackPreview.total / 100).toLocaleString('th-TH')} บาท</b>
           </div>
         )}
         {cashbackMsg && <div className={`text-xs mt-3 ${cashbackMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-400'}`}>{cashbackMsg}</div>}

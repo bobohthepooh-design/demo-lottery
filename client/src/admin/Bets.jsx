@@ -33,18 +33,18 @@ function ItemRow({ i }) {
             <code className="text-gold-300 font-mono">{i.number}</code>
             <span className="text-navy-300 text-xs truncate">{i.bet_name_th || i.bet_type}</span>
           </div>
-          <div className="text-[11px] text-navy-400">เดิมพัน ฿{satang(i.amount)}</div>
+          <div className="text-[11px] text-navy-400">เดิมพัน {satang(i.amount)} บาท</div>
         </div>
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
-          <div className={`font-bold text-red-400 ${anim}`}>จ่าย ฿{satang(i.payout)}</div>
+          <div className={`font-bold text-red-400 ${anim}`}>จ่าย {satang(i.payout)} บาท</div>
         )}
-        {i.status === 'lost' && <div className={`text-green-400 text-xs font-medium ${anim}`}>ผู้เล่นเสีย ฿{satang(i.amount)} — ระบบได้กำไร 😄</div>}
+        {i.status === 'lost' && <div className={`text-green-400 text-xs font-medium ${anim}`}>ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร 😄</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
             <div className="text-blue-300">รอผล</div>
-            <div className="text-gold-300/80">ถ้าถูก ได้ ฿{satang(potential(i))}</div>
+            <div className="text-gold-300/80">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
           </div>
         )}
         {i.status === 'cancelled' && <div className="text-navy-400 text-xs">ยกเลิก</div>}
@@ -126,11 +126,11 @@ export default function AdminBets() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-white font-bold">฿{satang(s.total_stake)}</span>
-                  {s.total_payout > 0 && <span className="text-green-400 text-sm ml-2">จ่าย ฿{satang(s.total_payout)}</span>}
+                  <span className="text-white font-bold">{satang(s.total_stake)} บาท</span>
+                  {s.total_payout > 0 && <span className="text-green-400 text-sm ml-2">จ่าย {satang(s.total_payout)} บาท</span>}
                   {settled && (
                     <span className={`text-sm ml-2 font-semibold ${houseNet >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      ระบบ {houseNet >= 0 ? '+' : ''}฿{satang(houseNet)}
+                      ระบบ {houseNet >= 0 ? '+' : ''}{satang(houseNet)} บาท
                     </span>
                   )}
                   <div className="text-xs text-navy-400">{STATUS_TH[s.status] || s.status} • {fmtDateTime(s.created_at)}</div>

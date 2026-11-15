@@ -14,8 +14,11 @@ export default function AdminMembers() {
 
   const save = async () => {
     if (!(await confirmAction({ title: 'ยืนยันการแก้ไขสมาชิก', message: `บันทึกการเปลี่ยนแปลงของ ${edit.username} ใช่หรือไม่?` }))) return;
+    // ส่งเฉพาะ field ที่แก้ได้ — password ว่าง = ไม่เปลี่ยน (ส่ง '' จะโดน validate min 8 ปฏิเสธ)
+    const body = { status: edit.status, displayName: edit.displayName, withdrawUnlocked: !!edit.withdrawUnlocked };
+    if (edit.password) body.password = edit.password;
     try {
-      await api(`/admin/members/${edit.id}`, { method: 'PATCH', body: edit });
+      await api(`/admin/members/${edit.id}`, { method: 'PATCH', body });
       setEdit(null); load();
     } catch (e) { toast(e.message, 'error'); }
   };
@@ -46,13 +49,13 @@ export default function AdminMembers() {
                 <td className="px-4 py-3"><div className="text-white font-semibold">{m.username}</div><div className="text-xs text-navy-300">{m.displayName}</div></td>
                 <td className="px-4 py-3 text-navy-300">{m.email}</td>
                 <td className="px-4 py-3 text-xs text-gold-300">{m.roles.join(', ')}</td>
-                <td className="px-4 py-3 text-right text-gold-300 font-bold">฿{satang(m.balance)}</td>
+                <td className="px-4 py-3 text-right text-gold-300 font-bold">{satang(m.balance)} บาท</td>
                 <td className="px-4 py-3"><span className={m.status === 'active' ? 'text-green-400' : 'text-red-400'}>{m.status}</span></td>
                 <td className="px-4 py-3 text-xs">{m.mfaEnabled ? '✅' : '—'}{m.withdrawUnlocked ? ' 💸' : ''}</td>
                 <td className="px-4 py-3 text-xs whitespace-nowrap">
                   {m.selfExcludedUntil ? <span className="text-red-400 font-bold" title={m.selfExcludedUntil === 'permanent' ? 'ระงับถาวร' : `ระงับถึง ${m.selfExcludedUntil}`}>⛔{m.selfExcludedUntil === 'permanent' ? 'ถาวร' : ''}</span>
                     : m.dailyLimitSatang || m.monthlyLimitSatang
-                      ? <span className="text-amber-300" title={`วัน ฿${satang(m.dailyLimitSatang || 0)} / เดือน ฿${satang(m.monthlyLimitSatang || 0)}`}>⚠️จำกัด</span>
+                      ? <span className="text-amber-300" title={`วัน ${satang(m.dailyLimitSatang || 0)} บาท / เดือน ${satang(m.monthlyLimitSatang || 0)} บาท`}>⚠️จำกัด</span>
                       : <span className="text-navy-400">—</span>}
                   {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
                 </td>
@@ -87,7 +90,7 @@ export default function AdminMembers() {
                   onChange={e => setEdit({ ...edit, withdrawUnlocked: e.target.checked })}
                   className="mt-0.5 accent-gold-500" />
                 <label htmlFor="wd-unlock" className="text-xs text-navy-200 leading-relaxed">
-                  💸 <b>อนุญาตให้ถอนเครดิต</b> — ถอนได้เต็มยอดคงเหลือ แต่ระบบจะ<b>หักเครดิตแถม ฿50 ออก</b> และต้องเหลืออย่างน้อย ฿50 จึงจะถอนได้
+                  💸 <b>อนุญาตให้ถอนเครดิต</b> — ถอนได้เต็มยอดคงเหลือ แต่ระบบจะ<b>หักเครดิตแถม 50 บาท ออก</b> และต้องเหลืออย่างน้อย 50 บาท จึงจะถอนได้
                 </label>
               </div>
               {(edit.selfExcludedUntil || edit.dailyLimitSatang || edit.monthlyLimitSatang || !edit.ageConfirmed) && (
@@ -96,7 +99,7 @@ export default function AdminMembers() {
                   {!edit.ageConfirmed && <div className="text-red-300">❗ ยังไม่ยืนยันอายุ 18+</div>}
                   {edit.selfExcludedUntil && <div className="text-red-300">⛔ ระงับการแทง{edit.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${edit.selfExcludedUntil}`}</div>}
                   {(edit.dailyLimitSatang || edit.monthlyLimitSatang) && (
-                    <div className="text-amber-300">⚠️ วงเงิน: วัน ฿{satang(edit.dailyLimitSatang || 0)} • เดือน ฿{satang(edit.monthlyLimitSatang || 0)}</div>
+                    <div className="text-amber-300">⚠️ วงเงิน: วัน {satang(edit.dailyLimitSatang || 0)} บาท • เดือน {satang(edit.monthlyLimitSatang || 0)} บาท</div>
                   )}
                 </div>
               )}

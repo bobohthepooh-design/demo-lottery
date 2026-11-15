@@ -26,14 +26,59 @@ const STATUS_EMOJI = {
 };
 const ITEM_EMOJI = { won: '🎉', lost: '😢', pending: '⏳', cancelled: '🚫' };
 
+// เกมด่วน — parse result_detail เพื่อแสดงเลขที่ออก/เต๋า/สัตว์ที่ถูก
+const DICE_SYMBOLS = ['ปลา', 'กุ้ง', 'น้ำเต้า', 'เสือ', 'ปู', 'ไก่'];
+const DICE_BET_LABEL = { single: 'สัตว์เดี่ยว', pair: 'สัตว์คู่', triple: 'สัตว์ตอง' };
+const HILO_PICK_LABEL = { low: 'ต่ำ', high: 'สูง', eleven: '11' };
+const jparse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+const arr = (v) => Array.isArray(v) ? v : [];
+
+// คืน { picks, drawn } สำหรับเกมด่วน — draws เป็นข้อความพร้อม emoji
+function instantDisplay(i) {
+  const bt = i.bet_type || '';
+  const num = jparse(i.number);
+  const det = jparse(i.result_detail) || {};
+  if (bt === 'kiwi_dice') {
+    const sel = arr(det.sel ?? num);           // เลขแต้ม 1-6 ที่เลือก
+    const dice = arr(det.dice ?? det.drawn);   // เต๋าที่ออก
+    const sym = (v) => DICE_SYMBOLS[v - 1] || String(v);
+    const picksTxt = sel.map(sym).join('+');
+    const drawnTxt = dice.length ? dice.map(sym).join(' ') : '—';
+    return {
+      head: `${DICE_BET_LABEL[det.betType] || 'น้ำเต้าปูปลา'} ${picksTxt}`,
+      sub: `ออก ${drawnTxt}`,
+    };
+  }
+  if (bt.startsWith('kiwi')) { // kiwi, kiwi_vip + เกมเก่า kiwi_zodiac/kiwi_animal
+    const picks = arr(det.picks ?? num);
+    const drawn = arr(det.drawn);
+    const hits = det.hits ?? picks.filter(p => drawn.includes(p)).length;
+    return {
+      head: `ซื้อ ${picks.join(', ') || '—'}`,
+      sub: drawn.length ? `ออก ${drawn.join(', ')} • ถูก ${hits} ตัว` : null,
+    };
+  }
+  if (bt === 'hilo') {
+    const dice = arr(det.dice);
+    return {
+      head: `เต๋า ${dice.join('-') || '—'} = ${det.sum ?? '—'}`,
+      sub: det.pick ? `ทาย${HILO_PICK_LABEL[det.pick] || det.pick}` : null,
+    };
+  }
+  if (bt === 'scratch') {
+    return { head: i.number || 'สล็อต', sub: null };
+  }
+  return null;
+}
+
 // เงินรางวัลที่จะได้ถ้าถูก = เงินเดิมพัน × อัตราจ่าย (est_payout = อัตราเฉพาะรายเลขของเลขอั้นถ้ามี)
 const potential = (i) => i.est_payout ?? Math.floor(i.amount * Number(i.payout_multiplier || 0));
 
-// แสดงปุ่มแชร์เมื่อชนะรางวัลตั้งแต่ ฿500 ขึ้นไป
+// แสดงปุ่มแชร์เมื่อชนะรางวัลตั้งแต่ 500 บาท ขึ้นไป
 const SHARE_THRESHOLD = 50000; // สตางค์
 
 function shareText(s) {
-  return `🎉 ฉันถูกรางวัล ฿${satang(s.total_payout)} จาก ${s.type_name_th || ''} ${s.draw_code || ''} บน Demo Lottery! (เครดิตจำลอง เพื่อการศึกษา)`;
+  return `🎉 ฉันถูกรางวัล ${satang(s.total_payout)} บาท จาก ${s.type_name_th || ''} ${s.draw_code || ''} บน Demo Lottery! (เครดิตจำลอง เพื่อการศึกษา)`;
 }
 
 function ShareButtons({ s }) {
@@ -73,26 +118,42 @@ function ItemRow({ i }) {
       <div className="flex items-center gap-2 min-w-0">
         <span className={`text-lg ${anim}`}>{emoji}</span>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <code className="text-gold-300 font-mono text-base">{i.number}</code>
-            <span className="text-navy-300 text-xs truncate">{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
-            {i.is_ann && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">เลขอั้น</span>}
-            {i.is_tod ? <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300 shrink-0">โต๊ด</span> : null}
-          </div>
-          <div className="text-[11px] text-navy-400">เดิมพัน ฿{satang(i.amount)}</div>
+          {(() => {
+            const inst = instantDisplay(i);
+            if (inst) {
+              return (
+                <>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-gold-300 font-bold text-sm">{inst.head}</span>
+                    <span className="text-navy-300 text-xs truncate">{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
+                  </div>
+                  {inst.sub && <div className="text-[11px] text-sky-300/90">{inst.sub}</div>}
+                </>
+              );
+            }
+            return (
+              <div className="flex items-center gap-2">
+                <code className="text-gold-300 font-mono text-base">{i.number}</code>
+                <span className="text-navy-300 text-xs truncate">{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
+                {i.is_ann && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">เลขอั้น</span>}
+                {i.is_tod ? <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300 shrink-0">โต๊ด</span> : null}
+              </div>
+            );
+          })()}
+          <div className="text-[11px] text-navy-400">เดิมพัน {satang(i.amount)} บาท</div>
         </div>
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
           <div className={`font-bold text-green-400 ${anim}`}>
-            <span className="text-base">💰</span> +฿{satang(i.payout)}
+            <span className="text-base">💰</span> +{satang(i.payout)} บาท
           </div>
         )}
-        {i.status === 'lost' && <div className={`text-navy-400 text-xs ${anim}`}>เสีย ฿{satang(i.amount)}</div>}
+        {i.status === 'lost' && <div className={`text-navy-400 text-xs ${anim}`}>เสีย {satang(i.amount)} บาท</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
             <div className="text-blue-300">รอผล</div>
-            <div className="text-amber-600/80">ถ้าถูก ได้ ฿{satang(potential(i))}</div>
+            <div className="text-amber-600/80">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
           </div>
         )}
         {i.status === 'cancelled' && <div className="text-navy-400 text-xs">ยกเลิก</div>}
@@ -101,11 +162,22 @@ function ItemRow({ i }) {
   );
 }
 
+const FILTERS = [
+  { k: 'all', label: 'ทั้งหมด' },
+  { k: 'pending', label: 'รอผล' },
+  { k: 'won', label: 'ถูกรางวัล' },
+  { k: 'partial', label: 'ถูกบางส่วน' },
+  { k: 'lost', label: 'ไม่ถูก' },
+  { k: 'cancelled', label: 'ยกเลิก' },
+  { k: 'refunded', label: 'คืนเงิน' },
+];
+
 export default function MyBets() {
   const [slips, setSlips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(null);
   const [cancelAsk, setCancelAsk] = useState(null);
+  const [filter, setFilter] = useState('all');
   const { setBalance } = useAuth();
   const navigate = useNavigate();
 
@@ -141,10 +213,15 @@ export default function MyBets() {
     try {
       const r = await api(`/bets/${s.id}/cancel`, { method: 'POST' });
       if (typeof r.balance === 'number') setBalance(r.balance);
-      toast(`ยกเลิกโพย ${r.slipRef} แล้ว — คืนเครดิต ฿${satang(r.refunded)}`, 'success');
+      toast(`ยกเลิกโพย ${r.slipRef} แล้ว — คืนเครดิต ${satang(r.refunded)} บาท`, 'success');
       await load();
     } catch (e) { toast(e.message, 'error'); }
   };
+
+  // filter ตามสถานะ + โพยรอผลขึ้นบนสุดเสมอ (ภายในกลุ่มเรียงใหม่→เก่า)
+  const visibleSlips = slips
+    .filter(s => filter === 'all' || s.status === filter)
+    .sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.id - a.id);
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
@@ -159,7 +236,21 @@ export default function MyBets() {
       </div>
       <p className="text-[11px] text-navy-400 -mt-2">
         📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนเวลาปิดรับ</p>
-      {slips.map(s => {
+      {/* filter สถานะ + เรียงโพยรอผลขึ้นก่อนเสมอ */}
+      <div className="flex gap-1.5 flex-wrap">
+        {FILTERS.map(f => (
+          <button key={f.k} onClick={() => setFilter(f.k)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filter === f.k
+              ? 'bg-gold-500/20 border-gold-500/60 text-gold-300'
+              : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
+            {f.label}
+            {f.k !== 'all' && slips.some(s => s.status === f.k) && (
+              <span className="ml-1 text-[10px] opacity-70">({slips.filter(s => s.status === f.k).length})</span>
+            )}
+          </button>
+        ))}
+      </div>
+      {visibleSlips.map(s => {
         const won = s.items?.some(i => i.status === 'won') || s.status === 'won';
         const lost = !won && s.items?.every(i => i.status === 'lost');
         const cardAnim = s.status === 'won' ? 'animate-win' : lost && s.status === 'lost' ? 'animate-lose' : '';
@@ -179,7 +270,7 @@ export default function MyBets() {
                 <div className="text-[11px] text-navy-500">แทงเมื่อ {fmtDateTime(s.created_at)}</div>
               </div>
               <div className="text-right flex flex-col items-end gap-1.5">
-                <div className="font-bold text-white">฿{satang(s.total_stake)}</div>
+                <div className="font-bold text-white">{satang(s.total_stake)} บาท</div>
                 <span className={`text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 ${s.status === 'won' ? 'bg-green-500/20 text-green-300' : s.status === 'lost' ? 'bg-navy-700 text-navy-300' : s.status === 'partial' ? 'bg-gold-500/20 text-gold-300' : 'bg-blue-500/20 text-blue-300'}`}>
                   <span>{STATUS_EMOJI[s.status]}</span> {STATUS_TH[s.status]}
                 </span>
@@ -205,10 +296,10 @@ export default function MyBets() {
                 {s.total_payout > 0 && (
                   <div className="text-right space-y-0.5 pt-1">
                     <div className="text-green-400 font-bold animate-coin">
-                      🎉 รวมเงินรางวัล ฿{satang(s.total_payout)}
+                      🎉 รวมเงินรางวัล {satang(s.total_payout)} บาท
                     </div>
                     <div className={`text-xs font-semibold ${net >= 0 ? 'text-amber-600' : 'text-navy-400'}`}>
-                      {net >= 0 ? `กำไรสุทธิ ฿${satang(net)}` : `ขาดทุนสุทธิ ฿${satang(-net)}`}
+                      {net >= 0 ? `กำไรสุทธิ ${satang(net)} บาท` : `ขาดทุนสุทธิ ${satang(-net)} บาท`}
                     </div>
                   </div>
                 )}
@@ -238,6 +329,9 @@ export default function MyBets() {
           </div>
         );
       })}
+      {!loading && slips.length > 0 && !visibleSlips.length && (
+        <div className="text-center text-navy-400 py-10 text-sm">ไม่มีโพยในสถานะนี้</div>
+      )}
       {!loading && !slips.length && (
         <EmptyState emoji="🎟️" title="ยังไม่มีโพยที่ส่ง" hint="เลือกประเภทหวยและใส่เลขเพื่อเริ่มแทงครั้งแรก"
           to="/lotteries" cta="ไปเลือกหวยเลย" />

@@ -6,15 +6,15 @@ import { toast } from '../components/toast.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
 
-// 12 ราศี — ต้องตรงกับ server/src/lib/zodiac.js
-const ZODIAC = ['เมษ', 'พฤษภ', 'เมถุน', 'กรกฎ', 'สิงห์', 'กันย์', 'ตุลย์', 'พิจิก', 'ธนู', 'มังกร', 'กุมภ์', 'มีน'];
-const normZodiac = (s) => String(s || '').trim().replace(/^ราศี/, '');
+// 12 ปีนักษัตรไทย — ต้องตรงกับ server/src/lib/zodiac.js
+const ZODIAC = ['ชวด', 'ฉลู', 'ขาล', 'เถาะ', 'มะโรง', 'มะเส็ง', 'มะเมีย', 'มะแม', 'วอก', 'ระกา', 'จอ', 'กุน'];
+const normZodiac = (s) => String(s || '').trim().replace(/^(ปี|ราศี)/, '');
 
 const ZodiacSelect = ({ value, onChange }) => (
   <select value={value} onChange={e => onChange(e.target.value)}
     className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 mt-1">
-    <option value="">— เลือกราศี —</option>
-    {ZODIAC.map(z => <option key={z} value={z}>ราศี{z}</option>)}
+    <option value="">— เลือกปีนักษัตร —</option>
+    {ZODIAC.map(z => <option key={z} value={z}>{z}</option>)}
   </select>
 );
 
@@ -58,7 +58,7 @@ export default function AdminSettle() {
   };
 
   // เกมด่วน (ขูด/ไฮโล) เป็น standing draw ไม่มีผลออกรางวัล — ไม่ควรอยู่ในรายการกรอกผล
-  const isInstantType = (d) => d.type_code === 'SC' || d.type_code === 'HL';
+  const isInstantType = (d) => ['SC', 'HL', 'KI'].includes(d.type_code);
   const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled' && !isInstantType(d));
   const settled = draws.filter(d => d.status === 'settled');
   // "รอบล่าสุด" = ออกรางวัลวันนี้ (เวลาไทย) หรือค้างไม่เกิน 48 ชม. — รอบวันถัดไปและค้างเก่าไปส่วนล่าง
@@ -125,7 +125,7 @@ export default function AdminSettle() {
       if (f.seq) {
         const arr = t.split('-').map(x => normZodiac(x)).filter(Boolean);
         if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x)))
-          return setErr('เลขรางวัล 6 ราศีต้องเป็นราศี 6 ตัวคั่นด้วย - เช่น สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร');
+          return setErr('เลขรางวัล 6 ปีนักษัตรต้องเป็นปีนักษัตร 6 ตัวคั่นด้วย - เช่น ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม');
         winning[f.key] = arr;
         continue;
       }
@@ -135,7 +135,7 @@ export default function AdminSettle() {
       const toVal = (x) => {
         if (f.zodiac) {
           const z = normZodiac(x);
-          if (!ZODIAC.includes(z)) throw new Error(`${f.label} ต้องเป็นดวงราศีที่ถูกต้อง`);
+          if (!ZODIAC.includes(z)) throw new Error(`${f.label} ต้องเป็นปีนักษัตรที่ถูกต้อง`);
           return z;
         }
         if (!new RegExp(`^\\d{${f.digits}}$`).test(x)) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลัก`);
@@ -167,7 +167,7 @@ export default function AdminSettle() {
       preview = await api(`/admin/draws/${useSel}/settle-preview`, { method: 'POST', body: { winning_numbers: winning } });
     } catch { /* preview ไม่ได้ไม่เป็นไร — settle ต่อได้ */ }
     const previewText = preview
-      ? `\nสรุปก่อนออกผล: ตรวจ ${preview.evaluated ?? preview.pending} โพย • ถูกรางวัล ${preview.winningItems} • จ่ายรวม ฿${satang(preview.totalPayout)}`
+      ? `\nสรุปก่อนออกผล: ตรวจ ${preview.evaluated ?? preview.pending} โพย • ถูกรางวัล ${preview.winningItems} • จ่ายรวม ${satang(preview.totalPayout)} บาท`
       : '';
     if (!(await confirmAction({
       title: '⚠️ ยืนยันออกผลรางวัล',
@@ -177,7 +177,7 @@ export default function AdminSettle() {
     try {
       const r = await api(`/admin/draws/${useSel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
       setResult(r); load();
-      if (target) setErr(`ออกผลย้อนหลังสำเร็จ: ตรวจ ${r.settledItems} รายการ • ถูกรางวัล ${r.winningItems} รายการ • จ่ายรวม ฿${satang(r.totalPayout)}`);
+      if (target) setErr(`ออกผลย้อนหลังสำเร็จ: ตรวจ ${r.settledItems} รายการ • ถูกรางวัล ${r.winningItems} รายการ • จ่ายรวม ${satang(r.totalPayout)} บาท`);
     } catch (e) { setErr(e.message); }
   };
 
@@ -285,7 +285,7 @@ export default function AdminSettle() {
                     <input value={fields[f.key] || ''}
                       onChange={e => setFields({ ...fields, [f.key]: e.target.value })}
                       className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                      placeholder="สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร" />
+                      placeholder="ชวด-ฉลู-ขาล-เถาะ-มะโรง-มะเส็ง" />
                   ) : (
                   <input value={fields[f.key] || ''}
                     onChange={e => setFields({...fields, [f.key]: e.target.value.replace(f.set5 ? /[^\d,\s\-]/g : /[^\d,\s]/g, '').slice(0, f.set5 ? 40 : (f.prizes > 1 ? 60 : f.digits))})}
@@ -302,7 +302,7 @@ export default function AdminSettle() {
             {err && <div className="text-red-400 text-sm">{err}</div>}
             {result && (
               <div className="bg-green-500/10 border border-green-500/40 rounded-lg p-4 text-sm text-green-300">
-                ออกผลสำเร็จ: ตรวจ {result.settledItems} รายการ • ถูกรางวัล {result.winningItems} รายการ • จ่ายรวม ฿{satang(result.totalPayout)}
+                ออกผลสำเร็จ: ตรวจ {result.settledItems} รายการ • ถูกรางวัล {result.winningItems} รายการ • จ่ายรวม {satang(result.totalPayout)} บาท
               </div>
             )}
             {selDraw?.result_mode === 'manual' && (
@@ -362,13 +362,13 @@ export default function AdminSettle() {
               if (!parts.length) continue;
               if (isSeqF) {
                 const arr = String(v).split('-').map(x => normZodiac(x)).filter(Boolean);
-                if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x))) return setEditMsg(`field "${k}" ต้องเป็นราศี 6 ตัวคั่นด้วย -`);
+                if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x))) return setEditMsg(`field "${k}" ต้องเป็นปีนักษัตร 6 ตัวคั่นด้วย -`);
                 winning[k] = arr;
                 continue;
               }
               if (isZod) {
                 const z = normZodiac(parts[0]);
-                if (!ZODIAC.includes(z)) return setEditMsg(`field "${k}" ต้องเป็นดวงราศีที่ถูกต้อง`);
+                if (!ZODIAC.includes(z)) return setEditMsg(`field "${k}" ต้องเป็นปีนักษัตรที่ถูกต้อง`);
                 winning[k] = z;
                 continue;
               }
@@ -393,7 +393,7 @@ export default function AdminSettle() {
                       <input value={editFields[f.key] || ''}
                         onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value })}
                         className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                        placeholder="สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร" />
+                        placeholder="ชวด-ฉลู-ขาล-เถาะ-มะโรง-มะเส็ง" />
                     ) : (
                     <input value={editFields[f.key] || ''}
                       onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value.replace(/[^\d,\s]/g, '').slice(0, 60) })}

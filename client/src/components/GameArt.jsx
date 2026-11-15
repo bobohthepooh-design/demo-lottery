@@ -25,30 +25,31 @@ function Defs({ id }) {
 }
 
 const SCENES = {
-  // MIG-หวยขูด — บัตรสีทอง + เหรียญขูด + ดาวเรือง
+  // SC-สล็อต — เครื่องสล็อต 5 รีล × 3 แถว 20 เพย์ไลน์ + คันโยก
   SC: (id) => (
     <>
-      {/* บัตรขูดเอียงเล็กน้อย */}
-      <g transform="rotate(-8 32 34)">
-        <rect x="10" y="16" width="44" height="34" rx="5" fill={`url(#${id}-g)`} stroke="#7a5200" strokeWidth="1" />
-        <rect x="10" y="16" width="44" height="10" rx="5" fill="#00000022" />
-        <text x="32" y="24" textAnchor="middle" fontSize="6.5" fontWeight="900" fill="#5c3d00" letterSpacing="1">SCRATCH</text>
-        {/* ช่องขูด 3 ช่อง */}
-        {[18, 28, 38].map((x, i) => (
-          <g key={i}>
-            <rect x={x} y="30" width="8" height="12" rx="1.5" fill="#0a1220" opacity="0.85" />
-            <circle cx={x + 4} cy="36" r="2.6" fill={i === 1 ? '#fde68a' : '#94a3b8'} opacity={i === 1 ? 1 : 0.7} />
-          </g>
-        ))}
-        {/* แถบขูดเงิน */}
-        <rect x="14" y="45" width="36" height="3.4" rx="1.7" fill="#cbd5e1" />
-      </g>
-      {/* เหรียญทองลอยข้างบัตร */}
-      <circle cx="50" cy="14" r="7" fill={`url(#${id}-g)`} stroke="#7a5200" strokeWidth="0.8" />
-      <circle cx="50" cy="14" r="4.6" fill="none" stroke="#7a5200" strokeWidth="0.7" />
-      <text x="50" y="17" textAnchor="middle" fontSize="7" fontWeight="900" fill="#5c3d00">฿</text>
+      {/* ตัวเครื่องสล็อต */}
+      <rect x="5" y="8" width="54" height="48" rx="7" fill={`url(#${id}-d)`} stroke="#475569" strokeWidth="1" />
+      <rect x="5" y="8" width="54" height="9" rx="7" fill="#00000033" />
+      <text x="32" y="15" textAnchor="middle" fontSize="5.5" fontWeight="900" fill="#f5c542" letterSpacing="1.5">SLOT</text>
+      {/* 5 รีล × 3 แถวสัญลักษณ์ — 7️⃣ กลางเป็นแจ็คพอต */}
+      {[
+        ['🍒', '🍋', '🍊', '🍇', '🔔'],
+        ['⭐', '💎', '7️⃣', '🍒', '🍋'],
+        ['🍊', '🍇', '🔔', '⭐', '💎'],
+      ].map((row, r) => row.map((s, c) => (
+        <g key={`${r}-${c}`}>
+          <rect x={9 + c * 9.5} y={19 + r * 10.5} width="8.5" height="9" rx="1.5"
+            fill={r === 1 && c === 2 ? `url(#${id}-g)` : '#0a1220'} stroke="#334155" strokeWidth="0.5" />
+          <text x={13.2 + c * 9.5} y={26 + r * 10.5} textAnchor="middle" fontSize="5">{s}</text>
+        </g>
+      )))}
+      {/* คันโยก */}
+      <line x1="60" y1="14" x2="60" y2="34" stroke="#f5c542" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="60" cy="37" r="3.2" fill={`url(#${id}-g)`} stroke="#7a5200" strokeWidth="0.6" />
       {/* ดาวประกาย */}
-      <path d="M14 12l1.2 2.4 2.6.3-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.3Z" fill="#fff8e0" />
+      <path d="M10 44l1 2 2.2.3-1.6 1.5.4 2.2-2-.9-2 .9.4-2.2-1.6-1.5 2.2-.3Z" fill="#fff8e0" opacity="0.9" />
+      <circle cx="53" cy="50" r="1.5" fill="#fde68a" />
     </>
   ),
 
@@ -75,7 +76,7 @@ const SCENES = {
     </>
   ),
 
-  // HR-ราศี — ลูกแก้วคริสตัล + ราศี ♈ + วงล้อจักรราศี
+  // HR-ปีนักษัตร — ลูกแก้วคริสตัล + สัตว์ชวด 🐭 + วงล้อนักษัตร 12 ตัว
   HR: (id) => (
     <>
       {/* ฐานลูกแก้ว */}
@@ -84,10 +85,10 @@ const SCENES = {
       {/* ลูกแก้ว */}
       <circle cx="32" cy="34" r="17" fill={`url(#${id}-orb)`} stroke="#c4b5fd" strokeWidth="1" opacity="0.95" />
       <ellipse cx="26" cy="27" rx="6" ry="4" fill="#ffffff" opacity="0.35" transform="rotate(-25 26 27)" />
-      {/* ราศีเมษเรืองในลูกแก้ว */}
-      <text x="32" y="41" textAnchor="middle" fontSize="15" fontWeight="900" fill="#fde68a"
-        style={{ filter: 'drop-shadow(0 0 4px #f5c542)' }}>♈</text>
-      {/* วงล้อราศีรอบนอก — จุดเล็ก 12 จุด */}
+      {/* สัตว์ชวดเรืองในลูกแก้ว */}
+      <text x="32" y="42" textAnchor="middle" fontSize="15"
+        style={{ filter: 'drop-shadow(0 0 4px #f5c542)' }}>🐀</text>
+      {/* วงล้อนักษัตรรอบนอก — จุดเล็ก 12 จุด */}
       {Array.from({ length: 12 }, (_, i) => {
         const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
         const x = 32 + Math.cos(a) * 23.5, y = 34 + Math.sin(a) * 23.5;
@@ -98,6 +99,29 @@ const SCENES = {
       <circle cx="10" cy="16" r="1.6" fill="#fde68a" />
     </>
   ),
+  // KI-ยี่กี — ลูกบอลเลข 3 ตัวเรียง + แผงเลือกเลข
+  KI: (id) => (
+    <>
+      {/* แผงเลือกเลข 3x3 */}
+      <rect x="8" y="14" width="30" height="30" rx="5" fill={`url(#${id}-d)`} stroke="#475569" strokeWidth="1" />
+      {[0, 1, 2].map(r => [0, 1, 2].map(c => {
+        const on = (r * 3 + c) % 4 === 0;
+        return <rect key={`${r}-${c}`} x={11 + c * 9} y={17 + r * 9} width="7" height="7" rx="1.5"
+          fill={on ? `url(#${id}-g)` : '#1e293b'} stroke={on ? '#7a5200' : '#334155'} strokeWidth="0.6" />;
+      }))}
+      {/* ลูกบอลเลข 3 ตัว */}
+      {[38, 48].map((cx, i) => (
+        <g key={i}>
+          <circle cx={cx} cy="22" r="8" fill={`url(#${id}-g)`} stroke="#7a5200" strokeWidth="0.8" />
+          <text x={cx} y="25.5" textAnchor="middle" fontSize="8" fontWeight="900" fill="#5c3d00">{i === 0 ? '7' : '3'}</text>
+        </g>
+      ))}
+      {/* ดาวประกาย */}
+      <path d="M56 44l1.2 2.4 2.6.3-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.3Z" fill="#fff8e0" />
+      <circle cx="12" cy="50" r="1.8" fill="#fde68a" />
+    </>
+  ),
+
 };
 
 export function GameArt({ code, className = 'w-14 h-14' }) {

@@ -19,15 +19,20 @@ const BET_TYPE_STYLE = {
 // เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
 const BET_ORDER = ['first', 'num4', 'front3', 'front3tod', 'last4', 'top3', '3tod', 'last3', 'top2', 'top2tod', 'bottom2', 'bottom2tod', 'last2', 'run_top', 'run_bottom', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
 
-// 12 ราศี — ต้องตรงกับ server/src/lib/zodiac.js
-const ZODIAC = ['เมษ', 'พฤษภ', 'เมถุน', 'กรกฎ', 'สิงห์', 'กันย์', 'ตุลย์', 'พิจิก', 'ธนู', 'มังกร', 'กุมภ์', 'มีน'];
+// 12 ปีนักษัตรไทย — ต้องตรงกับ server/src/lib/zodiac.js
+const ZODIAC = ['ชวด', 'ฉลู', 'ขาล', 'เถาะ', 'มะโรง', 'มะเส็ง', 'มะเมีย', 'มะแม', 'วอก', 'ระกา', 'จอ', 'กุน'];
+const ZODIAC_EMOJI = {
+  'ชวด': '🐭', 'ฉลู': '🐂', 'ขาล': '🐯', 'เถาะ': '🐰',
+  'มะโรง': '🐉', 'มะเส็ง': '🐍', 'มะเมีย': '🐴', 'มะแม': '🐐',
+  'วอก': '🐵', 'ระกา': '🐓', 'จอ': '🐕', 'กุน': '🐷',
+};
 
 // คำอธิบายแต่ละประเภทแทงราศี — บอกชัดว่าต้องตรงกับตำแหน่งไหนของผล 6 ราศี
 const ZODIAC_HINT = {
-  zodiac: 'เลือกราศีที่คาดว่าจะออก “ตัวแรก” ของผล 6 ราศี (ตำแหน่ง ①)',
-  zodiac3top: 'เลือก 3 ราศีให้ตรงกับ “3 ตัวท้าย” ของผล (④⑤⑥) เรียงลำดับ',
-  zodiac2bottom: 'เลือก 2 ราศีให้ตรงกับ “2 ตัวท้าย” ของผล (⑤⑥) เรียงลำดับ',
-  zodiac_run: 'เลือกราศีที่คิดว่าจะ “โผล่ในผล 6 ตัว” — ถูกไม่ว่าตำแหน่งไหนก็ได้',
+  zodiac: 'เลือกปีนักษัตรที่คาดว่าจะออก “ตัวแรก” ของผล 6 ตัว (ตำแหน่ง ①)',
+  zodiac3top: 'เลือก 3 ปีนักษัตรให้ตรงกับ “3 ตัวท้าย” ของผล (④⑤⑥) เรียงลำดับ',
+  zodiac2bottom: 'เลือก 2 ปีนักษัตรให้ตรงกับ “2 ตัวท้าย” ของผล (⑤⑥) เรียงลำดับ',
+  zodiac_run: 'เลือกปีนักษัตรที่คิดว่าจะ “โผล่ในผล 6 ตัว” — ถูกไม่ว่าตำแหน่งไหนก็ได้',
 };
 
 export default function PlaceBet() {
@@ -94,7 +99,9 @@ export default function PlaceBet() {
       if (it.isTod) {
         try { const t = JSON.parse(r.match_config || '{}').tod; if (t != null) mult = Number(t); } catch {}
       } else {
-        const entry = annEntries(draw.announce)[String(it.number).length === 3 ? 'top' : 'bottom']?.find(e => e.num === String(it.number));
+        const entry = (String(it.number).length === 2 || String(it.number).length === 3)
+          ? annEntries(draw.announce)[String(it.number).length === 3 ? 'top' : 'bottom']?.find(e => e.num === String(it.number))
+          : null;
         if (entry) { mult = entry.mult ?? Math.floor(baseMult / 2); isAnn = true; }
       }
       items.push({ ruleId: r.id, betType: r.bet_type, name: r.name_th + (it.isTod ? ' (โต๊ด)' : ''),
@@ -127,8 +134,8 @@ export default function PlaceBet() {
     if (!amt || amt <= 0) return { err: 'กรอกจำนวนเงิน' };
     const stake = bahtToSatang(amt);
     if (stake % rule.stake_unit !== 0) return { err: `จำนวนเงินต้องเป็นหน่วย ${rule.stake_unit / 100} บาท` };
-    if (stake < rule.min_amount) return { err: `ขั้นต่ำ ฿${satang(rule.min_amount)}` };
-    if (rule.max_amount && stake > rule.max_amount) return { err: `สูงสุด ฿${satang(rule.max_amount)}` };
+    if (stake < rule.min_amount) return { err: `ขั้นต่ำ ${satang(rule.min_amount)} บาท` };
+    if (rule.max_amount && stake > rule.max_amount) return { err: `สูงสุด ${satang(rule.max_amount)} บาท` };
     return { stake };
   };
 
@@ -149,9 +156,11 @@ export default function PlaceBet() {
     const { stake, err: amtErr } = stakeFromAmount();
     if (amtErr) return setErr(amtErr);
     if (stake > balance) return setErr('เครดิตไม่เพียงพอ');
-    // เลขอั้น — แทงกติกาปกติ แต่ถ้าเลขตรงเลขอั้นที่ประกาศ → ใช้อัตราเลขอั้น (mult เฉพาะรายเลข หรือครึ่งหนึ่งของอัตรากติกา)
+    // เลขอั้น — server ใช้อัตราเลขอั้นเฉพาะเลข 2-3 หลัก (4+ หลักไม่เข้าเงื่อนไข ann)
     const baseMult = Number(rule.payout_multiplier) || 0;
-    const annEntry = annEntries(draw.announce)[num.length === 3 ? 'top' : 'bottom']?.find(e => e.num === num) || null;
+    const annEntry = (num.length === 2 || num.length === 3)
+      ? (annEntries(draw.announce)[num.length === 3 ? 'top' : 'bottom']?.find(e => e.num === num) || null)
+      : null;
     const mult = annEntry ? (annEntry.mult ?? Math.floor(baseMult / 2)) : baseMult;
     const items = [{ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake, mult, isAnn: !!annEntry }];
     // โต๊ด — เลือกแพ็กเกจ "เต็ง+โต๊ด" → เพิ่มรายการโต๊ดอีก 1 รายการ (เงินเท่ากัน = เสียรวม ×2)
@@ -179,7 +188,7 @@ export default function PlaceBet() {
     const nums = [...set];
     const need = nums.length * stake;
     if (totalSatang + need > balance) {
-      return setErr(`เครดิตไม่พอ — รูด 19 ประตู = ${nums.length} รายการ รวม ฿${satang(need)} (คงเหลือ ฿${satang(balance - totalSatang)})`);
+      return setErr(`เครดิตไม่พอ — รูด 19 ประตู = ${nums.length} รายการ รวม ${satang(need)} บาท (คงเหลือ ${satang(balance - totalSatang)} บาท)`);
     }
     const baseMult = Number(rule.payout_multiplier) || 0;
     setSlip([...slip, ...nums.map(n => {
@@ -212,7 +221,7 @@ export default function PlaceBet() {
       <div className="text-5xl mb-3">🎉</div>
       <h1 className="text-xl font-bold text-green-400">ส่งโพยสำเร็จ!</h1>
       <p className="text-navy-200 mt-2">เลขที่โพย: <code className="text-gold-300">{done.slipRef}</code></p>
-      <p className="text-navy-200">ยอดแทงรวม ฿{satang(done.totalStake)} • ยอดเครดิตคงเหลือ ฿{satang(done.balance)}</p>
+      <p className="text-navy-200">ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
       <div className="mt-6 flex gap-3 justify-center">
         <Link to="/my-bets" className="bg-gold-500 text-navy-950 font-bold px-5 py-2.5 rounded-lg">ดูโพยของฉัน</Link>
         <Link to={draw ? `/lotteries?type=${draw.lottery_type_id}` : '/lotteries'} className="border border-navy-600 px-5 py-2.5 rounded-lg">แทงรอบอื่น</Link>
@@ -271,7 +280,7 @@ export default function PlaceBet() {
                     {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">อั้น</span>}
                     {r.name_th}
                   </div>
-                  <div className="text-xs text-navy-300">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `เลือก ${r.digits} ราศีตามลำดับ` : 'เลือก 1 ใน 12 ราศี') : `${r.digits} หลัก`} • จ่าย x{r.payout_multiplier}{isAnn ? ' (ครึ่งรางวัลหลัก)' : ''}</div>
+                  <div className="text-xs text-navy-300">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `เลือก ${r.digits} ปีนักษัตรตามลำดับ` : 'เลือก 1 ใน 12 ปีนักษัตร') : `${r.digits} หลัก`} • จ่าย x{r.payout_multiplier}{isAnn ? ' (ครึ่งรางวัลหลัก)' : ''}</div>
                 </button>
                 );
               })}
@@ -280,7 +289,7 @@ export default function PlaceBet() {
             <div className="grid sm:grid-cols-2 gap-3">
               {isZodiac ? (
               <div className="sm:col-span-2">
-                <label className="text-sm text-navy-300">เลือกดวงราศี {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับที่คาดว่าออก)` : '(1 ใน 12)'}</label>
+                <label className="text-sm text-navy-300">เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับที่คาดว่าออก)` : '(1 ใน 12)'}</label>
                 <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 mt-2">
                   {ZODIAC.map(z => {
                     const idx = zodiacPicks.indexOf(z);
@@ -288,19 +297,27 @@ export default function PlaceBet() {
                     const full = !sel && zodiacPicks.length >= zodiacDigits;
                     return (
                       <button key={z} type="button" onClick={() => toggleZodiac(z)} disabled={full}
-                        className={`py-2 rounded-lg text-xs border transition ${sel ? 'bg-violet-500 text-white border-violet-400 font-bold' : 'bg-navy-900 border-navy-600 text-navy-200 hover:border-violet-400'} disabled:opacity-40`}>
-                        {sel ? `${idx + 1}. ${z}` : `ราศี${z}`}
+                        className={`py-1.5 rounded-lg border transition flex flex-col items-center ${sel ? 'bg-violet-500 text-white border-violet-400 font-bold' : 'bg-navy-900 border-navy-600 text-navy-200 hover:border-violet-400'} disabled:opacity-40`}>
+                        <span className="text-xl leading-none">{ZODIAC_EMOJI[z]}</span>
+                        <span className={`text-[9px] leading-tight mt-0.5 ${sel ? 'text-white' : 'text-navy-400'}`}>{sel ? `${idx + 1}. ${z}` : z}</span>
                       </button>
                     );
                   })}
                 </div>
                 {zodiacPicks.length > 0 && (
-                  <div className="mt-2 text-sm font-mono text-violet-300">ผล: {zodiacPicks.join(' → ')}</div>
+                  <div className="mt-2 text-sm font-mono text-violet-300 flex items-center gap-1 flex-wrap">
+                    ผล: {zodiacPicks.map((z, i) => (
+                      <span key={i} className="inline-flex items-center gap-0.5">
+                        {i > 0 && <span className="text-navy-500">→</span>}
+                        <span className="text-base leading-none">{ZODIAC_EMOJI[z]}</span>{z}
+                      </span>
+                    ))}
+                  </div>
                 )}
                 <div className="mt-3 rounded-lg bg-violet-500/10 border border-violet-500/30 p-3 text-xs text-navy-200 space-y-1">
-                  <div className="font-semibold text-violet-300">📖 ผลรางวัล = ราศี 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
-                  <div>เช่น <span className="font-mono text-gold-300">สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร</span></div>
-                  <div>① ตัวแรก = รางวัลใหญ่ • ④⑤⑥ สามตัวท้าย = 3 ราศีบน • ⑤⑥ สองตัวท้าย = 2 ราศีล่าง • ราศีไหนก็ได้ = วิ่งราศี</div>
+                  <div className="font-semibold text-violet-300">📖 ผลรางวัล = ปีนักษัตร 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
+                  <div>เช่น <span className="font-mono text-gold-300">ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม</span></div>
+                  <div>① ตัวแรก = รางวัลใหญ่ • ④⑤⑥ สามตัวท้าย = 3 บน • ⑤⑥ สองตัวท้าย = 2 ล่าง • ปีนักษัตรไหนก็ได้ = วิ่ง</div>
                   {rule?.bet_type && ZODIAC_HINT[rule.bet_type] && (
                     <div className="text-violet-300 font-medium">→ {ZODIAC_HINT[rule.bet_type]}</div>
                   )}
@@ -362,7 +379,7 @@ export default function PlaceBet() {
                         เต็ง + โต๊ด ×2
                       </button>
                     </div>
-                    {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">เงิน ÷2 ต่อประเภท — เสียรวมเป็น ×2 (เช่น ฿100 → เต็ง 100 + โต๊ด 100)</div>}
+                    {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">เงิน ÷2 ต่อประเภท — เสียรวมเป็น ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100)</div>}
                   </div>
                 )}
               </div>
@@ -402,10 +419,10 @@ export default function PlaceBet() {
                   <span className="text-navy-300 ml-2">{i.name}</span>
                   {i.isAnn && <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">เลขอั้น</span>}
                   {i.isTod && <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300">โต๊ด</span>}
-                  <div className="text-[10px] text-navy-500">ถ้าถูก ≈ ฿{satang(itemPotential(i))} (ไม่รวมทุน)</div>
+                  <div className="text-[10px] text-navy-500">ถ้าถูก ≈ {satang(itemPotential(i))} บาท (ไม่รวมทุน)</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gold-300">฿{satang(i.stakeSatang)}</span>
+                  <span className="text-gold-300">{satang(i.stakeSatang)} บาท</span>
                   <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} className="text-red-400 hover:text-red-300">✕</button>
                 </div>
               </div>
@@ -423,11 +440,11 @@ export default function PlaceBet() {
           )}
           </div>
           <div className="border-t border-navy-700 mt-4 pt-4 space-y-1 text-sm">
-            <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
+            <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-lg">{satang(totalSatang)} บาท</span></div>
             {slip.length > 0 && (
-              <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">฿{satang(totalPotential)}</span></div>
+              <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">{satang(totalPotential)} บาท</span></div>
             )}
-            <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
+            <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300">{satang(balance - totalSatang)} บาท</span></div>
           </div>
           <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
             📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>
@@ -444,7 +461,7 @@ export default function PlaceBet() {
         <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-4">
           <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
             className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-5 disabled:opacity-50">
-            <span className="text-sm">🧾 {slip.length} รายการ • ฿{satang(totalSatang)}</span>
+            <span className="text-sm">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
             <span className="text-sm">ตรวจสอบโพย →</span>
           </button>
         </div>
@@ -460,14 +477,14 @@ export default function PlaceBet() {
               {slip.map((i, idx) => (
                 <div key={idx} className="flex justify-between text-sm bg-navy-900 rounded-lg px-3 py-2">
                   <span><span className="text-navy-400 font-mono text-xs mr-1">{idx + 1}.</span><span className="font-mono text-gold-300 text-base">{i.number}</span> <span className="text-navy-300">{i.name}</span></span>
-                  <span className="text-gold-300">฿{satang(i.stakeSatang)}</span>
+                  <span className="text-gold-300">{satang(i.stakeSatang)} บาท</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-navy-700 pt-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-navy-300">ยอดแทงรวม ({slip.length} รายการ)</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
-              <div className="flex justify-between"><span className="text-navy-300">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">฿{satang(totalPotential)}</span></div>
-              <div className="flex justify-between"><span className="text-navy-300">เครดิตคงเหลือหลังแทง</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
+              <div className="flex justify-between"><span className="text-navy-300">ยอดแทงรวม ({slip.length} รายการ)</span><span className="text-white font-bold text-lg">{satang(totalSatang)} บาท</span></div>
+              <div className="flex justify-between"><span className="text-navy-300">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">{satang(totalPotential)} บาท</span></div>
+              <div className="flex justify-between"><span className="text-navy-300">เครดิตคงเหลือหลังแทง</span><span className="text-gold-300">{satang(balance - totalSatang)} บาท</span></div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setConfirming(false)} disabled={busy}

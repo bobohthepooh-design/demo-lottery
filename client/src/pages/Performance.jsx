@@ -51,12 +51,12 @@ export default function Performance() {
       {/* KPI รวม */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Kpi label="โพยทั้งหมด" value={totals.slips} sub={`ถูก ${totals.wonSlips} • แพ้ ${totals.lostSlips}${totals.partialSlips ? ` • บางส่วน ${totals.partialSlips}` : ''}`} />
-        <Kpi label="ยอดแทงรวม" value={`฿${satang(totals.stake)}`} />
-        <Kpi label="เงินรางวัลรวม" value={`฿${satang(totals.payout)}`} tone="text-green-400" />
-        <Kpi label="กำไร/ขาดทุนสุทธิ" value={`${net >= 0 ? '+' : '−'}฿${satang(Math.abs(net))}`}
+        <Kpi label="ยอดแทงรวม" value={`${satang(totals.stake)} บาท`} />
+        <Kpi label="เงินรางวัลรวม" value={`${satang(totals.payout)} บาท`} tone="text-green-400" />
+        <Kpi label="กำไร/ขาดทุนสุทธิ" value={`${net >= 0 ? '+' : '−'}${satang(Math.abs(net))} บาท`}
           tone={net >= 0 ? 'text-gold-300' : 'text-red-400'} />
         <Kpi label="อัตราถูกรางวัล" value={`${items.winRate}%`} sub={`ถูก ${items.won}/${items.won + items.lost} รายการ`} />
-        <Kpi label="โพยรอผล" value={`฿${satang(totals.pendingStake)}`} sub="ยอดค้างอยู่" tone="text-blue-300" />
+        <Kpi label="โพยรอผล" value={`${satang(totals.pendingStake)} บาท`} sub="ยอดค้างอยู่" tone="text-blue-300" />
       </div>
 
       {/* ถูกรางวัลสูงสุด */}
@@ -70,7 +70,7 @@ export default function Performance() {
               {best.settled_at ? ` • ${fmtDateTime(best.settled_at)}` : ''}
             </div>
           </div>
-          <div className="text-xl font-black text-green-400">+฿{satang(best.total_payout)}</div>
+          <div className="text-xl font-black text-green-400">+{satang(best.total_payout)} บาท</div>
         </div>
       )}
 
@@ -91,9 +91,9 @@ export default function Performance() {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm text-navy-200">แทง ฿{satang(t.stake)}</div>
+                    <div className="text-sm text-navy-200">แทง {satang(t.stake)} บาท</div>
                     <div className={`text-xs font-bold ${tNet >= 0 ? 'text-gold-300' : 'text-red-400'}`}>
-                      สุทธิ {tNet >= 0 ? '+' : '−'}฿{satang(Math.abs(tNet))}
+                      สุทธิ {tNet >= 0 ? '+' : '−'}{satang(Math.abs(tNet))} บาท
                     </div>
                   </div>
                 </div>

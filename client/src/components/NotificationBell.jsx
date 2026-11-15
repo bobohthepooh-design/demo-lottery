@@ -57,7 +57,7 @@ export default function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-w-[90vw] bg-navy-800 border border-navy-600 rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="fixed right-3 top-16 w-[calc(100vw-24px)] max-w-sm bg-navy-800 border border-navy-600 rounded-xl shadow-2xl z-50 overflow-hidden sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-80 sm:max-w-[90vw]">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-navy-700">
             <span className="text-sm font-bold text-white">การแจ้งเตือน</span>
             {unread > 0 && (

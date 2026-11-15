@@ -69,7 +69,8 @@ function scheduleFor(typeCode, catCode) {
     if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true };
     // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
-    return { kind: 'daily', hour: h, minute: 30, closeHour: h, closeMinute: 30, skipHoliday: true };
+    // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
+    return { kind: 'daily', hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
   }
   if (typeCode === 'HR') return { kind: 'hourly', closeBeforeMin: 30, skipHoliday: false }; // หวยราศี — ทายราศี ทุกชั่วโมง
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true };
@@ -79,7 +80,7 @@ const UPCOMING_PER_TARGET = 5;
 // หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่ (หวยลาวพัฒนาไม่มีแหล่งผลจริงแยกจากหวยลาวหลัก)
 const DISABLED_CATS = new Set(['LAD']);
 // เกมด่วน (ขูด/ไฮโล) ใช้ standing draw ถาวรอยู่แล้ว — ไม่ต้องสร้างรอบตามตาราง
-const INSTANT_TYPES = new Set(['SC', 'HL']);
+const INSTANT_TYPES = new Set(['SC', 'HL', 'KI']);
 
 // สร้างวันที่ออกรางวัลลำดับถัดไป count ครั้ง (ข้ามวันที่ผ่านมาแล้ว/วันหยุด)
 function occurrences(sch, count = UPCOMING_PER_TARGET) {

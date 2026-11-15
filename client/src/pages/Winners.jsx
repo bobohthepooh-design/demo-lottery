@@ -16,7 +16,7 @@ export default function Winners() {
     return () => window.removeEventListener('sys:update', h);
   }, []);
 
-  const bigWin = (w) => w.payout >= 1000000; // ฿10,000+ highlight
+  const bigWin = (w) => w.payout >= 1000000; // 10,000 บาท+ highlight
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -44,14 +44,16 @@ export default function Winners() {
                 {w.isTod && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300">โต๊ด</span>}
               </div>
               <div className="text-[11px] text-navy-400 truncate">
-                {w.typeName} • {w.ruleName} • เลข <code className="text-gold-300 font-mono">{w.number}</code>
-                {w.drawCode ? ` • ${w.drawCode}` : ''}
+                {w.typeName} • {w.ruleName}
+                {['SC', 'HL', 'KI'].includes(w.typeCode)
+                  ? ' • เกมด่วน'
+                  : <> • เลข <code className="text-gold-300 font-mono">{w.number}</code>{w.drawCode ? ` • ${w.drawCode}` : ''}</>}
               </div>
-              <div className="text-[10px] text-navy-500">{fmtDateTime(w.settledAt)} • เดิมพัน ฿{satang(w.amount)}</div>
+              <div className="text-[10px] text-navy-500">{fmtDateTime(w.settledAt)} • เดิมพัน {satang(w.amount)} บาท</div>
             </div>
             <div className="text-right shrink-0">
               <div className={`font-black ${bigWin(w) ? 'text-gold-300 text-lg' : 'text-green-400'}`}>
-                +฿{satang(w.payout)}
+                +{satang(w.payout)} บาท
               </div>
               <div className="text-[9px] text-navy-500">เครดิต</div>
             </div>

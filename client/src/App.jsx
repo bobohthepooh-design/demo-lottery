@@ -14,6 +14,7 @@ import Wallet from './pages/Wallet.jsx';
 import MyBets from './pages/MyBets.jsx';
 import Scratch from './pages/Scratch.jsx';
 import Hilo from './pages/Hilo.jsx';
+import Kiwi from './pages/Kiwi.jsx';
 import Performance from './pages/Performance.jsx';
 import AdminLayout from './admin/AdminLayout.jsx';
 import AdminOverview from './admin/Overview.jsx';
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/winners" element={<Winners />} />
           <Route path="/scratch" element={<Protected><Scratch /></Protected>} />
           <Route path="/hilo" element={<Protected><Hilo /></Protected>} />
+          <Route path="/kiwi" element={<Protected><Kiwi /></Protected>} />
           <Route path="/performance" element={<Protected><Performance /></Protected>} />
           <Route path="/admin" element={<Protected admin><AdminLayout /></Protected>}>
             <Route index element={<AdminOverview />} />

@@ -169,7 +169,7 @@ export default function Hilo() {
   const bets = active?.bets || mkBets(p => mult?.[p] ?? { low: 1.8, high: 2.4, eleven: 7 }[p]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-orange-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 sm:p-8 text-center">
         <div className="hr-shine absolute top-0 inset-x-0 h-1.5" />
@@ -185,7 +185,7 @@ export default function Hilo() {
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-orange-300">ไฮโลเต๋า</h1>
         <p className="text-sm text-navy-300 mt-1">ทอยเต๋า <b className="text-orange-300">3 ลูก</b> → ทายผลรวม <b className="text-blue-300">ต่ำ (3-10)</b> / <b className="text-green-300">สูง (12-18)</b> / <b className="text-purple-300">11 ไฮโล</b> → รู้ผลทันที!</p>
         <div className="flex items-center justify-center gap-4 mt-4 text-xs text-navy-300 flex-wrap">
-          <span>💰 ราคา <b className="text-gold-300">฿{satang(price)}</b>/ครั้ง</span>
+          <span>💰 ราคา <b className="text-gold-300">{satang(price)} บาท</b>/ครั้ง</span>
           <span>🕐 <b className="text-green-300">แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
           <span>⚖️ อัตราจ่าย{mult ? ` ต่ำ ×${mult.low} • สูง ×${mult.high} • 11 ×${mult.eleven}` : 'ตามโอกาสจริง'}</span>
         </div>
@@ -196,7 +196,7 @@ export default function Hilo() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="font-bold text-white">วางเดิมพัน</div>
-            <div className="text-xs text-navy-400">เครดิตคงเหลือ ฿{satang(balance)} • ไม่จำกัดรอบ เล่นต่อได้เรื่อยๆ</div>
+            <div className="text-xs text-navy-400">เครดิตคงเหลือ {satang(balance)} บาท • ไม่จำกัดรอบ เล่นต่อได้เรื่อยๆ</div>
             {awaiting.length > 0 && (
               <div className="text-[11px] text-amber-300 mt-1">มีตั๋วรอเดิมพัน {awaiting.length} ใบ — เปิดจากประวัติด้านล่างเพื่อทาย</div>
             )}
@@ -255,31 +255,9 @@ export default function Hilo() {
           <p className="text-center text-xs text-amber-300 animate-pulse">กำลังเขย่าเต๋า...</p>
         )}
 
-        {/* โซนเลือกเดิมพัน — ปุ่มเดียว: มีตั๋วรอ = ทาย, ไม่มี = ซื้อเล่นใหม่เลย */}
-        {!revealing && (
-          <>
-            <p className="text-center text-xs text-navy-400">
-              {active?.status === 'awaiting'
-                ? '👇 เลือกเดิมพัน — เต๋าจะเปิดเผยทันทีหลังเลือก'
-                : `👇 เลือกเดิมพัน — ซื้อ+ทาย+เปิดเต๋าในขั้นตอนเดียว ฿${satang(price)}/ครั้ง`}
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {bets.map(b => {
-                const st = PICK_STYLE[b.pick] || PICK_STYLE.low;
-                return (
-                  <button key={b.pick} onClick={() => pickBet(b.pick)} disabled={busy || balance < price}
-                    className={`rounded-2xl border-2 ${st.cls} py-3 sm:py-4 transition disabled:opacity-50 select-none`}>
-                    <div className="text-2xl mb-1">{st.icon}</div>
-                    <div className={`font-bold ${st.nameCls}`}>{st.name}</div>
-                    <div className="text-[10px] text-navy-300 mt-1 leading-tight">
-                      {b.pick === 'low' ? 'ผลรวม 3–10' : b.pick === 'high' ? 'ผลรวม 12–18' : 'ผลรวม 11 พอดี'}
-                      <br />×{b.mult} • สูงสุด ฿{satang(b.maxPayout)}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>
+        {/* ปุ่มเดิมพันอยู่บนแถบล่าง (instant-betbar) — ที่นี่แสดงแค่เต๋า+ผล */}
+        {!revealing && active?.status === 'awaiting' && (
+          <p className="text-center text-[11px] text-navy-400">👇 เลือกเดิมพันจากแถบด้านล่าง — เต๋าจะเปิดเผยทันทีหลังเลือก</p>
         )}
 
         {active?.status === 'revealed' && (
@@ -326,6 +304,22 @@ export default function Hilo() {
           </div>
         </div>
       )}
+
+      {/* แถบแทงด่วน — ติดล่างจอตลอด เล่นต่อได้ทันทีไม่ต้องเลื่อนกลับ */}
+      <div className="instant-betbar px-4">
+        <div className="max-w-3xl mx-auto flex gap-2">
+          {bets.map(b => {
+            const st = PICK_STYLE[b.pick] || PICK_STYLE.low;
+            return (
+              <button key={b.pick} onClick={() => pickBet(b.pick)} disabled={busy || revealing || balance < price}
+                className={`flex-1 rounded-xl border-2 ${st.cls} py-2.5 text-center transition disabled:opacity-50 active:scale-95`}>
+                <div className={`text-sm font-black ${st.nameCls}`}>{st.icon} {st.name}</div>
+                <div className="text-[10px] text-navy-300">×{b.mult} • สูงสุด {satang(b.maxPayout)} บ.</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -341,8 +335,8 @@ function ResultPanel({ ticket }) {
         <>
           <div className="text-4xl mb-1 animate-coin text-green-400 font-black">✓</div>
           <div className="text-lg font-bold text-green-400">ถูกต้อง! {ticket.dice.join(' + ')} = {ticket.sum} → {outcomeTh}</div>
-          <div className="text-2xl font-black text-gold-300 coin-gold-bright">+฿{satang(ticket.payout)}</div>
-          {ticket.balance !== undefined && <div className="text-xs text-navy-400 mt-1">เครดิตคงเหลือ ฿{satang(ticket.balance)}</div>}
+          <div className="text-2xl font-black text-gold-300 coin-gold-bright">+{satang(ticket.payout)} บาท</div>
+          {ticket.balance !== undefined && <div className="text-xs text-navy-400 mt-1">เครดิตคงเหลือ {satang(ticket.balance)} บาท</div>}
         </>
       ) : (
         <>
