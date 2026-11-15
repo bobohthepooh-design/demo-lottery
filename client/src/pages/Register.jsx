@@ -36,7 +36,7 @@ export default function Register() {
   return (
     <div className="max-w-md mx-auto bg-navy-800 border border-navy-700 rounded-2xl p-8">
       <h1 className="text-2xl font-bold text-gold-400 mb-1">สมัครสมาชิก</h1>
-      <p className="text-xs text-navy-300 mb-5">สมัครง่ายๆ รับเครดิตฟรี 50 บาท ทันที (ถอนได้เฉพาะเงินรางวัล หลังเติมเครดิตครบ 100 บาท)</p>
+      <p className="text-xs text-navy-300 mb-5">สมัครง่ายๆ รับเครดิตฟรี 50 บาท ทันที (แลกเครดิตได้เฉพาะเงินรางวัล หลังเติมเครดิตครบ 100 บาท)</p>
 
       {/* tabs: เบอร์+OTP (แนะนำ) / ชื่อผู้ใช้+รหัสผ่าน */}
       <div className="flex gap-2 bg-navy-900 border border-navy-700 rounded-xl p-1 mb-5">

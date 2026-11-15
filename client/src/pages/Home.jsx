@@ -7,7 +7,7 @@ import { SkeletonGrid } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
 import { GameArt } from '../components/GameArt.jsx';
 import { mergeBanner } from '../bannerConfig.js';
-import { kindBadge } from '../resultSource.js';
+import { kindBadge, marketInfo, MODE_BADGE } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -58,6 +58,7 @@ export default function Home() {
   const { user, demoNotice, isAdmin } = useAuth();
   const now = useNow();
   const [types, setTypes] = useState([]);
+  const [markets, setMarkets] = useState([]);
   const [draws, setDraws] = useState([]);
   const [banner, setBanner] = useState(null);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
@@ -66,6 +67,7 @@ export default function Home() {
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
+    api('/lottery/markets').then(r => setMarkets(r.markets || [])).catch(() => {});
     api('/lottery/public-config').then(r => {
       setBanner(mergeBanner(r.banner));
       setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
@@ -87,6 +89,7 @@ export default function Home() {
   useEffect(() => {
     const h = () => {
       api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
+      api('/lottery/markets').then(r => setMarkets(r.markets || [])).catch(() => {});
       api('/lottery/public-config').then(r => {
         setBanner(mergeBanner(r.banner));
         setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
@@ -145,7 +148,7 @@ export default function Home() {
   const instantMeta = {
     SC: { code: 'SC', tag: 'สปินแล้วรู้ผลทันที', desc: `เล่นเกม ${baht(gamePrices.scratch)} → สปิน 5 รีล 3 แถว 20 เพย์ไลน์ → ${scratchPrizeText}`, cta: 'เล่นเกมเลย', grad: 'from-red-700 to-rose-900' },
     HL: { code: 'HL', tag: 'ทอยเต๋า 3 ลูก รู้ผลทันที', desc: `ทาย สูง/ต่ำ/11 ไฮโล — ${hiloOddsText ? `${hiloOddsText} — ` : ''}แทง ${baht(gamePrices.hilo)}/ครั้ง ตลอด 24 ชม.`, cta: 'เล่นไฮโลเลย', grad: 'from-amber-700 to-orange-900' },
-    KI: { code: 'KI', tag: 'เลือกเลขทายผลไว', desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP', cta: 'เล่นยี่กีเลย', grad: 'from-emerald-700 to-green-900' },
+    KI: { code: 'KI', tag: 'เลือกเลขทายผลไว', desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP', cta: 'เล่นยี่กีเลย', grad: 'from-yellow-700 to-amber-900' },
     HR: { code: '✦', tag: 'ปีนักษัตรออกผลทุกชั่วโมง', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — ตัวแรก/ท้าย 2-3 ตัว + วิ่ง', cta: 'ดูรอบปีนักษัตร', grad: 'from-violet-700 to-purple-900' },
   };
 
@@ -168,22 +171,22 @@ export default function Home() {
               {demoNotice || 'โหมดทดลอง — ใช้เครดิตเสมือนเท่านั้น'}
             </div>
           </div>
-          <span className="animate-demo-badge shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-white border border-gold-400/60 shadow-sm">
+          <span className="animate-demo-badge shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-navy-950 border border-gold-400/60 shadow-sm tracking-wider">
             DEMO MODE
           </span>
         </div>
       )}
       {/* โปร cashback — แสดงเมื่อ admin เปิดใช้ */}
       {cashbackPct > 0 && (
-        <div className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-navy-800/60 to-emerald-500/15 px-4 py-2.5 flex items-center gap-2 text-sm">
+        <div className="rounded-xl border border-gold-500/40 bg-gradient-to-r from-gold-500/15 via-navy-800/60 to-gold-500/15 px-4 py-2.5 flex items-center gap-2 text-sm">
           <span className="text-lg">🎁</span>
-          <span className="text-emerald-200">โปรโมชั่น: <b className="text-gold-300">คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
+          <span className="text-gold-200">โปรโมชั่น: <b className="text-gold-300">คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
         </div>
       )}
       {/* Hero — ดึงดูดให้เข้ามาแทง (ข้อความแก้ไขได้ที่ /admin/banner) */}
       {b.enabled && (
       <section className="casino-frame casino-hero-felt casino-rail relative overflow-hidden rounded-2xl border border-gold-500/50 px-5 py-10 sm:px-12 sm:py-14 text-center">
-        <div className="absolute -top-20 left-1/4 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 left-1/4 w-72 h-72 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 right-1/4 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl pointer-events-none" />
         {/* ลูกเล่นคาสิโน — ประกายทอง + ชิปโป๊กเกอร์ลอย (decorative) */}
         <span className="casino-sparkle text-xl" style={{ top: '14%', left: '7%', animationDelay: '0.2s' }}>✦</span>
@@ -192,7 +195,7 @@ export default function Home() {
         <span className="casino-sparkle text-sm" style={{ bottom: '30%', right: '14%', animationDelay: '0.7s' }}>✦</span>
         <span className="casino-sparkle text-base hidden sm:block" style={{ top: '55%', left: '4%', animationDelay: '1.6s' }}>✧</span>
         <span className="casino-sparkle text-base hidden sm:block" style={{ top: '60%', right: '5%', animationDelay: '2.6s' }}>✦</span>
-        <div className="casino-chip w-12 h-12 sm:w-16 sm:h-16" style={{ bottom: '-6%', left: '5%', background: 'radial-gradient(circle at 35% 30%, #fca5a5, #dc2626 60%, #7f1d1d)', animationDelay: '0.4s' }} />
+        <div className="casino-chip w-12 h-12 sm:w-16 sm:h-16" style={{ bottom: '-6%', left: '5%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.4s' }} />
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ top: '-4%', right: '7%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '1.8s' }} />
         <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ bottom: '12%', right: '3%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '3s' }} />
         <div className="relative">
@@ -247,7 +250,7 @@ export default function Home() {
               <h2 className="text-xl font-bold text-white">
                 เกมด่วน
               </h2>
-              <p className="text-xs text-navy-400 mt-0.5">เกมด่วนเล่นได้ทันที + หวยราศีออกรายชั่วโมง — เปิดตลอด 24 ชม.</p>
+              <p className="text-xs text-navy-400 mt-0.5">เกมด่วนเล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -325,6 +328,26 @@ export default function Home() {
                 {/* body */}
                 <div className="px-4 pb-4 pt-2 flex-1 flex flex-col">
                   <div className="text-[11px] text-navy-400 mb-2">{t.description}</div>
+                  {/* หมวดย่อยของประเภทนี้ + สถานะว่าเป็นผลจริงหรือเกม/สุ่ม */}
+                  {(() => {
+                    const ms = markets.filter(m => m.type_id === t.id);
+                    if (!ms.length) return null;
+                    const SHORT = { auto: '🌐 ผลจริง', manual: '✏️ ผลจริง(กรอกเอง)', game: '🎮 เกม', demo: '🎲 สุ่ม', off: '⛔ ปิด' };
+                    return (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {ms.map(m => {
+                          const info = marketInfo(m.type_code, m.category_code);
+                          const label = info ? SHORT[info.mode] || '' : '';
+                          return (
+                            <span key={m.key} title={info ? `${info.kind} • ${info.src}` : m.name_th}
+                              className="text-[9px] px-1.5 py-0.5 rounded bg-navy-900/70 border border-navy-700/60 text-navy-300 whitespace-nowrap">
+                              {m.name_th}{label ? ` · ${label}` : ''}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                   {isHR && (
                     <div className="flex justify-between text-base leading-none mb-2 select-none" aria-hidden="true">
                       {['🐭','🐂','🐯','🐰','🐉','🐍','🐴','🐐','🐵','🐓','🐕','🐷'].map((g, i) => (

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../services/authService.js';
+import { requireAuth, requireAgeConfirmed } from '../services/authService.js';
 import * as scratch from '../services/scratchService.js';
 import { HttpError } from '../lib/audit.js';
 
@@ -7,37 +7,46 @@ const router = Router();
 router.use(requireAuth);
 
 // ซื้อบัตรขูด 1 ใบ (ราคา/รางวัลกำหนดฝั่ง server)
-router.post('/buy', (req, res, next) => {
-  try { res.status(201).json({ ok: true, ...scratch.buyCard(req.user.id) }); }
+router.post('/buy', requireAgeConfirmed, async (req, res, next) => {
+  try { res.status(201).json({ ok: true, ...(await scratch.buyCard(req.user.id, req.body?.idempotencyKey)) }); }
   catch (e) { next(e); }
 });
 
 // บัตรขูดของฉัน — ใช้ resume ขูดต่อได้
-router.get('/mine', (req, res) => {
+router.get('/mine', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
-  res.json({ cards: scratch.listMyCards(req.user.id, { limit }) });
+  res.json({ cards: await scratch.listMyCards(req.user.id, { limit }) });
 });
 
 // เปิดเผยผลหลังขูดครบ — เครดิตรางวัลทันทีถ้าถูก
-router.post('/:id/reveal', (req, res, next) => {
+router.post('/:id/reveal', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, 'id ไม่ถูกต้อง');
-    res.json({ ok: true, ...scratch.revealCard(req.user.id, id) });
+    res.json({ ok: true, ...(await scratch.revealCard(req.user.id, id)) });
+  } catch (e) { next(e); }
+});
+
+// ยกเลิกบัตร hidden — คืนเครดิตเต็มจำนวน
+router.post('/:id/cancel', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, 'id ไม่ถูกต้อง');
+    res.json({ ok: true, ...(await scratch.cancelCard(req.user.id, id)) });
   } catch (e) { next(e); }
 });
 
 // ตรวจสอบผลย้อนหลังด้วย server_seed ที่เผยหลัง reveal (provably fair)
-router.post('/verify', (req, res, next) => {
-  try { res.json({ ok: true, ...scratch.verifyScratchSeed(String(req.body?.seed || '')) }); }
+router.post('/verify', async (req, res, next) => {
+  try { res.json({ ok: true, ...(await scratch.verifyScratchSeed(String(req.body?.seed || ''))) }); }
   catch (e) { next(e); }
 });
 
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, 'id ไม่ถูกต้อง');
-    res.json({ card: scratch.getCard(req.user.id, id) });
+    res.json({ card: await scratch.getCard(req.user.id, id) });
   } catch (e) { next(e); }
 });
 

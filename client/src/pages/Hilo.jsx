@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import FairnessNote from '../components/Fairness.jsx';
+import WinBurst from '../components/WinBurst.jsx';
 import { sfx } from '../sound.js';
 
 // ไฮโล (ไฮโลไทย / Sic Bo) — ซื้อ → เต๋า 3 ลูกคว่ำ → เลือก สูง/ต่ำ/11 ไฮโล → เปิดเต๋ารู้ผลทันที
@@ -53,33 +54,40 @@ function Die({ value, hidden, revealDelay = 0 }) {
   return <div className={anim} style={style}><DieFace value={value} /></div>;
 }
 
-// เปิดผลจริง — ทอยสุ่ม ~0.6 วิ แล้วค่อย ๆ ลงบนหน้าผลจริงทีละลูก (ต่อเนื่องจากเฟสทอย ไม่ขัดกัน)
+// เวลาแต่ละเต๋าหยุด — ไล่จากซ้ายไปขวาเหมือนรีลสล็อต
+const DIE_STOP_MS = [720, 940, 1160];
+
+// เปิดผลจริง — เต๋า 3 ลูกทอยสุ่มพร้อมกัน แล้วหยุดทีละลูกลงบนหน้าผลจริง (staggered เหมือนสล็อต)
 function RevealDice({ values, onDone }) {
-  const [landed, setLanded] = useState(false);
-  const [faces, setFaces] = useState(values || [1, 2, 3]);
+  const [faces, setFaces] = useState(() => (values || [1, 2, 3]).map(() => 1 + Math.floor(Math.random() * 6)));
+  const [stopped, setStopped] = useState([false, false, false]);
+  const stoppedRef = useRef([false, false, false]); // กัน interval เขียนทับหน้าที่หยุดแล้ว
+  const doneRef = useRef(false);
   useEffect(() => {
     const iv = setInterval(() => {
-      setFaces(f => f.map(() => 1 + Math.floor(Math.random() * 6)));
-    }, 75);
-    const t1 = setTimeout(() => {
-      clearInterval(iv);
-      setFaces(values || [1, 2, 3]);
-      setLanded(true);
-    }, 620);
-    const t2 = setTimeout(() => onDone?.(), 1150);
-    return () => { clearInterval(iv); clearTimeout(t1); clearTimeout(t2); };
+      setFaces(f => f.map((v, i) => (stoppedRef.current[i] ? v : 1 + Math.floor(Math.random() * 6))));
+    }, 70);
+    const timers = DIE_STOP_MS.map((ms, i) => setTimeout(() => {
+      stoppedRef.current[i] = true;
+      setFaces(f => { const n = [...f]; n[i] = (values || [1, 2, 3])[i]; return n; });
+      setStopped(s => { const n = [...s]; n[i] = true; return n; });
+    }, ms));
+    const fin = setTimeout(() => {
+      clearInterval(iv); timers.forEach(clearTimeout);
+      if (!doneRef.current) { doneRef.current = true; onDone?.(); }
+    }, DIE_STOP_MS[2] + 550);
+    return () => { clearInterval(iv); timers.forEach(clearTimeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  return (
-    <>
-      {faces.map((v, i) => (
-        <div key={i}
-          className={landed ? 'animate-dice-land' : 'animate-dice-tumble'}
-          style={{ animationDelay: landed ? `${i * 0.13}s` : `${i * 0.07}s` }}>
-          <DieFace value={v} />
-        </div>
-      ))}
-    </>
-  );
+  return faces.map((v, i) => (
+    <div key={i}
+      className={stopped[i] ? 'animate-dice-land' : 'animate-dice-tumble'}
+      style={stopped[i]
+        ? { animationDelay: `${i * 0.07}s` }
+        : { animationDelay: `${i * 0.05}s`, animationDuration: `${0.38 + i * 0.09 + (i % 2) * 0.06}s` }}>
+      <DieFace value={v} />
+    </div>
+  ));
 }
 
 const PICK_STYLE = {
@@ -101,22 +109,30 @@ export default function Hilo() {
   const [err, setErr] = useState('');
   const [price, setPrice] = useState(5000); // สตางค์ — sync จาก server (admin ตั้งได้)
   const [mult, setMult] = useState(null);   // อัตราจ่าย ต่ำ/สูง/11 จาก server settings
+  const playIdem = useRef(null); // {pick, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry ซื้อซ้ำ
 
   const load = () => api('/hilo/mine').then(r => setTickets(r.tickets)).catch(() => {});
+  const loadCfg = () => api('/lottery/public-config').then(r => {
+    const p = r.instantGame?.hiloPrice;
+    if (p) setPrice(p);
+    if (r.instantGame?.hiloMult) setMult(r.instantGame.hiloMult);
+  }).catch(() => {});
   useEffect(() => {
-    load();
-    api('/lottery/public-config').then(r => {
-      const p = r.instantGame?.hiloPrice;
-      if (p) setPrice(p);
-      if (r.instantGame?.hiloMult) setMult(r.instantGame.hiloMult);
-    }).catch(() => {});
+    load(); loadCfg();
+    // admin แก้ราคา/อัตราจ่าย → SSE ดันมา refetch ทันที
+    const h = () => loadCfg();
+    window.addEventListener('sys:update', h);
+    return () => window.removeEventListener('sys:update', h);
   }, []);
 
   // ไม่มีตั๋วรอเดิมพัน → เล่นจบในคำขอเดียว (ซื้อ+ทาย+เปิดเต๋าทันที)
   const playNew = async (pick) => {
     setErr(''); setBusy(true);
+    if (!playIdem.current || playIdem.current.pick !== pick)
+      playIdem.current = { pick, key: crypto.randomUUID() };
     try {
-      const r = await api('/hilo/play', { method: 'POST', body: { pick } });
+      const r = await api('/hilo/play', { method: 'POST', body: { pick, idempotencyKey: playIdem.current.key } });
+      playIdem.current = null;
       setBalance(r.balance);
       setPending(r);
       setRevealing(true);
@@ -158,6 +174,20 @@ export default function Hilo() {
   };
 
   const openTicket = (t) => { setDiceSettled(false); setActive(t); };
+  // ยกเลิกตั๋ว awaiting — คืนเครดิตเต็มจำนวน
+  const cancelTicket = async (e, t) => {
+    e.stopPropagation();
+    if (!confirm(`ยกเลิกตั๋ว ${t.slipRef}? เครดิตจะถูกคืนเต็มจำนวน`)) return;
+    setErr('');
+    try {
+      const r = await api(`/hilo/${t.id}/cancel`, { method: 'POST' });
+      setBalance(r.balance);
+      setTickets(ts => ts.map(x => x.id === t.id ? { ...x, status: 'cancelled' } : x));
+      if (active?.id === t.id) setActive(null);
+      load();
+    } catch (e2) { setErr(e2.message); }
+  };
+
   const awaiting = tickets.filter(t => t.status === 'awaiting');
 
   // ตัวเลือกเดิมพัน — ใช้ของตั๋วที่เปิดอยู่ หรือสร้างจาก settings เมื่อยังไม่มีตั๋ว
@@ -167,6 +197,15 @@ export default function Hilo() {
     { pick: 'eleven', mult: getMult('eleven') },
   ].map(b => ({ ...b, label: PICK_TH[b.pick], maxPayout: Math.floor(price * b.mult) }));
   const bets = active?.bets || mkBets(p => mult?.[p] ?? { low: 1.8, high: 2.4, eleven: 7 }[p]);
+
+  // จอ LCD ของตู้เต๋า — sum/ผลข้าง/สถานะ
+  const sideTh = (side) => side === 'eleven' ? '11 ไฮโล' : side === 'high' ? 'สูง ▲' : side === 'low' ? 'ต่ำ ▼' : '—';
+  const sumVal = revealing ? '···' : active?.sum != null ? `${active.sum}` : '—';
+  const sideVal = revealing ? '···' : active?.status === 'revealed' ? sideTh(active.side) : '—';
+  const statVal = revealing ? 'ทอยเต๋า...' : !active ? '—'
+    : active.status === 'awaiting' ? 'รอเดิมพัน'
+    : active.status === 'revealed' ? (active.side === active.pick ? 'ถูกต้อง ✓' : 'ไม่ถูก ✕') : '—';
+  const statCls = active?.status === 'revealed' ? (active.side === active.pick ? 'text-emerald-300' : 'text-red-400') : 'text-amber-300';
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 instant-page">
@@ -184,10 +223,16 @@ export default function Hilo() {
         </div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-orange-300">ไฮโลเต๋า</h1>
         <p className="text-sm text-navy-300 mt-1">ทอยเต๋า <b className="text-orange-300">3 ลูก</b> → ทายผลรวม <b className="text-blue-300">ต่ำ (3-10)</b> / <b className="text-green-300">สูง (12-18)</b> / <b className="text-purple-300">11 ไฮโล</b> → รู้ผลทันที!</p>
-        <div className="flex items-center justify-center gap-4 mt-4 text-xs text-navy-300 flex-wrap">
-          <span>💰 ราคา <b className="text-gold-300">{satang(price)} บาท</b>/ครั้ง</span>
-          <span>🕐 <b className="text-green-300">แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
-          <span>⚖️ อัตราจ่าย{mult ? ` ต่ำ ×${mult.low} • สูง ×${mult.high} • 11 ×${mult.eleven}` : 'ตามโอกาสจริง'}</span>
+        <div className="flex flex-col items-center gap-3 mt-4">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500/25 via-gold-500/10 to-gold-500/25 border border-gold-400/60 shadow-[0_0_20px_rgba(217,165,32,0.25)]">
+            <span className="text-sm">💰</span>
+            <span className="text-xs font-semibold text-gold-300">ราคาต่อครั้ง</span>
+            <span className="font-display font-bold text-2xl text-gold-300">{satang(price)} <span className="text-sm">บาท</span></span>
+          </div>
+          <div className="flex items-center justify-center gap-4 text-[11px] text-navy-300 flex-wrap">
+            <span>🕐 <b className="text-green-300">แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
+            <span>⚖️ อัตราจ่าย{mult ? ` ต่ำ ×${mult.low} • สูง ×${mult.high} • 11 ×${mult.eleven}` : 'ตามโอกาสจริง'}</span>
+          </div>
         </div>
       </div>
 
@@ -213,46 +258,88 @@ export default function Hilo() {
       {/* game card — เต๋า + โซนเลือกเดิมพัน (ปุ่มเดียว) + ผลล่าสุด */}
       <div className="bg-navy-800 border border-navy-700 rounded-2xl p-4 sm:p-5 space-y-4 sm:space-y-5 select-none">
         {active && (
-          <>
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-navy-400 font-mono">โพย {active.slipRef} • {fmtDateTime(active.createdAt)}</div>
-              <button onClick={() => setActive(null)} className="text-xs text-navy-400 hover:text-navy-200">ปิด</button>
-            </div>
-            <FairnessNote fairness={active.fairness}
-              verify={(seed) => api('/hilo/verify', { method: 'POST', body: { seed } })} />
-          </>
+          <FairnessNote fairness={active.fairness}
+            verify={(seed) => api('/hilo/verify', { method: 'POST', body: { seed } })} />
         )}
 
-        {/* เต๋า 3 ลูก — คว่ำตอนรอ, ลงบนผลจริงทีละลูกตอน reveal */}
-        <div className="flex items-center justify-center gap-3 sm:gap-5">
-          {revealing ? (
-            <RevealDice values={pending?.dice} onDone={finishReveal} />
-          ) : active ? (
-            (active.dice || [null, null, null]).map((v, i) => (
-              <div key={i} className="text-center">
-                <Die value={v} hidden={!v} revealDelay={v != null && !diceSettled ? i * 0.15 : -1} />
-                {active.status === 'revealed' && v != null && (
-                  <div className="text-[10px] text-navy-400 mt-1">ลูกที่ {i + 1}</div>
-                )}
+        {/* ===== ตู้เต๋า HILO — casino dice machine สไตล์สล็อต ===== */}
+        <div className="relative select-none">
+          <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#3d1220] via-[#2a0d18] to-[#1a0810] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
+            <div className="rounded-xl border border-amber-400/30 bg-black/30 p-1.5 sm:p-2">
+
+              {/* ===== Marquee — ป้ายไฟด้านบน ===== */}
+              <div className="relative rounded-lg bg-gradient-to-b from-[#101726] to-[#0a0f1c] border border-amber-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
+                <div className="flex justify-between px-1 mb-1">
+                  {Array.from({ length: 16 }).map((_, i) => (
+                    <span key={i} className="slot-bulb w-1.5 h-1.5 rounded-full"
+                      style={{ animationDelay: `${(i % 2) * 0.6 + (i * 0.09)}s` }} />
+                  ))}
+                </div>
+                <div className="text-center">
+                  <div className="font-black tracking-[0.18em] text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-yellow-300 to-amber-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">
+                    ★ HILO DICE ★
+                  </div>
+                  <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.3em] text-red-400/80 mt-0.5">3 DICE • HIGH • LOW • 11</div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
               </div>
-            ))
-          ) : (
-            <>
-              <DieHidden /><DieHidden /><DieHidden />
-            </>
-          )}
+
+              {/* ===== ช่องเต๋า (reel window) — เขย่าตอนทอย ===== */}
+              <div className={`relative rounded-lg bg-[#041008] border-2 border-black shadow-[inset_0_4px_18px_rgba(0,0,0,0.9)] px-2 sm:px-3 py-4 ${revealing ? 'animate-dice-shake' : ''}`}>
+                <div className="flex items-center justify-center gap-3 sm:gap-6">
+                  {revealing ? (
+                    <RevealDice values={pending?.dice} onDone={finishReveal} />
+                  ) : active ? (
+                    (active.dice || [null, null, null]).map((v, i) => (
+                      <div key={i} className="text-center">
+                        <Die value={v} hidden={!v} revealDelay={v != null && !diceSettled ? i * 0.15 : -1} />
+                        {active.status === 'revealed' && v != null && (
+                          <div className="text-[10px] text-navy-400 mt-1">ลูกที่ {i + 1}</div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <DieHidden /><DieHidden /><DieHidden />
+                    </>
+                  )}
+                </div>
+                {/* กระจก + ขอบบนล่างเข้ม */}
+                <div className="absolute inset-0 rounded-lg pointer-events-none bg-gradient-to-br from-white/15 via-white/[0.03] to-transparent" />
+                <div className="absolute inset-x-0 top-0 h-4 rounded-t-lg bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-4 rounded-b-lg bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+              </div>
+
+              {/* ===== จอ LCD — ผลรวม/ข้าง/สถานะ ===== */}
+              <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+                <DiceDisplay label="SUM" value={sumVal} accent="text-amber-300" />
+                <DiceDisplay label="SIDE" value={sideVal} accent="text-sky-300" />
+                <DiceDisplay label="RESULT" value={statVal} accent={statCls} />
+              </div>
+
+              {active && (
+                <div className="mt-1.5 flex items-center justify-between px-1">
+                  <span className="text-[10px] font-mono text-slate-500">{active.slipRef || ''}</span>
+                  <button onClick={() => setActive(null)} className="text-[10px] text-slate-500 hover:text-slate-300">ปิด ✕</button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ประกายไฟมุมตู้ */}
+          <span className="casino-sparkle text-lg absolute -top-2 -right-2 text-amber-300" style={{ animationDelay: '0.8s' }}>✦</span>
+          <span className="casino-sparkle text-sm absolute -bottom-1 -left-2 text-red-400" style={{ animationDelay: '1.9s' }}>✧</span>
         </div>
 
         {active?.status === 'revealed' && active.sum != null && (
           <div className="text-center">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-200 font-bold">
+            <span className={`inline-block px-4 py-1.5 rounded-full border font-bold animate-result-pop ${
+              active.side === active.pick
+                ? 'bg-green-500/15 border-green-500/50 text-green-300'
+                : 'bg-navy-700/60 border-navy-600 text-navy-200'}`}>
               ผลรวม = {active.sum} → {active.side === 'eleven' ? '11 ไฮโล' : active.side === 'high' ? 'สูง ▲' : 'ต่ำ ▼'}
             </span>
           </div>
-        )}
-
-        {revealing && (
-          <p className="text-center text-xs text-amber-300 animate-pulse">กำลังเขย่าเต๋า...</p>
         )}
 
         {/* ปุ่มเดิมพันอยู่บนแถบล่าง (instant-betbar) — ที่นี่แสดงแค่เต๋า+ผล */}
@@ -276,8 +363,9 @@ export default function Hilo() {
             {tickets.map(t => {
               const won = t.status === 'revealed' && t.side === t.pick;
               return (
-                <button key={t.id} onClick={() => openTicket(t)}
-                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left">
+                <div key={t.id} role="button" tabIndex={0}
+                  onClick={() => openTicket(t)} onKeyDown={e => e.key === 'Enter' && openTicket(t)}
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left cursor-pointer">
                   <div className="flex items-center gap-1">
                     {(t.dice || [null, null, null]).map((v, i) => (
                       v != null
@@ -292,13 +380,21 @@ export default function Hilo() {
                     </div>
                   </div>
                   {t.status === 'awaiting' ? (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40">รอเดิมพัน</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40">รอเดิมพัน</span>
+                      <span role="button" tabIndex={0}
+                        onClick={e => cancelTicket(e, t)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); cancelTicket(e, t); } }}
+                        className="text-[10px] font-bold px-2 py-1 rounded-full bg-navy-700/60 text-navy-300 border border-navy-600 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition cursor-pointer">ยกเลิก</span>
+                    </span>
+                  ) : t.status === 'cancelled' ? (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-400 border border-navy-600">ยกเลิก</span>
                   ) : won ? (
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/15 text-green-300 border border-green-500/40">ถูก</span>
                   ) : (
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-300 border border-navy-600">ไม่ถูก</span>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -324,18 +420,31 @@ export default function Hilo() {
   );
 }
 
+// จอ LCD ดิจิทัลของตู้เต๋า — ตัวอักษรเรืองแสงบนจอดำ
+function DiceDisplay({ label, value, accent = 'text-amber-300' }) {
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="text-[8px] sm:text-[9px] font-black tracking-[0.2em] text-red-400/90 mb-0.5">{label}</div>
+      <div className={`bg-black/80 border border-white/10 rounded-md px-2 py-1 font-mono font-bold text-sm sm:text-base ${accent} truncate shadow-[inset_0_0_12px_rgba(0,0,0,0.9)]`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function ResultPanel({ ticket }) {
   const won = ticket.side === ticket.pick;
   const pickTh = PICK_TH[ticket.pick] || ticket.pick;
   const outcomeTh = ticket.side === 'eleven' ? '11 ไฮโล' : ticket.side === 'high' ? 'สูง' : 'ต่ำ';
   return (
-    <div className={`rounded-2xl border-2 p-5 text-center ${
+    <div className={`relative rounded-2xl border-2 p-5 text-center overflow-visible ${
       won ? 'border-green-500/60 bg-green-500/10' : 'border-navy-600 bg-navy-900/60'}`}>
+      {won && <WinBurst />}
       {won ? (
         <>
           <div className="text-4xl mb-1 animate-coin text-green-400 font-black">✓</div>
           <div className="text-lg font-bold text-green-400">ถูกต้อง! {ticket.dice.join(' + ')} = {ticket.sum} → {outcomeTh}</div>
-          <div className="text-2xl font-black text-gold-300 coin-gold-bright">+{satang(ticket.payout)} บาท</div>
+          <div className="text-2xl font-black text-green-300 animate-coin">+{satang(ticket.payout)} บาท</div>
           {ticket.balance !== undefined && <div className="text-xs text-navy-400 mt-1">เครดิตคงเหลือ {satang(ticket.balance)} บาท</div>}
         </>
       ) : (

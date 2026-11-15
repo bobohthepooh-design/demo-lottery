@@ -1,27 +1,77 @@
 import { useEffect, useRef, useState } from 'react';
 
 // สล็อต 5 รีล × 3 แถวจ่าย (paylines) — ตู้สล็อตสไตล์ casino จริง
-// grid 15 ช่อง row-major (3 แถว × 5 รีล): คอลัมน์ c = รีลที่ c, แถว r = payline ที่ r
+// รีล = แถบสัญลักษณ์เลื่อนแนวตั้ง (translateY) พร้อม ease-out + motion blur ตามความเร็ว
 // spinKey เพิ่มค่า = เริ่มหมุน, grid = ผลจริงจาก server (settle ไปแล้ว แค่แสดงผลทีหลัง)
 const REELS = 5;
-const STOP_AT = [1300, 1600, 1900, 2200, 2500]; // ms — รีลหยุดทีละตัวจากซ้ายไปขวา
+const REEL_MS = [1350, 1680, 2010, 2340, 2670]; // ms — รีลซ้ายหยุดก่อน ไล่ไปขวา
 const BULBS = 16; // หลอดไฟ marquee วิ่งเป็นจังหวะ
+const GAP = 6;     // ระยะห่างระหว่างสัญลักษณ์/รีล
+const COL_GAP = 6; // ระยะห่างระหว่างคอลัมน์รีล
+const CELL_MIN = 34, CELL_MAX = 56; // ขนาดช่องสัญลักษณ์ — ย่อ/ขยายตามความกว้างจอ
 
 // grid row-major 3×5: รีล c = index c, c+5, c+10
 const reelOf = (grid, c) => grid ? [grid[c], grid[c + 5], grid[c + 10]] : null;
 
-// ช่องสัญลักษณ์บนแถบรีล — พื้นขาวแบบสล็อตจริง (สัญลักษณ์เข้มบนแถบขาว)
-function ReelCell({ sym, isWin, isSpinning, masked }) {
+// ===== รีลที่กำลังหมุน — แถบสัญลักษณ์ยาวเลื่อนขึ้นแล้ว ease-out ล็อกที่ผลจริง =====
+function StripReel({ target, icons, duration, onStop, cell, pitch, winH }) {
+  const LAND = 26 + Math.floor(Math.random() * 6); // ตำแหน่งใน strip ที่จะหยุด (ผลจริงแทรกไว้)
+  const [strip] = useState(() => {
+    const arr = Array.from({ length: LAND + 3 }, () => icons[Math.floor(Math.random() * icons.length)] || '❓');
+    arr[LAND] = target[0]; arr[LAND + 1] = target[1]; arr[LAND + 2] = target[2];
+    return arr;
+  });
+  const [pos, setPos] = useState(0);   // ตำแหน่งปัจจุบัน (หน่วยช่อง)
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    const t0 = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - t0) / duration);
+      const e = 1 - Math.pow(1 - t, 3.4); // ease-out — เร็วตอนต้น ช้าลงนิดหน่อยก่อนหยุด
+      setPos(e * LAND);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+      else onStop?.();
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // motion blur ตามระยะคงเหลือ — เร็วตอนต้นเบลอมาก หยุดแล้วคมชัด
+  const blur = Math.min(2.2, Math.max(0, (LAND - pos) * 0.085));
   return (
-    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-[4px] border flex items-center justify-center overflow-hidden transition-all duration-300
-      ${isSpinning
-        ? 'border-slate-300 bg-gradient-to-b from-slate-100 to-slate-200 blur-[1.5px] saturate-150'
-        : isWin
-          ? 'border-amber-300 bg-gradient-to-b from-amber-200 to-yellow-400 shadow-[0_0_16px_rgba(251,191,36,0.8)] scale-[1.04]'
-          : 'border-slate-300/80 bg-gradient-to-b from-white to-slate-100 shadow-[inset_0_-3px_5px_rgba(0,0,0,0.15)]'}`}>
-      <span className="leading-none text-2xl sm:text-[28px] drop-shadow-sm">
-        {masked && !sym ? '❓' : (sym || '❓')}
-      </span>
+    <div style={{ width: cell, height: winH, overflow: 'hidden', position: 'relative' }}>
+      <div style={{ transform: `translateY(${-pos * pitch}px)`, filter: `blur(${blur.toFixed(2)}px)` }}>
+        {strip.map((s, i) => (
+          <div key={i} style={{ height: cell, marginBottom: GAP }} className="flex items-center justify-center">
+            <span className="leading-none select-none" style={{ fontSize: Math.round(cell * 0.56) }}>{s}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===== รีลที่หยุดแล้ว — ช่องสัญลักษณ์นิ่งๆ พร้อมไฮไลต์เพย์ไลน์ =====
+function ReelCell({ sym, isWin, cell }) {
+  return (
+    <div className={`flex items-center justify-center rounded-[4px] border overflow-hidden transition-all duration-300
+      ${isWin
+        ? 'border-amber-300 bg-gradient-to-b from-amber-200 to-yellow-400 shadow-[0_0_16px_rgba(251,191,36,0.8)] scale-[1.06]'
+        : 'border-slate-300/80 bg-gradient-to-b from-white to-slate-100 shadow-[inset_0_-3px_5px_rgba(0,0,0,0.15)]'}`}
+      style={{ width: cell, height: cell }}>
+      <span className="leading-none select-none" style={{ fontSize: Math.round(cell * 0.56) }}>{sym || '❓'}</span>
+    </div>
+  );
+}
+
+function StaticReel({ col, isWin, justLocked, masked, cell }) {
+  return (
+    <div className={`flex flex-col ${justLocked ? 'animate-reel-lock' : ''}`} style={{ gap: GAP }}>
+      {col.map((sym, r) => (
+        <ReelCell key={r} sym={masked && !sym ? '❓' : sym} isWin={isWin(r)} cell={cell} />
+      ))}
     </div>
   );
 }
@@ -43,51 +93,58 @@ export default function SlotMachine({
   title = '★ MEGA SLOTS ★', betLabel = 'BET 20', creditLabel = 'CREDIT',
   onSpin = null, spinning = false, spinDisabled = false,
 }) {
-  const [view, setView] = useState(() => (grid && grid.length === 15 ? [0, 1, 2, 3, 4].map(c => reelOf(grid, c)) : [[null, null, null], [null, null, null], [null, null, null], [null, null, null], [null, null, null]]));
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [stopped, setStopped] = useState([true, true, true, true, true]);
+  const [phase, setPhase] = useState('idle');        // idle | spinning | done
+  const [locked, setLocked] = useState([false, false, false, false, false]);
   const doneRef = useRef(false);
+  const reelsRef = useRef(null);
+  const [cell, setCell] = useState(48);              // ขนาดช่องสัญลักษณ์ — วัดจากความกว้างจริง (มือถือไม่ล้นขอบ)
+
+  useEffect(() => {
+    const el = reelsRef.current;
+    if (!el) return;
+    const compute = () => {
+      const w = el.clientWidth;
+      if (w > 0) setCell(Math.max(CELL_MIN, Math.min(CELL_MAX, Math.floor((w - (REELS - 1) * COL_GAP) / REELS))));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const pitch = cell + GAP;
+  const winH = cell * 3 + GAP * 2;
 
   // เริ่มหมุนเมื่อ spinKey เปลี่ยน + มี grid (ผลจริงจาก server)
   useEffect(() => {
     if (!spinKey || !grid || grid.length !== 15) return;
     doneRef.current = false;
-    const locked = [false, false, false, false, false];
-    const rand = () => icons[Math.floor(Math.random() * icons.length)] || '❓';
-    setIsSpinning(true);
-    setStopped([false, false, false, false, false]);
-    setView([0, 1, 2, 3, 4].map(() => [rand(), rand(), rand()]));
-    const iv = setInterval(() => {
-      setView(v => v.map((col, i) => (locked[i] ? col : [rand(), rand(), rand()])));
-    }, 80);
-    const timers = STOP_AT.map((ms, c) => setTimeout(() => {
-      locked[c] = true;
-      const targetCol = reelOf(grid, c);
-      setView(v => { const n = [...v]; n[c] = targetCol; return n; });
-      setStopped(s => { const n = [...s]; n[c] = true; return n; });
-    }, ms));
-    const fin = setTimeout(() => {
-      clearInterval(iv);
-      setIsSpinning(false);
-      if (!doneRef.current) { doneRef.current = true; onDone?.(); }
-    }, STOP_AT[4] + 450);
-    return () => { clearInterval(iv); timers.forEach(clearTimeout); clearTimeout(fin); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinKey]);
+    setLocked([false, false, false, false, false]);
+    setPhase('spinning');
+  }, [spinKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // idle / ผลที่เปิดเผยแล้ว — แสดงผลจริงนิ่งๆ
-  useEffect(() => {
-    if (!isSpinning && grid && grid.length === 15) setView([0, 1, 2, 3, 4].map(c => reelOf(grid, c)));
-  }, [grid, isSpinning]);
+  const handleStop = (c) => {
+    setLocked(s => {
+      if (s[c]) return s;
+      const n = [...s]; n[c] = true;
+      if (n.every(Boolean) && !doneRef.current) {
+        doneRef.current = true;
+        setPhase('done');
+        onDone?.();
+      }
+      return n;
+    });
+  };
+
+  const active = phase === 'spinning';
+  const cols = [0, 1, 2, 3, 4].map(c => reelOf(grid, c) || [null, null, null]);
 
   // cell (row r, col/reel c) ชนะถ้าอยู่ใน cells ของเพย์ไลน์ที่ถูก
   // รองรับทั้ง format ใหม่ {cells:[[r,c]]} และ format เก่า {row,count} (ผลย้อนหลัง)
-  const cellWin = (r, c) => !isSpinning && (lines || []).some(l =>
+  const cellWin = (r, c) => !active && (lines || []).some(l =>
     l.cells ? l.cells.some(([rr, cc]) => rr === r && cc === c) : (l.row === r && c < (l.count || 3)));
-  const rowWin = (r) => !isSpinning && (lines || []).some(l =>
+  const rowWin = (r) => !active && (lines || []).some(l =>
     l.cells ? l.cells.some(([rr]) => rr === r) : l.row === r);
-  const anyWin = (lines || []).length > 0 && !isSpinning;
-  const cellCls = compact ? 'w-10 h-10 text-xl' : '';
+  const anyWin = (lines || []).length > 0 && !active;
 
   return (
     <div className="relative select-none">
@@ -116,32 +173,34 @@ export default function SlotMachine({
           </div>
 
           {/* ===== ช่องรีล (reel window) ===== */}
-          <div className="relative rounded-lg bg-[#05070d] border-2 border-black shadow-[inset_0_4px_18px_rgba(0,0,0,0.9)] px-2 sm:px-2.5 py-2">
-            <div className="flex">
+          <div className="relative rounded-lg bg-[#041008] border-2 border-black shadow-[inset_0_4px_18px_rgba(0,0,0,0.9)] px-1.5 sm:px-2.5 py-2">
+            <div className="flex items-center">
               {/* ตัวชี้ payline ซ้าย-ขวา */}
-              <div className="flex flex-col justify-around py-1 pr-1 gap-0.5">
+              <div className="flex flex-col justify-around py-1 pr-1" style={{ height: winH, gap: GAP }}>
                 {[0, 1, 2].map(r => (
-                  <span key={r} className={`text-[8px] font-black w-4 text-center ${rowWin(r) ? 'text-amber-300' : 'text-slate-600'}`}>
+                  <span key={r} className={`text-[8px] font-black w-3 sm:w-4 text-center ${rowWin(r) ? 'text-amber-300' : 'text-slate-600'}`}>
                     {rowWin(r) ? '►' : '·'}
                   </span>
                 ))}
               </div>
 
-              <div className="flex gap-1 sm:gap-1.5">
-                {view.map((col, c) => (
-                  <div key={c} className="flex flex-col gap-1 sm:gap-1.5">
-                    {col.map((sym, r) => (
-                      <ReelCell key={r} sym={masked && !grid && !isSpinning ? '❓' : sym}
-                        isWin={cellWin(r, c)} isSpinning={isSpinning && !stopped[c]}
-                        masked={masked && !grid && !isSpinning} />
-                    ))}
-                  </div>
-                ))}
+              <div ref={reelsRef} className="flex" style={{ gap: COL_GAP }}>
+                {cols.map((col, c) =>
+                  active && !locked[c] ? (
+                    <StripReel key={`${spinKey}-${c}`} target={col} icons={icons}
+                      duration={REEL_MS[c]} onStop={() => handleStop(c)}
+                      cell={cell} pitch={pitch} winH={winH} />
+                  ) : (
+                    <StaticReel key={c} col={col}
+                      isWin={(r) => cellWin(r, c)}
+                      justLocked={active && locked[c]}
+                      masked={masked && !grid} cell={cell} />
+                  ))}
               </div>
 
-              <div className="flex flex-col justify-around py-1 pl-1 gap-0.5">
+              <div className="flex flex-col justify-around py-1 pl-1" style={{ height: winH, gap: GAP }}>
                 {[0, 1, 2].map(r => (
-                  <span key={r} className={`text-[8px] font-black w-4 text-center ${rowWin(r) ? 'text-amber-300' : 'text-slate-600'}`}>
+                  <span key={r} className={`text-[8px] font-black w-3 sm:w-4 text-center ${rowWin(r) ? 'text-amber-300' : 'text-slate-600'}`}>
                     {rowWin(r) ? '◄' : '·'}
                   </span>
                 ))}
@@ -155,10 +214,10 @@ export default function SlotMachine({
           </div>
 
           {/* ===== แผงควบคุมล่าง ===== */}
-          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#1c2438] to-[#0d1220] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
             <Display label="BET" value={betLabel} />
-            <Display label="CREDIT" value={creditLabel} accent="text-emerald-300" />
-            <Display label="LINES" value="1-2-3" accent="text-sky-300" />
+            <Display label="CREDIT" value={creditLabel} accent="text-gold-300" />
+            <Display label="LINES" value="20" accent="text-sky-300" />
 
             {onSpin && (
               <button onClick={onSpin} disabled={spinning || spinDisabled}

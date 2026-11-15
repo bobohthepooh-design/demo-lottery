@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { resultSchema } from '../lotterySchema.js';
+import { marketInfo, MODE_BADGE } from '../resultSource.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import AdminSettle from './Settle.jsx';
 import { toast } from '../components/toast.js';
@@ -29,7 +30,35 @@ function matchLabel(cfg) {
 }
 
 // กติกาเกมด่วนที่ผูกกับ service จริง — ให้แก้ match_config ได้แม้ตอน edit
-const INSTANT_BET_TYPES = ['scratch', 'hilo', 'hilo_low', 'hilo_high', 'hilo_eleven'];
+const INSTANT_BET_TYPES = ['scratch', 'hilo', 'hilo_low', 'hilo_high', 'hilo_eleven', 'kiwi', 'kiwi_vip', 'kiwi_dice'];
+
+// ค่า default อัตราจ่ายเกมด่วน — ใช้แสดงในฟอร์มเมื่อยังไม่เคยปรับ (ตรงกับ server)
+const SCRATCH_DEFAULT_PRIZES = [
+  { icon: '🍒', name: 'เชอร์รี่', prize: 150 }, { icon: '🍋', name: 'เลมอน', prize: 300 },
+  { icon: '🍊', name: 'ส้ม', prize: 500 },     { icon: '🍇', name: 'องุ่น', prize: 900 },
+  { icon: '🔔', name: 'กระดิ่ง', prize: 2000 }, { icon: '⭐', name: 'ดาว', prize: 6000 },
+  { icon: '💎', name: 'เพชร', prize: 18000 },  { icon: '7️⃣', name: 'เจ็ด', prize: 80000 },
+];
+const KIWI_TIER_HITS = { kiwi: [2, 3, 4, 5], kiwi_vip: [2, 3] };
+const KIWI_TIER_DEFAULTS = { kiwi: { 2: 1, 3: 4, 4: 18, 5: 70 }, kiwi_vip: { 2: 4, 3: 30 } };
+const DICE_MULT_DEFAULTS = { single: 1.6, pair: 5, triple: 150 };
+const DICE_BET_LABEL = { single: 'สัตว์เดี่ยว', pair: 'สัตว์คู่', triple: 'สัตว์ตอง' };
+// ประเภทที่มีตัวแก้ JSON เฉพาะทาง (prizes/payouts) — ซ่อนช่อง match_config ดิบกันแก้ชนกัน
+const STRUCTURED_CFG_TYPES = ['scratch', 'kiwi', 'kiwi_vip', 'kiwi_dice'];
+const parseCfg = (s) => { try { return JSON.parse(s || '{}') || {}; } catch { return {}; } };
+
+// badge สถานะตลาด — ข้อมูลอยู่ใน resultSource.js (MARKET_INFO/MODE_BADGE)
+function marketBadge(typeCode, catCode) {
+  const info = marketInfo(typeCode, catCode);
+  if (!info) return null;
+  const b = MODE_BADGE[info.mode];
+  return (
+    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${b.cls}`}
+      title={`ชนิด: ${info.kind} • แหล่งผล: ${info.src}`}>
+      {info.kind} • {b.label}{info.src && info.mode !== 'off' ? ` (${info.src})` : ''}
+    </span>
+  );
+}
 
 const emptyRule = (typeId) => ({
   lottery_type_id: typeId, category_id: null, bet_type: '', name_th: '', name_en: '',
@@ -87,6 +116,30 @@ export default function AdminLotteries() {
     load();
   };
 
+  // patch match_config (เก็บ payouts/prizes ของเกมด่วน) — ใช้ในฟอร์มแก้ไขกติกา
+  const patchCfg = (patch) => setEditRule(er => er && ({ ...er, match_config: JSON.stringify({ ...parseCfg(er.match_config), ...patch }) }));
+  const setTier = (bt, hits, v) => {
+    const c = parseCfg(editRule.match_config);
+    const tiers = { ...(c.payouts?.tiers || {}) };
+    if (v === '' || v == null) delete tiers[hits]; else tiers[hits] = +v;
+    patchCfg({ payouts: { ...(c.payouts || {}), tiers } });
+  };
+  const setDiceMult = (key, v) => {
+    const c = parseCfg(editRule.match_config);
+    const mults = { ...(c.payouts?.mults || {}) };
+    if (v === '' || v == null) delete mults[key]; else mults[key] = +v;
+    patchCfg({ payouts: { ...(c.payouts || {}), mults } });
+  };
+  const setScratchPrize = (icon, satangVal) => {
+    const c = parseCfg(editRule.match_config);
+    const cur = Array.isArray(c.prizes) ? c.prizes : [];
+    const prizes = SCRATCH_DEFAULT_PRIZES.map(s => ({
+      icon: s.icon,
+      prize: s.icon === icon ? satangVal : (cur.find(p => p.icon === s.icon)?.prize ?? s.prize),
+    }));
+    patchCfg({ prizes });
+  };
+
   const saveRule = async () => {
     if (!(await confirmAction({ title: editRule.id ? 'ยืนยันแก้ไขกติกา' : 'ยืนยันเพิ่มกติกา', message: `${editRule.id ? 'บันทึกการแก้ไข' : 'เพิ่ม'}กติกา "${editRule.name_th}" ใช่หรือไม่?` }))) return;
     try {
@@ -108,6 +161,7 @@ export default function AdminLotteries() {
     const catIds = [...new Set(typeRules.map(r => r.category_id || 0))];
     const groups = catIds.map(cid => ({
       cid: cid || null,
+      catCode: cid ? categories.find(c => c.id === cid)?.code : null,
       name: cid ? catName(cid) : 'ทั่วไป (ไม่ระบุหมวด)',
       rows: typeRules.filter(r => (r.category_id || 0) === cid),
     }));
@@ -167,6 +221,7 @@ export default function AdminLotteries() {
               </button>
             </div>
             <div className="text-xs text-navy-300 mt-1">{t.description}</div>
+            <div className="mt-1.5">{marketBadge(t.code, null)}</div>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-[11px] text-navy-400">ผลรางวัล:</span>
               <select value={t.result_mode || 'auto'} onChange={e => setResultMode(t, e.target.value)}
@@ -223,8 +278,9 @@ export default function AdminLotteries() {
             </div>
             {groups.map(g => (
               <div key={g.cid || 'none'} className={g.cid ? 'border-t border-navy-700/60' : ''}>
-                <div className="px-5 py-2 bg-navy-800/60 text-xs font-semibold text-gold-400/90">
+                <div className="px-5 py-2 bg-navy-800/60 text-xs font-semibold text-gold-400/90 flex items-center gap-2 flex-wrap">
                   {g.name}
+                  {marketBadge(type.code, g.catCode)}
                 </div>
                 <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[560px]">
@@ -247,7 +303,7 @@ export default function AdminLotteries() {
                         </td>
                         <td className="px-3 py-2.5 text-center text-navy-200">{r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : 'ราศี') : `${r.digits} หลัก`}</td>
                         <td className="px-3 py-2.5 text-navy-300 text-xs" title={r.match_config}>{matchLabel(r.match_config)}</td>
-                        <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">{r.bet_type === 'scratch' ? 'ตารางรางวัล' : r.bet_type === 'hilo' ? 'ราคาต่อครั้ง' : `x${r.payout_multiplier}`}</td>
+                        <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">{STRUCTURED_CFG_TYPES.includes(r.bet_type) ? <span className="text-navy-400 text-xs font-normal">ดูในแก้ไข</span> : r.bet_type === 'hilo' ? 'ราคาต่อครั้ง' : `x${r.payout_multiplier}`}</td>
                         <td className="px-3 py-2.5 text-center">
                           <button onClick={async () => {
                             const enabling = !r.is_active;
@@ -309,7 +365,7 @@ export default function AdminLotteries() {
                 </>
               )}
               {/* game ด่วน (ขูด/ไฮโล): match_config แก้ได้แม้ตอน edit — ใช้เก็บ option เสริมของเกม */}
-              {editRule.id && INSTANT_BET_TYPES.includes(editRule.bet_type) && (
+              {editRule.id && INSTANT_BET_TYPES.includes(editRule.bet_type) && !STRUCTURED_CFG_TYPES.includes(editRule.bet_type) && (
                 <div className="sm:col-span-2"><label className="text-navy-300 text-xs">match_config (JSON)</label>
                   <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" />
                   <div className="text-[10px] text-navy-500 mt-1">เกมด่วน: ราคาอยู่ที่ "ขั้นต่ำ/สูงสุด" ด้านล่าง, อัตราจ่ายอยู่ที่ "อัตราจ่าย" — match_config เป็น option เสริมเท่านั้น</div></div>
@@ -317,10 +373,62 @@ export default function AdminLotteries() {
               <div><label className="text-navy-300 text-xs">ชื่อไทย (แสดงให้สมาชิก)</label>
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               {editRule.bet_type === 'scratch' ? (
-                <div className="sm:col-span-2"><label className="text-navy-300 text-xs">อัตราจ่าย</label>
-                  <div className="text-xs text-navy-300 bg-navy-900 border border-navy-700 rounded-lg px-3 py-2 mt-1">
-                    🎰 สล็อตจ่ายตามตารางรางวัล 20 เพย์ไลน์ (ซ้ำ ≥3 รีลบนเส้นใดก็ได้ • 5 รีล × 3 แถว) ไม่ใช่ตัวคูณ — แก้รางวัล(3 รีล/เส้น)ได้ที่ Settings → <code>scratch_prizes</code> (JSON) • ราคาบัตรแก้ที่ขั้นต่ำ/สูงสุดด้านล่าง (sync อัตโนมัติ)
-                  </div></div>
+                <div className="sm:col-span-2"><label className="text-navy-300 text-xs">ตารางรางวัล — จ่ายเมื่อสัญลักษณ์ซ้ำ 3 รีลบน 1 เพย์ไลน์ (บาท)</label>
+                  <div className="grid sm:grid-cols-2 gap-2 mt-1">
+                    {(() => {
+                      const c = parseCfg(editRule.match_config);
+                      const cur = Array.isArray(c.prizes) ? c.prizes : [];
+                      return SCRATCH_DEFAULT_PRIZES.map(s => {
+                        const v = cur.find(p => p.icon === s.icon)?.prize ?? s.prize;
+                        return (
+                          <label key={s.icon} className="flex items-center gap-2 bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5">
+                            <span className="text-lg w-7 text-center">{s.icon}</span>
+                            <span className="flex-1 text-xs text-navy-300 truncate">{s.name}</span>
+                            <input type="number" step="0.01" min="0" value={toBaht(v)}
+                              onChange={e => setScratchPrize(s.icon, toSatang(e.target.value))}
+                              className="w-20 bg-navy-800 border border-navy-600 rounded px-2 py-1 text-xs text-right" />
+                          </label>
+                        );
+                      });
+                    })()}
+                  </div>
+                  <div className="text-[10px] text-navy-500 mt-1">รางวัล 4/5 รีล = ×4 / ×15 ของค่านี้อัตโนมัติ • ราคาบัตรแก้ที่ขั้นต่ำ/สูงสุดด้านล่าง</div></div>
+              ) : ['kiwi', 'kiwi_vip'].includes(editRule.bet_type) ? (
+                <div className="sm:col-span-2"><label className="text-navy-300 text-xs">อัตราจ่าย — จ่ายกี่เท่าของราคาเมื่อเลขที่เลือกตรง (×ราคา)</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+                    {KIWI_TIER_HITS[editRule.bet_type].map(h => {
+                      const c = parseCfg(editRule.match_config);
+                      const tiers = c.payouts?.tiers || {};
+                      const v = tiers[h] ?? KIWI_TIER_DEFAULTS[editRule.bet_type][h];
+                      return (
+                        <label key={h} className="bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5">
+                          <span className="text-[10px] text-navy-400">ตรง {h} เลข →</span>
+                          <input type="number" step="0.1" min="0" value={v}
+                            onChange={e => setTier(editRule.bet_type, h, e.target.value)}
+                            className="w-full bg-navy-800 border border-navy-600 rounded px-2 py-1 text-sm text-right" />
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[10px] text-navy-500 mt-1">เว้นว่าง/ลบค่า = ใช้ค่า default • 0 = ไม่จ่ายรางวัลระดับนั้น</div></div>
+              ) : editRule.bet_type === 'kiwi_dice' ? (
+                <div className="sm:col-span-2"><label className="text-navy-300 text-xs">อัตราจ่ายน้ำเต้าปูปลา — จ่ายกี่เท่าของราคา (×ราคา)</label>
+                  <div className="grid grid-cols-3 gap-2 mt-1">
+                    {['single', 'pair', 'triple'].map(k => {
+                      const c = parseCfg(editRule.match_config);
+                      const mults = c.payouts?.mults || {};
+                      const v = mults[k] ?? DICE_MULT_DEFAULTS[k];
+                      return (
+                        <label key={k} className="bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5">
+                          <span className="text-[10px] text-navy-400">{DICE_BET_LABEL[k]}</span>
+                          <input type="number" step="0.1" min="0" value={v}
+                            onChange={e => setDiceMult(k, e.target.value)}
+                            className="w-full bg-navy-800 border border-navy-600 rounded px-2 py-1 text-sm text-right" />
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[10px] text-navy-500 mt-1">เว้นว่าง/ลบค่า = ใช้ค่า default • 0 = ไม่จ่ายรางวัลประเภทนั้น</div></div>
               ) : (
               <div><label className="text-navy-300 text-xs">อัตราจ่าย (จ่ายกี่เท่า)</label>
                 <div className="flex items-center gap-2 mt-1">

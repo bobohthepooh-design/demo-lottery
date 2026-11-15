@@ -1,0 +1,69 @@
+services:
+  app:
+    build: .
+    image: demo-lottery:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # อยู่หลัง Caddy reverse proxy — ให้ rate-limit เห็น IP จริง
+      TRUST_PROXY: "true"
+      # PostgreSQL primary — hostname `postgres` resolve ใน docker network
+      # (env_file มี DATABASE_URL=127.0.0.1 สำหรับรันนอก docker — ตัวนี้ override)
+      DATABASE_URL: postgres://lottery:${POSTGRES_PASSWORD}@postgres:5432/lottery
+    volumes:
+      # SQLite database — เก็บไว้เป็น backup/rollback (ไม่ใช้เมื่อ DATABASE_URL ถูกตั้ง)
+      - lottery-data:/app/server/data
+    expose:
+      - "4000"          # ไม่เปิดออก host — ให้เข้าผ่าน Caddy เท่านั้น
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+
+  # PostgreSQL — primary database (migration เสร็จแล้ว app ใช้ DATABASE_URL)
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lottery
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: lottery
+    ports:
+      - "127.0.0.1:5432:5432"   # เฉพาะ localhost — สำหรับ migration script/เทส (ไม่ expose ออก LAN)
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lottery"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      # ตั้งใน .env: DOMAIN=lottery.example.com
+      DOMAIN: ${DOMAIN:-localhost}
+      # IP ของเครื่องใน LAN สำหรับทดสอบ — ว่างไว้ = ไม่เปิด LAN site
+      LAN_IP: ${LAN_IP:-}
+    depends_on: [app]
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  lottery-data:
+  caddy-data:
+  caddy-config:
+  postgres-data:

@@ -40,7 +40,7 @@ const SCENES = {
       ].map((row, r) => row.map((s, c) => (
         <g key={`${r}-${c}`}>
           <rect x={9 + c * 9.5} y={19 + r * 10.5} width="8.5" height="9" rx="1.5"
-            fill={r === 1 && c === 2 ? `url(#${id}-g)` : '#0a1220'} stroke="#334155" strokeWidth="0.5" />
+            fill={r === 1 && c === 2 ? `url(#${id}-g)` : '#0a1526'} stroke="#334155" strokeWidth="0.5" />
           <text x={13.2 + c * 9.5} y={26 + r * 10.5} textAnchor="middle" fontSize="5">{s}</text>
         </g>
       )))}

@@ -149,11 +149,11 @@ function ItemRow({ i }) {
             <span className="text-base">💰</span> +{satang(i.payout)} บาท
           </div>
         )}
-        {i.status === 'lost' && <div className={`text-navy-400 text-xs ${anim}`}>เสีย {satang(i.amount)} บาท</div>}
+        {i.status === 'lost' && <div className={`text-red-400/90 text-xs ${anim}`}>เสีย {satang(i.amount)} บาท</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
             <div className="text-blue-300">รอผล</div>
-            <div className="text-amber-600/80">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
+            <div className="text-gold-300/80">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
           </div>
         )}
         {i.status === 'cancelled' && <div className="text-navy-400 text-xs">ยกเลิก</div>}
@@ -181,7 +181,14 @@ export default function MyBets() {
   const { setBalance } = useAuth();
   const navigate = useNavigate();
 
-  const load = () => api('/bets/mine?limit=100').then(r => setSlips(r.slips)).catch(() => {});
+  // ดึงโพยล่าสุด 100 + โพย pending แยกเสมอ — กันโพยค้างเก่าหลุดจากหน้าต่าง limit
+  const load = () => Promise.all([
+    api('/bets/mine?limit=100'),
+    api('/bets/mine?status=pending&limit=100'),
+  ]).then(([recent, pending]) => {
+    const seen = new Set();
+    setSlips([...pending.slips, ...recent.slips].filter(s => !seen.has(s.id) && seen.add(s.id)));
+  }).catch(() => {});
   useEffect(() => { load().finally(() => setLoading(false)); }, []);
   // SSE — ผลรางวัลออก/โพยเปลี่ยนสถานะ → อัปเดตทันที
   useEffect(() => {
@@ -190,9 +197,10 @@ export default function MyBets() {
     return () => window.removeEventListener('sys:update', h);
   }, []);
 
-  // ยกเลิกได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่
+  // ยกเลิกได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่ — โพยเกมด่วน (STANDING) ยกเลิกได้ตราบใดที่ยังไม่ตัดสิน
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  const canCancel = (s) => s.status === 'pending' && s.draw_status === 'open' && s.close_at > nowSql;
+  const canCancel = (s) => s.status === 'pending' && (
+    (s.draw_status === 'open' && s.close_at > nowSql) || String(s.draw_code || '').endsWith('-STANDING'));
 
   // ยิงซ้ำได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่ — พาไปหน้แทงพร้อมรายการเดิมให้ตรวจก่อนส่ง
   const canRepeat = (s) => s.status === 'pending' && s.draw_status === 'open' && s.close_at > nowSql
@@ -284,7 +292,7 @@ export default function MyBets() {
                 {canCancel(s) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); cancelSlip(s); }}
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${cancelAsk === s.id ? 'bg-red-500 text-white border-red-500 animate-pulse' : 'border-red-400/50 text-red-300 hover:bg-red-500/15'}`}>
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${cancelAsk === s.id ? 'bg-red-500 text-white border-red-500 animate-pulse' : 'border-gold-400/50 text-gold-300 hover:bg-gold-500/15'}`}>
                     {cancelAsk === s.id ? '⚠️ ยืนยัน?' : '🚫 ยกเลิก'}
                   </button>
                 )}
@@ -298,7 +306,7 @@ export default function MyBets() {
                     <div className="text-green-400 font-bold animate-coin">
                       🎉 รวมเงินรางวัล {satang(s.total_payout)} บาท
                     </div>
-                    <div className={`text-xs font-semibold ${net >= 0 ? 'text-amber-600' : 'text-navy-400'}`}>
+                    <div className={`text-xs font-semibold ${net >= 0 ? 'text-gold-300' : 'text-navy-400'}`}>
                       {net >= 0 ? `กำไรสุทธิ ${satang(net)} บาท` : `ขาดทุนสุทธิ ${satang(-net)} บาท`}
                     </div>
                   </div>

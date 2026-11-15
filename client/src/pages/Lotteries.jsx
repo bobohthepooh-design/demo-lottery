@@ -173,12 +173,12 @@ export default function Lotteries() {
         <div className="bg-navy-800/70 border border-navy-700 rounded-2xl p-3 space-y-1">
           <div className="kicker px-2 pt-1 pb-2">ประเภทหวย</div>
           <Link to="/lotteries"
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${!selType ? 'bg-[#06C755]/15 text-[#7ce8a8] border border-[#06C755]/40' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent'}`}>
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${!selType ? 'bg-[#22d3ee]/15 text-[#67e8f9] border border-[#22d3ee]/40' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent'}`}>
             🌐 ทั้งหมด
           </Link>
           {visibleTypes.map(t => (
             <Link key={t.id} to={`/lotteries?type=${t.id}`}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${selType === String(t.id) ? 'bg-[#06C755]/15 text-[#7ce8a8] border border-[#06C755]/40' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent'}`}>
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${selType === String(t.id) ? 'bg-[#22d3ee]/15 text-[#67e8f9] border border-[#22d3ee]/40' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent'}`}>
               <FlagIcon code={t.code} className="w-6 h-4 text-[8px] shrink-0" />
               <span className="truncate">{t.name_th}</span>
             </Link>

@@ -15,7 +15,7 @@ export function ensureCsrf(req, res) {
   const existing = parseCookies(req)[COOKIE];
   const value = existing && /^[a-f0-9]{32,64}$/.test(existing) ? existing : crypto.randomBytes(24).toString('hex');
   if (!existing) {
-    res.append('Set-Cookie', `${COOKIE}=${value}; Path=/; SameSite=Lax; Max-Age=86400${config.isProd ? '; Secure' : ''}`);
+    res.append('Set-Cookie', `${COOKIE}=${value}; Path=/; SameSite=Lax; Max-Age=86400${req.secure ? '; Secure' : ''}`);
   }
   return { cookieValue: value, token: `${value}.${sign(value)}` };
 }

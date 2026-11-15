@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import FairnessNote from '../components/Fairness.jsx';
+import WinBurst from '../components/WinBurst.jsx';
 import { sfx } from '../sound.js';
 
 // หวยยี่กี — เลือกเลข K ตัว → server สุ่มผล → จ่ายตามจำนวนที่ตรง รู้ผลทันที
@@ -19,8 +20,8 @@ function NumPicker({ poolSize, pickCount, picks, setPicks, disabled }) {
         return (
           <button key={n} onClick={() => toggle(n)} disabled={disabled || full}
             className={`aspect-square rounded-lg text-sm font-bold transition border ${on
-              ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-navy-950 border-emerald-300 shadow'
-              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-emerald-500/50 disabled:opacity-40'}`}>
+              ? 'bg-gradient-to-b from-gold-400 to-gold-600 text-black border-gold-200 shadow'
+              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-gold-400/50 disabled:opacity-40'}`}>
             {n}
           </button>
         );
@@ -66,8 +67,8 @@ function AnimalPicker({ symbols, picks, setPicks, disabled }) {
         return (
           <button key={n} onClick={() => toggle(n)} disabled={disabled}
             className={`rounded-xl px-2 py-3 flex flex-col items-center gap-1 transition border ${on
-              ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-navy-950 border-emerald-300 shadow'
-              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-emerald-500/50 disabled:opacity-40'}`}>
+              ? 'bg-gradient-to-b from-gold-400 to-gold-600 text-black border-gold-200 shadow'
+              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-gold-400/50 disabled:opacity-40'}`}>
             <AnimalGlyph name={s} size="1.9rem" />
             <span className={`text-[10px] leading-none ${on ? 'text-navy-900' : 'text-navy-400'}`}>{s}</span>
           </button>
@@ -94,8 +95,8 @@ function DiceAnimalPicker({ symbols, picks, setPicks, count, disabled }) {
         return (
           <button key={n} onClick={() => toggle(n)} disabled={disabled || full}
             className={`rounded-xl px-2 py-3 flex flex-col items-center gap-1 transition border ${on
-              ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-navy-950 border-emerald-300 shadow'
-              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-emerald-500/50 disabled:opacity-40'}`}>
+              ? 'bg-gradient-to-b from-gold-400 to-gold-600 text-black border-gold-200 shadow'
+              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-gold-400/50 disabled:opacity-40'}`}>
             <AnimalGlyph name={s} size="1.9rem" />
             <span className={`text-[10px] leading-none ${on ? 'text-navy-900' : 'text-navy-400'}`}>{s}</span>
           </button>
@@ -105,31 +106,38 @@ function DiceAnimalPicker({ symbols, picks, setPicks, count, disabled }) {
   );
 }
 
-// ลูกเต๋าหมุน — สุ่มสัญลักษณ์สัตว์เร็วๆ แล้วหยุดทีละลูกที่ผลจริง (เหมือนวงล้อ)
+// ลูกเต๋าน้ำเต้าปูปลา — สัญลักษณ์สัตว์กระพริบสลับเร็วๆ แล้วหยุดทีละลูกที่ผลจริง (ไม่หมุน)
 function DiceRoll({ drawn, symbols, onDone }) {
   const [vals, setVals] = useState(() => drawn.map((_, i) => (i * 2 + 1) % 6 + 1));
+  const [stopped, setStopped] = useState([false, false, false]);
+  const stoppedRef = useRef([false, false, false]); // กัน interval เขียนทับหน้าที่หยุดแล้ว
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
   useEffect(() => {
-    const stopAt = drawn.map((_, i) => 800 + i * 550); // ลูกที่ 1 หยุดก่อน ลูก 3 ทีหลัง
+    const stopAt = drawn.map((_, i) => 750 + i * 520); // ลูกที่ 1 หยุดก่อน ลูก 3 ทีหลัง
     const t0 = Date.now();
     const iv = setInterval(() => {
       const now = Date.now() - t0;
-      const next = drawn.map((d, i) => now >= stopAt[i] ? d : 1 + Math.floor(Math.random() * 6));
-      setVals(next);
-      if (now >= stopAt[drawn.length - 1] + 80) { clearInterval(iv); doneRef.current?.(); }
-    }, 70);
+      drawn.forEach((_, i) => {
+        if (now >= stopAt[i] && !stoppedRef.current[i]) {
+          stoppedRef.current[i] = true;
+          setStopped(s => { const n = [...s]; n[i] = true; return n; });
+        }
+      });
+      setVals(drawn.map((d, i) => (now >= stopAt[i] ? d : 1 + Math.floor(Math.random() * 6))));
+      if (now >= stopAt[drawn.length - 1] + 130) { clearInterval(iv); doneRef.current?.(); }
+    }, 60);
     return () => clearInterval(iv);
   }, [drawn]);
-  return (
-    <div className="flex items-center justify-center gap-2 flex-wrap">
-      {vals.map((v, i) => (
-        <span key={i} className="lotto-ball" style={{ fontSize: '1.4em', minWidth: '2.2em', height: '2.2em', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-          <AnimalGlyph name={symbols?.[v - 1]} size="1.4em" />
-        </span>
-      ))}
-    </div>
-  );
+  return vals.map((v, i) => (
+    <span key={i}
+      className={stopped[i] ? 'animate-dice-settle' : 'animate-animal-roll'}
+      style={{ animationDelay: stopped[i] ? `${i * 0.05}s` : undefined }}>
+      <span className="lotto-ball" style={{ fontSize: '1.4em', minWidth: '2.2em', height: '2.2em', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        <AnimalGlyph name={symbols?.[v - 1]} size="1.4em" />
+      </span>
+    </span>
+  ));
 }
 
 // ลูกเต๋า 3 ลูก — แสดงผลเป็นสัญลักษณ์สัตว์
@@ -141,6 +149,212 @@ function DiceResult({ drawn, symbols }) {
           <AnimalGlyph name={symbols?.[d - 1]} size="1.4em" />
         </span>
       ))}
+    </div>
+  );
+}
+
+// จอ LCD ดิจิทัลของตู้ — ตัวอักษรเรืองแสงบนจอดำ (สไตล์เดียวกับสล็อต/ไฮโล)
+function LcdDisplay({ label, value, accent = 'text-amber-300' }) {
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="text-[8px] sm:text-[9px] font-black tracking-[0.2em] text-red-400/90 mb-0.5">{label}</div>
+      <div className={`bg-black/80 border border-white/10 rounded-md px-2 py-1 font-mono font-bold text-xs sm:text-sm ${accent} truncate shadow-[inset_0_0_12px_rgba(0,0,0,0.9)]`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// ตู้เต๋าน้ำเต้าปูปลา — casino dice machine สไตล์สล็อต: marquee หลอดไฟ + ช่องเต๋า + จอ LCD
+function DiceMachineResult({ last, spinDone, g, game, onSpinDone }) {
+  const won = last.outcome === 'win' || (last.payout || 0) > 0; // ticket เก่าไม่มี outcome — ใช้ payout แทน
+  const betTh = last.betType ? (DICE_BET_LABEL[last.betType] || last.betType) : '—';
+  const pickTh = last.picks?.length
+    ? last.picks.map(p => animalText(last.diceSymbols?.[p - 1])).join(' + ')
+    : '—';
+  const resVal = !spinDone ? 'ทอยเต๋า...' : won ? 'ถูกต้อง ✓' : 'ไม่ถูก ✕';
+  const resCls = !spinDone ? 'text-amber-300' : won ? 'text-emerald-300' : 'text-red-400';
+  return (
+    <div className="relative select-none">
+      <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#16304f] via-[#0f1e33] to-[#0a1526] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
+        <div className="rounded-xl border border-gold-400/30 bg-black/30 p-1.5 sm:p-2">
+
+          {/* ===== Marquee ===== */}
+          <div className="relative rounded-lg bg-gradient-to-b from-[#0f1e33] to-[#040a14] border border-gold-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
+            <div className="flex justify-between px-1 mb-1">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span key={i} className="slot-bulb w-1.5 h-1.5 rounded-full"
+                  style={{ animationDelay: `${(i % 2) * 0.6 + (i * 0.09)}s` }} />
+              ))}
+            </div>
+            <div className="text-center">
+              <div className="font-black tracking-[0.18em] text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-gold-300 to-amber-500 drop-shadow-[0_0_8px_rgba(244,201,78,0.6)]">
+                ★ น้ำเต้าปูปลา ★
+              </div>
+              <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.3em] text-gold-300/80 mt-0.5">3 DICE • SINGLE • PAIR • TRIPLE</div>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
+          </div>
+
+          {/* ===== ช่องเต๋า — เขย่าตอนทอย ===== */}
+          <div className={`relative rounded-lg bg-[#041008] border-2 border-black shadow-[inset_0_4px_18px_rgba(0,0,0,0.9)] px-2 sm:px-3 py-5 ${!spinDone ? 'animate-dice-shake' : ''}`}>
+            <div className="flex items-center justify-center gap-3 sm:gap-6 flex-wrap">
+              {!spinDone ? (
+                <DiceRoll key={last.drawn.join('-')} drawn={last.drawn} symbols={last.diceSymbols} onDone={onSpinDone} />
+              ) : (
+                <DiceResult drawn={last.drawn} symbols={last.diceSymbols} />
+              )}
+            </div>
+            <div className="absolute inset-0 rounded-lg pointer-events-none bg-gradient-to-br from-white/15 via-white/[0.03] to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-4 rounded-t-lg bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-4 rounded-b-lg bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+          </div>
+
+          {/* ===== จอ LCD ===== */}
+          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+            <LcdDisplay label="TYPE" value={betTh} accent="text-sky-300" />
+            <LcdDisplay label="PICK" value={pickTh} accent="text-violet-300" />
+            <LcdDisplay label="RESULT" value={resVal} accent={resCls} />
+          </div>
+
+          {/* รางวัล + fairness */}
+          <div className="mt-2 px-1">
+            {!spinDone ? (
+              <div className="text-center text-xs text-gold-300/80 font-semibold animate-pulse">🎲 กำลังออกรางวัล…</div>
+            ) : won ? (
+              <div className="relative text-center overflow-visible">
+                <WinBurst />
+                <div className="text-2xl font-black text-green-300 animate-coin">+{satang(last.payout)} บาท</div>
+                {g?.diceBets?.[last.betType]?.payout && (
+                  <div className="text-[10px] text-navy-400">จ่าย {g.diceBets[last.betType].payout}</div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-xs text-navy-300">ไม่เข้าเงื่อนไข — ลองใหม่นะ!</div>
+            )}
+            <div className="mt-2"><FairnessNote fairness={last.fairness}
+              verify={(seed) => api('/kiwi/verify', { method: 'POST', body: { game: last.game || game, seed } })} /></div>
+          </div>
+        </div>
+      </div>
+      <span className="casino-sparkle text-lg absolute -top-2 -right-2 text-gold-300" style={{ animationDelay: '0.8s' }}>✦</span>
+      <span className="casino-sparkle text-sm absolute -bottom-1 -left-2 text-amber-300" style={{ animationDelay: '1.9s' }}>✧</span>
+    </div>
+  );
+}
+
+// ตู้สุ่มเลขยี่กี/VIP — casino draw machine: ผลเด้งทีละลูกลงในช่องเหมือนรีลสล็อต + จอ LCD
+function KiwiDrawMachine({ last, g, game, onDone }) {
+  const drawn = last.drawn || [];
+  const [shown, setShown] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
+  useEffect(() => {
+    if (!drawn.length) { setFinished(true); doneRef.current?.(); return; }
+    let n = 0;
+    const iv = setInterval(() => {
+      n += 1;
+      setShown(n);
+      if (n >= drawn.length) {
+        clearInterval(iv);
+        setFinished(true);
+        setTimeout(() => doneRef.current?.(), 350);
+      }
+    }, 420);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [last.id]);
+
+  const isAnimal = !!last.symbols;
+  const won = last.outcome === 'win' || (last.payout || 0) > 0; // ชนะจริง = มีเงินรางวัล (hits ต่ำกว่าเกณฑ์ก็ไม่ถูก)
+  const hits = last.hits ?? last.picks?.filter(p => drawn.includes(p)).length ?? 0;
+  const ball = (p, i, hidden) => {
+    const hit = !hidden && last.picks?.includes(p);
+    const label = isAnimal ? animalEmoji(last.symbols, p) : p;
+    return (
+      <span key={i}
+        className={`${hidden ? '' : hit ? 'animate-dice-land' : 'animate-digit'} inline-flex`}
+        style={hidden ? {} : { animationDelay: `${i * 0.05}s` }}>
+        <span className="lotto-ball" style={{
+          fontSize: '1.5em', minWidth: '2.4em', height: '2.4em',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          outline: hit ? '3px solid #34d399' : undefined,
+          boxShadow: hit ? '0 0 14px rgba(52,211,153,0.8)' : undefined,
+          opacity: hidden ? 0.35 : 1,
+        }}>{hidden ? '?' : label}</span>
+      </span>
+    );
+  };
+
+  const typeTh = isAnimal ? 'ตรงสัตว์' : `เลือก ${last.picks?.length ?? ''} เลข`;
+  const pickTh = isAnimal
+    ? (last.picks || []).map(p => animalEmoji(last.symbols, p)).join(' ')
+    : (last.picks || []).join(' • ');
+  const resVal = !finished ? 'ออกรางวัล...' : won ? `ถูก ${hits} ✓` : hits > 0 ? `ถูก ${hits} — ไม่เข้าเงื่อนไข` : 'ไม่ถูก ✕';
+  const resCls = !finished ? 'text-amber-300' : won ? 'text-emerald-300' : hits > 0 ? 'text-sky-300' : 'text-red-400';
+  const title = last.gameLabel || g?.label || 'ยี่กี';
+
+  return (
+    <div className="relative select-none">
+      <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#16304f] via-[#0f1e33] to-[#0a1526] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
+        <div className="rounded-xl border border-gold-400/30 bg-black/30 p-1.5 sm:p-2">
+
+          {/* ===== Marquee ===== */}
+          <div className="relative rounded-lg bg-gradient-to-b from-[#0f1e33] to-[#040a14] border border-gold-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
+            <div className="flex justify-between px-1 mb-1">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span key={i} className="slot-bulb w-1.5 h-1.5 rounded-full"
+                  style={{ animationDelay: `${(i % 2) * 0.6 + (i * 0.09)}s` }} />
+              ))}
+            </div>
+            <div className="text-center">
+              <div className="font-black tracking-[0.18em] text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-gold-300 to-amber-500 drop-shadow-[0_0_8px_rgba(244,201,78,0.6)]">
+                ★ {title} ★
+              </div>
+              <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.3em] text-gold-300/80 mt-0.5">INSTANT DRAW • PROVABLY FAIR</div>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
+          </div>
+
+          {/* ===== ช่องลูกบอล — ผลเด้งทีละลูก ===== */}
+          <div className="relative rounded-lg bg-[#041008] border-2 border-black shadow-[inset_0_4px_18px_rgba(0,0,0,0.9)] px-2 sm:px-3 py-5">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap min-h-[3.5rem]">
+              {drawn.map((d, i) => ball(d, i, i >= shown))}
+            </div>
+            <div className="absolute inset-0 rounded-lg pointer-events-none bg-gradient-to-br from-white/15 via-white/[0.03] to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-4 rounded-t-lg bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-4 rounded-b-lg bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+          </div>
+
+          {/* ===== จอ LCD ===== */}
+          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+            <LcdDisplay label="TYPE" value={typeTh} accent="text-sky-300" />
+            <LcdDisplay label="PICK" value={pickTh || '—'} accent="text-violet-300" />
+            <LcdDisplay label="RESULT" value={resVal} accent={resCls} />
+          </div>
+
+          {/* รางวัล + fairness */}
+          <div className="mt-2 px-1">
+            {!finished ? (
+              <div className="text-center text-xs text-gold-300/80 font-semibold animate-pulse">🎲 กำลังออกรางวัล…</div>
+            ) : won ? (
+              <div className="relative text-center overflow-visible">
+                <WinBurst />
+                <div className="text-2xl font-black text-green-300 animate-coin">+{satang(last.payout)} บาท</div>
+              </div>
+            ) : hits > 0 ? (
+              <div className="text-center text-xs text-sky-300">ถูก {hits} เลข — ต่ำกว่าเงื่อนไขรางวัล (ต้องถูก 2+)</div>
+            ) : (
+              <div className="text-center text-xs text-navy-300">ไม่เข้าเงื่อนไข — ลองใหม่นะ!</div>
+            )}
+            <div className="mt-2"><FairnessNote fairness={last.fairness}
+              verify={(seed) => api('/kiwi/verify', { method: 'POST', body: { game: last.game || game, seed } })} /></div>
+          </div>
+        </div>
+      </div>
+      <span className="casino-sparkle text-lg absolute -top-2 -right-2 text-gold-300" style={{ animationDelay: '0.8s' }}>✦</span>
+      <span className="casino-sparkle text-sm absolute -bottom-1 -left-2 text-amber-300" style={{ animationDelay: '1.9s' }}>✧</span>
     </div>
   );
 }
@@ -157,16 +371,25 @@ export default function Kiwi() {
   const [last, setLast] = useState(null);
   const [spinDone, setSpinDone] = useState(true); // น้ำเต้าปูปลา: รอเต๋าหมดก่อนบอกผล
   const [spinningId, setSpinningId] = useState(null); // ticket id ที่กำลังหมุน — ซ่อนผลในประวัติ
+  const playIdem = useRef(null); // {sig, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry เล่นซ้ำ
 
   const g = games.find(x => x.game === game) || games[0] || null;
   const load = () => api('/kiwi/mine').then(r => setTickets(r.tickets)).catch(() => {});
+  const loadInfo = () => api('/kiwi/info').then(r => setGames(r.games)).catch(() => {});
   useEffect(() => {
     load();
     api('/kiwi/info').then(r => { setGames(r.games); if (r.games[0]) setGame(r.games[0].game); }).catch(() => {});
+    // admin แก้ราคาเกม → SSE ดันมา refetch ราคาใหม่ทันที (คงเกมที่เลือกไว้)
+    const h = () => { load(); loadInfo(); };
+    window.addEventListener('sys:update', h);
+    return () => window.removeEventListener('sys:update', h);
   }, []);
 
   const pickGame = (id) => { setGame(id); setPicks([]); setBetType(null); setErr(''); };
   const pickBetType = (bt) => { setBetType(bt); setPicks([]); setErr(''); };
+
+  // เปิดโพยเก่าจากประวัติ — แสดงผลในตู้เครื่องเหมือนเพิ่งเล่น (เต๋าโชว์ผลนิ่ง ไม่หมุนซ้ำ)
+  const openTicket = (t) => { if (t.dice) setSpinDone(true); setLast(t); };
 
   // น้ำเต้าปูปลา — ready: pair=เลือก 2 สัตว์, single/triple=เลือก 1 สัตว์
   const diceReady = !g?.dice ? false : (betType ? (betType === 'pair' ? picks.length === 2 : picks.length === 1) : false);
@@ -175,12 +398,16 @@ export default function Kiwi() {
   const play = async () => {
     if (!ready || busy) return;
     setErr(''); setBusy(true);
+    const sig = JSON.stringify([game, picks, betType]);
+    if (!playIdem.current || playIdem.current.sig !== sig)
+      playIdem.current = { sig, key: crypto.randomUUID() };
     try {
-      const r = await api('/kiwi/play', { method: 'POST', body: { game, picks, betType: g?.dice ? betType : undefined } });
+      const r = await api('/kiwi/play', { method: 'POST', body: { game, picks, betType: g?.dice ? betType : undefined, idempotencyKey: playIdem.current.key } });
+      playIdem.current = null;
       setBalance(r.balance);
       setLast(r); setPicks([]); setBetType(null);
       if (g?.dice) { setSpinDone(false); setSpinningId(r.id); } // รอเต๋าหมดค่อยบอกถูก/ไม่ถูก
-      else { setSpinningId(null); if (r.outcome === 'win') sfx.win(); else sfx.lose(); }
+      else { setSpinningId(r.id); } // เกมเลข/สัตว์ — รอผลเด้งหมดในตู้ก่อนเล่นเสียง
       load();
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -195,13 +422,25 @@ export default function Kiwi() {
   return (
     <div className="max-w-3xl mx-auto space-y-5 instant-page">
       {/* hero */}
-      <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 text-center">
+      <div className="relative overflow-hidden rounded-3xl border-2 border-gold-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 text-center">
         <div className="hr-shine absolute top-0 inset-x-0 h-1.5" />
-        <h1 className="font-display font-bold text-2xl sm:text-3xl text-emerald-300">หวยยี่กี</h1>
+        <span className="casino-sparkle text-xl" style={{ top: '18%', left: '8%', animationDelay: '0.5s' }}>✦</span>
+        <span className="casino-sparkle text-sm" style={{ top: '28%', right: '10%', animationDelay: '1.7s' }}>✧</span>
+        <span className="casino-sparkle text-lg" style={{ bottom: '30%', left: '12%', animationDelay: '2.4s' }}>✦</span>
+        <span className="casino-sparkle text-sm" style={{ bottom: '36%', right: '9%', animationDelay: '1.1s' }}>✦</span>
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.6s' }} />
+        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
+        <h1 className="font-display font-bold text-2xl sm:text-3xl text-gold-300">หวยยี่กี</h1>
         <p className="text-sm text-navy-300 mt-1">{g?.dice ? 'ลูกเต๋า 3 ลูก → สุ่มผลทันที → แทงสัตว์เดี่ยว / คู่ / ตอง!' : g?.symbols ? 'เลือกสัตว์ 1 ตัว → สุ่มผลทันที → ถูกรับรางวัลทันที!' : `เลือกเลข ${g ? `${g.pickCount} ตัว` : ''} → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น!`}</p>
-        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-navy-300 flex-wrap">
-          <span>💰 เริ่มต้น <b className="text-gold-300">{g ? satang(g.price) : '—'} บาท</b></span>
-          <span>⚖️ จ่ายตามผล {tierText && <span className="text-emerald-300">{tierText}</span>}</span>
+        <div className="flex flex-col items-center gap-2.5 mt-3">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500/25 via-gold-500/10 to-gold-500/25 border border-gold-400/60 shadow-[0_0_20px_rgba(217,165,32,0.25)]">
+            <span className="text-sm">💰</span>
+            <span className="text-xs font-semibold text-gold-300">{g?.label ? `${g.label} — ราคาต่อครั้ง` : 'ราคาต่อครั้ง'}</span>
+            <span className="font-display font-bold text-2xl text-gold-300">{g ? satang(g.price) : '—'} <span className="text-sm">บาท</span></span>
+          </div>
+          <div className="flex items-center justify-center gap-4 text-[11px] text-navy-300 flex-wrap">
+            <span>⚖️ จ่ายตามผล {tierText && <span className="text-gold-300">{tierText}</span>}</span>
+          </div>
         </div>
       </div>
 
@@ -210,10 +449,11 @@ export default function Kiwi() {
         {games.map(x => (
           <button key={x.game} onClick={() => pickGame(x.game)}
             className={`rounded-xl border px-2 py-2.5 text-center transition ${game === x.game
-              ? 'border-emerald-400/70 bg-emerald-500/10' : 'border-navy-700 bg-navy-800/60 hover:border-navy-500'}`}>
+              ? 'border-[#22d3ee]/70 bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/5 shadow-[0_0_18px_rgba(34,211,238,0.3)]'
+              : 'border-navy-700 bg-navy-800/60 hover:border-[#22d3ee]/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]'}`}>
             <div className="text-xs font-bold text-white leading-tight">{x.label}</div>
             <div className="text-[10px] text-navy-400 mt-0.5">{satang(x.price)} บาท</div>
-            <div className="text-[9px] text-emerald-400/80 mt-0.5 leading-tight">
+            <div className="text-[9px] text-gold-300/80 mt-0.5 leading-tight">
               {x.dice ? 'เดี่ยว/คู่/ตอง' : x.symbols ? 'ตรงสัตว์ x5' : Object.entries(x.tiers || {}).map(([h, m]) => 'ถูก' + h + ' = x' + m).join('  ')}
             </div>
           </button>
@@ -239,7 +479,7 @@ export default function Kiwi() {
                 {Object.entries(g.diceBets || {}).map(([bt, info]) => (
                   <button key={bt} onClick={() => pickBetType(bt)} disabled={busy}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${betType === bt
-                      ? 'bg-emerald-500/20 border-emerald-400/70 text-emerald-300' : 'bg-navy-900 border-navy-700 text-navy-300 hover:border-navy-500'}`}>
+                      ? 'bg-red-500/20 border-red-400/70 text-gold-300' : 'bg-navy-900 border-navy-700 text-navy-300 hover:border-navy-500'}`}>
                     {info.label}
                   </button>
                 ))}
@@ -247,7 +487,7 @@ export default function Kiwi() {
               {betType && g.diceBets?.[betType] && (
                 <div className="text-[11px] text-navy-400 mt-1 space-y-0.5">
                   <div>{g.diceBets[betType].desc}</div>
-                  <div className="text-emerald-300 font-semibold">💰 อัตราจ่าย: {g.diceBets[betType].payout}</div>
+                  <div className="text-gold-300 font-semibold">💰 อัตราจ่าย: {g.diceBets[betType].payout}</div>
                 </div>
               )}
             </div>
@@ -271,59 +511,19 @@ export default function Kiwi() {
         {/* ปุ่มเล่นอยู่บนแถบล่าง (instant-betbar) — ที่นี่แสดงแค่ตัวเลือกเลข/สัตว์ */}
       </div>
 
-      {/* ผลล่าสุด */}
-      {last && (
-        <div className={`rounded-2xl border-2 p-5 text-center ${last.dice && !spinDone ? 'border-navy-600 bg-navy-900/60' : last.outcome === 'win' ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-navy-600 bg-navy-900/60'}`}>
-          {last.dice && !spinDone ? (
-            <div className="text-navy-200 font-semibold animate-pulse">🎲 กำลังออกรางวัล…</div>
-          ) : last.outcome === 'win' ? (
-            <>
-              <div className="text-3xl font-black text-emerald-400">{last.dice ? '✓ ถูก! ชนะ!' : last.symbols ? '✓ ถูกสัตว์!' : `✓ ถูก ${last.hits} เลข!`}</div>
-              <div className="text-2xl font-black text-gold-300 coin-gold-bright mt-1">+{satang(last.payout)} บาท</div>
-            </>
-          ) : (
-            <div className="text-navy-200 font-semibold">{last.dice ? 'ไม่เข้าเงื่อนไข — ลองใหม่นะ!' : last.symbols ? 'สัตว์ไม่ตรง — ลองใหม่นะ!' : `ถูก ${last.hits} เลข — ไม่เข้าเงื่อนไขรางวัล ลองใหม่นะ!`}</div>
-          )}
-          {last.dice ? (
-            <div className="mt-3 space-y-2">
-              <DiceRoll key={last.drawn.join('-')} drawn={last.drawn} symbols={last.diceSymbols}
-                onDone={() => {
-                  setSpinDone(true); setSpinningId(null);
-                  if (last.outcome === 'win') sfx.win(); else sfx.lose();
-                }} />
-              <div className="text-[11px] text-navy-400">
-                {last.betType && DICE_BET_LABEL[last.betType]}
-                {last.betType && ['single', 'pair', 'triple'].includes(last.betType) && last.picks.length > 0 &&
-                  ` • ${last.picks.map(p => animalText(last.diceSymbols?.[p - 1])).join(' + ')}`}
-                {last.betType && g?.diceBets?.[last.betType]?.payout && ` • จ่าย ${g.diceBets[last.betType].payout}`}
-              </div>
-            </div>
-          ) : (
-          <div className="flex justify-center gap-4 mt-3 flex-wrap">
-            <div>
-              <div className="text-[10px] text-navy-400 mb-1">{last.symbols ? 'สัตว์ที่เลือก' : 'เลขที่เลือก'}</div>
-              <div className="flex gap-1 flex-wrap justify-center">
-                {last.picks.map((p, i) => last.symbols
-                  ? <span key={i} className="lotto-ball" style={{ fontSize: '0.85em' }}>{animalEmoji(last.symbols, p)}</span>
-                  : <span key={i} className="lotto-ball" style={{ fontSize: '0.85em' }}>{p}</span>)}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-navy-400 mb-1">{last.symbols ? 'ผลที่ออก' : 'ผลที่ออก'}</div>
-              <div className="flex gap-1 flex-wrap justify-center">
-                {last.drawn.map((p, i) => {
-                  const hit = last.picks.includes(p);
-                  const label = last.symbols ? animalEmoji(last.symbols, p) : p;
-                  return hit
-                    ? <span key={i} className="lotto-ball" style={{ fontSize: '0.85em', outline: '2px solid #34d399' }}>{label}</span>
-                    : <span key={i} className="lotto-ball" style={{ fontSize: '0.85em', opacity: 0.6 }}>{label}</span>;
-                })}
-              </div>
-            </div>
-          </div>
-          )}
-          <FairnessNote fairness={last.fairness} verify={(seed) => api('/kiwi/verify', { method: 'POST', body: { game, seed } })} />
-        </div>
+      {/* ผลล่าสุด — น้ำเต้าปูปลาใช้ตู้เต๋า casino, เกมเลข/สัตว์เดี่ยวใช้เฟรมรางวัล */}
+      {last?.dice ? (
+        <DiceMachineResult key={last.id} last={last} spinDone={spinDone} g={g} game={game}
+          onSpinDone={() => {
+            setSpinDone(true); setSpinningId(null);
+            if (last.outcome === 'win' || (last.payout || 0) > 0) sfx.win(); else sfx.lose();
+          }} />
+      ) : last && (
+        <KiwiDrawMachine key={last.id} last={last} g={g} game={game}
+          onDone={() => {
+            setSpinningId(null);
+            if (last.outcome === 'win' || (last.payout || 0) > 0) sfx.win(); else sfx.lose();
+          }} />
       )}
 
       {/* history */}
@@ -332,7 +532,8 @@ export default function Kiwi() {
           <div className="px-5 py-4 border-b border-navy-700 font-bold text-white">ประวัติยี่กี</div>
           <div className="divide-y divide-navy-700">
             {tickets.map(t => (
-              <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+              <button key={t.id} onClick={() => openTicket(t)}
+                className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left transition">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-white">{t.gameLabel} • {t.slipRef}</div>
                   <div className="text-[11px] text-navy-400">
@@ -348,7 +549,8 @@ export default function Kiwi() {
                 ) : (
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-300 border border-navy-600">ไม่ถูก</span>
                 )}
-              </div>
+                <span className="text-[10px] text-navy-500 shrink-0">👁</span>
+              </button>
             ))}
           </div>
         </div>
@@ -358,7 +560,7 @@ export default function Kiwi() {
       <div className="instant-betbar px-4">
         <div className="max-w-3xl mx-auto">
           <button onClick={play} disabled={!ready || busy || balance < (g?.price || Infinity)}
-            className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black py-3.5 text-sm tracking-wide shadow-lg shadow-emerald-500/30 hover:brightness-110 transition disabled:opacity-50 active:scale-[0.98]">
+            className="w-full rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-black py-3.5 text-sm tracking-wide shadow-lg shadow-[0_0_24px_rgba(226,168,18,0.35)] hover:brightness-110 transition disabled:opacity-50 active:scale-[0.98]">
             {busy ? '🎲 กำลังสุ่มผล...' : ready
               ? `🎲 เล่นเลย — ${satang(g.price)} บาท${picks.length ? ` (${picks.length} เลือก)` : ''}`
               : g?.dice ? `เลือกรูปแบบ + ค่าที่ถูกต้องก่อน (${picks.length}/${betType === 'pair' ? 2 : 1})`

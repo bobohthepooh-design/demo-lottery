@@ -65,24 +65,32 @@ export default function PlaceBet() {
   useEffect(() => { idemKey.current = null; }, [slip]);
   useEffect(() => { setBetMode('teng'); }, [selRule]);
 
+  const loadDraw = () => api(`/lottery/draws/${drawId}`).then(async r => {
+    setDraw(r.draw);
+    try {
+      const t = await api(`/lottery/draws/${drawId}/rules`);
+      const sorted = [...t.rules].sort((a, b) =>
+        (BET_ORDER.indexOf(a.bet_type) === -1 ? 99 : BET_ORDER.indexOf(a.bet_type)) -
+        (BET_ORDER.indexOf(b.bet_type) === -1 ? 99 : BET_ORDER.indexOf(b.bet_type)) || a.digits - b.digits);
+      setRules(sorted);
+      // คงกติกาที่เลือกไว้ถ้ายังมี — ถ้าเพิ่งเข้าให้เลือกกติกาแรก
+      setSelRule(prev => sorted.some(x => String(x.id) === prev) ? prev : (sorted[0] ? String(sorted[0].id) : ''));
+    } catch (e2) {
+      if (e2.status === 401) { navigate('/login'); return; }
+      setErr(e2.message);
+    }
+  }).catch(e => {
+    if (e.status === 401) navigate('/login');
+    else setErr(e.message);
+  });
+
+  useEffect(() => { loadDraw(); }, [drawId]);
+
+  // admin แก้กติกา/ราคา → SSE ดันมา refetch (ราคา/อัตราจ่ายตามล่าสุดทันที)
   useEffect(() => {
-    api(`/lottery/draws/${drawId}`).then(async r => {
-      setDraw(r.draw);
-      try {
-        const t = await api(`/lottery/draws/${drawId}/rules`);
-        const sorted = [...t.rules].sort((a, b) =>
-          (BET_ORDER.indexOf(a.bet_type) === -1 ? 99 : BET_ORDER.indexOf(a.bet_type)) -
-          (BET_ORDER.indexOf(b.bet_type) === -1 ? 99 : BET_ORDER.indexOf(b.bet_type)) || a.digits - b.digits);
-        setRules(sorted);
-        if (t.rules[0]) setSelRule(String(t.rules[0].id));
-      } catch (e2) {
-        if (e2.status === 401) { navigate('/login'); return; }
-        setErr(e2.message);
-      }
-    }).catch(e => {
-      if (e.status === 401) navigate('/login');
-      else setErr(e.message);
-    });
+    const h = () => loadDraw();
+    window.addEventListener('sys:update', h);
+    return () => window.removeEventListener('sys:update', h);
   }, [drawId]);
 
   // เติมโพยจาก "แทงซ้ำ" — คำนวณ mult ใหม่ตามกติกาปัจจุบัน + เลขอั้นของรอบนี้ (ตรวจสอบก่อนยืนยันเหมือนโพยปกติ)
@@ -423,7 +431,7 @@ export default function PlaceBet() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gold-300">{satang(i.stakeSatang)} บาท</span>
-                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} className="text-red-400 hover:text-red-300">✕</button>
+                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} className="text-red-400 hover:text-gold-300">✕</button>
                 </div>
               </div>
             ))}

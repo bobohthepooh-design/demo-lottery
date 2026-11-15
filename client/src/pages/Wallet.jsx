@@ -8,7 +8,7 @@ import { sfx } from '../sound.js';
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
   bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
-  deposit: 'เติมเครดิต', withdraw: 'ถอนเครดิต',
+  deposit: 'เติมเครดิต', withdraw: 'แลกเครดิต',
 };
 
 const PRESETS = [100, 500, 1000, 5000, 10000];
@@ -84,13 +84,13 @@ export default function Wallet() {
     if (!satangAmt || satangAmt < 100) return setErr('กรอกจำนวนเงินอย่างน้อย 1 บาท');
     if (satangAmt > 1000000) return setErr('สูงสุด 10,000 บาทต่อรายการ');
     if (modal === 'withdraw') {
-      if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อนจึงจะสามารถถอนเงินได้');
-      if (wd && satangAmt > wd.withdrawable) return setErr(`ถอนได้สูงสุด ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล)`);
+      if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อนจึงจะสามารถแลกเครดิตได้');
+      if (wd && satangAmt > wd.withdrawable) return setErr(`แลกได้สูงสุด ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล)`);
     }
     setBusy(true);
     try {
       const sig = `${modal}:${satangAmt}`;
-      if (idemRef.current.sig !== sig) idemRef.current = { sig, key: crypto.randomUUID() };
+      if (idemRef.current.sig !== sig) idemRef.current = { sig, key: (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`) };
       const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, paymentMethod: payMethod, idempotencyKey: idemRef.current.key, ...(accountNo ? { accountNo } : {}) } });
       setBalance(r.balance);
       setModal(null); setAmount(''); idemRef.current = { sig: '', key: '' };
@@ -101,34 +101,34 @@ export default function Wallet() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-gold-500/40 rounded-2xl p-8 text-center">
-        <div className="text-sm text-navy-300">ยอดเครดิตจำลองคงเหลือ</div>
-        <div className="text-5xl font-bold text-amber-600 mt-2">{satang(balance)} บาท</div>
+      <div className="bg-gradient-to-br from-[#f7ecc4] via-[#efd78f] to-[#e3c05c] border border-gold-500/40 rounded-2xl p-8 text-center shadow-[0_0_24px_rgba(226,168,18,0.15)]">
+        <div className="text-sm font-bold text-navy-950/80">ยอดเครดิตจำลองคงเหลือ</div>
+        <div className="text-5xl font-black text-black mt-2 drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">{satang(balance)} บาท</div>
         <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
           <button onClick={() => { setModal('deposit'); setAmount(''); setErr(''); }}
-            className="bg-gold-500 text-navy-950 font-bold px-6 py-2.5 rounded-xl hover:bg-gold-400 transition">
+            className="bg-navy-950 text-gold-300 font-bold px-6 py-2.5 rounded-xl hover:bg-navy-900 transition shadow-lg">
             ＋ เติมเครดิต
           </button>
           <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); }}
-            className="border border-navy-500 text-navy-200 font-semibold px-6 py-2.5 rounded-xl hover:bg-navy-700 transition">
-            － ถอนเครดิต
+            className="bg-navy-950 text-gold-300 font-bold px-6 py-2.5 rounded-xl hover:bg-navy-900 transition shadow-lg">
+            － แลกเครดิต
           </button>
         </div>
         {wd && (
-          <div className={`text-xs mt-3 ${wd.pendingSlips > 0 ? 'text-amber-300' : wd.unlocked ? 'text-green-400' : 'text-amber-300'}`}>
+          <div className={`text-xs mt-3 font-semibold ${wd.pendingSlips > 0 ? 'text-amber-800' : wd.unlocked ? 'text-green-800' : 'text-amber-800'}`}>
             {wd.pendingSlips > 0 && (
-              <div className="mb-1">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท) — ยกเลิกโพยเพื่อคืนเครดิตก่อนถอนได้</div>
+              <div className="mb-1">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท) — สปิน/ทายหรือลงผล หรือยกเลิกโพย-บัตรเกมเพื่อคืนเครดิตก่อนแลกได้</div>
             )}
             {wd.unlocked
               ? wd.override
                 ? balance < 5000
-                  ? `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท ถอนไม่ได้`
-                  : `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — ถอนได้ ${satang(wd.withdrawable)} บาท (ยอดสุทธิหักเครดิตแถม)`
-                : `✅ ถอนได้ ${satang(wd.withdrawable)} บาท (ยอดคงเหลือหักเครดิตแถม)`
-              : `🔒 ถอนเงินได้หลังเติมเครดิตครบ 100 บาท — เติมแล้ว ${satang(wd.deposited)} บาท`}
+                  ? `✅ ได้รับอนุญาตให้แลกเครดิตจากแอดมิน — แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท แลกไม่ได้`
+                  : `✅ ได้รับอนุญาตให้แลกเครดิตจากแอดมิน — แลกได้ ${satang(wd.withdrawable)} บาท (ยอดสุทธิหักเครดิตแถม)`
+                : `✅ แลกได้ ${satang(wd.withdrawable)} บาท (ยอดคงเหลือหักเครดิตแถม)`
+              : `🔒 แลกเครดิตได้หลังเติมเครดิตครบ 100 บาท — เติมแล้ว ${satang(wd.deposited)} บาท`}
           </div>
         )}
-        <div className="text-xs text-navy-400 mt-2">เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่สามารถแลกเป็นเงินจริงได้</div>
+        <div className="text-xs text-navy-950/70 mt-2 font-semibold">⚠️ เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่ใช่เงินจริงและไม่สามารถแลกเป็นเงินจริงได้</div>
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
@@ -148,7 +148,7 @@ export default function Wallet() {
                   <div className={`font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
                     {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
                   </div>
-                  <div className="text-[11px] text-amber-600">คงเหลือ {satang(t.balance_after)} บาท</div>
+                  <div className="text-[11px] text-gold-300">คงเหลือ {satang(t.balance_after)} บาท</div>
                 </div>
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function Wallet() {
                   <td className={`px-4 py-3 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
                     {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
                   </td>
-                  <td className="px-4 py-3 text-right text-amber-600">{satang(t.balance_after)} บาท</td>
+                  <td className="px-4 py-3 text-right text-gold-300">{satang(t.balance_after)} บาท</td>
                   <td className="px-4 py-3 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
                   <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
                 </tr>
@@ -186,22 +186,22 @@ export default function Wallet() {
       {modal && createPortal(
         <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setModal(null)}>
           <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 ถอนเครดิตจำลอง'}</h2>
+            <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 แลกเครดิตจำลอง'}</h2>
             <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท • สำหรับ Demo เท่านั้น</p>
             {modal === 'withdraw' && wd && (
               <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
                 {wd.unlocked
                   ? wd.override
                     ? balance < 5000
-                      ? `ได้รับอนุญาตจากแอดมินแล้ว แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท — ถอนไม่ได้`
-                      : `ถอนได้ ${satang(wd.withdrawable)} บาท — ยอดสุทธิหักเครดิตแถม (ได้รับอนุญาตจากแอดมิน)`
-                    : `ถอนได้สูงสุด ${satang(wd.withdrawable)} บาท — ยอดคงเหลือหักเครดิตแถม (เครดิตโปรโมชั่นถอนไม่ได้)`
-                  : `ยังถอนไม่ได้ — ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อน (เติมแล้ว ${satang(wd.deposited)} บาท)`}
+                      ? `ได้รับอนุญาตจากแอดมินแล้ว แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท — แลกไม่ได้`
+                      : `แลกได้ ${satang(wd.withdrawable)} บาท — ยอดสุทธิหักเครดิตแถม (ได้รับอนุญาตจากแอดมิน)`
+                    : `แลกได้สูงสุด ${satang(wd.withdrawable)} บาท — ยอดคงเหลือหักเครดิตแถม (เครดิตโปรโมชั่นแลกไม่ได้)`
+                  : `ยังแลกไม่ได้ — ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อน (เติมแล้ว ${satang(wd.deposited)} บาท)`}
               </div>
             )}
             {modal && (
               <div className="mb-4">
-                <div className="text-xs text-navy-400 mb-1.5">{modal === 'deposit' ? 'เลือกช่องทางเติมเครดิต' : 'เลือกช่องทางรับเงินถอน'} (ระบบจำลอง):</div>
+                <div className="text-xs text-navy-400 mb-1.5">{modal === 'deposit' ? 'เลือกช่องทางเติมเครดิต' : 'เลือกช่องทางรับเครดิต'} (ระบบจำลอง):</div>
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {DEPOSIT_METHODS.map(m => (
                     <button key={m.key} type="button" onClick={() => setPayMethod(m.key)}
@@ -215,7 +215,7 @@ export default function Wallet() {
                   {payMethod === 'bank_transfer' && (
                     <>
                       <div className="flex justify-between"><span>ธนาคาร</span><span className="text-white font-semibold">ธนาคารกสิกรไทย (ตัวอย่าง)</span></div>
-                      <div className="flex justify-between"><span>เลขบัญชี</span><span className="font-mono text-amber-600">xxx-x-xxxxx-x</span></div>
+                      <div className="flex justify-between"><span>เลขบัญชี</span><span className="font-mono text-gold-300">xxx-x-xxxxx-x</span></div>
                       <div className="flex justify-between"><span>ชื่อบัญชี</span><span className="text-white">Demo Lottery (DEMO)</span></div>
                     </>
                   )}
@@ -224,14 +224,14 @@ export default function Wallet() {
                       <FakeQr />
                       <div>
                         <div className="text-white font-semibold mb-1">สแกน QR เพื่อชำระ</div>
-                        <div>พร้อมเพย์: <span className="font-mono text-amber-600">081-234-5678</span></div>
+                        <div>พร้อมเพย์: <span className="font-mono text-gold-300">081-234-5678</span></div>
                         <div className="text-navy-400">ชื่อ: Demo Lottery (DEMO)</div>
                       </div>
                     </div>
                   )}
                   {payMethod === 'truemoney' && (
                     <>
-                      <div className="flex justify-between"><span>เบอร์ TrueMoney</span><span className="font-mono text-amber-600">081-234-5678</span></div>
+                      <div className="flex justify-between"><span>เบอร์ TrueMoney</span><span className="font-mono text-gold-300">081-234-5678</span></div>
                       <div className="flex justify-between"><span>ชื่อผู้รับ</span><span className="text-white">Demo Lottery (DEMO)</span></div>
                       <div className="text-navy-400">ชำระผ่านแอป TrueMoney Wallet</div>
                     </>
@@ -249,7 +249,7 @@ export default function Wallet() {
                 )}
               </div>
             )}
-            <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'}:</div>
+            <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'แลก'}:</div>
             <div className="grid grid-cols-3 gap-2 mb-3">
               {PRESETS.map(p => (
                 <button key={p} type="button" onClick={() => setAmount(String(p))}
@@ -261,7 +261,7 @@ export default function Wallet() {
             <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง (ขั้นต่ำ 1 บาท สูงสุด 10,000 บาท):</div>
             <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
               inputMode="decimal" placeholder="0.00" autoFocus
-              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-amber-600 focus:outline-none focus:border-gold-500" />
+              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
             {err && <div className="text-red-400 text-sm mt-2">{err}</div>}
             <div className="flex gap-3 mt-5">
               <button onClick={() => setModal(null)} disabled={busy}
@@ -270,7 +270,7 @@ export default function Wallet() {
               </button>
               <button onClick={doAction} disabled={busy}
                 className={`flex-1 font-bold py-2.5 rounded-lg disabled:opacity-40 ${modal === 'deposit' ? 'bg-gold-500 text-navy-950 hover:bg-gold-400' : 'bg-red-500/80 text-white hover:bg-red-500'}`}>
-                {busy ? 'กำลังดำเนินการ...' : modal === 'deposit' ? 'ยืนยันเติมเครดิต' : 'ยืนยันถอนเครดิต'}
+                {busy ? 'กำลังดำเนินการ...' : modal === 'deposit' ? 'ยืนยันเติมเครดิต' : 'ยืนยันแลกเครดิต'}
               </button>
             </div>
           </div>
@@ -315,14 +315,14 @@ export default function Wallet() {
                 <h2 className="text-2xl font-bold text-gold-300 mb-1">ยินดีด้วย!</h2>
                 <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ถูกรางวัล</p>
                 <div className="text-3xl font-bold text-green-400 animate-coin mb-1">+{satang(celebration.slip.total_payout)} บาท</div>
-                <p className="text-xs text-navy-400 mb-5">เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — ถอนได้หลังปลดล็อก</p>
+                <p className="text-xs text-navy-400 mb-5">เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — แลกได้หลังปลดล็อก</p>
               </>
             ) : (
               <>
                 <div className="text-6xl mb-2 animate-lose">😢💧</div>
                 <h2 className="text-2xl font-bold text-blue-300 mb-1">เสียใจด้วย...</h2>
                 <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ไม่ถูกรางวัลรอบนี้</p>
-                <div className="text-xl font-bold text-navy-300 mb-1">เสีย {satang(celebration.slip.total_stake)} บาท</div>
+                <div className="text-xl font-bold text-red-400 mb-1">เสีย {satang(celebration.slip.total_stake)} บาท</div>
                 <p className="text-xs text-navy-400 mb-5">เก็บเครดิตไว้ลองใหม่นะ — ห้องยังเปิดรับแทงทุกวัน</p>
               </>
             )}

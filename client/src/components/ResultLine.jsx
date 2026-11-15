@@ -83,7 +83,7 @@ export default function ResultLine({ r }) {
     return (
       <div key={key} className="shrink-0 text-center min-w-[3.4rem]">
         <div className="text-[9px] leading-tight text-navy-400">{label}</div>
-        <div className="text-xs font-mono font-bold text-amber-600 whitespace-nowrap flex flex-wrap justify-center gap-0.5">
+        <div className="text-xs font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-0.5">
           {tokens.map((t, ti) => /^\d/.test(t) ? (
             <span key={ti} className="lotto-ball" style={{ fontSize: '0.8em' }}>{t}</span>
           ) : <span key={ti}>{t}</span>)}

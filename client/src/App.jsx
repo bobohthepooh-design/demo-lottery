@@ -46,7 +46,7 @@ class ErrorBoundary extends Component {
     if (this.state.err) return (
       <div className="min-h-screen bg-navy-950 text-white p-6">
         <div className="max-w-xl mx-auto mt-10 bg-red-500/10 border border-red-500/40 rounded-2xl p-6">
-          <h1 className="text-xl font-bold text-red-300 mb-2">เกิดข้อผิดพลาดของหน้าเว็บ</h1>
+          <h1 className="text-xl font-bold text-gold-300 mb-2">เกิดข้อผิดพลาดของหน้าเว็บ</h1>
           <pre className="text-xs text-navy-200 whitespace-pre-wrap break-all">{String(this.state.err?.message || this.state.err)}</pre>
           <button onClick={() => { this.setState({ err: null }); window.location.reload(); }}
             className="mt-4 bg-gold-500 text-navy-950 font-bold px-4 py-2 rounded-lg">โหลดหน้าใหม่</button>
@@ -86,6 +86,7 @@ export default function App() {
             <Route path="settle" element={<Navigate to="/admin/lotteries?tab=settle" replace />} />
             <Route path="wallet" element={<AdminWallet />} />
             <Route path="bets" element={<AdminBets />} />
+            <Route path="my-bets" element={<MyBets />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="security" element={<AdminSecurity />} />

@@ -6,7 +6,7 @@ const fmt = (satangVal) => `${satang(satangVal)} บาท`;
 
 function StatCard({ icon, label, value, sub, tone = 'gold' }) {
   const tones = {
-    gold: 'from-gold-500/20 to-gold-600/5 border-gold-500/40 text-gold-300',
+    gold: 'from-gold-500/20 to-gold-600/5 border-red-500/40 text-red-300',
     green: 'from-green-500/20 to-green-600/5 border-green-500/40 text-green-300',
     red: 'from-red-500/20 to-red-600/5 border-red-500/40 text-red-300',
     blue: 'from-blue-500/20 to-blue-600/5 border-blue-500/40 text-blue-300',
@@ -62,9 +62,9 @@ export default function AdminOverview() {
           </div>
         </div>
         <div className="bg-gradient-to-br from-red-500/25 to-rose-700/10 border border-red-500/50 rounded-2xl p-6 relative overflow-hidden">
-          <Icon name="reports" className="absolute -right-6 -top-6 w-36 h-36 opacity-10 text-red-300" />
-          <div className="text-sm text-red-300 font-semibold">รายจ่ายรวม (เครดิตออก)</div>
-          <div className="text-3xl font-black text-red-300 mt-1">{fmt(m.totalOut || 0)}</div>
+          <Icon name="reports" className="absolute -right-6 -top-6 w-36 h-36 opacity-10 text-gold-300" />
+          <div className="text-sm text-gold-300 font-semibold">รายจ่ายรวม (เครดิตออก)</div>
+          <div className="text-3xl font-black text-gold-300 mt-1">{fmt(m.totalOut || 0)}</div>
           <div className="text-[11px] text-navy-300 mt-2">
             ถอน {fmt(m.withdraw || 0)} • admin หัก {fmt(m.adminDebit || 0)} • รางวัล {fmt(m.winnings || 0)} • คืนเงิน {fmt(m.refunds || 0)}
           </div>
@@ -82,7 +82,7 @@ export default function AdminOverview() {
         <div className="bg-red-500/10 border border-red-500/50 rounded-2xl px-5 py-4 flex items-center gap-3">
           <Icon name="security" className="w-6 h-6 text-red-400 shrink-0" />
           <div>
-            <div className="font-bold text-red-300">มี {d.overdueDraws} รอบที่เลยเวลาออกรางวัลแล้วยังไม่ออกผล</div>
+            <div className="font-bold text-gold-300">มี {d.overdueDraws} รอบที่เลยเวลาออกรางวัลแล้วยังไม่ออกผล</div>
             <div className="text-xs text-navy-300">ไปที่ "ประเภทหวย/กติกา → ออกผลรางวัล" เพื่อตรวจผลอัตโนมัติหรือกรอกผลเอง</div>
           </div>
         </div>

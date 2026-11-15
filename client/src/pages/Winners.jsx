@@ -52,7 +52,7 @@ export default function Winners() {
               <div className="text-[10px] text-navy-500">{fmtDateTime(w.settledAt)} • เดิมพัน {satang(w.amount)} บาท</div>
             </div>
             <div className="text-right shrink-0">
-              <div className={`font-black ${bigWin(w) ? 'text-gold-300 text-lg' : 'text-green-400'}`}>
+              <div className={`font-black ${bigWin(w) ? 'text-green-300 text-lg' : 'text-green-400'}`}>
                 +{satang(w.payout)} บาท
               </div>
               <div className="text-[9px] text-navy-500">เครดิต</div>

@@ -56,7 +56,7 @@ export default function AdminWallet() {
         <input required placeholder="เหตุผล (บังคับ)" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5" />
         <input placeholder="Idempotency key" value={form.idempotencyKey} onChange={e => setForm({...form, idempotencyKey: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 font-mono text-xs" />
         <button className="bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">ปรับเครดิต</button>
-        {msg && <div className={`sm:col-span-2 text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-300' : 'bg-green-500/10 text-green-300'}`}>{msg}</div>}
+        {msg && <div className={`sm:col-span-2 text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`}>{msg}</div>}
       </form>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">

@@ -1,0 +1,27 @@
+# deps / build artifacts
+node_modules
+**/node_modules
+client/dist
+server/data
+.git
+.gitignore
+*.log
+
+# audit & scratch files
+docs/audit
+scripts/*.mjs
+add-*.mjs
+check-*.mjs
+audit-*.mjs
+cdp-*.mjs
+*.bat
+*.vbs
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db

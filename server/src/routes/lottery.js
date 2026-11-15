@@ -11,36 +11,36 @@ import { HttpError } from '../lib/audit.js';
 
 const router = Router();
 
-router.get('/types', (req, res) => {
-  res.json({ types: svc.listLotteryTypes() });
+router.get('/types', async (req, res) => {
+  res.json({ types: await svc.listLotteryTypes() });
 });
 
 // public config สำหรับหน้าแรก (ไม่ต้อง login) — เฉพาะ key ที่ปลอดภัย
-router.get('/public-config', (req, res) => {
+router.get('/public-config', async (req, res) => {
   res.json({
-    banner: settings.getSetting('homepage_banner', null),
-    announcement: settings.getSetting('announcement', null),
-    bettingMenuEnabled: settings.getSetting('betting_menu_enabled', true) !== false,
-    hiddenBetTypes: settings.getSetting('bet_menu_hidden_types', []),
+    banner: await settings.getSetting('homepage_banner', null),
+    announcement: await settings.getSetting('announcement', null),
+    bettingMenuEnabled: (await settings.getSetting('betting_menu_enabled', true)) !== false,
+    hiddenBetTypes: await settings.getSetting('bet_menu_hidden_types', []),
     // เกมด่วน (สตางค์/ตัวคูณ) — ให้หน้าบ้านแสดงราคา+อัตราจ่าย/รางวัลปัจจุบันจากหลังบ้าน
     instantGame: {
-      scratchPrice: scratchSvc.cardPrice(),
-      hiloPrice: hiloSvc.hiloPrice(),
-      scratchPrizes: scratchSvc.prizeTable(),
-      hiloMult: hiloSvc.hiloMultipliers(),
+      scratchPrice: await scratchSvc.cardPrice(),
+      hiloPrice: await hiloSvc.hiloPrice(),
+      scratchPrizes: await scratchSvc.prizeTable(),
+      hiloMult: await hiloSvc.hiloMultipliers(),
     },
     // โปรโมชัน — cashback % (0 = ปิด)
-    cashbackPercent: Number(settings.getSetting('cashback_percent', 0)) || 0,
+    cashbackPercent: Number(await settings.getSetting('cashback_percent', 0)) || 0,
   });
 });
 
 // รายการ "ตลาดหวย" แยกย่อย — type ที่มี category จะกลายเป็นหลาย market
 // key = "<type_id>:<category_id|0>" ใช้เป็น query param ?market=...
-router.get('/markets', (req, res) => {
+router.get('/markets', async (req, res) => {
   const db = getDb();
-  const types = db.prepare('SELECT id, code, name_th FROM lottery_types WHERE is_active = 1 ORDER BY id').all();
+  const types = await db.prepare('SELECT id, code, name_th FROM lottery_types WHERE is_active = 1 ORDER BY id').all();
   // เฉพาะหมวดที่มี rules ใช้งานอยู่ — หมวดที่ปิดบริการ (เช่น หวยลาวพัฒนา LAD) ไม่โผล่เป็น market
-  const cats = db.prepare(`SELECT c.id, c.lottery_type_id, c.code, c.name_th
+  const cats = await db.prepare(`SELECT c.id, c.lottery_type_id, c.code, c.name_th
     FROM lottery_categories c
     WHERE EXISTS (SELECT 1 FROM lottery_rules r WHERE r.category_id = c.id AND r.is_active = 1)
     ORDER BY c.id`).all();
@@ -63,15 +63,15 @@ router.get('/lucky', async (req, res, next) => {
   catch (e) { next(e); }
 });
 
-router.get('/types/:id', (req, res, next) => {
+router.get('/types/:id', async (req, res, next) => {
   try {
-    const t = svc.getLotteryType(Number(req.params.id));
+    const t = await svc.getLotteryType(Number(req.params.id));
     if (!t) return res.status(404).json({ error: 'ไม่พบประเภทหวย' });
-    res.json({ type: t, rules: svc.listRules(t.id) });
+    res.json({ type: t, rules: await svc.listRules(t.id) });
   } catch (e) { next(e); }
 });
 
-router.get('/draws', (req, res, next) => {
+router.get('/draws', async (req, res, next) => {
   try {
     // ?market=<type_id>:<category_id|0> — กรองระดับตลาดหวย (ละเอียดกว่า type)
     let lotteryTypeId = req.query.type ? Number(req.query.type) : null;
@@ -81,7 +81,7 @@ router.get('/draws', (req, res, next) => {
       lotteryTypeId = Number(t);
       categoryId = c === '0' || c === undefined ? null : Number(c);
     }
-    const draws = svc.listDraws({
+    const draws = await svc.listDraws({
       lotteryTypeId,
       categoryId,
       upcoming: req.query.upcoming === '1',
@@ -90,17 +90,17 @@ router.get('/draws', (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get('/draws/:id', (req, res, next) => {
+router.get('/draws/:id', async (req, res, next) => {
   try {
-    const d = svc.getDraw(Number(req.params.id));
+    const d = await svc.getDraw(Number(req.params.id));
     if (!d) return res.status(404).json({ error: 'ไม่พบรอบหวย' });
     res.json({ draw: d });
   } catch (e) { next(e); }
 });
 
-router.get('/draws/:id/rules', requireAuth, (req, res, next) => {
+router.get('/draws/:id/rules', requireAuth, async (req, res, next) => {
   try {
-    const r = svc.rulesForDraw(Number(req.params.id));
+    const r = await svc.rulesForDraw(Number(req.params.id));
     if (!r) return res.status(404).json({ error: 'ไม่พบรอบหวย' });
     res.json({ rules: r.rules });
   } catch (e) { next(e); }
@@ -117,19 +117,19 @@ router.get('/fairness/gen', (req, res, next) => {
 });
 
 // fairness ของรอบหนึ่งๆ — บอกว่าวิธีที่ผลถูกสร้าง (deterministic/external/manual)
-router.get('/draws/:id/fairness', (req, res, next) => {
+router.get('/draws/:id/fairness', async (req, res, next) => {
   try {
-    const draw = svc.getDraw(Number(req.params.id));
+    const draw = await svc.getDraw(Number(req.params.id));
     if (!draw) return res.status(404).json({ error: 'ไม่พบรอบหวย' });
-    const result = getDb().prepare('SELECT source FROM lottery_results WHERE draw_id = ?').get(draw.id);
+    const result = await getDb().prepare('SELECT source FROM lottery_results WHERE draw_id = ?').get(draw.id);
     res.json({ draw_code: draw.draw_code, ...fetcher.fairnessForSource(result?.source, draw.draw_code) });
   } catch (e) { next(e); }
 });
 
 // Winners board — ผู้ชนะล่าสุด (mask ชื่อเล่นเพื่อความเป็นส่วนตัว) public สำหรับหน้า engagement
-router.get('/winners', (req, res) => {
+router.get('/winners', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '30', 10) || 30, 50);
-  const rows = getDb().prepare(`
+  const rows = await getDb().prepare(`
     SELECT bi.number, bi.amount, bi.payout, bi.bet_type, bi.is_tod,
            r.name_th AS rule_name_th,
            bs.slip_ref, bs.settled_at,
@@ -163,9 +163,9 @@ router.get('/winners', (req, res) => {
   });
 });
 
-router.get('/results', (req, res) => {
+router.get('/results', async (req, res) => {
   // เฉพาะผลล่าสุด 1 รายการต่อประเภท/หมวด — ของเก่าไม่ต้องแสดง
-  const rows = getDb().prepare(`
+  const rows = await getDb().prepare(`
     WITH ranked AS (
       SELECT lr.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th, lt.code AS type_code,
              c.code AS category_code, c.name_th AS category_name_th,

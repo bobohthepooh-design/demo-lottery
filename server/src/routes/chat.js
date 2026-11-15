@@ -13,11 +13,11 @@ const BODY_MAX = 500;
 
 const msgSchema = z.object({ body: z.string().trim().min(1).max(BODY_MAX) });
 
-function threadForUser(userId) {
-  let t = db().prepare('SELECT * FROM chat_threads WHERE user_id = ?').get(userId);
+async function threadForUser(userId) {
+  let t = await db().prepare('SELECT * FROM chat_threads WHERE user_id = ?').get(userId);
   if (!t) {
-    db().prepare('INSERT INTO chat_threads (user_id) VALUES (?)').run(userId);
-    t = db().prepare('SELECT * FROM chat_threads WHERE user_id = ?').get(userId);
+    await db().prepare('INSERT INTO chat_threads (user_id) VALUES (?)').run(userId);
+    t = await db().prepare('SELECT * FROM chat_threads WHERE user_id = ?').get(userId);
   }
   return t;
 }
@@ -40,30 +40,30 @@ export const memberRouter = Router();
 memberRouter.use(requireAuth);
 
 // thread ของฉัน + ข้อความล่าสุด (สร้าง thread ถ้ายังไม่มี)
-memberRouter.get('/thread', (req, res) => {
-  const t = threadForUser(req.user.id);
+memberRouter.get('/thread', async (req, res) => {
+  const t = await threadForUser(req.user.id);
   const limit = Math.min(parseInt(req.query.limit || '100', 10), 200);
-  const msgs = db().prepare(`${MSG_SELECT} WHERE m.thread_id = ? ORDER BY m.id DESC LIMIT ?`)
-    .all(t.id, limit).reverse();
+  const msgs = (await db().prepare(`${MSG_SELECT} WHERE m.thread_id = ? ORDER BY m.id DESC LIMIT ?`)
+    .all(t.id, limit)).reverse();
   // mark อ่านแล้วฝั่ง member
-  db().prepare('UPDATE chat_messages SET read_by_user = 1 WHERE thread_id = ? AND is_admin = 1 AND read_by_user = 0').run(t.id);
+  await db().prepare('UPDATE chat_messages SET read_by_user = 1 WHERE thread_id = ? AND is_admin = 1 AND read_by_user = 0').run(t.id);
   res.json({ threadId: t.id, messages: msgs.map(m => msgDto(m, req.user.id)) });
 });
 
 // จำนวนข้อความแอดมินที่ยังไม่อ่าน — ใช้ทำ badge บนปุ่มแชท (ไม่ mark read)
-memberRouter.get('/unread', (req, res) => {
-  const t = db().prepare('SELECT id FROM chat_threads WHERE user_id = ?').get(req.user.id);
-  const unread = t ? db().prepare('SELECT COUNT(*) c FROM chat_messages WHERE thread_id = ? AND is_admin = 1 AND read_by_user = 0').get(t.id).c : 0;
+memberRouter.get('/unread', async (req, res) => {
+  const t = await db().prepare('SELECT id FROM chat_threads WHERE user_id = ?').get(req.user.id);
+  const unread = t ? (await db().prepare('SELECT COUNT(*) c FROM chat_messages WHERE thread_id = ? AND is_admin = 1 AND read_by_user = 0').get(t.id)).c : 0;
   res.json({ unread });
 });
 
-memberRouter.post('/messages', (req, res, next) => {
+memberRouter.post('/messages', async (req, res, next) => {
   try {
     const { body } = msgSchema.parse(req.body);
-    const t = threadForUser(req.user.id);
-    const r = db().prepare('INSERT INTO chat_messages (thread_id, sender_id, is_admin, body) VALUES (?, ?, 0, ?)')
+    const t = await threadForUser(req.user.id);
+    const r = await db().prepare('INSERT INTO chat_messages (thread_id, sender_id, is_admin, body) VALUES (?, ?, 0, ?)')
       .run(t.id, req.user.id, body);
-    db().prepare(`UPDATE chat_threads SET last_msg_at = datetime('now') WHERE id = ?`).run(t.id);
+    await db().prepare(`UPDATE chat_threads SET last_msg_at = datetime('now') WHERE id = ?`).run(t.id);
     broadcast('chat', { to: 'admin' });
     res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) });
   } catch (e) { next(e); }
@@ -74,14 +74,14 @@ export const adminRouter = Router();
 adminRouter.use(requireAuth, requireMfaVerified, requirePerm('members.manage'));
 
 // จำนวนข้อความที่ยังไม่อ่านรวม — ใช้ทำ badge บนเมนูแชทใน admin
-adminRouter.get('/unread', (req, res) => {
-  const row = db().prepare('SELECT COUNT(*) c FROM chat_messages WHERE is_admin = 0 AND read_by_admin = 0').get();
+adminRouter.get('/unread', async (req, res) => {
+  const row = await db().prepare('SELECT COUNT(*) c FROM chat_messages WHERE is_admin = 0 AND read_by_admin = 0').get();
   res.json({ unread: row.c });
 });
 
 // รายการ thread ทั้งหมด — ล่าสุดก่อน + จำนวนข้อความที่ admin ยังไม่อ่าน
-adminRouter.get('/threads', (req, res) => {
-  const rows = db().prepare(`
+adminRouter.get('/threads', async (req, res) => {
+  const rows = await db().prepare(`
     SELECT t.id AS thread_id, t.user_id, t.last_msg_at,
            u.username, u.display_name, u.status,
            (SELECT COUNT(*) FROM chat_messages m WHERE m.thread_id = t.id AND m.is_admin = 0 AND m.read_by_admin = 0) AS unread,
@@ -97,29 +97,29 @@ adminRouter.get('/threads', (req, res) => {
   })) });
 });
 
-adminRouter.get('/threads/:userId/messages', (req, res) => {
+adminRouter.get('/threads/:userId/messages', async (req, res) => {
   const userId = Number(req.params.userId);
   if (!Number.isInteger(userId) || userId <= 0) throw new HttpError(400, 'userId ไม่ถูกต้อง');
-  const t = db().prepare('SELECT * FROM chat_threads WHERE user_id = ?').get(userId);
+  const t = await db().prepare('SELECT * FROM chat_threads WHERE user_id = ?').get(userId);
   if (!t) return res.json({ messages: [], threadId: null });
   const limit = Math.min(parseInt(req.query.limit || '200', 10), 500);
-  const msgs = db().prepare(`${MSG_SELECT} WHERE m.thread_id = ? ORDER BY m.id DESC LIMIT ?`)
-    .all(t.id, limit).reverse();
-  db().prepare('UPDATE chat_messages SET read_by_admin = 1 WHERE thread_id = ? AND is_admin = 0 AND read_by_admin = 0').run(t.id);
+  const msgs = (await db().prepare(`${MSG_SELECT} WHERE m.thread_id = ? ORDER BY m.id DESC LIMIT ?`)
+    .all(t.id, limit)).reverse();
+  await db().prepare('UPDATE chat_messages SET read_by_admin = 1 WHERE thread_id = ? AND is_admin = 0 AND read_by_admin = 0').run(t.id);
   res.json({ threadId: t.id, messages: msgs.map(m => msgDto(m, req.user.id)) });
 });
 
-adminRouter.post('/threads/:userId/messages', (req, res, next) => {
+adminRouter.post('/threads/:userId/messages', async (req, res, next) => {
   try {
     const userId = Number(req.params.userId);
     if (!Number.isInteger(userId) || userId <= 0) throw new HttpError(400, 'userId ไม่ถูกต้อง');
     const { body } = msgSchema.parse(req.body);
-    const target = db().prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const target = await db().prepare('SELECT id FROM users WHERE id = ?').get(userId);
     if (!target) throw new HttpError(404, 'ไม่พบสมาชิก');
-    const t = threadForUser(userId);
-    const r = db().prepare('INSERT INTO chat_messages (thread_id, sender_id, is_admin, body) VALUES (?, ?, 1, ?)')
+    const t = await threadForUser(userId);
+    const r = await db().prepare('INSERT INTO chat_messages (thread_id, sender_id, is_admin, body) VALUES (?, ?, 1, ?)')
       .run(t.id, req.user.id, body);
-    db().prepare(`UPDATE chat_threads SET last_msg_at = datetime('now') WHERE id = ?`).run(t.id);
+    await db().prepare(`UPDATE chat_threads SET last_msg_at = datetime('now') WHERE id = ?`).run(t.id);
     broadcast('chat', { to: String(userId) });
     res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) });
   } catch (e) { next(e); }

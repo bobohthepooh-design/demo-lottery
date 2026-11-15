@@ -49,20 +49,20 @@ const otpVerifySchema = z.object({
 });
 const mfaCodeSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 
-router.post('/register', loginLimiter, (req, res, next) => {
+router.post('/register', loginLimiter, async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
     const email = data.email || `${data.username.toLowerCase()}@demo.local`;
-    const userId = auth.register({ ...data, email, ip: req.ip, userAgent: req.headers['user-agent'] });
-    getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(userId);
+    const userId = await auth.register({ ...data, email, ip: req.ip, userAgent: req.headers['user-agent'] });
+    await getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(userId);
     res.status(201).json({ ok: true, userId, message: 'สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ' });
   } catch (e) { next(e); }
 });
 
-router.post('/login', loginLimiter, (req, res, next) => {
+router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
-    const result = auth.login({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
+    const result = await auth.login({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
     auth.setSessionCookie(res, result.token);
     const needsMfa = result.requiresMfa;
     res.json({
@@ -74,21 +74,21 @@ router.post('/login', loginLimiter, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/logout', (req, res) => {
-  auth.logout(req);
+router.post('/logout', async (req, res) => {
+  await auth.logout(req);
   res.setHeader('Set-Cookie', 'dl_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
   res.json({ ok: true });
 });
 
-router.get('/me', auth.requireAuth, (req, res) => {
-  const balance = getBalance(req.user.id);
-  const roles = getDb().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`)
-    .all(req.user.id).map(r => r.name);
+router.get('/me', auth.requireAuth, async (req, res) => {
+  const balance = await getBalance(req.user.id);
+  const roles = (await getDb().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`)
+    .all(req.user.id)).map(r => r.name);
   res.json({
     user: { ...req.user, roles, mfaVerified: !!req.session.mfa_verified },
     balance,
     currency: 'THB',
-    demoNotice: getSetting('demo_notice', ''),
+    demoNotice: await getSetting('demo_notice', ''),
   });
 });
 
@@ -98,11 +98,11 @@ const rgSchema = z.object({
   monthlyLimitBaht: z.number().min(0).max(100_000_000).nullable().optional(),
   selfExcludeDays: z.union([z.literal(1), z.literal(7), z.literal(30), z.literal(36500)]).nullable().optional(),
 });
-router.patch('/me/responsible-gambling', auth.requireAuth, (req, res, next) => {
+router.patch('/me/responsible-gambling', auth.requireAuth, async (req, res, next) => {
   try {
     const data = rgSchema.parse(req.body);
     const db = getDb();
-    const u = db.prepare('SELECT self_excluded_until FROM users WHERE id = ?').get(req.user.id);
+    const u = await db.prepare('SELECT self_excluded_until FROM users WHERE id = ?').get(req.user.id);
     if (!u) throw new HttpError(404, 'ไม่พบผู้ใช้');
     // self-exclusion: ตั้งได้เท่านั้น (ขยายเวลาได้) — ยกเลิกเองไม่ได้จนกว่าจะหมดเวลา
     if (data.selfExcludeDays) {
@@ -113,13 +113,13 @@ router.patch('/me/responsible-gambling', auth.requireAuth, (req, res, next) => {
         // อนุญาตเฉพาะการต่อเวลา (36500 = ถาวร) — ห้ามลด/ยกเลิก
         if (!(data.selfExcludeDays === 36500)) throw new HttpError(400, 'อยู่ในช่วงระงับแล้ว — ต่อเวลาได้เฉพาะ "ถาวร" เท่านั้น');
       }
-      db.prepare('UPDATE users SET self_excluded_until = ? WHERE id = ?').run(until, req.user.id);
+      await db.prepare('UPDATE users SET self_excluded_until = ? WHERE id = ?').run(until, req.user.id);
       audit({ userId: req.user.id, action: 'user.self_exclude', entityType: 'user', entityId: String(req.user.id), detail: { until } });
     }
     if (data.dailyLimitBaht !== undefined)
-      db.prepare('UPDATE users SET daily_limit_satang = ? WHERE id = ?').run(data.dailyLimitBaht === null ? null : Math.round(data.dailyLimitBaht * 100), req.user.id);
+      await db.prepare('UPDATE users SET daily_limit_satang = ? WHERE id = ?').run(data.dailyLimitBaht === null ? null : Math.round(data.dailyLimitBaht * 100), req.user.id);
     if (data.monthlyLimitBaht !== undefined)
-      db.prepare('UPDATE users SET monthly_limit_satang = ? WHERE id = ?').run(data.monthlyLimitBaht === null ? null : Math.round(data.monthlyLimitBaht * 100), req.user.id);
+      await db.prepare('UPDATE users SET monthly_limit_satang = ? WHERE id = ?').run(data.monthlyLimitBaht === null ? null : Math.round(data.monthlyLimitBaht * 100), req.user.id);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
@@ -129,87 +129,87 @@ const prefsSchema = z.object({
   language: z.literal('th').optional(),
   timezone: z.string().max(60).optional(),
 });
-router.patch('/me/prefs', auth.requireAuth, (req, res, next) => {
+router.patch('/me/prefs', auth.requireAuth, async (req, res, next) => {
   try {
     const data = prefsSchema.parse(req.body);
     const db = getDb();
     if (data.language !== undefined) {
-      db.prepare('UPDATE users SET language = ? WHERE id = ?').run(data.language, req.user.id);
+      await db.prepare('UPDATE users SET language = ? WHERE id = ?').run(data.language, req.user.id);
     }
     if (data.timezone !== undefined) {
       // validate IANA timezone
       try { new Intl.DateTimeFormat('en', { timeZone: data.timezone }); }
       catch { throw new HttpError(400, 'Timezone ไม่ถูกต้อง'); }
-      db.prepare('UPDATE users SET timezone = ? WHERE id = ?').run(data.timezone, req.user.id);
+      await db.prepare('UPDATE users SET timezone = ? WHERE id = ?').run(data.timezone, req.user.id);
     }
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
 // ยืนยันอายุ 18+ สำหรับบัญชีเก่า/LINE ที่ยังไม่ได้ยืนยัน (บังคับก่อนใช้งานต่อ — frontend แสดง banner)
-router.post('/me/confirm-age', auth.requireAuth, (req, res) => {
-  getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ? AND age_confirmed = 0').run(req.user.id);
+router.post('/me/confirm-age', auth.requireAuth, async (req, res) => {
+  await getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ? AND age_confirmed = 0').run(req.user.id);
   res.json({ ok: true });
 });
 
-router.post('/change-password', auth.requireAuth, (req, res, next) => {
+router.post('/change-password', auth.requireAuth, async (req, res, next) => {
   try {
     const data = changePwSchema.parse(req.body);
-    auth.changePassword(req.user.id, data.oldPassword, data.newPassword, req);
+    await auth.changePassword(req.user.id, data.oldPassword, data.newPassword, req);
     res.json({ ok: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่' });
   } catch (e) { next(e); }
 });
 
-router.post('/forgot-password', (req, res, next) => {
+router.post('/forgot-password', async (req, res, next) => {
   try {
     const data = forgotSchema.parse(req.body);
-    auth.forgotPassword({ email: data.email });
+    await auth.forgotPassword({ email: data.email });
     res.json({ ok: true, message: 'หากอีเมลนี้มีในระบบ เราจะส่งลิงก์รีเซ็ตรหัสผ่าน (Demo: ไม่ได้ส่งอีเมลจริง)' });
   } catch (e) { next(e); }
 });
 
 // ขอ OTP — DEMO: ไม่ได้ส่ง SMS จริง ส่งรหัสกลับใน response (devCode) ให้ frontend แสดง
-router.post('/otp/request', loginLimiter, (req, res, next) => {
+router.post('/otp/request', loginLimiter, async (req, res, next) => {
   try {
     const data = otpRequestSchema.parse(req.body);
-    const r = auth.requestOtp({ ...data, ip: req.ip });
+    const r = await auth.requestOtp({ ...data, ip: req.ip });
     res.json({ ok: true, ...r, message: 'ส่งรหัส OTP แล้ว (Demo: รหัสแสดงด้านล่าง ไม่ได้ส่ง SMS จริง)' });
   } catch (e) { next(e); }
 });
 
 // ยืนยัน OTP — สมัครใหม่ (purpose=register) หรือเข้าสู่ระบบ (purpose=login)
-router.post('/otp/verify', loginLimiter, (req, res, next) => {
+router.post('/otp/verify', loginLimiter, async (req, res, next) => {
   try {
     const data = otpVerifySchema.parse(req.body);
     if (data.purpose === 'register' && data.ageConfirmed !== true)
       throw new HttpError(400, 'ต้องยืนยันว่าอายุ 18 ปีขึ้นไป');
-    const result = auth.verifyOtpLogin({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
+    const result = await auth.verifyOtpLogin({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
     if (data.purpose === 'register' && result.user?.id)
-      getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(result.user.id);
+      await getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(result.user.id);
     auth.setSessionCookie(res, result.token);
     const needsMfa = result.requiresMfa;
     res.json({ ok: true, user: result.user, requiresMfa: needsMfa, mfaVerified: !needsMfa });
   } catch (e) { next(e); }
 });
 
-router.post('/mfa/setup', auth.requireAuth, (req, res, next) => {
-  try { res.json(auth.setupMfa(req.user.id)); } catch (e) { next(e); }
+router.post('/mfa/setup', auth.requireAuth, async (req, res, next) => {
+  try { res.json(await auth.setupMfa(req.user.id)); } catch (e) { next(e); }
 });
 
-router.post('/mfa/enable', auth.requireAuth, (req, res, next) => {
+router.post('/mfa/enable', auth.requireAuth, async (req, res, next) => {
   try {
     const { code } = mfaCodeSchema.parse(req.body);
-    auth.enableMfa(req.user.id, code);
+    await auth.enableMfa(req.user.id, code);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
-router.post('/mfa/verify', loginLimiter, (req, res, next) => {
+router.post('/mfa/verify', loginLimiter, async (req, res, next) => {
   try {
     const { code } = mfaCodeSchema.parse(req.body);
     const sessionId = auth.getSessionToken(req);
     if (!sessionId) return res.status(401).json({ error: 'ไม่พบ session' });
-    auth.verifyMfa(sessionId, code);
+    await auth.verifyMfa(sessionId, code);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
@@ -268,25 +268,24 @@ router.get('/line/callback', async (req, res) => {
     // 3) หา/สร้างบัญชี (email จำลองจาก LINE userId — ไม่เก็บรหัสผ่านจริง)
     const db = getDb();
     const email = `line_${profile.userId}@line.local`;
-    let user = db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
+    let user = await db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
     if (!user) {
-      const db2 = getDb();
       let username;
       do { username = `line${randomBytes(4).toString('hex')}`; }
-      while (db2.prepare('SELECT id FROM users WHERE username = ?').get(username));
+      while (await db.prepare('SELECT id FROM users WHERE username = ?').get(username));
       const password = randomToken(24); // ไม่เคยใช้ — บัญชี LINE ล็อกอินผ่าน OAuth เท่านั้น
-      auth.register({
+      await auth.register({
         username, email, password,
         displayName: String(profile.displayName || username).slice(0, 100),
         ip: req.ip, userAgent: req.headers['user-agent'],
       });
-      user = db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
+      user = await db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
       audit({ userId: user.id, action: 'user.register_line', entityType: 'user', entityId: String(user.id), req });
     }
 
     // 4) สร้าง session ตรง (ไม่ผ่าน password login)
     const token = randomToken(32);
-    db.prepare(`INSERT INTO user_sessions (id, user_id, ip, user_agent, expires_at)
+    await db.prepare(`INSERT INTO user_sessions (id, user_id, ip, user_agent, expires_at)
                 VALUES (?, ?, ?, ?, datetime('now', '+${config.sessionTtlHours} hours'))`)
       .run(token, user.id, req.ip || null, String(req.headers['user-agent'] || '').slice(0, 300));
     auth.setSessionCookie(res, token);

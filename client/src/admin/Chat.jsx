@@ -53,7 +53,7 @@ export default function AdminChat() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">แชทสมาชิก</h1>
         {totalUnread > 0 && (
-          <span className="text-xs bg-red-500/15 border border-red-500/40 text-red-300 rounded-full px-3 py-1 font-bold">
+          <span className="text-xs bg-gold-500/15 border border-gold-500/40 text-gold-300 rounded-full px-3 py-1 font-bold">
             ยังไม่อ่าน {totalUnread} ข้อความ
           </span>
         )}

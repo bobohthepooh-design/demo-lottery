@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import * as svc from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
-import { requireAuth } from '../services/authService.js';
+import * as hilo from '../services/hiloService.js';
+import * as scratch from '../services/scratchService.js';
+import { getDb, isPg } from '../db/index.js';
+import { qGet } from '../db/pg.js';
+import { requireAuth, requireAgeConfirmed } from '../services/authService.js';
 import { requirePerm } from '../middleware/rbac.js';
 import { HttpError } from '../lib/audit.js';
 
@@ -15,33 +19,35 @@ const betSchema = z.object({
     ruleId: z.number().int().positive(),
     number: z.string().min(1).max(20),
     amount: z.number().int().positive(),
-    tod: z.boolean().optional(), // แทงแบบโต๊ด — สลับลำดับหลักได้ จ่ายตามอัตราโต๊ดของกติกา
+    tod: z.boolean().optional(),
   })).min(1).max(50),
   idempotencyKey: z.string().max(64).optional(),
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', requireAgeConfirmed, async (req, res, next) => {
   try {
     const data = betSchema.parse(req.body);
-    const result = svc.placeBet(req.user.id, data);
+    const result = await svc.placeBet(req.user.id, data);
     res.status(201).json({ ok: true, ...result });
   } catch (e) { next(e); }
 });
 
-router.get('/mine', (req, res) => {
+router.get('/mine', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
   const offset = parseInt(req.query.offset || '0', 10);
-  res.json({ slips: svc.listMyBets(req.user.id, { limit, offset }) });
+  const status = ['pending', 'won', 'lost', 'partial', 'cancelled', 'refunded'].includes(req.query.status)
+    ? req.query.status : null;
+  res.json({ slips: await svc.listMyBets(req.user.id, { limit, offset, status }) });
 });
 
-router.get('/stats', (req, res) => {
-  res.json({ stats: svc.myStats(req.user.id) });
+router.get('/stats', async (req, res) => {
+  res.json({ stats: await svc.myStats(req.user.id) });
 });
 
 // export ประวัติโพยเป็น CSV — Excel อ่านไทยได้ (มี BOM)
-router.get('/export', (req, res, next) => {
+router.get('/export', async (req, res, next) => {
   try {
-    const rows = svc.exportMyBets(req.user.id);
+    const rows = await svc.exportMyBets(req.user.id);
     const esc = (v) => {
       const s = v == null ? '' : String(v);
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -60,33 +66,55 @@ router.get('/export', (req, res, next) => {
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="bets-${new Date().toISOString().slice(0, 10)}.csv"`);
-    res.send('﻿' + lines.join('\r\n')); // UTF-8 BOM — ให้ Excel เปิดภาษาไทยถูกต้อง
+    res.send('﻿' + lines.join('\r\n'));
   } catch (e) { next(e); }
 });
 
+// เกมด่วน (สล็อต/ไฮโล) ใช้ตั๋ว/บัตรของตัวเอง — ค้นจาก slip_id แล้วยกเลิกผ่าน service นั้น
+// คืน null ถ้าไม่ใช่โพยเกมด่วนที่ยกเลิกได้
+async function cancelInstantBySlip(userId, slipId) {
+  const hiloTicket = isPg()
+    ? await qGet(`SELECT id FROM hilo_tickets WHERE slip_id = $1 AND user_id = $2 AND status = 'awaiting'`, [slipId, userId])
+    : getDb().prepare(`SELECT id FROM hilo_tickets WHERE slip_id = ? AND user_id = ? AND status = 'awaiting'`).get(slipId, userId);
+  if (hiloTicket) return hilo.cancelTicket(userId, hiloTicket.id);
+  const scratchCard = isPg()
+    ? await qGet(`SELECT id FROM scratch_cards WHERE slip_id = $1 AND user_id = $2 AND status = 'hidden'`, [slipId, userId])
+    : getDb().prepare(`SELECT id FROM scratch_cards WHERE slip_id = ? AND user_id = ? AND status = 'hidden'`).get(slipId, userId);
+  if (scratchCard) return scratch.cancelCard(userId, scratchCard.id);
+  return null;
+}
+
 // ยกเลิกโพยของตัวเอง — เฉพาะตอนรอบยังเปิดรับ (คืนเครดิตเต็มจำนวน)
-router.post('/:id/cancel', (req, res, next) => {
+// โพยเกมด่วนที่ยังไม่ตัดสิน (ตั๋วไฮโล/บัตรสล็อต) ยกเลิกผ่านระบบเกมนั้นแทน
+router.post('/:id/cancel', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, 'id ไม่ถูกต้อง');
-    res.json({ ok: true, ...svc.cancelBet(req.user.id, id) });
+    try {
+      res.json({ ok: true, ...(await svc.cancelBet(req.user.id, id)) });
+    } catch (e) {
+      if (e?.code !== 'DRAW_CLOSED') throw e;
+      const instant = await cancelInstantBySlip(req.user.id, id);
+      if (!instant) throw e;
+      res.json({ ok: true, ...instant });
+    }
   } catch (e) { next(e); }
 });
 
-router.get('/slips/:ref', (req, res, next) => {
+router.get('/slips/:ref', async (req, res, next) => {
   try {
-    res.json({ slip: svc.getMySlip(req.user.id, req.params.ref) });
+    res.json({ slip: await svc.getMySlip(req.user.id, req.params.ref) });
   } catch (e) { next(e); }
 });
 
 // wallet (member view)
-router.get('/wallet', (req, res) => {
+router.get('/wallet', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
   const offset = parseInt(req.query.offset || '0', 10);
   res.json({
-    balance: wallet.getBalance(req.user.id),
-    withdrawable: wallet.getWithdrawable(req.user.id),
-    transactions: wallet.listTransactions(req.user.id, { limit, offset }),
+    balance: await wallet.getBalance(req.user.id),
+    withdrawable: await wallet.getWithdrawable(req.user.id),
+    transactions: await wallet.listTransactions(req.user.id, { limit, offset }),
   });
 });
 
@@ -103,11 +131,11 @@ const walletActionSchema = z.object({
   accountNo: z.string().max(50).optional(),
   idempotencyKey: z.string().max(64).optional(),
 });
-router.post('/wallet/action', (req, res, next) => {
+router.post('/wallet/action', async (req, res, next) => {
   try {
     const { direction, amount, paymentMethod, accountNo, idempotencyKey } = walletActionSchema.parse(req.body);
     const methodLabel = DEPOSIT_METHODS[paymentMethod] || 'ช่องทางอื่น';
-    const result = wallet.memberWalletAction(req.user.id, {
+    const result = await wallet.memberWalletAction(req.user.id, {
       direction, amount, idempotencyKey,
       description: `${direction === 'deposit' ? 'เติมเครดิต' : 'ถอนเครดิต'} — ${methodLabel}${accountNo ? ` • ปลายทาง ${accountNo}` : ''} (DEMO)`,
     });

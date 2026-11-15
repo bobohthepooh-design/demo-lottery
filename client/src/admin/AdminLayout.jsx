@@ -21,6 +21,7 @@ const groups = [
       { to: '/admin/lotteries', label: 'ประเภทหวย/กติกา', icon: 'lotteries' },
       { to: '/admin/draws', label: 'รอบหวย', icon: 'draws' },
       { to: '/admin/bets', label: 'ตรวจโพย', icon: 'bets' },
+      { to: '/admin/my-bets', label: 'โพยของฉัน', icon: 'bets' },
       { to: '/admin/chat', label: 'แชทสมาชิก', icon: 'chat' },
     ],
   },

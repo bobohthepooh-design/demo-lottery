@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { SymbolGrid } from '../components/ScratchCard.jsx';
 import SlotMachine from '../components/SlotMachine.jsx';
+import WinBurst from '../components/WinBurst.jsx';
 import FairnessNote from '../components/Fairness.jsx';
 import { sfx } from '../sound.js';
 
@@ -26,7 +27,14 @@ const DEFAULT_PRIZES = [
 
 // บัตรเก่า (grid 9 ช่อง กติกาเดิม) — แสดง SymbolGrid 3x3; สล็อตใหม่ grid 15 ช่อง
 const isLegacyCard = (grid) => !!grid && grid.length !== 15;
-const rowIcons = (grid) => !grid ? ['❓', '❓', '❓'] : grid.slice(0, 5); // แถวจ่ายแรกเป็นตัวแทนบัตรในลิสต์
+// รูปย่อบัตรในลิสต์ — แสดง mini grid 3 แถว × 5 รีล ทั้งหมด (ไม่ใช่แค่แถวแรก)
+const MiniGrid = ({ grid }) => !grid ? null : (
+  <div className="grid grid-cols-5 gap-[2px]">
+    {[...Array(15)].map((_, i) => (
+      <span key={i} className="w-4 h-4 rounded-[3px] bg-navy-900 border border-navy-600 flex items-center justify-center text-[10px] leading-none">{grid[i] || '❓'}</span>
+    ))}
+  </div>
+);
 
 export default function Scratch() {
   const { user, balance, setBalance } = useAuth();
@@ -43,21 +51,28 @@ export default function Scratch() {
   const reelIcons = prizes.map(p => p.icon);
 
   const load = () => api('/scratch/mine').then(r => setCards(r.cards)).catch(() => {});
+  const loadCfg = () => api('/lottery/public-config').then(r => {
+    const p = r.instantGame?.scratchPrice;
+    if (p) setPrice(p);
+    if (Array.isArray(r.instantGame?.scratchPrizes) && r.instantGame.scratchPrizes.length) {
+      setPrizes(r.instantGame.scratchPrizes);
+    }
+  }).catch(() => {});
   useEffect(() => {
-    load();
-    api('/lottery/public-config').then(r => {
-      const p = r.instantGame?.scratchPrice;
-      if (p) setPrice(p);
-      if (Array.isArray(r.instantGame?.scratchPrizes) && r.instantGame.scratchPrizes.length) {
-        setPrizes(r.instantGame.scratchPrizes);
-      }
-    }).catch(() => {});
+    load(); loadCfg();
+    // admin แก้ราคา/ตารางรางวัล → SSE ดันมา refetch ทันที
+    const h = () => loadCfg();
+    window.addEventListener('sys:update', h);
+    return () => window.removeEventListener('sys:update', h);
   }, []);
 
+  const buyIdem = useRef(null); // คง key เดิมจนกว่าจะสำเร็จ — retry/ดับเน็ตจะไม่ซื้อซ้ำ
   const buy = async () => {
     setErr(''); setBusy(true);
+    if (!buyIdem.current) buyIdem.current = crypto.randomUUID();
     try {
-      const r = await api('/scratch/buy', { method: 'POST', body: {} });
+      const r = await api('/scratch/buy', { method: 'POST', body: { idempotencyKey: buyIdem.current } });
+      buyIdem.current = null;
       setBalance(r.balance);
       if (r.price) setPrice(r.price);
       setCards(cs => [r.card, ...cs]);
@@ -95,6 +110,20 @@ export default function Scratch() {
     setSpinKey(0); setSpinning(false); setReelsDone(true);
   };
 
+  // ยกเลิกบัตร hidden — คืนเครดิตเต็มจำนวน
+  const cancelCard = async (e, c) => {
+    e.stopPropagation();
+    if (!confirm(`ยกเลิกบัตร ${c.slipRef}? เครดิตจะถูกคืนเต็มจำนวน`)) return;
+    setErr('');
+    try {
+      const r = await api(`/scratch/${c.id}/cancel`, { method: 'POST' });
+      setBalance(r.balance);
+      setCards(cs => cs.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
+      if (active?.id === c.id) { setActive(null); setResult(null); }
+      load();
+    } catch (e2) { setErr(e2.message); }
+  };
+
   const hidden = cards.filter(c => c.status === 'hidden');
   const revealed = cards.filter(c => c.status === 'revealed');
   // ปุ่มหลักบนแถบล่าง — ตามสถานะบัตรที่เปิดอยู่
@@ -110,13 +139,19 @@ export default function Scratch() {
         <span className="casino-sparkle text-sm" style={{ top: '30%', right: '10%', animationDelay: '1.4s' }}>✧</span>
         <span className="casino-sparkle text-lg" style={{ bottom: '26%', left: '14%', animationDelay: '2.2s' }}>✦</span>
         <span className="casino-sparkle text-sm" style={{ bottom: '34%', right: '8%', animationDelay: '0.9s' }}>✦</span>
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', right: '6%', background: 'radial-gradient(circle at 35% 30%, #fca5a5, #dc2626 60%, #7f1d1d)', animationDelay: '1s' }} />
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', right: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '1s' }} />
         <div className="text-5xl mb-2 animate-float">🎰</div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-gold-300">สล็อต</h1>
         <p className="text-sm text-navy-300 mt-1">เล่นเกม → กดสปิน → 5 รีลหมุนหยุดทีละตัว → รู้ผลทันที!</p>
-        <div className="flex items-center justify-center gap-4 mt-4 text-xs text-navy-300 flex-wrap">
-          <span>💰 ราคา <b className="text-gold-300">{satang(price)} บาท</b>/ใบ</span>
-          {prizes.map(p => <span key={p.icon} className="inline-flex items-center gap-0.5">{p.icon} <b>{p.name}</b> {p.max && p.max !== p.prize ? `${satang(p.prize)}–${satang(p.max)}` : satang(p.prize)} บาท</span>)}
+        <div className="flex flex-col items-center gap-3 mt-4">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500/25 via-gold-500/10 to-gold-500/25 border border-gold-400/60 shadow-[0_0_20px_rgba(217,165,32,0.25)]">
+            <span className="text-sm">💰</span>
+            <span className="text-xs font-semibold text-gold-300">ราคาต่อใบ</span>
+            <span className="font-display font-bold text-2xl text-gold-300">{satang(price)} <span className="text-sm">บาท</span></span>
+          </div>
+          <div className="flex items-center justify-center gap-3 text-[11px] text-navy-300 flex-wrap">
+            {prizes.map(p => <span key={p.icon} className="inline-flex items-center gap-0.5">{p.icon} <b>{p.name}</b> {p.max && p.max !== p.prize ? `${satang(p.prize)}–${satang(p.max)}` : satang(p.prize)} บาท</span>)}
+          </div>
         </div>
         <p className="text-[11px] text-navy-400 mt-2">ถูกเมื่อสัญลักษณ์เดิมซ้ำกันติดกันตั้งแต่รีลซ้ายอย่างน้อย 3 รีล บน 20 เพย์ไลน์ใดก็ได้ • จ่ายรวมทุกเส้นที่ถูก • เครดิตเสมือนสำหรับ Demo</p>
       </div>
@@ -194,25 +229,30 @@ export default function Scratch() {
               const o = c.outcome;
               const isWin = o?.win;
               return (
-                <button key={c.id} onClick={() => openCard(c)}
-                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left">
-                  <div className="flex -space-x-1">
-                    {rowIcons(c.grid).map((s, i) => (
-                      <span key={i} className="w-8 h-8 rounded-lg bg-navy-900 border border-navy-600 flex items-center justify-center text-lg">{s}</span>
-                    ))}
-                  </div>
+                <div key={c.id} role="button" tabIndex={0}
+                  onClick={() => openCard(c)} onKeyDown={e => e.key === 'Enter' && openCard(c)}
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left cursor-pointer">
+                  <MiniGrid grid={c.grid} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-mono text-navy-300">{c.slipRef}</div>
                     <div className="text-[11px] text-navy-400">{fmtDateTime(c.createdAt)}</div>
                   </div>
                   {c.status === 'hidden' ? (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40">รอสปิน</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40">รอสปิน</span>
+                      <span role="button" tabIndex={0}
+                        onClick={e => cancelCard(e, c)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); cancelCard(e, c); } }}
+                        className="text-[10px] font-bold px-2 py-1 rounded-full bg-navy-700/60 text-navy-300 border border-navy-600 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition cursor-pointer">ยกเลิก</span>
+                    </span>
+                  ) : c.status === 'cancelled' ? (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-400 border border-navy-600">ยกเลิก</span>
                   ) : isWin ? (
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/15 text-green-300 border border-green-500/40">ถูก {o.symbol} +{satang(o.prize)} บาท</span>
                   ) : (
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-300 border border-navy-600">ไม่ถูก</span>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -249,13 +289,19 @@ function RevealResult({ outcome, balance, slipRef }) {
   if (!outcome) return null;
   const win = outcome.win;
   return (
-    <div className={`rounded-2xl border-2 p-5 text-center ${win ? 'border-green-500/60 bg-green-500/10' : 'border-navy-600 bg-navy-900/60'}`}>
+    <div className={`relative rounded-2xl border-2 p-5 text-center overflow-visible ${win ? 'border-green-500/60 bg-green-500/10' : 'border-navy-600 bg-navy-900/60'}`}>
+      {win && <WinBurst />}
       {win ? (
         <>
           <div className="text-5xl mb-2 animate-coin">🎉🏆</div>
           <div className="text-xl font-bold text-green-400">ถูกรางวัล!</div>
-          <div className="text-3xl font-black text-gold-300 coin-gold-bright mt-1">+{satang(outcome.prize)} บาท</div>
+          <div className="text-3xl font-black text-green-300 mt-1">+{satang(outcome.prize)} บาท</div>
           <div className="text-sm text-navy-300 mt-1">
+            {outcome.lines?.length > 0 && (
+              <div className="text-[11px] text-amber-300/90 mb-0.5">
+                เพย์ไลน์ที่ถูก: {outcome.lines.map(l => `#${l.line}`).join(', ')}
+              </div>
+            )}
             {outcome.lines?.length > 1
               ? `ถูก ${outcome.lines.length} เพย์ไลน์ — สูงสุด ${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''}`
               : `${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''} ซ้ำ ${outcome.lines?.[0]?.count || 3} รีล`}

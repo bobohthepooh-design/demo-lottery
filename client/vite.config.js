@@ -8,4 +8,14 @@ export default defineConfig({
     port: 5173,
     proxy: { '/api': 'http://localhost:4000' },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // แยก vendor ออกจาก app code — cache ได้ยาว + โหลดขนานกัน
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
 });

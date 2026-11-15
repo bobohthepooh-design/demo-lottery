@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
-import { runMigrations } from './db/migrate.js';
+import { migrate } from './db/migrate.js';
 import { seed } from './db/seed.js';
 import { seedDemoDraws } from './db/demo-data.js';
 import { getDb } from './db/index.js';
@@ -27,39 +27,44 @@ import * as scratchService from './services/scratchService.js';
 import * as hiloService from './services/hiloService.js';
 import * as kiwiService from './services/kiwiService.js';
 import kiwiRoutes from './routes/kiwi.js';
+import { logger } from './lib/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-runMigrations();
+await migrate();
 // seed only if users table empty
-if (getDb().prepare('SELECT COUNT(*) c FROM users').get().c === 0) seed();
+if ((await getDb().prepare('SELECT COUNT(*) c FROM users').get()).c === 0) await seed();
 
 // instant games (หวยขูด/ไฮโล) — สร้าง lottery type/rule/standing draw ตอน boot
 // เพื่อให้ type โผล่ใน /lottery/types และเมนูทันที ไม่ต้องรอการซื้อครั้งแรก
-try { scratchService.ensureInfra(); hiloService.ensureInfra(); kiwiService.ensureInfra(); }
+try { await scratchService.ensureInfra(); await hiloService.ensureInfra(); await kiwiService.ensureInfra(); }
 catch (e) { console.error('[instant-games] infra init failed:', e.message); }
 
 // สร้างรอบหวยตัวอย่างอัตโนมัติ (idempotent — เติมเฉพาะรอบที่ยังไม่มี)
 // หวยไทย: ทุกวันที่ 1 และ 16 ของเดือน | ประเทศอื่น: top-up ให้มีรอบล่วงหน้าเสมอ
 if (config.env !== 'test') {
-  try { seedDemoDraws(); } catch (e) { console.error('[demo-data] auto-seed failed:', e.message); }
+  const tickSeed = () => Promise.resolve(seedDemoDraws()).catch(e => console.error('[demo-data] tick seed failed:', e.message));
+  try { await tickSeed(); } catch (e) { console.error('[demo-data] auto-seed failed:', e.message); }
   // ดึงผลรางวัลอัตโนมัติทุก 1 นาที — พร้อม top-up รอบหวย (ราศีต้องมีรอบเปิดรับเดียวหมุนต่อเนื่อง)
   const autoSettle = () => autoSettleResults()
-    .then(r => { if (r.settled.length || r.errors.length) console.log('[auto-settle]', JSON.stringify(r)); })
-    .catch(e => console.error('[auto-settle] failed:', e.message));
-  setTimeout(() => { try { seedDemoDraws(); } catch {} autoSettle(); }, 20000).unref();
+    .then(r => {
+      if (r.settled.length) logger.info('auto-settle', `settled: ${r.settled.join(', ')}`);
+      if (r.errors.length) logger.warn('auto-settle', `errors: ${r.errors.join(' | ')}`, { sources: r.sources });
+    })
+    .catch(e => logger.error('auto-settle', e.message));
+  setTimeout(() => { tickSeed(); autoSettle(); }, 20000).unref();
   setInterval(() => {
-    try { seedDemoDraws(); } catch (e) { console.error('[demo-data] tick seed failed:', e.message); }
+    tickSeed();
     autoSettle();
-    try { maybeDailyCashback(); } catch (e) { console.error('[cashback] failed:', e.message); }
+    Promise.resolve(maybeDailyCashback()).catch(e => console.error('[cashback] failed:', e.message));
   }, 60 * 1000).unref();
 
   // ล้าง session/OTP ที่หมดอายุทิ้งทุก 6 ชม. — กัน DB บวมเมื่อเปิด public
-  const cleanup = () => {
+  const cleanup = async () => {
     try {
       const d = getDb();
-      const s = d.prepare(`DELETE FROM user_sessions WHERE expires_at < datetime('now', '-1 day') OR revoked_at < datetime('now', '-7 days')`).run();
-      const o = d.prepare(`DELETE FROM otp_codes WHERE expires_at < datetime('now', '-1 day') OR (used = 1 AND created_at < datetime('now', '-1 day'))`).run();
+      const s = await d.prepare(`DELETE FROM user_sessions WHERE expires_at < datetime('now', '-1 day') OR revoked_at < datetime('now', '-7 days')`).run();
+      const o = await d.prepare(`DELETE FROM otp_codes WHERE expires_at < datetime('now', '-1 day') OR (used = 1 AND created_at < datetime('now', '-1 day'))`).run();
       if (s.changes || o.changes) console.log(`[cleanup] sessions -${s.changes}, otp -${o.changes}`);
     } catch (e) { console.error('[cleanup] failed:', e.message); }
   };
@@ -94,7 +99,21 @@ app.use('/api/', (req, res, next) => { ensureCsrf(req, res); next(); });
 app.get('/api/csrf-token', csrfTokenEndpoint);
 app.use('/api/', csrfProtection);
 
-app.get('/api/health', (req, res) => res.json({ ok: true, service: 'demo-lottery', env: config.env, features: { lineLogin: !!config.line.channelId } }));
+// health check — /api/health ตอบเร็วเสมอ (uptime monitor ใช้ตัวนี้)
+// /api/health?deep=1 เช็ค DB ด้วย (ใช้ตรวจหลัง deploy/ก่อนเปิด traffic จริง)
+app.get('/api/health', async (req, res) => {
+  const out = { ok: true, service: 'demo-lottery', env: config.env, features: { lineLogin: !!config.line.channelId } };
+  if (req.query.deep === '1') {
+    try {
+      await getDb().prepare('SELECT 1').get();
+      out.db = 'ok';
+    } catch (e) {
+      out.ok = false; out.db = 'error';
+      logger.error('health', `deep check failed: ${e.message}`);
+    }
+  }
+  res.status(out.ok ? 200 : 503).json(out);
+});
 
 // SSE — client subscribe รับแจ้งเตือน real-time เมื่อข้อมูลเปลี่ยน (ผลรางวัล/รอบ/การตั้งค่า)
 app.get('/api/events', sseHandler);
@@ -134,7 +153,24 @@ export default app;
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (isMain) {
-  app.listen(config.port, () => {
+  const server = app.listen(config.port, () => {
     console.log(`[demo-lottery] server listening on http://localhost:${config.port} (${config.env})`);
+  });
+  // graceful shutdown — รอ request ค้างเสร็จก่อนปิด (กัน restart แล้ว request ขาดกลางคัน)
+  let shuttingDown = false;
+  const shutdown = (sig) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[demo-lottery] ${sig} received — draining connections`);
+    server.close(() => { console.log('[demo-lottery] server closed'); process.exit(0); });
+    setTimeout(() => process.exit(1), 10000).unref(); // force exit ถ้าค้างเกิน 10 วิ
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  // กัน process ดับเงียบ — log ไว้ใน app.log ให้ตามตรวจย้อนหลังได้
+  process.on('unhandledRejection', (e) => logger.error('process', `unhandledRejection: ${e?.message || e}`, { stack: String(e?.stack || '').slice(0, 1500) }));
+  process.on('uncaughtException', (e) => {
+    logger.error('process', `uncaughtException: ${e?.message || e}`, { stack: String(e?.stack || '').slice(0, 1500) });
+    setTimeout(() => process.exit(1), 500).unref();
   });
 }

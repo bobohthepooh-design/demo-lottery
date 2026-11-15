@@ -23,3 +23,32 @@ export function kindBadge(kind) {
   if (kind === 'demo') return { label: '🎲 ผล DEMO', cls: 'bg-purple-500/15 text-purple-300', short: '🎲 DEMO' };
   return { label: '🌐 ผลจริง (เว็บ)', cls: 'bg-emerald-500/15 text-emerald-300', short: '🌐 เว็บจริง' };
 }
+
+// ---------- ข้อมูลตลาด: ชนิด + แหล่งผลจริง (ตรวจสอบแล้วจากแหล่งข้อมูลภายนอก) ----------
+// mode: auto=ดึงผลจริงอัตโนมัติ, manual=ผลจริงแต่ admin กรอกเอง, game=เกมในระบบ, demo=สุ่มในระบบ, off=ปิด
+export const MARKET_INFO = {
+  TH:          { kind: 'หวยจริง',    mode: 'auto',   src: 'GLO (glo.or.th)' },
+  LA:          { kind: 'หวยจริง',    mode: 'auto',   src: 'laodl.com' },
+  'LA:LAD':    { kind: 'หวยจริง',    mode: 'manual', src: 'admin กรอกผลจริง' },
+  'LA:LADAM':  { kind: 'ไม่มีจริง',  mode: 'off',    src: 'ปิดบริการ' },
+  HN:          { kind: 'หวยจริง',    mode: 'auto',   src: 'XSMB / lotterychecks' },
+  'HN:HNN':    { kind: 'หวยจริง',    mode: 'auto',   src: 'XSMB' },
+  'HN:HNST':   { kind: 'หวยจริง',    mode: 'auto',   src: 'XSMB' },
+  'HN:HNS':    { kind: 'หวยจริง',    mode: 'auto',   src: 'lotterychecks.com' },
+  'HN:HNP':    { kind: 'หวยจริง',    mode: 'auto',   src: 'lotterychecks.com' },
+  'HN:HNV':    { kind: 'หวยจริง',    mode: 'auto',   src: 'lotterychecks.com' },
+  HR:          { kind: 'เกมจับราษี', mode: 'demo',   src: 'สุ่มในระบบ' },
+  SC:          { kind: 'เกมด่วน',    mode: 'game',   src: 'ในระบบ' },
+  HL:          { kind: 'เกมด่วน',    mode: 'game',   src: 'ในระบบ' },
+  KI:          { kind: 'เกมด่วน',    mode: 'game',   src: 'ในระบบ' },
+};
+export const MODE_BADGE = {
+  auto:   { label: '🌐 ผลจริงอัตโนมัติ', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  manual: { label: '✏️ ผลจริง — admin กรอก', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  game:   { label: '🎮 เกม (ผลในระบบ)', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
+  demo:   { label: '🎲 สุ่มในระบบ', cls: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
+  off:    { label: '⛔ ไม่มีจริง — ปิด', cls: 'bg-navy-700 text-navy-400 border-navy-600' },
+};
+export function marketInfo(typeCode, catCode) {
+  return MARKET_INFO[`${typeCode}:${catCode}`] || MARKET_INFO[typeCode] || null;
+}

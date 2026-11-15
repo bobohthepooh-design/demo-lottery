@@ -1,6 +1,7 @@
-import { getDb } from './index.js';
+import { getDb, isPg } from './index.js';
 import { settleDraw } from '../services/lotteryService.js';
 import { ZODIAC_SIGNS } from '../lib/zodiac.js';
+import { q, qGet } from './pg.js';
 
 /**
  * สร้างผลรางวัลตัวอย่างให้รอบที่เปิดรับอยู่ — รอบละ 1 ใบต่อประเทศ/หมวด
@@ -9,12 +10,14 @@ import { ZODIAC_SIGNS } from '../lib/zodiac.js';
  */
 
 const rnd = (n) => String(Math.floor(Math.random() * 10 ** n)).padStart(n, '0');
-const adminId = () => {
-  const db = getDb();
-  return db.prepare(`SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
-    JOIN roles r ON r.id = ur.role_id WHERE r.name = 'super_admin' LIMIT 1`).get()?.id
-    ?? db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').get()?.id;
-};
+
+const DRAWS_SQL = `
+    SELECT d.id, d.draw_code, lt.code AS type_code, c.code AS category_code
+    FROM lottery_draws d
+    JOIN lottery_types lt ON lt.id = d.lottery_type_id
+    LEFT JOIN lottery_categories c ON c.id = d.category_id
+    WHERE d.status = 'open'
+    ORDER BY d.draw_at ASC`;
 
 function winningFor(typeCode, categoryCode) {
   if (typeCode === 'TH') {
@@ -45,18 +48,41 @@ function winningFor(typeCode, categoryCode) {
   return { main: rnd(6) };
 }
 
-export function seedDemoResults() {
-  const db = getDb();
-  const admin = adminId();
-  // รอบ open ที่ใกล้จะออกสุดของแต่ละ (type, category) — settle รอบแรกของแต่ละกลุ่ม
-  const draws = db.prepare(`
-    SELECT d.id, d.draw_code, lt.code AS type_code, c.code AS category_code
-    FROM lottery_draws d
-    JOIN lottery_types lt ON lt.id = d.lottery_type_id
-    LEFT JOIN lottery_categories c ON c.id = d.category_id
-    WHERE d.status = 'open'
-    ORDER BY d.draw_at ASC`).all();
+async function settleOpenDraws(draws, admin) {
+  const done = new Set();
+  let settled = 0;
+  for (const d of draws) {
+    const key = `${d.type_code}:${d.category_code || ''}`;
+    if (done.has(key)) continue;
+    try {
+      const w = winningFor(d.type_code, d.category_code);
+      await settleDraw(admin, d.id, w);
+      console.log(`[demo-results] settled ${d.draw_code} (${d.type_code}${d.category_code ? '/' + d.category_code : ''}) ->`, JSON.stringify(w));
+      settled++;
+    } catch (e) {
+      console.log(`[demo-results] skip ${d.draw_code}: ${e.message}`);
+    }
+    done.add(key);
+  }
+  console.log(`[demo-results] settled ${settled} draws`);
+  return settled;
+}
 
+function adminIdSync() {
+  const db = getDb();
+  return db.prepare(`SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
+    JOIN roles r ON r.id = ur.role_id WHERE r.name = 'super_admin' LIMIT 1`).get()?.id
+    ?? db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').get()?.id;
+}
+async function adminIdPg() {
+  return (await qGet(`SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
+    JOIN roles r ON r.id = ur.role_id WHERE r.name = 'super_admin' LIMIT 1`))?.id
+    ?? (await qGet('SELECT id FROM users ORDER BY id LIMIT 1'))?.id;
+}
+
+function seedDemoResultsSync() {
+  const admin = adminIdSync();
+  const draws = getDb().prepare(DRAWS_SQL).all();
   const done = new Set();
   let settled = 0;
   for (const d of draws) {
@@ -76,6 +102,17 @@ export function seedDemoResults() {
   return settled;
 }
 
+async function seedDemoResultsPg() {
+  const admin = await adminIdPg();
+  const draws = await q(DRAWS_SQL);
+  return settleOpenDraws(draws, admin);
+}
+
+// dual-mode: sqlite sync / pg คืน Promise
+export function seedDemoResults() {
+  return isPg() ? seedDemoResultsPg() : seedDemoResultsSync();
+}
+
 if (process.argv[1] && process.argv[1].endsWith('demo-results.js')) {
-  seedDemoResults();
+  Promise.resolve(seedDemoResults()).catch(e => { console.error(e); process.exit(1); });
 }

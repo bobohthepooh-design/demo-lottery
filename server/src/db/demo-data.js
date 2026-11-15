@@ -1,4 +1,5 @@
-import { getDb } from './index.js';
+import { getDb, isPg } from './index.js';
+import { q } from './pg.js';
 
 /**
  * สร้างรอบหวยตัวอย่างสำหรับ Demo — idempotent (เช็ค draw_code ก่อนสร้าง)
@@ -56,7 +57,7 @@ const TH_HOLIDAYS = new Set([
 ]);
 const isHoliday = (d) => TH_HOLIDAYS.has(ymdKey(d));
 
-// ตารางเวลาตามประเภท/หมวด — kind: monthly(วันที่ของเดือน) | weekly(วันในสัปดาห์) | daily
+// ตารางเวลาตามประเภท/หมวด — kind: monthly(วันที่ของเดือน) | weekly(วันในสัปดาห์) | daily | hourly
 function scheduleFor(typeCode, catCode) {
   if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
   if (typeCode === 'LA') {
@@ -69,6 +70,8 @@ function scheduleFor(typeCode, catCode) {
     if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true };
     // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
+    // HNN ใช้ผล XSMB จริง — ออกรางวัลเฉพาะ จันทร์–เสาร์ (ไม่มีวันอาทิตย์) จึงห้ามสร้างรอบวันอาทิตย์
+    if (catCode === 'HNN') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
     // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
     return { kind: 'daily', hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
   }
@@ -77,8 +80,10 @@ function scheduleFor(typeCode, catCode) {
 }
 
 const UPCOMING_PER_TARGET = 5;
-// หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่ (หวยลาวพัฒนาไม่มีแหล่งผลจริงแยกจากหวยลาวหลัก)
-const DISABLED_CATS = new Set(['LAD']);
+// หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่
+// LAD: หวยลาวพัฒนา 5/45 (จ-ศ 20:00) ไม่มีแหล่งผลแยกจากหวยลาวหลัก
+// LADAM: "ลาวพัฒนาเช้า" ไม่มีอยู่ในหวยจริง — ผลเป็น generated ล้วน ไม่ใช่ตลาดจริง
+const DISABLED_CATS = new Set(['LADAM']);
 // เกมด่วน (ขูด/ไฮโล) ใช้ standing draw ถาวรอยู่แล้ว — ไม่ต้องสร้างรอบตามตาราง
 const INSTANT_TYPES = new Set(['SC', 'HL', 'KI']);
 
@@ -122,38 +127,73 @@ function drawCodeFor(typeCode, catCode, dt) {
   return `${catCode}-DEMO-${yyyymmdd}`;
 }
 
-export function seedDemoDraws() {
-  const db = getDb();
-  const types = db.prepare('SELECT id, code FROM lottery_types WHERE is_active = 1').all();
-  let created = 0;
-
+// targets = [{id, code}] ของ type + cats[{id, code}] — คืนแผนรอบที่จะสร้าง (ยังไม่เช็คซ้ำใน db)
+function planDraws(types) {
+  const plans = [];
   for (const t of types) {
     if (INSTANT_TYPES.has(t.code)) continue; // เกมด่วนไม่มีรอบตามตาราง
-    const cats = db.prepare('SELECT id, code FROM lottery_categories WHERE lottery_type_id = ?').all(t.id);
-    const targets = cats.length ? cats : [{ id: null, code: t.code }];
-    for (const c of targets) {
+    const cats = t.cats.length ? t.cats : [{ id: null, code: t.code }];
+    for (const c of cats) {
       if (DISABLED_CATS.has(c.code)) continue;
       const sch = scheduleFor(t.code, c.code);
       // รายชั่วโมง (ราศี) สร้างล่วงหน้าแค่รอบเดียว — ให้เหลือรอบเปิดรับปัจจุบัน ไม่ให้รอบซ้อนหลายใบ
       const upcomingCount = sch.kind === 'hourly' ? 1 : UPCOMING_PER_TARGET;
       for (const { draw, close } of occurrences(sch, upcomingCount)) {
-        const drawCode = drawCodeFor(t.code, c.code, draw);
-        if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
-        const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        // ใช้เวลา (ชม./นาที) จาก Date ที่ occurrences สร้าง — รองรับรอบรายชั่วโมงที่เวลาไม่คงที่
-        const localSqlOf = (dt) => localDateSql(dt, dt.getHours(), dt.getMinutes());
-        const status = toUtcSql(localSqlOf(close)) > nowUtc ? 'open' : 'scheduled';
-        db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
-                    VALUES (?, ?, ?, ?, ?, ?)`)
-          .run(t.id, c.id, drawCode, toUtcSql(localSqlOf(draw)), toUtcSql(localSqlOf(close)), status);
-        created++;
+        plans.push({
+          lotteryTypeId: t.id, categoryId: c.id,
+          drawCode: drawCodeFor(t.code, c.code, draw),
+          drawAt: toUtcSql(localDateSql(draw, draw.getHours(), draw.getMinutes())),
+          closeAt: toUtcSql(localDateSql(close, close.getHours(), close.getMinutes())),
+        });
       }
     }
+  }
+  return plans;
+}
+
+const nowUtc = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+function seedDemoDrawsSync() {
+  const db = getDb();
+  const types = db.prepare('SELECT id, code FROM lottery_types WHERE is_active = 1').all()
+    .map(t => ({ ...t, cats: db.prepare('SELECT id, code FROM lottery_categories WHERE lottery_type_id = ?').all(t.id) }));
+  let created = 0;
+  for (const p of planDraws(types)) {
+    if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(p.drawCode)) continue;
+    const status = p.closeAt > nowUtc() ? 'open' : 'scheduled';
+    db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
+                VALUES (?, ?, ?, ?, ?, ?)`)
+      .run(p.lotteryTypeId, p.categoryId, p.drawCode, p.drawAt, p.closeAt, status);
+    created++;
   }
   console.log(`[demo-data] created ${created} draws`);
   return created;
 }
 
+async function seedDemoDrawsPg() {
+  const types = (await q('SELECT id, code FROM lottery_types WHERE is_active = 1'))
+    .map(t => ({ ...t, cats: [] }));
+  for (const t of types) {
+    t.cats = await q('SELECT id, code FROM lottery_categories WHERE lottery_type_id = $1', [t.id]);
+  }
+  let created = 0;
+  for (const p of planDraws(types)) {
+    if (await q('SELECT id FROM lottery_draws WHERE draw_code = $1', [p.drawCode]).then(r => r[0])) continue;
+    const status = p.closeAt > nowUtc() ? 'open' : 'scheduled';
+    await q(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
+              VALUES ($1, $2, $3, $4, $5, $6)`,
+      [p.lotteryTypeId, p.categoryId, p.drawCode, p.drawAt, p.closeAt, status]);
+    created++;
+  }
+  console.log(`[demo-data:pg] created ${created} draws`);
+  return created;
+}
+
+// dual-mode: sqlite sync / pg คืน Promise — caller await ได้ทั้งคู่
+export function seedDemoDraws() {
+  return isPg() ? seedDemoDrawsPg() : seedDemoDrawsSync();
+}
+
 if (process.argv[1] && process.argv[1].endsWith('demo-data.js')) {
-  seedDemoDraws();
+  Promise.resolve(seedDemoDraws()).catch(e => { console.error(e); process.exit(1); });
 }

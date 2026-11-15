@@ -31,9 +31,9 @@ const ACCENTS = {
     btnLive: 'from-violet-500 to-purple-700 text-white',
   },
   SC: {
-    bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-red-500/15 text-red-300 border-red-400/50',
+    bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-gold-500/15 text-gold-300 border-gold-400/50',
     border: 'border-red-400/60', glow: 'hover:border-red-400',
-    head: 'from-red-600', dot: 'bg-red-400',
+    head: 'from-red-600', dot: 'bg-gold-400',
     btn: 'from-red-500/40 to-rose-700/40 text-red-200',
     btnLive: 'from-red-500 to-rose-700 text-white',
   },

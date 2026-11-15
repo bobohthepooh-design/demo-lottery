@@ -1,0 +1,56 @@
+# Caddy — HTTPS อัตโนมัติ (ต้องมี DOMAIN ชี้มาที่เครื่องนี้)
+# ถ้าทดสอบ local ให้ใช้ http://localhost แทน
+
+{
+	# client ที่ไม่ส่ง SNI (browser เปิด https://<IP> ตรงๆ) → ใช้ cert ของ LAN_IP
+	default_sni {$LAN_IP}
+}
+
+{$DOMAIN} {
+	reverse_proxy app:4000
+
+	# headers พื้นฐาน
+	header {
+		-Server
+		X-Powered-By
+	}
+
+	# log สั้นๆ
+	log {
+		output stdout
+		format console
+	}
+}
+
+# LAN testing — http://<LAN-IP> (เช่น http://192.168.1.41)
+# HTTP ธรรมดาเพื่อให้ login/cookie ใช้ได้บนเครื่องในวง LAN โดยไม่ต้องจัดการ cert
+http://{$LAN_IP} {
+	reverse_proxy app:4000
+
+	header {
+		-Server
+		X-Powered-By
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# LAN testing — https://<LAN-IP> (fallback ถ้า browser บังคับ HTTPS เช่น Safari)
+# ใช้ Caddy internal CA → browser จะเตือน cert (กด Advanced → Proceed ได้)
+{$LAN_IP} {
+	tls internal
+	reverse_proxy app:4000
+
+	header {
+		-Server
+		X-Powered-By
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

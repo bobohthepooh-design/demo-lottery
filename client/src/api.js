@@ -11,16 +11,27 @@ async function getCsrf() {
 export function resetCsrf() { csrfToken = null; }
 
 export async function api(path, { method = 'GET', body } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (method !== 'GET') headers['x-csrf-token'] = await getCsrf();
-  const res = await fetch(`/api${path}`, {
-    method,
-    headers,
-    credentials: 'same-origin',
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const doFetch = async () => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (method !== 'GET') headers['x-csrf-token'] = await getCsrf();
+    return fetch(`/api${path}`, {
+      method,
+      headers,
+      credentials: 'same-origin',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  };
+  let res = await doFetch();
+  // CSRF cookie หมุน (login ใหม่/expire) แต่ token ใน memory ยังเก่า → ขอ token ใหม่แล้ว retry ครั้งเดียว
   let json = null;
-  try { json = await res.json(); } catch {}
+  try { json = await res.clone().json(); } catch {}
+  if (res.status === 403 && json?.code === 'CSRF_FAILED') {
+    resetCsrf();
+    res = await doFetch();
+    try { json = await res.json(); } catch {}
+  } else {
+    try { json = await res.json(); } catch {}
+  }
   if (res.status === 401) {
     // auth:expired เฉพาะ 401 ที่หมายถึง session หมดอายุจริง —
     // ยกเว้น auth endpoints ที่ 401 เพราะ credential ผิด (login/mfa/otp)

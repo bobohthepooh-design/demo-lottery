@@ -6,25 +6,29 @@ import { HttpError } from '../lib/audit.js';
 const router = Router();
 
 // public VAPID key สำหรับ subscribe (ไม่ใช่ secret)
-router.get('/vapid-key', (req, res) => {
-  res.json({ key: push.vapidPublicKey() });
+router.get('/vapid-key', async (req, res, next) => {
+  try { res.json({ key: await push.vapidPublicKey() }); }
+  catch (e) { next(e); }
 });
 
-router.post('/subscribe', requireAuth, (req, res, next) => {
+router.post('/subscribe', requireAuth, async (req, res, next) => {
   try {
-    const ok = push.saveSubscription(req.user.id, req.body || {});
+    const ok = await push.saveSubscription(req.user.id, req.body || {});
     if (!ok) throw new HttpError(400, 'subscription ไม่ถูกต้อง');
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
-router.post('/unsubscribe', requireAuth, (req, res) => {
-  push.removeSubscription(req.user.id, req.body?.endpoint);
-  res.json({ ok: true });
+router.post('/unsubscribe', requireAuth, async (req, res, next) => {
+  try {
+    await push.removeSubscription(req.user.id, req.body?.endpoint);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
-router.get('/status', requireAuth, (req, res) => {
-  res.json({ count: push.subscriptionCount(req.user.id) });
+router.get('/status', requireAuth, async (req, res, next) => {
+  try { res.json({ count: await push.subscriptionCount(req.user.id) }); }
+  catch (e) { next(e); }
 });
 
 export default router;

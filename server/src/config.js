@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, '..', '..', '..');
+// .env อยู่ที่ repo root (demo-lottery/.env) — src อยู่ server/src → ขึ้น 2 ระดับ
+const rootDir = path.resolve(__dirname, '..', '..');
 const envPath = path.join(rootDir, '.env');
 
 if (fs.existsSync(envPath)) {
@@ -26,6 +27,8 @@ export const config = {
   sessionSecret: process.env.SESSION_SECRET || 'dev-insecure-secret-change-me',
   sessionTtlHours: parseInt(process.env.SESSION_TTL_HOURS || '12', 10),
   databasePath: dbPath,
+  // PostgreSQL — เมื่อมีค่านี้จะใช้ pg แทน SQLite (migration อยู่ระหว่างทำ — ดู MIGRATION.md)
+  databaseUrl: process.env.DATABASE_URL || null,
   initialCredit: parseInt(process.env.INITIAL_CREDIT || '5000', 10),
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '300', 10),

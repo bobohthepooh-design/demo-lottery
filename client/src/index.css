@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  /* Casino Gold —-dark theme:'bg-navy-*' = พื้น/การ์ดเข้ม, 'text-navy-*' = ข้อความสว่าง
-     gold-* = ทอง wagering (primary accent), class เดิมทั้งหมดใช้ได้ทันที */
-  --color-navy-950: #060a18;   /* พื้นหลังลึกสุด / gradient end */
-  --color-navy-900: #0c1428;   /* panel / input */
-  --color-navy-800: #131c38;   /* การ์ดหลัก */
-  --color-navy-700: #1e2a4e;   /* เส้นขอบ/active */
-  --color-navy-600: #2b3a63;   /* เส้นขอบเข้ม */
-  --color-navy-500: #5a6b96;   /* ข้อความจาง */
-  --color-navy-400: #8b9cc4;   /* secondary text */
-  --color-navy-300: #bcc6e8;   /* body text */
-  --color-navy-200: #e2e8f8;   /* text สว่าง */
-  --color-navy-100: #f2f4fd;   /* text สว่างสุด (rare) */
+  /* Ocean Blue — dark theme:'bg-navy-*' = พื้น/การ์ดน้ำเงินเข้ม, 'text-navy-*' = ข้อความสว่าง
+     gold-* = ทอง wagering (เงิน/เครดิต), cyan = accent tech (nav/kicker/interactive) */
+  --color-navy-950: #040a14;   /* พื้นหลังลึกสุด / gradient end */
+  --color-navy-900: #0a1526;   /* panel / input */
+  --color-navy-800: #0f1e33;   /* การ์ดหลัก */
+  --color-navy-700: #1e3a5f;   /* เส้นขอบ/active */
+  --color-navy-600: #2f5580;   /* เส้นขอบเข้ม */
+  --color-navy-500: #6b8aa8;   /* ข้อความจาง */
+  --color-navy-400: #9db8d0;   /* secondary text */
+  --color-navy-300: #c8dcec;   /* body text */
+  --color-navy-200: #e2eef8;   /* text สว่าง */
+  --color-navy-100: #f2f8fd;   /* text สว่างสุด (rare) */
 
   /* โทนทองคาสิโน — jackpot gold */
   --color-gold-100: #fdf3d0;
   --color-gold-200: #f9e3a1;
-  --color-gold-300: #f4c94e;
+  --color-gold-300: #ffe08a;
   --color-gold-400: #edb92c;
   --color-gold-500: #e2a812;   /* primary gold */
   --color-gold-600: #d9a520;
@@ -44,14 +44,14 @@
 }
 
 body {
-  background-color: #060a18;
-  /* glows ทอง/ม่วง/แดง — บรรยากาศคาสิโน */
+  background-color: #040a14;
+  /* glows ฟ้า neon/ทอง — บรรยากาศ ocean tech */
   background-image:
     radial-gradient(700px 420px at 85% -5%, rgba(226, 168, 18, 0.10), transparent 60%),
-    radial-gradient(560px 420px at -10% 30%, rgba(124, 58, 237, 0.14), transparent 60%),
-    radial-gradient(540px 440px at 60% 110%, rgba(220, 38, 38, 0.08), transparent 60%);
+    radial-gradient(560px 420px at -10% 30%, rgba(34, 211, 238, 0.14), transparent 60%),
+    radial-gradient(540px 440px at 60% 110%, rgba(14, 165, 233, 0.10), transparent 60%);
   background-attachment: fixed;
-  color: #e8ecf8;
+  color: #c8dcec;
   font-family: var(--font-sans);
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
@@ -60,12 +60,17 @@ body {
 h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.01em; }
 
 /* text-navy-950 / text-white = ตัวหนังสือหลัก → สว่างบนพื้น dark theme */
-.text-navy-950 { color: #f2f4fd !important; }
+.text-navy-950 { color: #f2f8fd !important; }
 .text-white { color: #ffffff !important; }
 .text-white\/80, .text-white\/70, .text-white\/60 { color: rgba(255, 255, 255, 0.78) !important; }
 /* ข้อยกเว้น: ตัวหนังสือสีเข้มบนพื้นสีอ่อน (ปุ่ม/pill โทนทองอ่อน ฯลฯ) */
 [class*="bg-gold-100"][class*="text-navy-950"],
 [class*="bg-gold-200"][class*="text-navy-950"] { color: #3a2a05 !important; }
+/* ข้อยกเว้น: ตัวหนังสือบนพื้นทอง/gradient ทอง — ดำสนิทอ่านชัด (bg-gold/from-gold/via-gold/to-gold เท่านั้น ไม่รวม border-gold) */
+[class*="text-navy-950"][class*="bg-gold-"],
+[class*="text-navy-950"][class*="from-gold-"],
+[class*="text-navy-950"][class*="via-gold-"],
+[class*="text-navy-950"][class*="to-gold-"] { color: #0a0a0d !important; }
 
 /* ================= Casino component layer ================= */
 
@@ -74,9 +79,9 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 [class*="bg-navy-800"], [class*="bg-navy-900"] {
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(226, 168, 18, 0.05);
 }
-/* เส้นขอบการ์ด — ทองจางให้ความรู้สึกพรีเมียม */
-.border-navy-700 { border-color: #2b3a63; }
-.border-navy-600 { border-color: #3d4f80; }
+/* เส้นขอบการ์ด — แดงจางให้ความรู้สึกพรีเมียม */
+.border-navy-700 { border-color: #1e3a5f; }
+.border-navy-600 { border-color: #2f5580; }
 
 /* ปุ่ม — นุ่ม + press feedback */
 button, a[class*="rounded"] {
@@ -117,16 +122,16 @@ a[class*="from-gold-500"]::after {
 .hoverable { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
 .hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(226, 168, 18, 0.18); }
 
-/* ตาราง — dark casino */
+/* ตาราง — deep ocean */
 main table thead th {
-  background: #101a36;
+  background: #0a1526;
   font-family: var(--font-display);
   letter-spacing: .02em;
-  color: #bcc6e8;
+  color: #c8dcec;
 }
-main table tbody tr:hover { background: #182448; }
-main table tbody tr { border-color: #22315a; }
-main table td, main table th { border-color: #22315a; }
+main table tbody tr:hover { background: #12233c; }
+main table tbody tr { border-color: #1e3a5f; }
+main table td, main table th { border-color: #1e3a5f; }
 
 /* ตัวหนังสือขนาดเล็ก — ขยายให้อ่านง่าย/เห็นชัดขึ้น */
 .text-xs { font-size: 13px; line-height: 1.45; }
@@ -135,7 +140,7 @@ main table td, main table th { border-color: #22315a; }
 .text-\[11px\] { font-size: 13px; }
 
 /* placeholder — มองเห็นชัดบนพื้น dark */
-::placeholder { color: #5a6b96; opacity: 1; }
+::placeholder { color: #6b8aa8; opacity: 1; }
 
 /* หัวข้อ — หนาและชัดขึ้น */
 h1, h2, h3 { font-weight: 700; }
@@ -143,7 +148,7 @@ main h2 { letter-spacing: 0.005em; }
 
 /* skeleton — dark shimmer */
 .skeleton {
-  background: linear-gradient(90deg, #101a36 25%, #1a2748 50%, #101a36 75%);
+  background: linear-gradient(90deg, #0a1526 25%, #16304f 50%, #0a1526 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s linear infinite;
   border-radius: 0.75rem;
@@ -231,6 +236,19 @@ main h2 { letter-spacing: 0.005em; }
   animation: confetti-fall linear infinite;
 }
 
+/* emoji burst ตอนถูกรางวัลในเกมด่วน — พุ่งออกจากกลางจอผล */
+@keyframes burst-pop {
+  0%   { transform: translate(-50%, -50%) scale(0.3) rotate(0deg); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(50deg); opacity: 0; }
+}
+.win-burst {
+  position: absolute;
+  font-size: 1.15rem;
+  line-height: 1;
+  animation: burst-pop 1.05s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
 /* หยดน้ำตา/ฝนซาเมื่อไม่ถูกรางวัล — โทนม่วงเข้ม */
 @keyframes tear-fall {
   0% { transform: translateY(-6vh) scale(0.6); opacity: 0; }
@@ -251,32 +269,76 @@ main h2 { letter-spacing: 0.005em; }
 }
 .animate-result-pop { animation: result-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-/* ไฮโล — ลูกเต๋าทอย/กระโดดเหมือนของจริง (ตอนกำลังสุ่มหน้าก่อนเลือกเดิมพัน) */
+/* สลอต — รีลที่กำลังหมุนมี motion blur + แถบสัญลักษณ์เลื่อนขึ้นลงเรื่อยๆ */
+@keyframes reel-blur {
+  0%   { transform: translateY(0);    filter: blur(0); }
+  50%  { transform: translateY(-7px); filter: blur(1.8px) saturate(1.4); }
+  100% { transform: translateY(0);    filter: blur(0); }
+}
+.animate-reel-blur { animation: reel-blur 0.16s linear infinite; }
+/* รีลที่เพิ่งหยุด — เด้งลงนิดหน่อยแล้วนิ่ง เหมือนล็อกตำแหน่งจริง */
+@keyframes reel-lock {
+  0%   { transform: translateY(-6px) scaleY(1.08); filter: brightness(1.4); }
+  55%  { transform: translateY(1.5px) scaleY(0.96); filter: brightness(1.1); }
+  80%  { transform: translateY(-0.5px) scaleY(1.01); }
+  100% { transform: translateY(0) scaleY(1); filter: brightness(1); }
+}
+.animate-reel-lock { animation: reel-lock 0.32s cubic-bezier(0.3, 1.35, 0.5, 1) both; }
+/* ไฮโล — ลูกเต๋าทอยในแก้ว: หมุน + เด้งขึ้น-ลง + แกว่งซ้ายขวา + motion blur */
 @keyframes dice-tumble {
-  0%   { transform: rotate(0deg) translateY(0) scale(1); }
-  20%  { transform: rotate(80deg) translateY(-14px) scale(1.06); }
-  40%  { transform: rotate(160deg) translateY(0) scale(0.97); }
-  60%  { transform: rotate(250deg) translateY(-10px) scale(1.04); }
-  80%  { transform: rotate(330deg) translateY(-4px) scale(1.0); }
-  100% { transform: rotate(360deg) translateY(0) scale(1); }
+  0%   { transform: rotate(0deg) translate(0, 0) scale(1);            filter: blur(0); }
+  15%  { transform: rotate(110deg) translate(4px, -14px) scale(1.1); filter: blur(0.5px); }
+  30%  { transform: rotate(195deg) translate(-4px, -3px) scale(0.94); filter: blur(1.3px); }
+  45%  { transform: rotate(280deg) translate(3px, -16px) scale(1.08); filter: blur(0.7px); }
+  60%  { transform: rotate(15deg)  translate(-3px, -5px) scale(0.96); filter: blur(1.1px); }
+  75%  { transform: rotate(100deg) translate(2px, -11px) scale(1.05); filter: blur(0.6px); }
+  90%  { transform: rotate(320deg) translate(-1px, -2px) scale(0.98); filter: blur(0.3px); }
+  100% { transform: rotate(360deg) translate(0, 0) scale(1);          filter: blur(0); }
 }
-.animate-dice-tumble { animation: dice-tumble 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite; }
-/* เต๋าเด้งเปิดผลทีละลูก */
+.animate-dice-tumble { animation: dice-tumble 0.46s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite; }
+/* เต๋าเด้งเปิดผลทีละลูก — หมุนเข้ามาจากด้านบน กระทบ "โต๊ะ" แล้วเด้งกลับเล็กน้อย */
 @keyframes dice-reveal {
-  0%   { transform: rotate(-160deg) scale(0.4); opacity: 0; }
-  55%  { transform: rotate(14deg) scale(1.12); opacity: 1; }
-  75%  { transform: rotate(-7deg) scale(0.96); }
-  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  0%   { transform: rotate(-200deg) translateY(-18px) scale(0.4); opacity: 0; }
+  50%  { transform: rotate(20deg) translateY(2px) scale(1.12); opacity: 1; }
+  68%  { transform: rotate(-8deg) translateY(-5px) scale(0.97); }
+  84%  { transform: rotate(4deg) translateY(1px) scale(1.01); }
+  100% { transform: rotate(0deg) translateY(0) scale(1); opacity: 1; }
 }
-.animate-dice-reveal { animation: dice-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-dice-reveal { animation: dice-reveal 0.55s cubic-bezier(0.3, 1.3, 0.5, 1) both; }
 /* เต๋าลงแตdding — ทอยสั้นๆ แล้วลงบนหน้าจริง (ใช้ตอนเปิดผลหลังเลือกเดิมพัน) */
 @keyframes dice-land {
-  0%   { transform: translateY(-16px) rotate(35deg) scale(1.08); opacity: 0.3; }
-  55%  { transform: translateY(2px) rotate(-8deg) scale(0.97); opacity: 1; }
-  80%  { transform: translateY(-3px) rotate(3deg) scale(1.01); }
+  0%   { transform: translateY(-30px) rotate(60deg) scale(1.12); opacity: 0.3; }
+  40%  { transform: translateY(4px) rotate(-12deg) scale(0.94); opacity: 1; filter: brightness(1.3); }
+  55%  { transform: translateY(-7px) rotate(6deg) scale(1.03); filter: brightness(1); }
+  72%  { transform: translateY(1.5px) rotate(-3deg) scale(0.99); }
+  86%  { transform: translateY(-1px) rotate(1deg) scale(1.005); }
   100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
 }
-.animate-dice-land { animation: dice-land 0.42s cubic-bezier(0.3, 1.35, 0.5, 1) both; }
+.animate-dice-land { animation: dice-land 0.55s cubic-bezier(0.3, 1.35, 0.5, 1) both; }
+/* ตู้เต๋าเขย่าตอนกำลังทอย — ทั้งเครื่องสั่นเป็นจังหวะ */
+@keyframes dice-machine-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-4px, 2.5px) rotate(-0.6deg); }
+  40% { transform: translate(4px, -2.5px) rotate(0.6deg); }
+  60% { transform: translate(-3px, -1.5px) rotate(-0.4deg); }
+  80% { transform: translate(3px, 1.5px) rotate(0.4deg); }
+}
+.animate-dice-shake { animation: dice-machine-shake 0.14s linear infinite; }
+/* น้ำเต้าปูปลา — สัญลักษณ์หมุนเร็วตอนสุ่ม (blur + spin) */
+@keyframes animal-roll {
+  0%   { transform: rotate(0deg) scale(1);    filter: blur(0) brightness(1); }
+  50%  { transform: rotate(170deg) scale(1.15); filter: blur(1.4px) brightness(1.6); }
+  100% { transform: rotate(360deg) scale(1);    filter: blur(0) brightness(1); }
+}
+.animate-animal-roll { animation: animal-roll 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite; }
+/* น้ำเต้าปูปลา — สัญลักษณ์หยุดแล้วเด้ง/หมุนเข้าที่ (เหมือนเต๋าลงโต๊ะ) */
+@keyframes dice-settle {
+  0%   { transform: scale(0.7) rotate(-30deg); filter: brightness(2) blur(1px); }
+  45%  { transform: scale(1.22) rotate(10deg);  filter: brightness(1.8) saturate(1.4); }
+  70%  { transform: scale(0.94) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0deg);     filter: brightness(1); }
+}
+.animate-dice-settle { animation: dice-settle 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
 
 /* เลขผลรางวัลเด้งทีละตัว — flip-in เหมือนลูกบอลหวยหมุนออก */
 @keyframes digit-pop {
@@ -299,7 +361,8 @@ main h2 { letter-spacing: 0.005em; }
   filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5));
 }
 @media (prefers-reduced-motion: reduce) {
-  .animate-digit, .confetti-piece, .animate-dice-tumble, .animate-dice-reveal, .animate-dice-land { animation: none !important; opacity: 1; }
+  .animate-digit, .confetti-piece, .animate-dice-tumble, .animate-dice-reveal, .animate-dice-land, .animate-dice-shake, .animate-dice-settle, .animate-reel-blur, .animate-reel-lock, .animate-animal-roll { animation: none !important; opacity: 1; }
+  .win-burst { display: none !important; }
 }
 
 /* toast notification */
@@ -338,7 +401,7 @@ input.font-mono, input[inputmode="numeric"] {
 }
 
 /* เส้นแบ่งบาง */
-.divide-navy-700 > * + * { border-color: #22315a; }
+.divide-navy-700 > * + * { border-color: #1e3a5f; }
 
 /* Touch target ≥ 44px บนมือถือ */
 @media (max-width: 1023px) {
@@ -467,7 +530,7 @@ input:focus, select:focus, textarea:focus {
 .text-green-200, .text-green-300 { color: #4ade80 !important; }
 .text-green-400 { color: #22c55e !important; }
 .text-emerald-200, .text-emerald-300 { color: #34d399 !important; }
-.text-red-200, .text-red-300 { color: #f87171 !important; }
+.text-red-200, .text-gold-300 { color: #f87171 !important; }
 .text-red-400 { color: #ef4444 !important; }
 .text-blue-200, .text-blue-300 { color: #60a5fa !important; }
 .text-sky-200, .text-sky-300 { color: #38bdf8 !important; }
@@ -495,13 +558,17 @@ button[class*="from-gold-500"]:hover, a[class*="from-gold-500"]:hover {
 button.bg-gold-500:disabled, a.bg-gold-500:disabled { opacity: .55; }
 
 /* ===== ทอง — ตัวเลขเงิน/เครดิต/รางวัลเรืองแสง ===== */
-.coin-gold { color: #f4c94e !important; }
-.coin-gold-bright { color: #ffe27a !important; }
+/* ตัวเลขเครดิต/เงิน — ทองสว่าง + ขอบเงาดำให้อ่านชัดบนพื้น dark */
+.text-gold-300, .text-gold-200, .coin-gold, .coin-gold-bright {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 10px rgba(255, 224, 138, 0.25);
+}
+.coin-gold { color: #ffe08a !important; }
+.coin-gold-bright { color: #fff3c4 !important; }
 
 /* ===== UX polish — scrollbar / focus / page transition ===== */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #0c1428; }
-::-webkit-scrollbar-thumb { background: #2b3a63; border-radius: 8px; border: 2px solid #0c1428; }
+::-webkit-scrollbar-track { background: #0a1526; }
+::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 8px; border: 2px solid #0a1526; }
 ::-webkit-scrollbar-thumb:hover { background: #e2a812; }
 
 /* focus ring ชัดสำหรับ keyboard/screen reader — โทนทอง */
@@ -529,10 +596,10 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 12% -8%, rgba(226, 168, 18, 0.16), transparent 60%),
-    radial-gradient(820px 540px at 92% 18%, rgba(124, 58, 237, 0.18), transparent 62%),
-    radial-gradient(760px 620px at 55% 115%, rgba(220, 38, 38, 0.12), transparent 60%),
-    radial-gradient(600px 400px at 80% 60%, rgba(16, 185, 129, 0.07), transparent 60%);
+    radial-gradient(900px 520px at 12% -8%, rgba(34, 211, 238, 0.16), transparent 60%),
+    radial-gradient(820px 540px at 92% 18%, rgba(14, 165, 233, 0.20), transparent 62%),
+    radial-gradient(760px 620px at 55% 115%, rgba(226, 168, 18, 0.10), transparent 60%),
+    radial-gradient(600px 400px at 80% 60%, rgba(34, 211, 238, 0.08), transparent 60%);
   animation: aurora-drift 28s ease-in-out infinite alternate;
 }
 @keyframes aurora-drift {
@@ -548,18 +615,18 @@ body::after {
   background: radial-gradient(130% 95% at 50% 38%, transparent 52%, rgba(0, 0, 0, 0.55));
 }
 
-/* โต๊ะเกม — พื้นสักหลาดเขียวเข้มขอบทอง (club felt) */
+/* โต๊ะเกม — พื้น felt น้ำเงินเข้มเรืองฟ้า neon ขอบทอง */
 .casino-table {
   background:
-    radial-gradient(130% 110% at 50% -10%, rgba(16, 185, 129, 0.14), transparent 55%),
-    radial-gradient(100% 90% at 50% 115%, rgba(0, 0, 0, 0.5), transparent 60%),
-    linear-gradient(165deg, #0d2b20 0%, #081a12 52%, #0a1428 100%);
+    radial-gradient(130% 110% at 50% -10%, rgba(34, 211, 238, 0.15), transparent 55%),
+    radial-gradient(100% 90% at 50% 115%, rgba(0, 0, 0, 0.55), transparent 60%),
+    linear-gradient(165deg, #16304f 0%, #0a1526 52%, #0f1e33 100%);
   border: 1px solid rgba(226, 168, 18, 0.35) !important;
   box-shadow:
     0 12px 34px rgba(0, 0, 0, 0.55),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     inset 0 0 60px rgba(0, 0, 0, 0.35),
-    0 0 26px rgba(16, 185, 129, 0.07);
+    0 0 26px rgba(226, 168, 18, 0.12);
 }
 .casino-table:hover {
   border-color: rgba(244, 201, 78, 0.6) !important;
@@ -588,7 +655,7 @@ body::after {
 
 /* ticker LED — แถบดำสนิท ตัวหนังสือทองเรืองแสงเหมือนป้ายไฟตารางประกาศผล */
 .ticker-led {
-  background: linear-gradient(180deg, #04060d 0%, #0a0f1e 100%);
+  background: linear-gradient(180deg, #040a14 0%, #0a1526 100%);
   border-color: rgba(226, 168, 18, 0.45) !important;
 }
 .ticker-led .ticker-item {
@@ -703,26 +770,26 @@ button, a, [role="button"] { touch-action: manipulation; }
   a[class*="from-gold-500"]::after { animation: none; opacity: 0; }
 }
 
-/* ===== LINE-style refresh — accent เขียวสำหรับ navigation/brand, gold เก็บไว้สำหรับเงิน/เดิมพัน ===== */
-/* kicker section header → เขียว LINE */
-.kicker { color: #2BD47D !important; text-shadow: 0 0 12px rgba(6,199,85,0.35); }
-.kicker::after { background: linear-gradient(90deg, rgba(6,199,85,0.7), transparent); }
+/* ===== Casino Red — accent แดงสำหรับ navigation/brand, gold เก็บไว้สำหรับเงิน/เดิมพัน ===== */
+/* kicker section header → แดง velvet */
+.kicker { color: #67e8f9 !important; text-shadow: 0 0 12px rgba(34,211,238,0.45); }
+.kicker::after { background: linear-gradient(90deg, rgba(34,211,238,0.7), transparent); }
 
 /* card มนขึ้นเล็กน้อย — สไตล์ LINE */
 .rounded-2xl, .rounded-xl { border-radius: 1.375rem; }
 
 /* link ทั่วไป hover → เขียวอ่อน (คง gold สำหรับตัวเลขเงิน/เครดิต) */
-main a.text-gold-400:hover, main a.text-gold-300:hover { color: #7ce8a8 !important; }
+main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !important; }
 
 /* ===== Hero felt table - green club-felt + wooden rail + vignette (home hero only) ===== */
 .casino-hero-felt {
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cg fill='%23f4c94e' fill-opacity='0.05'%3E%3Ctext x='12' y='34' font-size='26'%3E%E2%99%A0%3C/text%3E%3Ctext x='82' y='98' font-size='26'%3E%E2%99%A5%3C/text%3E%3Ctext x='92' y='30' font-size='20'%3E%E2%99%A3%3C/text%3E%3Ctext x='22' y='102' font-size='20'%3E%E2%99%A6%3C/text%3E%3C/g%3E%3C/svg%3E"),
-    radial-gradient(110% 80% at 50% -12%, rgba(16, 185, 129, 0.22), transparent 55%),
+    radial-gradient(110% 80% at 50% -12%, rgba(34, 211, 238, 0.20), transparent 55%),
     radial-gradient(90% 90% at 50% 118%, rgba(0, 0, 0, 0.6), transparent 62%),
     repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.014) 0 2px, transparent 2px 5px),
-    linear-gradient(168deg, #0f3d2c 0%, #0a2a1e 42%, #081a24 78%, #0a1428 100%);
-  background-color: #081a12;
+    linear-gradient(168deg, #16304f 0%, #0f1e33 42%, #0a1526 78%, #081120 100%);
+  background-color: #0a1526;
 }
 /* wooden table rail - thick dark wood ring + thin gold pinstripe, inset via shadow */
 .casino-rail {
@@ -743,7 +810,7 @@ main a.text-gold-400:hover, main a.text-gold-300:hover { color: #7ce8a8 !importa
 }
 /* ===== แถบปุ่มแทงเกมด่วน — ติดล่างจอตลอด ไม่ต้องเลื่อนกลับไปกด ===== */
 .instant-betbar{position:fixed;left:0;right:0;bottom:calc(4.5rem + env(safe-area-inset-bottom));z-index:35;pointer-events:none;
-  background:linear-gradient(180deg,rgba(10,18,32,0) 0%,rgba(10,18,32,0.92) 30%,rgba(10,18,32,0.96) 100%);
+  background:linear-gradient(180deg,rgba(4,10,20,0) 0%,rgba(4,10,20,0.92) 30%,rgba(4,10,20,0.96) 100%);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   padding-top:1.25rem;padding-bottom:calc(0.75rem + env(safe-area-inset-bottom))}
 .instant-betbar>div{pointer-events:auto}

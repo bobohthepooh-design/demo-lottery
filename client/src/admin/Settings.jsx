@@ -10,15 +10,12 @@ export default function AdminSettings() {
   const [betMenuOn, setBetMenuOn] = useState(true);
   const [lotteryTypes, setLotteryTypes] = useState([]);
   const [hiddenTypes, setHiddenTypes] = useState([]);
-  const [gameCfg, setGameCfg] = useState({ scratch_price: '50', hilo_price: '50', hilo_mult_low: '1.8', hilo_mult_high: '2.4', hilo_mult_11: '7' });
-  const [gameMsg, setGameMsg] = useState('');
   const [cashbackPct, setCashbackPct] = useState('0');
   const [cashbackMsg, setCashbackMsg] = useState('');
   const [cashbackPreview, setCashbackPreview] = useState(null);
 
-  const GAME_KEYS = ['scratch_price', 'hilo_price', 'hilo_mult_low', 'hilo_mult_high', 'hilo_mult_11'];
-  // ราคาเก็บเป็นสตางค์ใน DB — ฟอร์มแสดงเป็นบาท
-  const satangToBaht = (v) => (Number(v) / 100).toString();
+  // ราคา/อัตราจ่ายเกมด่วนแก้ที่หน้าประเภทและกติกา (lottery_rules) ที่เดียว — key เหล่านี้เป็น cache ที่ sync อัตโนมัติ
+  const GAME_KEYS = ['scratch_price', 'hilo_price', 'hilo_mult_low', 'hilo_mult_high', 'hilo_mult_11', 'kiwi_price_kiwi', 'kiwi_price_kiwi_vip', 'kiwi_price_kiwi_dice'];
 
   const load = () => {
     api('/admin/settings').then(r => {
@@ -30,12 +27,6 @@ export default function AdminSettings() {
       setBetMenuOn(bm ? bm.value !== false : true);
       const ht = r.settings.find(s => s.key === 'bet_menu_hidden_types');
       setHiddenTypes(Array.isArray(ht?.value) ? ht.value : []);
-      const g = {};
-      for (const k of GAME_KEYS) {
-        const row = r.settings.find(s => s.key === k);
-        if (row) g[k] = k.endsWith('_price') ? satangToBaht(row.value) : String(row.value);
-      }
-      setGameCfg(c => ({ ...c, ...g }));
       const cb = r.settings.find(s => s.key === 'cashback_percent');
       if (cb) setCashbackPct(String(cb.value ?? 0));
     }).catch(e => toast(e.message, 'error'));
@@ -65,31 +56,6 @@ export default function AdminSettings() {
       setHiddenTypes(next);
       toast(show ? `แสดงเมนูหวย ${code} แล้ว` : `ซ่อนเมนูหวย ${code} แล้ว — สมาชิกจะไม่เห็นประเภทนี้`, 'success');
     } catch (e) { toast(e.message, 'error'); }
-  };
-
-  const saveGame = async () => {
-    setGameMsg('');
-    const payloads = {
-      scratch_price: Math.round(parseFloat(gameCfg.scratch_price) * 100),
-      hilo_price: Math.round(parseFloat(gameCfg.hilo_price) * 100),
-      hilo_mult_low: parseFloat(gameCfg.hilo_mult_low),
-      hilo_mult_high: parseFloat(gameCfg.hilo_mult_high),
-      hilo_mult_11: parseFloat(gameCfg.hilo_mult_11),
-    };
-    for (const [k, v] of Object.entries(payloads)) {
-      if (!Number.isFinite(v) || v <= 0) { setGameMsg(`ค่า ${k} ไม่ถูกต้อง`); return; }
-    }
-    if (!(await confirmAction({
-      title: 'ยืนยันบันทึกราคาเกมด่วน',
-      message: `บันทึกราคา/อัตราจ่ายเกมด่วน?\nสล็อต ${gameCfg.scratch_price} บาท/ใบ • ไฮโล ${gameCfg.hilo_price} บาท/ครั้ง (ต่ำ ×${gameCfg.hilo_mult_low}, สูง ×${gameCfg.hilo_mult_high}, 11 ×${gameCfg.hilo_mult_11})`,
-    }))) return;
-    try {
-      for (const [k, v] of Object.entries(payloads)) {
-        await api(`/admin/settings/${k}`, { method: 'PUT', body: { value: v } });
-      }
-      setGameMsg('บันทึกราคาเกมด่วนแล้ว — มีผลทันทีทั้งหน้าบ้านและหลังบ้าน');
-      load();
-    } catch (e) { setGameMsg('ERROR: ' + e.message); }
   };
 
   const saveCashback = async () => {
@@ -178,43 +144,6 @@ export default function AdminSettings() {
           </div>
         </div>
       )}
-
-      {/* ราคาเกมด่วน — หวยขูด/ไฮโล (แก้ได้เฉพาะตรงนี้ ไม่ต้องแก้ key ดิบ) */}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-        <div className="text-sm font-bold text-white mb-1">🎰 ราคาเกมด่วน (สล็อต / ไฮโล)</div>
-        <div className="text-xs text-navy-400 mb-3">มีผลทันทีทั้งหน้าบ้านและหลังบ้าน — ราคาต่อหน่วยเป็นบาท (ระบบเก็บเป็นสตางค์)</div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <label className="block">
-            <span className="text-[11px] text-navy-300">สล็อต (บาท/ใบ)</span>
-            <input value={gameCfg.scratch_price} onChange={e => setGameCfg({ ...gameCfg, scratch_price: e.target.value })}
-              className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="50" />
-          </label>
-          <label className="block">
-            <span className="text-[11px] text-navy-300">ไฮโล (บาท/ครั้ง)</span>
-            <input value={gameCfg.hilo_price} onChange={e => setGameCfg({ ...gameCfg, hilo_price: e.target.value })}
-              className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="50" />
-          </label>
-          <label className="block">
-            <span className="text-[11px] text-navy-300">อัตราจ่าย ต่ำ (×)</span>
-            <input value={gameCfg.hilo_mult_low} onChange={e => setGameCfg({ ...gameCfg, hilo_mult_low: e.target.value })}
-              className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="1.8" />
-          </label>
-          <label className="block">
-            <span className="text-[11px] text-navy-300">อัตราจ่าย สูง (×)</span>
-            <input value={gameCfg.hilo_mult_high} onChange={e => setGameCfg({ ...gameCfg, hilo_mult_high: e.target.value })}
-              className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="2.4" />
-          </label>
-          <label className="block">
-            <span className="text-[11px] text-navy-300">อัตราจ่าย 11 ไฮโล (×)</span>
-            <input value={gameCfg.hilo_mult_11} onChange={e => setGameCfg({ ...gameCfg, hilo_mult_11: e.target.value })}
-              className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="7" />
-          </label>
-        </div>
-        {gameMsg && <div className={`text-xs mt-3 ${gameMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-400'}`}>{gameMsg}</div>}
-        <button onClick={saveGame} className="mt-3 bg-gold-500 text-navy-950 font-bold px-5 py-2 rounded-lg text-sm hover:bg-gold-400">
-          บันทึกราคาเกมด่วน
-        </button>
-      </div>
 
       {/* Cashback promotion — คืนยอดเสียให้สมาชิก */}
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">

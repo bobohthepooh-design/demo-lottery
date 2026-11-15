@@ -18,6 +18,102 @@ const ZodiacSelect = ({ value, onChange }) => (
   </select>
 );
 
+// field ที่มีหลายรางวัล → ช่องแยก 1 ช่องต่อรางวัล (digits หลักพอดี ไม่ต้องพิมพ์ comma)
+const PrizeInputs = ({ f, value, onChange }) => {
+  const cur = Array.isArray(value) ? value
+    : String(value || '').split(/[\s,]+/).map(x => x.trim());
+  const arr = Array.from({ length: f.prizes }, (_, i) => cur[i] || '');
+  const set = (i, v) => {
+    const next = [...arr];
+    next[i] = v.replace(/\D/g, '').slice(0, f.digits);
+    onChange(next);
+  };
+  return (
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${f.prizes}, minmax(0,1fr))` }}>
+      {arr.map((p, i) => (
+        <input key={i} value={p} inputMode="numeric" maxLength={f.digits}
+          onChange={e => set(i, e.target.value)}
+          placeholder={'0'.repeat(f.digits)}
+          className="w-full bg-navy-900 border border-navy-600 rounded-lg px-2 py-3 text-xl font-mono text-center text-gold-300" />
+      ))}
+    </div>
+  );
+};
+
+// format hint แสดงใต้ช่องกรอก — บอก syntax ที่ต้องกรอกของ field นั้น
+const fieldHint = (f) => {
+  if (f.set5) return '5 เลขไม่ซ้ำ ในช่วง 1-45 คั่นด้วย comma';
+  if (f.seq) return 'ปีนักษัตร 6 ตัวคั่นด้วย - เช่น ขาล-เถาะ-มะโรง';
+  if (f.zodiac) return 'เลือกปีนักษัตรจาก dropdown';
+  if (f.prizes > 1) return `เลข ${f.digits} หลัก จำนวน ${f.prizes} รางวัล คั่นด้วย comma เช่น ${Array(f.prizes).fill('0'.repeat(f.digits)).join(', ')}`;
+  return `ต้องเป็นตัวเลข ${f.digits} หลักเท่านั้น`;
+};
+// จำกัดความยาว input ตาม format จริง (เลข×จำนวนรางวัล + ช่องว่าง/comma)
+const fieldMaxLen = (f) => f.set5 ? 40 : (f.prizes > 1 ? f.digits * f.prizes + f.prizes * 2 : f.digits);
+
+// แปลงค่าที่กรอกใน field เดียว → {value} | {empty} | {error}
+const parseField = (f, t) => {
+  const s = String(t || '').trim();
+  if (!s) return { empty: true };
+  if (f.set5) {
+    const nums = s.split(/[\s,\-]+/).map(x => x.trim()).filter(Boolean);
+    const ok = nums.length === 5 && nums.every(x => /^\d{1,2}$/.test(x))
+      && nums.every(x => { const n = +x; return n >= 1 && n <= 45; })
+      && new Set(nums.map(Number)).size === 5;
+    return ok ? { value: nums }
+      : { error: 'เลขที่ออกต้องเป็นตัวเลขไม่ซ้ำ 5 ตัว ในช่วง 1-45 (คั่นด้วย comma)' };
+  }
+  if (f.seq) {
+    const arr = s.split('-').map(x => normZodiac(x)).filter(Boolean);
+    return (arr.length === 6 && arr.every(x => ZODIAC.includes(x)))
+      ? { value: arr }
+      : { error: 'เลขรางวัล 6 ปีนักษัตรต้องเป็นปีนักษัตร 6 ตัวคั่นด้วย - เช่น ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม' };
+  }
+  const parts = s.split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
+  const expected = f.prizes && f.prizes > 1 ? f.prizes : 1;
+  const toVal = (x) => {
+    if (f.zodiac) {
+      const z = normZodiac(x);
+      if (!ZODIAC.includes(z)) throw new Error(`${f.label} ต้องเป็นปีนักษัตรที่ถูกต้อง`);
+      return z;
+    }
+    if (!new RegExp(`^\\d{${f.digits}}$`).test(x)) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลัก`);
+    return x;
+  };
+  try {
+    if (expected > 1) {
+      if (parts.length !== expected)
+        return { error: `${f.label} ต้องกรอก ${expected} รางวัล (คั่นด้วย comma) — ตอนนี้ได้ ${parts.length} เลข` };
+      return { value: parts.map(toVal) };
+    }
+    if (parts.length !== 1) return { error: `${f.label} ต้องเป็นตัวเลข ${f.digits} หลักตัวเดียว` };
+    return { value: toVal(parts[0]) };
+  } catch (e) { return { error: e.message }; }
+};
+
+// สร้าง winning_numbers จากช่องกรอก — requireAll=false (แก้ผลย้อนหลัง) ข้าม field ว่างได้
+const buildWinning = (useFields, useSchema, requireAll = true) => {
+  const winning = {};
+  for (const f of useSchema?.fields || []) {
+    const r = parseField(f, useFields?.[f.key]);
+    if (r.error) return { error: r.error };
+    if (r.empty) {
+      if (requireAll && !f.optional) return { error: `กรุณากรอกผล "${f.label}" ให้ครบทุกประเภทรางวัล` };
+      continue;
+    }
+    winning[f.key] = r.value;
+  }
+  for (const [k, v] of Object.entries(useFields || {})) {
+    if (winning[k] !== undefined || useSchema?.fields?.some(f => f.key === k)) continue;
+    const parts = String(v || '').split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
+    if (!parts.length) continue;
+    if (!parts.every(x => /^\d{1,10}$/.test(x))) return { error: `field "${k}" ต้องเป็นตัวเลข` };
+    winning[k] = parts.length > 1 ? parts : parts[0];
+  }
+  if (!Object.keys(winning).length) return { error: 'กรุณากรอกผลรางวัลอย่างน้อย 1 รายการ' };
+  return { winning };
+};
+
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
   const [sel, setSel] = useState(null);
@@ -104,63 +200,8 @@ export default function AdminSettle() {
     const useSchema = target?.schema ?? schema;
     const useFields = target?.fields ?? fields;
     const useDraw = target?.draw ?? selDraw;
-    const winning = {};
-    for (const f of useSchema?.fields || []) {
-      const t = (useFields[f.key] || '').trim();
-      if (!t) {
-        if (!f.optional) return setErr(`กรุณากรอกผล "${f.label}" ให้ครบทุกประเภทรางวัล`);
-        continue;
-      }
-      // પર-field 5/45: 5 เลขไม่ซ้ำ 1-45 คั่นด้วย comma/space/dash
-      if (f.set5) {
-        const nums = t.split(/[\s,\-]+/).map(x => x.trim()).filter(Boolean);
-        const ok = nums.length === 5 && nums.every(x => /^\d{1,2}$/.test(x))
-          && nums.every(x => { const n = +x; return n >= 1 && n <= 45; })
-          && new Set(nums.map(Number)).size === 5;
-        if (!ok) return setErr('เลขที่ออกต้องเป็นตัวเลขไม่ซ้ำ 5 ตัว ในช่วง 1-45 (คั่นด้วย comma)');
-        winning[f.key] = nums;
-        continue;
-      }
-      // seq (หวยราศี): เลขรางวัล 6 ราศีคั่นด้วย -
-      if (f.seq) {
-        const arr = t.split('-').map(x => normZodiac(x)).filter(Boolean);
-        if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x)))
-          return setErr('เลขรางวัล 6 ปีนักษัตรต้องเป็นปีนักษัตร 6 ตัวคั่นด้วย - เช่น ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม');
-        winning[f.key] = arr;
-        continue;
-      }
-      const parts = t.split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
-      const expected = f.prizes && f.prizes > 1 ? f.prizes : 1;
-      // field ที่มีหลายรางวัล → เก็บเป็น array; ถ้ากรอกเลขเดียวก็เก็บ string
-      const toVal = (x) => {
-        if (f.zodiac) {
-          const z = normZodiac(x);
-          if (!ZODIAC.includes(z)) throw new Error(`${f.label} ต้องเป็นปีนักษัตรที่ถูกต้อง`);
-          return z;
-        }
-        if (!new RegExp(`^\\d{${f.digits}}$`).test(x)) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลัก`);
-        return x;
-      };
-      try {
-        if (expected > 1) {
-          const arr = parts.map(toVal);
-          if (arr.length !== expected) throw new Error(`${f.label} ต้องกรอก ${expected} รางวัล (คั่นด้วย comma) — ตอนนี้ได้ ${arr.length} เลข`);
-          winning[f.key] = arr;
-        } else {
-          if (parts.length !== 1) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลักตัวเดียว`);
-          winning[f.key] = toVal(parts[0]);
-        }
-      } catch (e) { return setErr(e.message); }
-    }
-    // field เสริมที่ไม่อยู่ใน schema (ถ้ามี) — รับตัวเลขอะไรก็ได้
-    for (const [k, v] of Object.entries(useFields)) {
-      if (winning[k] !== undefined || useSchema?.fields?.some(f => f.key === k)) continue;
-      const t = v.trim();
-      if (!t) continue;
-      if (!/^\d{1,10}$/.test(t)) return setErr(`field "${k}" ต้องเป็นตัวเลข`);
-      winning[k] = t;
-    }
-    if (!Object.keys(winning).length) return setErr('กรุณากรอกผลรางวัลอย่างน้อย 1 รายการ');
+    const { winning, error: winErr } = buildWinning(useFields, useSchema, true);
+    if (winErr) return setErr(winErr);
     // จำลองผลก่อนยืนยัน — แสดงสถิติโพยที่จะถูกตรวจ/ถูกรางวัล/ยอดจ่ายรวม
     let preview = null;
     try {
@@ -286,12 +327,22 @@ export default function AdminSettle() {
                       onChange={e => setFields({ ...fields, [f.key]: e.target.value })}
                       className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
                       placeholder="ชวด-ฉลู-ขาล-เถาะ-มะโรง-มะเส็ง" />
+                  ) : f.prizes > 1 && !f.set5 ? (
+                    <div className="mt-1"><PrizeInputs f={f} value={fields[f.key]} onChange={v => setFields({ ...fields, [f.key]: v })} /></div>
+                  ) : f.set5 ? (
+                    <input value={fields[f.key] || ''}
+                      onChange={e => setFields({ ...fields, [f.key]: e.target.value.replace(/[^\d,\s\-]/g, '').slice(0, 40) })}
+                      inputMode="numeric"
+                      className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
+                      placeholder="เช่น 12, 7, 34, 19, 45" />
                   ) : (
                   <input value={fields[f.key] || ''}
-                    onChange={e => setFields({...fields, [f.key]: e.target.value.replace(f.set5 ? /[^\d,\s\-]/g : /[^\d,\s]/g, '').slice(0, f.set5 ? 40 : (f.prizes > 1 ? 60 : f.digits))})}
+                    onChange={e => setFields({...fields, [f.key]: e.target.value.replace(/\D/g, '').slice(0, f.digits)})}
+                    inputMode="numeric" maxLength={f.digits}
                     className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                    placeholder={f.set5 ? 'เช่น 12, 7, 34, 19, 45' : (f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits))} />
+                    placeholder={'0'.repeat(f.digits)} />
                   )}
+                  <p className="text-[11px] text-navy-500 mt-1">{fieldHint(f)}</p>
                 </div>
               ))}
             </div>
@@ -353,28 +404,8 @@ export default function AdminSettle() {
               message: `แก้ไขผลรางวัลของรอบที่ออกผลแล้ว?\nระบบจะคำนวณเครดิตโพยทั้งหมดใหม่`,
               danger: true, confirmLabel: 'ยืนยันแก้ไข',
             }))) return;
-            const winning = {};
-            for (const [k, v] of Object.entries(editFields)) {
-              const isSet5 = s.fields.some(f => f.key === k && f.set5);
-              const isZod = s.fields.some(f => f.key === k && f.zodiac);
-              const isSeqF = s.fields.some(f => f.key === k && f.seq);
-              const parts = String(v).split(isSet5 ? /[\s,\-]+/ : /[\s,]+/).map(x => x.trim()).filter(Boolean);
-              if (!parts.length) continue;
-              if (isSeqF) {
-                const arr = String(v).split('-').map(x => normZodiac(x)).filter(Boolean);
-                if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x))) return setEditMsg(`field "${k}" ต้องเป็นปีนักษัตร 6 ตัวคั่นด้วย -`);
-                winning[k] = arr;
-                continue;
-              }
-              if (isZod) {
-                const z = normZodiac(parts[0]);
-                if (!ZODIAC.includes(z)) return setEditMsg(`field "${k}" ต้องเป็นปีนักษัตรที่ถูกต้อง`);
-                winning[k] = z;
-                continue;
-              }
-              if (!parts.every(x => /^\d{1,10}$/.test(x))) return setEditMsg(`field "${k}" ต้องเป็นตัวเลข`);
-              winning[k] = parts.length > 1 ? parts : parts[0];
-            }
+            const { winning, error: winErr } = buildWinning(editFields, s, false);
+            if (winErr) return setEditMsg(winErr);
             try {
               await api(`/admin/draws/${editSel}/result`, { method: 'POST', body: { winning_numbers: winning } });
               setEditMsg('บันทึกผลแก้ไขสำเร็จ — ระบบปรับเครดิตโพยทั้งหมดแล้ว');
@@ -394,12 +425,22 @@ export default function AdminSettle() {
                         onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value })}
                         className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
                         placeholder="ชวด-ฉลู-ขาล-เถาะ-มะโรง-มะเส็ง" />
+                    ) : f.prizes > 1 && !f.set5 ? (
+                      <div className="mt-1"><PrizeInputs f={f} value={editFields[f.key]} onChange={v => setEditFields({ ...editFields, [f.key]: v })} /></div>
+                    ) : f.set5 ? (
+                      <input value={editFields[f.key] || ''}
+                        onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value.replace(/[^\d,\s\-]/g, '').slice(0, 40) })}
+                        inputMode="numeric"
+                        className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
+                        placeholder="เช่น 12, 7, 34, 19, 45" />
                     ) : (
                     <input value={editFields[f.key] || ''}
-                      onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value.replace(/[^\d,\s]/g, '').slice(0, 60) })}
+                      onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value.replace(/\D/g, '').slice(0, f.digits) })}
+                      inputMode="numeric" maxLength={f.digits}
                       className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                      placeholder={f.prizes > 1 ? 'คั่นด้วย comma' : '0'.repeat(f.digits)} />
+                      placeholder={'0'.repeat(f.digits)} />
                     )}
+                    <p className="text-[11px] text-navy-500 mt-1">{fieldHint(f)}</p>
                   </div>
                 ))}
               </div>

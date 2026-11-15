@@ -58,7 +58,7 @@ export function ConfirmHost() {
             {o.cancelLabel}
           </button>
           <button onClick={() => settle(true)} autoFocus={o.danger}
-            className={`flex-1 font-bold py-2.5 rounded-lg ${o.danger ? 'bg-red-500 text-white hover:bg-red-400' : 'bg-gold-500 text-navy-950 hover:bg-gold-400'}`}>
+            className={`flex-1 font-bold py-2.5 rounded-lg ${o.danger ? 'bg-red-500 text-white hover:bg-gold-400' : 'bg-gold-500 text-navy-950 hover:bg-gold-400'}`}>
             {o.confirmLabel}
           </button>
         </div>

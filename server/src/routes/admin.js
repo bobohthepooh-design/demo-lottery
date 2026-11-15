@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { getDb, tx } from '../db/index.js';
+import { getDb, txAsync } from '../db/index.js';
 import { requireAuth, requireMfaVerified } from '../services/authService.js';
 import { requirePerm, requireRole, hasRole, invalidatePermCache } from '../middleware/rbac.js';
 import { audit, securityEvent, HttpError } from '../lib/audit.js';
@@ -19,9 +19,9 @@ router.use(requireAuth, requireMfaVerified, requirePerm('dashboard.admin'));
 // ---------- helpers ----------
 const db = () => getDb();
 
-function memberDto(u) {
-  const w = db().prepare('SELECT balance FROM virtual_wallets WHERE user_id = ?').get(u.id);
-  const roles = db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(u.id).map(r=>r.name);
+async function memberDto(u) {
+  const w = await db().prepare('SELECT balance FROM virtual_wallets WHERE user_id = ?').get(u.id);
+  const roles = (await db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(u.id)).map(r=>r.name);
   return { id: u.id, username: u.username, email: u.email, displayName: u.display_name, status: u.status,
     balance: w?.balance ?? 0, roles, createdAt: u.created_at, mfaEnabled: !!u.mfa_enabled,
     withdrawUnlocked: !!u.withdraw_unlocked,
@@ -30,67 +30,67 @@ function memberDto(u) {
 }
 
 // ป้องกัน privilege escalation — admin ธรรมดา (มี members.manage) ห้ามแก้/ลบบัญชี super_admin
-function assertCanManageTarget(req, targetId) {
-  const isSuperTarget = db().prepare(`SELECT 1 FROM user_roles ur JOIN roles r ON r.id=ur.role_id
+async function assertCanManageTarget(req, targetId) {
+  const isSuperTarget = await db().prepare(`SELECT 1 FROM user_roles ur JOIN roles r ON r.id=ur.role_id
     WHERE ur.user_id = ? AND r.name = 'super_admin'`).get(targetId);
-  if (isSuperTarget && !hasRole(req.user.id, 'super_admin')) {
+  if (isSuperTarget && !(await hasRole(req.user.id, 'super_admin'))) {
     throw new HttpError(403, 'ไม่มีสิทธิ์จัดการบัญชี super_admin', 'FORBIDDEN');
   }
 }
 
 // ---------- dashboard overview ----------
-router.get('/overview', requirePerm('dashboard.admin'), (req, res) => {
+router.get('/overview', requirePerm('dashboard.admin'), async (req, res) => {
   const d = db();
-  const one = (sql, ...a) => d.prepare(sql).get(...a);
-  const txSum = (type) => one('SELECT COALESCE(SUM(amount),0) s FROM virtual_transactions WHERE type = ?', type).s;
+  const one = async (sql, ...a) => (await d.prepare(sql).get(...a));
+  const txSum = async (type) => (await one('SELECT COALESCE(SUM(amount),0) s FROM virtual_transactions WHERE type = ?', type)).s;
   // รายรับ/รายจ่ายของระบบเครดิตจำลอง แยกตามประเภทธุรกรรม
   const money = {
-    deposit: txSum('deposit'),          // สมาชิกเติมเครดิตเอง
-    adminCredit: txSum('admin_adjust'), // admin เพิ่มเครดิตให้
-    initialCredit: txSum('initial_credit'),
-    withdraw: txSum('withdraw'),        // สมาชิกถอนเครดิต
-    adminDebit: txSum('admin_debit'),
-    staked: txSum('bet_debit'),         // ยอดเดิมพันรวม
-    winnings: txSum('win_credit'),      // ยอดจ่ายรางวัล
-    refunds: txSum('bet_refund'),       // คืนเงินคืนโพย
+    deposit: await txSum('deposit'),          // สมาชิกเติมเครดิตเอง
+    adminCredit: await txSum('admin_adjust'), // admin เพิ่มเครดิตให้
+    initialCredit: await txSum('initial_credit'),
+    withdraw: await txSum('withdraw'),        // สมาชิกถอนเครดิต
+    adminDebit: await txSum('admin_debit'),
+    staked: await txSum('bet_debit'),         // ยอดเดิมพันรวม
+    winnings: await txSum('win_credit'),      // ยอดจ่ายรางวัล
+    refunds: await txSum('bet_refund'),       // คืนเงินคืนโพย
   };
   money.totalIn = money.deposit + money.adminCredit + money.initialCredit;
   money.totalOut = money.withdraw + money.adminDebit + money.winnings + money.refunds;
   // house margin = ยอดเดิมพัน − เงินรางวัล − เงินคืน (demo: ติดลบได้ถ้าจ่ายเกิน)
   money.houseNet = money.staked - money.winnings - money.refunds;
   // ยอดเข้า-ออก 7 วันล่าสุด (stacked bars)
-  const daily = d.prepare(`SELECT date(created_at) day,
+  const daily = (await d.prepare(`SELECT date(created_at) AS "day",
       COALESCE(SUM(CASE WHEN direction='credit' THEN amount ELSE 0 END),0) inn,
       COALESCE(SUM(CASE WHEN direction='debit' THEN amount ELSE 0 END),0) out
     FROM virtual_transactions
     WHERE created_at >= date('now','-6 days')
-    GROUP BY day ORDER BY day`).all()
+    GROUP BY "day" ORDER BY "day"`).all())
     .map(r => ({ day: r.day, inn: r.inn, out: r.out }));
   res.json({
-    members: one('SELECT COUNT(*) c FROM users').c,
-    activeDraws: one(`SELECT COUNT(*) c FROM lottery_draws WHERE status='open'`).c,
-    pendingBets: one(`SELECT COUNT(*) c FROM bet_items WHERE status='pending'`).c,
-    totalStaked: one(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status='pending'`).s,
-    totalPaid: one(`SELECT COALESCE(SUM(total_payout),0) s FROM bet_slips WHERE status IN ('won','partial','lost')`).s,
-    walletLiability: one('SELECT COALESCE(SUM(balance),0) s FROM virtual_wallets').s,
+    members: (await one('SELECT COUNT(*) c FROM users')).c,
+    activeDraws: (await one(`SELECT COUNT(*) c FROM lottery_draws WHERE status='open'`)).c,
+    pendingBets: (await one(`SELECT COUNT(*) c FROM bet_items WHERE status='pending'`)).c,
+    totalStaked: (await one(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status='pending'`)).s,
+    totalPaid: (await one(`SELECT COALESCE(SUM(total_payout),0) s FROM bet_slips WHERE status IN ('won','partial','lost')`)).s,
+    walletLiability: (await one('SELECT COALESCE(SUM(balance),0) s FROM virtual_wallets')).s,
     // รอบหวยจริงที่เลยเวลาออกรางวัลแล้วยังไม่ออกผล (ยกเว้นเกมด่วน SC/HL)
-    overdueDraws: one(`SELECT COUNT(*) c FROM lottery_draws d
+    overdueDraws: (await one(`SELECT COUNT(*) c FROM lottery_draws d
       JOIN lottery_types lt ON lt.id = d.lottery_type_id
       WHERE d.status IN ('open','scheduled','closed') AND d.draw_at <= datetime('now')
         AND lt.code NOT IN ('SC','HL','KI')
-        AND d.id NOT IN (SELECT draw_id FROM lottery_results)`).c,
+        AND d.id NOT IN (SELECT draw_id FROM lottery_results)`)).c,
     money, daily,
-    recentAudit: d.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 10').all(),
-    recentSecurity: d.prepare(`SELECT * FROM security_events ORDER BY id DESC LIMIT 10`).all(),
+    recentAudit: await d.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 10').all(),
+    recentSecurity: await d.prepare(`SELECT * FROM security_events ORDER BY id DESC LIMIT 10`).all(),
   });
 });
 
 // ---------- members ----------
-router.get('/members', requirePerm('members.manage'), (req, res) => {
+router.get('/members', requirePerm('members.manage'), async (req, res) => {
   const q = `%${(req.query.q || '').slice(0, 100)}%`;
-  const rows = db().prepare(`SELECT * FROM users WHERE username LIKE ? OR email LIKE ? OR display_name LIKE ?
+  const rows = await db().prepare(`SELECT * FROM users WHERE username LIKE ? OR email LIKE ? OR display_name LIKE ?
                              ORDER BY id DESC LIMIT 200`).all(q, q, q);
-  res.json({ members: rows.map(memberDto) });
+  res.json({ members: await Promise.all(rows.map(memberDto)) });
 });
 
 const memberUpdateSchema = z.object({
@@ -100,23 +100,23 @@ const memberUpdateSchema = z.object({
   withdrawUnlocked: z.boolean().optional(),
 });
 
-router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => {
+router.patch('/members/:id', requirePerm('members.manage'), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const data = memberUpdateSchema.parse(req.body);
-    const target = db().prepare('SELECT * FROM users WHERE id = ?').get(id);
+    const target = await db().prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
-    assertCanManageTarget(req, id);
+    await assertCanManageTarget(req, id);
     if (data.status && id === req.user.id && data.status !== 'active')
       return res.status(400).json({ error: 'ไม่สามารถเปลี่ยนสถานะบัญชีของตัวเองได้' });
-    if (data.status) db().prepare(`UPDATE users SET status=?, updated_at=datetime('now') WHERE id=?`).run(data.status, id);
-    if (data.displayName) db().prepare(`UPDATE users SET display_name=?, updated_at=datetime('now') WHERE id=?`).run(data.displayName, id);
+    if (data.status) await db().prepare(`UPDATE users SET status=?, updated_at=datetime('now') WHERE id=?`).run(data.status, id);
+    if (data.displayName) await db().prepare(`UPDATE users SET display_name=?, updated_at=datetime('now') WHERE id=?`).run(data.displayName, id);
     if (data.withdrawUnlocked !== undefined) {
-      db().prepare(`UPDATE users SET withdraw_unlocked=?, updated_at=datetime('now') WHERE id=?`).run(data.withdrawUnlocked ? 1 : 0, id);
+      await db().prepare(`UPDATE users SET withdraw_unlocked=?, updated_at=datetime('now') WHERE id=?`).run(data.withdrawUnlocked ? 1 : 0, id);
     }
     if (data.password) {
-      db().prepare(`UPDATE users SET password_hash=?, updated_at=datetime('now') WHERE id=?`).run(hashPassword(data.password), id);
-      db().prepare(`UPDATE user_sessions SET revoked_at=datetime('now') WHERE user_id=? AND revoked_at IS NULL`).run(id);
+      await db().prepare(`UPDATE users SET password_hash=?, updated_at=datetime('now') WHERE id=?`).run(hashPassword(data.password), id);
+      await db().prepare(`UPDATE user_sessions SET revoked_at=datetime('now') WHERE user_id=? AND revoked_at IS NULL`).run(id);
       securityEvent({ eventType: 'admin.member_password_reset', severity: 'warning', userId: id,
         ip: req.ip, detail: { by: req.user.id } });
     }
@@ -128,26 +128,26 @@ router.patch('/members/:id', requirePerm('members.manage'), (req, res, next) => 
   } catch (e) { next(e); }
 });
 
-router.delete('/members/:id', requirePerm('members.manage'), (req, res, next) => {
+router.delete('/members/:id', requirePerm('members.manage'), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (id === req.user.id) return res.status(400).json({ error: 'ไม่สามารถลบบัญชีของตัวเองได้' });
-    const target = db().prepare('SELECT * FROM users WHERE id = ?').get(id);
+    const target = await db().prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
-    assertCanManageTarget(req, id);
-    const slips = db().prepare('SELECT COUNT(*) c FROM bet_slips WHERE user_id = ?').get(id).c;
+    await assertCanManageTarget(req, id);
+    const slips = (await db().prepare('SELECT COUNT(*) c FROM bet_slips WHERE user_id = ?').get(id)).c;
     if (slips > 0) return res.status(400).json({ error: `ไม่สามารถลบได้ สมาชิกนี้มีประวัติโพย ${slips} รายการ` });
-    tx((d) => {
-      d.prepare('DELETE FROM virtual_transactions WHERE user_id = ?').run(id);
-      d.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
-      d.prepare('DELETE FROM chat_messages WHERE sender_id = ?').run(id); // FK ไม่ cascade — ลบทิ้งก่อนลบ user
-      d.prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?').run(id);
-      d.prepare('UPDATE security_events SET user_id = NULL WHERE user_id = ?').run(id);
-      d.prepare('UPDATE lottery_results SET published_by = NULL WHERE published_by = ?').run(id);
-      d.prepare('UPDATE virtual_transactions SET created_by = NULL WHERE created_by = ?').run(id);
-      d.prepare('UPDATE system_settings SET updated_by = NULL WHERE updated_by = ?').run(id);
+    await txAsync(async (d) => {
+      await d.prepare('DELETE FROM virtual_transactions WHERE user_id = ?').run(id);
+      await d.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
+      await d.prepare('DELETE FROM chat_messages WHERE sender_id = ?').run(id); // FK ไม่ cascade — ลบทิ้งก่อนลบ user
+      await d.prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?').run(id);
+      await d.prepare('UPDATE security_events SET user_id = NULL WHERE user_id = ?').run(id);
+      await d.prepare('UPDATE lottery_results SET published_by = NULL WHERE published_by = ?').run(id);
+      await d.prepare('UPDATE virtual_transactions SET created_by = NULL WHERE created_by = ?').run(id);
+      await d.prepare('UPDATE system_settings SET updated_by = NULL WHERE updated_by = ?').run(id);
       // user_roles / user_sessions / virtual_wallets ถูกลบตามด้วย ON DELETE CASCADE
-      d.prepare('DELETE FROM users WHERE id = ?').run(id);
+      await d.prepare('DELETE FROM users WHERE id = ?').run(id);
     });
     invalidatePermCache(id);
     audit({ userId: req.user.id, action: 'admin.member_delete', entityType: 'user', entityId: String(id), detail: { username: target.username }, req });
@@ -156,10 +156,10 @@ router.delete('/members/:id', requirePerm('members.manage'), (req, res, next) =>
 });
 
 // ---------- roles ----------
-router.get('/roles', requirePerm('roles.manage'), (req, res) => {
-  const roles = db().prepare('SELECT * FROM roles ORDER BY id').all();
-  const perms = db().prepare('SELECT * FROM permissions ORDER BY code').all();
-  const rp = db().prepare('SELECT role_id, permission_id FROM role_permissions').all();
+router.get('/roles', requirePerm('roles.manage'), async (req, res) => {
+  const roles = await db().prepare('SELECT * FROM roles ORDER BY id').all();
+  const perms = await db().prepare('SELECT * FROM permissions ORDER BY code').all();
+  const rp = await db().prepare('SELECT role_id, permission_id FROM role_permissions').all();
   res.json({
     roles: roles.map(r => ({ ...r, permissions: rp.filter(x => x.role_id === r.id).map(x => x.permission_id) })),
     permissions: perms,
@@ -171,24 +171,23 @@ const rolePermSchema = z.object({
   permissionIds: z.array(z.number().int().positive()),
 });
 
-router.put('/roles/permissions', requirePerm('roles.manage'), requireRole('super_admin'), (req, res, next) => {
+router.put('/roles/permissions', requirePerm('roles.manage'), requireRole('super_admin'), async (req, res, next) => {
   try {
     const { roleId, permissionIds } = rolePermSchema.parse(req.body);
-    tx((d) => {
-      d.prepare('DELETE FROM role_permissions WHERE role_id = ?').run(roleId);
-      const ins = d.prepare('INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-      for (const pid of permissionIds) ins.run(roleId, pid);
+    await txAsync(async (d) => {
+      await d.prepare('DELETE FROM role_permissions WHERE role_id = ?').run(roleId);
+      for (const pid of permissionIds) await d.prepare('INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)').run(roleId, pid);
     });
     // invalidate caches for users with this role
-    for (const u of db().prepare('SELECT user_id FROM user_roles WHERE role_id = ?').all(roleId)) invalidatePermCache(u.user_id);
+    for (const u of await db().prepare('SELECT user_id FROM user_roles WHERE role_id = ?').all(roleId)) invalidatePermCache(u.user_id);
     audit({ userId: req.user.id, action: 'admin.roles_update', entityType: 'role', entityId: String(roleId), detail: { permissionIds }, req });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
 // ---------- lottery types & rules ----------
-router.get('/lottery/types', requirePerm('lottery.manage'), (req, res) => {
-  res.json({ types: lottery.listLotteryTypes({ activeOnly: false }) });
+router.get('/lottery/types', requirePerm('lottery.manage'), async (req, res) => {
+  res.json({ types: await lottery.listLotteryTypes({ activeOnly: false }) });
 });
 
 const typeSchema = z.object({
@@ -200,11 +199,11 @@ const typeSchema = z.object({
   result_mode: z.enum(['auto', 'manual']).optional(),
 });
 
-router.post('/lottery/types', requirePerm('lottery.manage'), (req, res, next) => {
+router.post('/lottery/types', requirePerm('lottery.manage'), async (req, res, next) => {
   try {
     const t = typeSchema.parse(req.body);
     if (!/^[A-Z0-9_-]{2,10}$/i.test(t.code)) return res.status(400).json({ error: 'code ต้องเป็นตัวอักษร/ตัวเลข 2-10 ตัว' });
-    const r = db().prepare('INSERT INTO lottery_types (code,name_th,name_en,description,is_active,result_mode) VALUES (?,?,?,?,?,?)')
+    const r = await db().prepare('INSERT INTO lottery_types (code,name_th,name_en,description,is_active,result_mode) VALUES (?,?,?,?,?,?)')
       .run(t.code, t.name_th, t.name_en || null, t.description || null, t.is_active ?? 1, t.result_mode ?? 'auto');
     audit({ userId: req.user.id, action: 'admin.lottery_type_create', entityType: 'lottery_type', entityId: String(r.lastInsertRowid), req });
     broadcast('settings');
@@ -212,7 +211,7 @@ router.post('/lottery/types', requirePerm('lottery.manage'), (req, res, next) =>
   } catch (e) { next(e); }
 });
 
-router.patch('/lottery/types/:id', requirePerm('lottery.manage'), (req, res, next) => {
+router.patch('/lottery/types/:id', requirePerm('lottery.manage'), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const t = typeSchema.partial().parse(req.body);
@@ -220,7 +219,7 @@ router.patch('/lottery/types/:id', requirePerm('lottery.manage'), (req, res, nex
     delete t.code;
     const fields = Object.keys(t).filter(k => t[k] !== undefined);
     if (!fields.length) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
-    db().prepare(`UPDATE lottery_types SET ${fields.map(f => `${f}=?`).join(',')} WHERE id=?`)
+    await db().prepare(`UPDATE lottery_types SET ${fields.map(f => `${f}=?`).join(',')} WHERE id=?`)
       .run(...fields.map(f => t[f]), id);
     audit({ userId: req.user.id, action: 'admin.lottery_type_update', entityType: 'lottery_type', entityId: String(id), detail: t, req });
     broadcast('settings');
@@ -243,17 +242,17 @@ const ruleSchema = z.object({
   is_active: z.number().int().min(0).max(1).optional(),
 });
 
-router.post('/lottery/rules', requirePerm('lottery.manage'), (req, res, next) => {
+router.post('/lottery/rules', requirePerm('lottery.manage'), async (req, res, next) => {
   try {
     const r = ruleSchema.parse(req.body);
     JSON.parse(r.match_config); // must be valid JSON
-    if (!db().prepare('SELECT id FROM lottery_types WHERE id = ?').get(r.lottery_type_id))
+    if (!(await db().prepare('SELECT id FROM lottery_types WHERE id = ?').get(r.lottery_type_id)))
       return res.status(400).json({ error: 'ประเภทหวยไม่ถูกต้อง' });
-    const dup = db().prepare(`SELECT id FROM lottery_rules
+    const dup = await db().prepare(`SELECT id FROM lottery_rules
       WHERE lottery_type_id = ? AND bet_type = ? AND COALESCE(category_id,0) = COALESCE(?,0)`)
       .get(r.lottery_type_id, r.bet_type, r.category_id ?? null);
     if (dup) return res.status(409).json({ error: `มีกติกา bet_type "${r.bet_type}" ในหมวดนี้อยู่แล้ว` });
-    const x = db().prepare(`INSERT INTO lottery_rules
+    const x = await db().prepare(`INSERT INTO lottery_rules
       (lottery_type_id,category_id,bet_type,name_th,name_en,digits,match_config,payout_multiplier,stake_unit,min_amount,max_amount,is_active)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(r.lottery_type_id, r.category_id ?? null, r.bet_type, r.name_th, r.name_en || null, r.digits,
@@ -282,7 +281,7 @@ const INSTANT_GAME_OF = (bt) => {
 };
 const INSTANT_MULT_KEY = { hilo_mult_low: 'hilo_low', hilo_mult_high: 'hilo_high', hilo_mult_11: 'hilo_eleven' };
 
-router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), (req, res, next) => {
+router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const r = ruleSchema.partial().parse(req.body);
@@ -291,24 +290,24 @@ router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), (req, res, nex
     if (r.match_config) JSON.parse(r.match_config);
     const fields = Object.keys(r).filter(k => r[k] !== undefined);
     if (!fields.length) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
-    const existing = db().prepare('SELECT bet_type FROM lottery_rules WHERE id = ?').get(id);
-    db().prepare(`UPDATE lottery_rules SET ${fields.map(f => `${f}=?`).join(',')} WHERE id=?`)
+    const existing = await db().prepare('SELECT bet_type FROM lottery_rules WHERE id = ?').get(id);
+    await db().prepare(`UPDATE lottery_rules SET ${fields.map(f => `${f}=?`).join(',')} WHERE id=?`)
       .run(...fields.map(f => r[f]), id);
     // sync กลับเข้า settings + เผยแพร่ราคาให้ทุกกติกาของเกมนั้น — กันราคาเพี้ยนข้ามกติกา/ข้ามหน้า
     const game = INSTANT_GAME_OF(existing?.bet_type);
     if (game && (r.min_amount != null || r.max_amount != null)) {
       // ราคาต้องมาจาก min_amount เสมอ (max_amount อย่างเดียวไม่เปลี่ยนราคา — บังคับ min=max=ราคาเดิม)
-      const v = Math.round(Number(r.min_amount ?? db().prepare('SELECT min_amount FROM lottery_rules WHERE id = ?').get(id)?.min_amount));
+      const v = Math.round(Number(r.min_amount ?? (await db().prepare('SELECT min_amount FROM lottery_rules WHERE id = ?').get(id))?.min_amount));
       if (Number.isFinite(v) && v > 0) {
-        settings.setSetting(INSTANT_GAMES[game].setting, v, req.user.id);
+        await settings.setSetting(INSTANT_GAMES[game].setting, v, req.user.id);
         const types = INSTANT_GAMES[game].rules;
-        db().prepare(`UPDATE lottery_rules SET min_amount = ?, max_amount = ? WHERE bet_type IN (${types.map(() => '?').join(',')})`).run(v, v, ...types);
+        await db().prepare(`UPDATE lottery_rules SET min_amount = ?, max_amount = ? WHERE bet_type IN (${types.map(() => '?').join(',')})`).run(v, v, ...types);
       }
     }
     const multKey = Object.keys(INSTANT_MULT_KEY).find(k => INSTANT_MULT_KEY[k] === existing?.bet_type);
     if (multKey && r.payout_multiplier != null) {
       const v = Number(r.payout_multiplier);
-      if (Number.isFinite(v) && v > 0) settings.setSetting(multKey, v, req.user.id);
+      if (Number.isFinite(v) && v > 0) await settings.setSetting(multKey, v, req.user.id);
     }
     audit({ userId: req.user.id, action: 'admin.rule_update', entityType: 'lottery_rule', entityId: String(id), detail: r, req });
     broadcast('settings');
@@ -316,23 +315,23 @@ router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), (req, res, nex
   } catch (e) { next(e); }
 });
 
-router.get('/lottery/categories', requirePerm('lottery.manage'), (req, res) => {
-  res.json({ categories: db().prepare(`SELECT c.*, lt.name_th AS type_name_th FROM lottery_categories c JOIN lottery_types lt ON lt.id=c.lottery_type_id ORDER BY c.lottery_type_id, c.id`).all() });
+router.get('/lottery/categories', requirePerm('lottery.manage'), async (req, res) => {
+  res.json({ categories: await db().prepare(`SELECT c.*, lt.name_th AS type_name_th FROM lottery_categories c JOIN lottery_types lt ON lt.id=c.lottery_type_id ORDER BY c.lottery_type_id, c.id`).all() });
 });
 
-router.get('/lottery/rules', requirePerm('lottery.manage'), (req, res) => {
-  res.json({ rules: db().prepare('SELECT * FROM lottery_rules ORDER BY lottery_type_id, bet_type').all() });
+router.get('/lottery/rules', requirePerm('lottery.manage'), async (req, res) => {
+  res.json({ rules: await db().prepare('SELECT * FROM lottery_rules ORDER BY lottery_type_id, bet_type').all() });
 });
 
 // ---------- draws ----------
-router.get('/draws', requirePerm('draws.manage'), (req, res) => {
+router.get('/draws', requirePerm('draws.manage'), async (req, res) => {
   // includeInactiveTypes — admin ต้องเห็น/ยกเลิก/ออกผลรอบของประเภทที่ปิดอยู่ด้วย (โพยค้างต้องจัดการได้)
-  res.json({ draws: lottery.listDraws({ lotteryTypeId: req.query.type ? Number(req.query.type) : null, includeInactiveTypes: true }) });
+  res.json({ draws: await lottery.listDraws({ lotteryTypeId: req.query.type ? Number(req.query.type) : null, includeInactiveTypes: true }) });
 });
 
 // สถานะการอัปเดตผลรางวัลล่าสุดของทุกประเภท/หมวด — ล่าสุดต่อ type+category
-router.get('/results/status', requirePerm('results.publish'), (req, res) => {
-  const rows = db().prepare(`
+router.get('/results/status', requirePerm('results.publish'), async (req, res) => {
+  const rows = await db().prepare(`
     WITH latest AS (
       SELECT lr.id, lr.draw_id, lr.published_at, lr.source,
              d.lottery_type_id AS tid, COALESCE(d.category_id, 0) AS cid,
@@ -363,10 +362,10 @@ const drawSchema = z.object({
   close_at: z.string().min(10),
 });
 
-router.post('/draws', requirePerm('draws.manage'), (req, res, next) => {
+router.post('/draws', requirePerm('draws.manage'), async (req, res, next) => {
   try {
     const d = drawSchema.parse(req.body);
-    const id = lottery.createDraw(req.user.id, {
+    const id = await lottery.createDraw(req.user.id, {
       lotteryTypeId: d.lottery_type_id, categoryId: d.category_id ?? null,
       drawCode: d.draw_code, drawAt: d.draw_at, closeAt: d.close_at,
     });
@@ -395,20 +394,20 @@ const drawUpdateSchema = z.object({
     z.null(),
   ]).optional(),
 });
-router.patch('/draws/:id', requirePerm('draws.manage'), (req, res, next) => {
+router.patch('/draws/:id', requirePerm('draws.manage'), async (req, res, next) => {
   try {
     const data = drawUpdateSchema.parse(req.body);
-    lottery.updateDraw(req.user.id, Number(req.params.id), data);
+    await lottery.updateDraw(req.user.id, Number(req.params.id), data);
     broadcast('draws');
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
 const statusSchema = z.object({ status: z.enum(['scheduled', 'open', 'closed', 'cancelled']) });
-router.patch('/draws/:id/status', requirePerm('draws.manage'), (req, res, next) => {
+router.patch('/draws/:id/status', requirePerm('draws.manage'), async (req, res, next) => {
   try {
     const { status } = statusSchema.parse(req.body);
-    const result = lottery.updateDrawStatus(req.user.id, Number(req.params.id), status);
+    const result = await lottery.updateDrawStatus(req.user.id, Number(req.params.id), status);
     broadcast('draws');
     res.json({ ok: true, ...result });
   } catch (e) { next(e); }
@@ -418,10 +417,32 @@ const numVal = z.union([z.string().regex(/^\d{1,10}$/), z.array(z.string().regex
 const settleSchema = z.object({
   winning_numbers: z.record(z.string(), numVal),
 });
-router.post('/draws/:id/settle', requirePerm('results.publish'), (req, res, next) => {
+// เทียบ winning_numbers แบบไม่สนลำดับ key/array — ใช้เช็คผลทางการ
+function sameWinningNumbers(a, b) {
+  const norm = (o) => {
+    const out = {};
+    for (const k of Object.keys(o || {}).sort()) {
+      const v = o[k];
+      out[k] = Array.isArray(v) ? v.map(String).sort() : String(v ?? '').trim();
+    }
+    return JSON.stringify(out);
+  };
+  return norm(a) === norm(b);
+}
+
+router.post('/draws/:id/settle', requirePerm('results.publish'), async (req, res, next) => {
   try {
     const { winning_numbers } = settleSchema.parse(req.body);
-    const result = lottery.settleDraw(req.user.id, Number(req.params.id), winning_numbers);
+    const drawId = Number(req.params.id);
+    // หวยไทยต้องออกผลจากแหล่งทางการ (GLO) เท่านั้น — ห้ามกรอกเอง/ใช้ผลเทียม
+    const draw = await lottery.getDraw(drawId);
+    if (draw?.type_code === 'TH') {
+      const official = await fetcher.fetchResultForDraw(drawId);
+      if (!sameWinningNumbers(official.winning, winning_numbers))
+        throw new HttpError(400,
+          'หวยไทยต้องใช้ผลทางการที่ระบบดึงมาเท่านั้น — กรุณากด "ดึงผล" ก่อน แล้วใช้ตัวเลขที่ระบบแสดง', 'OFFICIAL_RESULT_REQUIRED');
+    }
+    const result = await lottery.settleDraw(req.user.id, drawId, winning_numbers);
     broadcast('results');
     res.json({ ok: true, ...result });
   } catch (e) { next(e); }
@@ -438,19 +459,20 @@ router.post('/draws/auto-settle', requirePerm('results.publish'), async (req, re
 
 // จำลองผล settle — คืนสถิติ (โพยรอผล/ถูกรางวัล/ยอดจ่าย) โดยไม่เขียน DB
 // ใช้ให้ admin ตรวจสอบก่อนกดยืนยันออกผลจริง
-router.post('/draws/:id/settle-preview', requirePerm('results.publish'), (req, res, next) => {
+router.post('/draws/:id/settle-preview', requirePerm('results.publish'), async (req, res, next) => {
   try {
     const drawId = Number(req.params.id);
-    const draw = lottery.getDraw(drawId);
+    const draw = await lottery.getDraw(drawId);
     if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
     const winning = req.body?.winning_numbers;
     if (!winning || typeof winning !== 'object' || Array.isArray(winning)) {
       throw new HttpError(400, 'winning_numbers ไม่ถูกต้อง');
     }
+    lottery.validateWinningNumbers(winning); // เช็ค format เดียวกับตอน settle จริง
     // merge เลขอั้น + ประเมินแบบเดียวกับ settle จริง (รวม is_tod และอัตราเฉพาะรายเลข)
     let wn = { ...winning };
     try { lottery.mergeAnnounce?.(wn, draw.announce); } catch {}
-    const items = db().prepare(`
+    const items = await db().prepare(`
       SELECT bi.id, bi.rule_id, bi.number, bi.amount, bi.is_tod, bi.payout_multiplier AS snap_mult, bi.match_config AS snap_cfg, r.payout_multiplier
       FROM bet_items bi
       JOIN bet_slips bs ON bs.id = bi.slip_id
@@ -461,7 +483,7 @@ router.post('/draws/:id/settle-preview', requirePerm('results.publish'), (req, r
     for (const it of items) {
       let rule = ruleCache.get(it.rule_id);
       if (!rule) {
-        rule = db().prepare('SELECT * FROM lottery_rules WHERE id = ?').get(it.rule_id);
+        rule = await db().prepare('SELECT * FROM lottery_rules WHERE id = ?').get(it.rule_id);
         ruleCache.set(it.rule_id, rule);
       }
       try {
@@ -486,17 +508,17 @@ router.post('/draws/:id/fetch-result', requirePerm('results.publish'), async (re
 });
 
 // แก้ไขผลหลังออกผลแล้ว — ระบบคำนวณเครดิต/เดบิตส่วนต่างใหม่ทั้งโพย
-router.post('/draws/:id/result', requirePerm('results.publish'), (req, res, next) => {
+router.post('/draws/:id/result', requirePerm('results.publish'), async (req, res, next) => {
   try {
     const { winning_numbers } = settleSchema.parse(req.body);
-    const result = fetcher.updateDrawResult(req.user.id, Number(req.params.id), winning_numbers);
+    const result = await fetcher.updateDrawResult(req.user.id, Number(req.params.id), winning_numbers);
     broadcast('results');
     res.json(result);
   } catch (e) { next(e); }
 });
 
 // ---------- bet monitoring ----------
-router.get('/bets', requirePerm('bets.view_all'), (req, res) => {
+router.get('/bets', requirePerm('bets.view_all'), async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
   const status = req.query.status || null;
   let sql = `SELECT bs.*, u.username, d.draw_code, d.draw_at, lt.name_th AS type_name_th,
@@ -508,11 +530,11 @@ router.get('/bets', requirePerm('bets.view_all'), (req, res) => {
   if (status) { sql += ' AND bs.status = ?'; args.push(status); }
   if (req.query.userId) { sql += ' AND bs.user_id = ?'; args.push(Number(req.query.userId)); }
   sql += ' ORDER BY bs.id DESC LIMIT ?'; args.push(limit);
-  const slips = db().prepare(sql).all(...args);
-  const items = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th,
+  const slips = await db().prepare(sql).all(...args);
+  const itemsStmt = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th,
                                     COALESCE(bi.payout_multiplier, r.payout_multiplier) AS payout_multiplier
                              FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
-  res.json({ slips: slips.map(s => ({ ...s, items: items.all(s.id) })) });
+  res.json({ slips: await Promise.all(slips.map(async s => ({ ...s, items: await itemsStmt.all(s.id) }))) });
 });
 
 // ---------- wallet adjust ----------
@@ -523,52 +545,52 @@ const adjustSchema = z.object({
   reason: z.string().min(3).max(500),
   idempotencyKey: z.string().min(8).max(100),
 });
-router.post('/wallet/adjust', requirePerm('wallet.adjust'), (req, res, next) => {
+router.post('/wallet/adjust', requirePerm('wallet.adjust'), async (req, res, next) => {
   try {
     const { userId, ...rest } = adjustSchema.parse(req.body);
-    const result = wallet.adminAdjust({ adminId: req.user.id, targetUserId: userId, ...rest });
+    const result = await wallet.adminAdjust({ adminId: req.user.id, targetUserId: userId, ...rest });
     res.json({ ok: true, ...result });
   } catch (e) { next(e); }
 });
 
-router.get('/wallet/transactions', requirePerm('wallet.adjust'), (req, res) => {
+router.get('/wallet/transactions', requirePerm('wallet.adjust'), async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
-  res.json({ transactions: db().prepare(`SELECT vt.*, u.username FROM virtual_transactions vt JOIN users u ON u.id=vt.user_id ORDER BY vt.id DESC LIMIT ?`).all(limit) });
+  res.json({ transactions: await db().prepare(`SELECT vt.*, u.username FROM virtual_transactions vt JOIN users u ON u.id=vt.user_id ORDER BY vt.id DESC LIMIT ?`).all(limit) });
 });
 
 // ---------- audit / security ----------
-router.get('/audit', requirePerm('audit.view'), (req, res) => {
+router.get('/audit', requirePerm('audit.view'), async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
-  res.json({ logs: db().prepare(`SELECT al.*, u.username FROM audit_logs al LEFT JOIN users u ON u.id=al.user_id ORDER BY al.id DESC LIMIT ?`).all(limit) });
+  res.json({ logs: await db().prepare(`SELECT al.*, u.username FROM audit_logs al LEFT JOIN users u ON u.id=al.user_id ORDER BY al.id DESC LIMIT ?`).all(limit) });
 });
 
-router.get('/security-events', requirePerm('security.view'), (req, res) => {
+router.get('/security-events', requirePerm('security.view'), async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
-  res.json({ events: db().prepare(`SELECT se.*, u.username FROM security_events se LEFT JOIN users u ON u.id=se.user_id ORDER BY se.id DESC LIMIT ?`).all(limit) });
+  res.json({ events: await db().prepare(`SELECT se.*, u.username FROM security_events se LEFT JOIN users u ON u.id=se.user_id ORDER BY se.id DESC LIMIT ?`).all(limit) });
 });
 
 // ---------- settings ----------
-router.get('/settings', requirePerm('settings.manage'), (req, res) => {
-  res.json({ settings: settings.allSettings() });
+router.get('/settings', requirePerm('settings.manage'), async (req, res) => {
+  res.json({ settings: await settings.allSettings() });
 });
-router.put('/settings/:key', requirePerm('settings.manage'), (req, res, next) => {
+router.put('/settings/:key', requirePerm('settings.manage'), async (req, res, next) => {
   try {
     const key = String(req.params.key).slice(0, 100);
     if (!/^[a-z0-9_.-]+$/i.test(key)) return res.status(400).json({ error: 'key ไม่ถูกต้อง' });
-    settings.setSetting(key, req.body?.value, req.user.id);
+    await settings.setSetting(key, req.body?.value, req.user.id);
     // sync เกมด่วน: ราคา → min/max ของทุกกติกาในเกมนั้น, อัตราจ่าย → payout_multiplier ของกติกาฝั่งนั้น
     const priceGame = Object.keys(INSTANT_GAMES).find(g => INSTANT_GAMES[g].setting === key);
     if (priceGame) {
       const v = Math.round(Number(req.body?.value));
       if (Number.isFinite(v) && v > 0) {
         const types = INSTANT_GAMES[priceGame].rules;
-        db().prepare(`UPDATE lottery_rules SET min_amount = ?, max_amount = ? WHERE bet_type IN (${types.map(() => '?').join(',')})`).run(v, v, ...types);
+        await db().prepare(`UPDATE lottery_rules SET min_amount = ?, max_amount = ? WHERE bet_type IN (${types.map(() => '?').join(',')})`).run(v, v, ...types);
       }
     }
     const multBetType = Object.keys(INSTANT_MULT_KEY).find(bt => INSTANT_MULT_KEY[bt] === key);
     if (multBetType) {
       const v = Number(req.body?.value);
-      if (Number.isFinite(v) && v > 0) db().prepare('UPDATE lottery_rules SET payout_multiplier = ? WHERE bet_type = ?').run(v, multBetType);
+      if (Number.isFinite(v) && v > 0) await db().prepare('UPDATE lottery_rules SET payout_multiplier = ? WHERE bet_type = ?').run(v, multBetType);
     }
     audit({ userId: req.user.id, action: 'admin.setting_update', entityType: 'setting', entityId: key, req });
     broadcast('settings');
@@ -577,14 +599,14 @@ router.put('/settings/:key', requirePerm('settings.manage'), (req, res, next) =>
 });
 
 // ---------- promotions: cashback คืนยอดเสีย ----------
-router.get('/promotions/cashback/preview', requirePerm('settings.manage'), (req, res) => {
+router.get('/promotions/cashback/preview', requirePerm('settings.manage'), async (req, res) => {
   const hours = Math.min(Math.max(parseInt(req.query.hours || '24', 10) || 24, 1), 24 * 30);
-  res.json({ preview: promo.previewCashback({ windowHours: hours }) });
+  res.json({ preview: await promo.previewCashback({ windowHours: hours }) });
 });
-router.post('/promotions/cashback/run', requirePerm('settings.manage'), (req, res, next) => {
+router.post('/promotions/cashback/run', requirePerm('settings.manage'), async (req, res, next) => {
   try {
     const hours = Math.min(Math.max(parseInt(req.body?.hours || '24', 10) || 24, 1), 24 * 30);
-    const r = promo.runCashback({ windowHours: hours, runKey: `manual-${Date.now()}` });
+    const r = await promo.runCashback({ windowHours: hours, runKey: `manual-${Date.now()}` });
     audit({ userId: req.user.id, action: 'admin.cashback_run', entityType: 'system', entityId: String(r.runKey || 'disabled'), detail: r, req });
     broadcast('settings');
     res.json({ ok: true, ...r });
@@ -592,23 +614,24 @@ router.post('/promotions/cashback/run', requirePerm('settings.manage'), (req, re
 });
 
 // ---------- reports ----------
-router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
+router.get('/reports/summary', requirePerm('reports.view'), async (req, res) => {
   const d = db();
+  const one = async (sql) => (await d.prepare(sql).get());
   res.json({
     totals: {
-      stake: d.prepare(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`).get().s,
-      payout: d.prepare(`SELECT COALESCE(SUM(payout),0) p FROM bet_items WHERE status='won'`).get().p,
-      pendingExposure: d.prepare(`SELECT COALESCE(SUM(bs.total_stake),0) s
+      stake: (await one(`SELECT COALESCE(SUM(total_stake),0) s FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`)).s,
+      payout: (await one(`SELECT COALESCE(SUM(payout),0) p FROM bet_items WHERE status='won'`)).p,
+      pendingExposure: (await one(`SELECT COALESCE(SUM(bs.total_stake),0) s
                                    FROM bet_slips bs JOIN lottery_draws dr ON dr.id = bs.draw_id
-                                   WHERE bs.status='pending' AND dr.draw_code NOT LIKE '%-STANDING'`).get().s,
-      unplayedInstant: d.prepare(`SELECT COALESCE(SUM(bs.total_stake),0) s
+                                   WHERE bs.status='pending' AND dr.draw_code NOT LIKE '%-STANDING'`)).s,
+      unplayedInstant: (await one(`SELECT COALESCE(SUM(bs.total_stake),0) s
                                    FROM bet_slips bs JOIN lottery_draws dr ON dr.id = bs.draw_id
-                                   WHERE bs.status='pending' AND dr.draw_code LIKE '%-STANDING'`).get().s,
-      items: d.prepare(`SELECT COUNT(*) c, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) w FROM bet_items WHERE status IN ('won','lost')`).get(),
-      slips: d.prepare(`SELECT COUNT(*) c FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`).get().c,
+                                   WHERE bs.status='pending' AND dr.draw_code LIKE '%-STANDING'`)).s,
+      items: await one(`SELECT COUNT(*) c, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) w FROM bet_items WHERE status IN ('won','lost')`),
+      slips: (await one(`SELECT COUNT(*) c FROM bet_slips WHERE status NOT IN ('cancelled','refunded')`)).c,
     },
     // รายการ = ทุกรายการที่ยังไม่ยกเลิก / ถูก = เฉพาะที่ settle แล้ว — frontend คำนวณเรทจาก won/(won+lost)
-    betsByType: d.prepare(`SELECT r.name_th AS rule_name, MIN(r.bet_type) AS bet_type,
+    betsByType: await d.prepare(`SELECT r.name_th AS rule_name, MIN(r.bet_type) AS bet_type,
                              lt.code AS type_code, lt.name_th AS type_name_th,
                              lc.name_th AS category_name_th,
                              COUNT(*) c,
@@ -622,15 +645,15 @@ router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
                            LEFT JOIN lottery_categories lc ON lc.id = ld.category_id
                            WHERE bi.status != 'cancelled'
                              AND r.bet_type NOT IN ('kiwi_zodiac','kiwi_animal') -- เกมยี่กีที่ถูกถอดแล้ว
-                           GROUP BY lt.code, lc.id, r.name_th
+                           GROUP BY lt.code, lt.name_th, lc.id, lc.name_th, r.name_th
                            ORDER BY stake DESC`).all(),
-    betsByDay: d.prepare(`SELECT date(bs.created_at) day, COUNT(DISTINCT bs.id) slips,
+    betsByDay: await d.prepare(`SELECT date(bs.created_at) AS "day", COUNT(DISTINCT bs.id) slips,
                              COALESCE(SUM(bi.amount),0) stake,
                              COALESCE(SUM(CASE WHEN bi.status='won' THEN bi.payout ELSE 0 END),0) payout
                           FROM bet_slips bs JOIN bet_items bi ON bi.slip_id = bs.id
                           WHERE bs.status NOT IN ('cancelled','refunded')
-                          GROUP BY day ORDER BY day DESC LIMIT 30`).all(),
-    topWinners: d.prepare(`SELECT u.username, bs.slip_ref, d.draw_code, lt.name_th AS type_name_th,
+                          GROUP BY "day" ORDER BY "day" DESC LIMIT 30`).all(),
+    topWinners: await d.prepare(`SELECT u.username, bs.slip_ref, d.draw_code, lt.name_th AS type_name_th,
                              SUM(bi.payout) payout, COUNT(*) items
                            FROM bet_items bi JOIN bet_slips bs ON bs.id=bi.slip_id
                            JOIN users u ON u.id=bs.user_id
@@ -638,9 +661,9 @@ router.get('/reports/summary', requirePerm('reports.view'), (req, res) => {
                            JOIN lottery_types lt ON lt.id=d.lottery_type_id
                            JOIN lottery_rules rl ON rl.id=bi.rule_id
                            WHERE bi.status='won' AND rl.bet_type NOT IN ('kiwi_zodiac','kiwi_animal')
-                           GROUP BY bs.id ORDER BY payout DESC LIMIT 20`).all(),
+                           GROUP BY bs.id, u.username, bs.slip_ref, d.draw_code, lt.name_th ORDER BY payout DESC LIMIT 20`).all(),
     // รอบล่าสุด 1 รอบต่อประเภท/หมวด — กันรอบรายชั่วโมง (เช่น หวยราศี) ล้นตาราง
-    drawsSummary: d.prepare(`WITH ranked AS (
+    drawsSummary: await d.prepare(`WITH ranked AS (
                                SELECT d.id, d.draw_code, lt.name_th, d.status, d.draw_at,
                                       ROW_NUMBER() OVER (PARTITION BY d.lottery_type_id, COALESCE(d.category_id, 0)
                                                          ORDER BY d.draw_at DESC, d.id DESC) AS rn

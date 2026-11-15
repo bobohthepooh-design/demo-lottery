@@ -67,7 +67,7 @@ export default function ResultsTicker() {
       <div className="ticker-led ticker-scan rounded-xl overflow-hidden border">
         <div className="flex items-center gap-2 px-4 py-1.5 bg-black/60 border-b border-gold-500/25">
           <span className="text-xs font-bold text-gold-300">📢 ผลรางวัลล่าสุด</span>
-          <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${live ? 'bg-green-500/15 text-green-700' : 'bg-navy-700/30 text-navy-500'}`}>
+          <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${live ? 'bg-green-500/15 text-green-300 border border-green-500/30' : 'bg-navy-700/30 text-navy-400'}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-green-500 animate-pulse' : 'bg-navy-400'}`} />
             {live ? 'อัปเดตอัตโนมัติ' : 'ออฟไลน์'}
           </span>

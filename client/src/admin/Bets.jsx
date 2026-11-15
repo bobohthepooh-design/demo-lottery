@@ -11,7 +11,7 @@ const STATUS_EMOJI = {
 const ITEM_EMOJI = { won: '😢', lost: '😄', pending: '⏳', cancelled: '🚫' };
 
 const SLIP_STYLE = {
-  won: 'border-red-500/40',
+  won: 'border-gold-500/40',
   lost: 'border-green-500/40',
   partial: 'border-gold-500/40',
   pending: 'border-blue-500/30',

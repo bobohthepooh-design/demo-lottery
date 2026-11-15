@@ -11,3 +11,4 @@ data/*.db-shm
 server/test-tmp.db*
 server/test-dbg.db*
 *.log
+server/data/

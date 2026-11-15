@@ -1,4 +1,5 @@
 import { audit, securityEvent, HttpError } from '../lib/audit.js';
+import { logger } from '../lib/logger.js';
 
 export function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
@@ -13,7 +14,9 @@ export function errorHandler(err, req, res, next) {
     return res.status(400).json({ error: 'รูปแบบข้อมูลไม่ถูกต้อง' });
   }
   // never leak internals
-  console.error('[error]', err);
+  logger.error('http', `${req.method} ${req.originalUrl} — ${err?.message || err}`, {
+    stack: String(err?.stack || '').slice(0, 1500), userId: req.user?.id, ip: req.ip,
+  });
   securityEvent({ eventType: 'unhandled_error', severity: 'warning', ip: req.ip, detail: { message: String(err?.message || err).slice(0, 300) } });
   res.status(500).json({ error: 'เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่' });
 }
