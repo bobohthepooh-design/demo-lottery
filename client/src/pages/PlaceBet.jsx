@@ -1,23 +1,41 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonCard } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
+import { sfx } from '../sound.js';
+import { kindBadge } from '../resultSource.js';
+import { annSummary, annEntries } from '../ann.js';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
   '3tod': '3 ตัวโต๊ด', 'run_top': 'วิ่งบน', 'run_bottom': 'วิ่งล่าง',
+  'ann_top': 'เลขอั้นบน', 'ann_bottom': 'เลขอั้นล่าง',
 };
 
 // เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
-const BET_ORDER = ['first', 'num4', 'front3', 'last4', 'top3', 'last3', 'top2', 'bottom2', 'last2', 'run_top', 'run_bottom'];
+const BET_ORDER = ['first', 'num4', 'front3', 'front3tod', 'last4', 'top3', '3tod', 'last3', 'top2', 'top2tod', 'bottom2', 'bottom2tod', 'last2', 'run_top', 'run_bottom', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
+
+// 12 ราศี — ต้องตรงกับ server/src/lib/zodiac.js
+const ZODIAC = ['เมษ', 'พฤษภ', 'เมถุน', 'กรกฎ', 'สิงห์', 'กันย์', 'ตุลย์', 'พิจิก', 'ธนู', 'มังกร', 'กุมภ์', 'มีน'];
+
+// คำอธิบายแต่ละประเภทแทงราศี — บอกชัดว่าต้องตรงกับตำแหน่งไหนของผล 6 ราศี
+const ZODIAC_HINT = {
+  zodiac: 'เลือกราศีที่คาดว่าจะออก “ตัวแรก” ของผล 6 ราศี (ตำแหน่ง ①)',
+  zodiac3top: 'เลือก 3 ราศีให้ตรงกับ “3 ตัวท้าย” ของผล (④⑤⑥) เรียงลำดับ',
+  zodiac2bottom: 'เลือก 2 ราศีให้ตรงกับ “2 ตัวท้าย” ของผล (⑤⑥) เรียงลำดับ',
+  zodiac_run: 'เลือกราศีที่คิดว่าจะ “โผล่ในผล 6 ตัว” — ถูกไม่ว่าตำแหน่งไหนก็ได้',
+};
 
 export default function PlaceBet() {
   const { drawId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // แทงซ้ำจากหน้าประวัติโพย — {ref, items:[{ruleId, number, amount(satang), isTod}]}
+  const repeat = location.state?.repeat || null;
   const { balance, setBalance, user } = useAuth();
   const [draw, setDraw] = useState(null);
   const [rules, setRules] = useState([]);
@@ -34,10 +52,13 @@ export default function PlaceBet() {
   const [selRule, setSelRule] = useState('');
   const [number, setNumber] = useState('');
   const [picks, setPicks] = useState([]);   // pattana5: เลขที่เลือก 1-45
+  const [zodiacPicks, setZodiacPicks] = useState([]); // หวยราศี: ราศีที่เลือกเรียงตามลำดับ (สูงสุดตาม digits ของกติกา)
   const [amount, setAmount] = useState('');
+  const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (เงิน ×2)
 
   // เปลี่ยนเนื้อหาโพย → key ใหม่ เพื่อไม่ให้โพยคนละชุดใช้ key เดียวกัน
   useEffect(() => { idemKey.current = null; }, [slip]);
+  useEffect(() => { setBetMode('teng'); }, [selRule]);
 
   useEffect(() => {
     api(`/lottery/draws/${drawId}`).then(async r => {
@@ -59,8 +80,39 @@ export default function PlaceBet() {
     });
   }, [drawId]);
 
+  // เติมโพยจาก "แทงซ้ำ" — คำนวณ mult ใหม่ตามกติกาปัจจุบัน + เลขอั้นของรอบนี้ (ตรวจสอบก่อนยืนยันเหมือนโพยปกติ)
+  const repeatDone = useRef(false);
+  useEffect(() => {
+    if (!repeat || repeatDone.current || !rules.length || !draw) return;
+    repeatDone.current = true;
+    const items = [];
+    for (const it of repeat.items || []) {
+      const r = rules.find(x => Number(x.id) === Number(it.ruleId));
+      if (!r) continue; // กติกาถูกปิดไปแล้ว — ข้ามรายการนั้น
+      const baseMult = Number(r.payout_multiplier) || 0;
+      let mult = baseMult, isAnn = false;
+      if (it.isTod) {
+        try { const t = JSON.parse(r.match_config || '{}').tod; if (t != null) mult = Number(t); } catch {}
+      } else {
+        const entry = annEntries(draw.announce)[String(it.number).length === 3 ? 'top' : 'bottom']?.find(e => e.num === String(it.number));
+        if (entry) { mult = entry.mult ?? Math.floor(baseMult / 2); isAnn = true; }
+      }
+      items.push({ ruleId: r.id, betType: r.bet_type, name: r.name_th + (it.isTod ? ' (โต๊ด)' : ''),
+        number: String(it.number), stakeSatang: Number(it.amount) || 0, mult, isTod: !!it.isTod, isAnn });
+    }
+    if (items.length) setSlip(items);
+    else setErr('ไม่พบประเภทการแทงเดิมในรอบนี้ (กติกาอาจถูกปิดแล้ว)');
+  }, [repeat, rules, draw]);
+
   const rule = rules.find(r => String(r.id) === selRule);
   const isPattana = rule?.bet_type === 'pattana5';
+  const isZodiac = rule?.bet_type?.startsWith('zodiac');
+  // โต๊ด — อัตราโต๊ดฝังใน match_config ของกติกา (แสดงเป็นข้อความแจ้งเท่านั้น ผู้แทงไม่ต้องใส่เลขโต๊ด)
+  const todRate = (() => { try { const t = JSON.parse(rule?.match_config || '{}').tod; return t != null ? Number(t) : null; } catch { return null; } })();
+  const showTodHint = todRate != null && !isZodiac && !isPattana && rule?.digits >= 2 && rule?.digits <= 3;
+  const zodiacDigits = rule?.digits || 1;
+  const toggleZodiac = (z) => setZodiacPicks(p =>
+    p.includes(z) ? p.filter(x => x !== z) : (p.length < zodiacDigits ? [...p, z] : p));
   const togglePick = (n) => setPicks(p => p.includes(n) ? p.filter(x => x !== n) : (p.length < 5 ? [...p, n] : p));
 
   const totalSatang = useMemo(() => slip.reduce((s, i) => s + i.stakeSatang, 0), [slip]);
@@ -84,7 +136,10 @@ export default function PlaceBet() {
     setErr('');
     if (!rule) return setErr('เลือกประเภทการแทง');
     let num;
-    if (isPattana) {
+    if (isZodiac) {
+      if (zodiacPicks.length !== zodiacDigits) return setErr(`กรุณาเลือก ${zodiacDigits} ราศีตามลำดับ`);
+      num = zodiacPicks.join('-');
+    } else if (isPattana) {
       if (picks.length !== 5) return setErr('เลือกเลขให้ครบ 5 ตัว (1-45)');
       num = [...picks].sort((a, b) => a - b).map(n => String(n).padStart(2, '0')).join('-');
     } else {
@@ -94,8 +149,17 @@ export default function PlaceBet() {
     const { stake, err: amtErr } = stakeFromAmount();
     if (amtErr) return setErr(amtErr);
     if (stake > balance) return setErr('เครดิตไม่เพียงพอ');
-    setSlip([...slip, { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake, mult: Number(rule.payout_multiplier) || 0 }]);
-    setNumber(''); setPicks([]); setAmount('');
+    // เลขอั้น — แทงกติกาปกติ แต่ถ้าเลขตรงเลขอั้นที่ประกาศ → ใช้อัตราเลขอั้น (mult เฉพาะรายเลข หรือครึ่งหนึ่งของอัตรากติกา)
+    const baseMult = Number(rule.payout_multiplier) || 0;
+    const annEntry = annEntries(draw.announce)[num.length === 3 ? 'top' : 'bottom']?.find(e => e.num === num) || null;
+    const mult = annEntry ? (annEntry.mult ?? Math.floor(baseMult / 2)) : baseMult;
+    const items = [{ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake, mult, isAnn: !!annEntry }];
+    // โต๊ด — เลือกแพ็กเกจ "เต็ง+โต๊ด" → เพิ่มรายการโต๊ดอีก 1 รายการ (เงินเท่ากัน = เสียรวม ×2)
+    if (betMode === 'tengtod' && showTodHint) {
+      items.push({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th + ' (โต๊ด)', number: num, stakeSatang: stake, mult: todRate, isTod: true });
+    }
+    setSlip([...slip, ...items]);
+    setNumber(''); setPicks([]); setZodiacPicks([]); setAmount('');
   };
 
   // ---- ปุ่มลัดสไตล์ LINE: แค่ช่วยกรอก/เพิ่มเลข ยังต้องกดยืนยันโพยเหมือนเดิม ----
@@ -117,7 +181,12 @@ export default function PlaceBet() {
     if (totalSatang + need > balance) {
       return setErr(`เครดิตไม่พอ — รูด 19 ประตู = ${nums.length} รายการ รวม ฿${satang(need)} (คงเหลือ ฿${satang(balance - totalSatang)})`);
     }
-    setSlip([...slip, ...nums.map(n => ({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: n, stakeSatang: stake, mult: Number(rule.payout_multiplier) || 0 }))]);
+    const baseMult = Number(rule.payout_multiplier) || 0;
+    setSlip([...slip, ...nums.map(n => {
+      const entry = annEntries(draw.announce).bottom.find(e => e.num === n) || null;
+      return { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: n, stakeSatang: stake,
+        mult: entry ? (entry.mult ?? Math.floor(baseMult / 2)) : baseMult, isAnn: !!entry };
+    })]);
     setNumber(''); setAmount('');
   };
 
@@ -127,12 +196,13 @@ export default function PlaceBet() {
     try {
       const r = await api('/bets', { method: 'POST', body: {
         drawId: Number(drawId),
-        items: slip.map(i => ({ ruleId: i.ruleId, number: i.number, amount: i.stakeSatang })),
+        items: slip.map(i => ({ ruleId: i.ruleId, number: i.number, amount: i.stakeSatang, ...(i.isTod ? { tod: true } : {}) })),
         idempotencyKey: idemKey.current,
       }});
       setBalance(r.balance);
       setDone(r);
       idemKey.current = null; // โพยถัดไปใช้ key ใหม่
+      sfx.bet();
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
@@ -153,8 +223,10 @@ export default function PlaceBet() {
   if (err && !draw) return <div className="text-red-400 text-center py-10">{err}</div>;
   if (!draw) return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard className="h-28" /><SkeletonCard className="h-64" /></div>;
 
-  const closed = draw.status !== 'open' || draw.close_at <= new Date().toISOString().slice(0,19).replace('T',' ');
+  // เทียบกับเวลา server (draw.server_now) — fallback นาฬิกาเครื่องถ้า field ไม่มี
+  const closed = draw.status !== 'open' || draw.close_at <= (draw.server_now || new Date().toISOString().slice(0,19).replace('T',' '));
   const ac = draw ? typeAccent(draw.type_code) : null;
+  const kb = kindBadge(draw.result_kind);
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;
 
   return (
@@ -170,11 +242,19 @@ export default function PlaceBet() {
                 <h1 className={`text-xl font-bold ${ac?.text || 'text-navy-950'}`}>{drawLabel(draw)}</h1>
               </div>
               <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)}</div>
+              {(() => { const s = annSummary(draw.announce); return s ? (
+                <div className="ann-blink mt-1 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/20 border-2 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]">
+                  📣 เลขอั้น: {s}
+                </div>
+              ) : null; })()}
               <div className="text-sm mt-1">⏱️ ปิดรับโพย: {!closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
             </div>
-            <span className={`text-xs font-bold px-3 py-1 rounded-full shrink-0 ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
-              {closed ? 'ปิดรับแล้ว' : 'เปิดรับ'}
-            </span>
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              {kb && <span className={`text-[9px] px-2 py-0.5 rounded ${kb.cls}`}>{kb.label}</span>}
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
+                {closed ? 'ปิดรับแล้ว' : 'รับแทงอยู่'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -182,17 +262,51 @@ export default function PlaceBet() {
           <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 space-y-4 shadow-lg shadow-black/20">
             <h2 className="font-bold text-navy-950">{headBar}เลือกประเภทการแทง</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {rules.map(r => (
+              {rules.map(r => {
+                const isAnn = r.bet_type?.startsWith('ann_');
+                return (
                 <button key={r.id} onClick={() => setSelRule(String(r.id))}
-                  className={`px-3 py-3 rounded-lg text-sm border transition ${selRule === String(r.id) ? 'border-gold-500 bg-navy-700 text-gold-300' : 'border-navy-600 text-navy-200 hover:border-navy-500'}`}>
-                  <div className="font-semibold">{r.name_th}</div>
-                  <div className="text-xs text-navy-300">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : `${r.digits} หลัก`} • จ่าย x{r.payout_multiplier}</div>
+                  className={`px-3 py-3 rounded-lg text-sm border transition text-left ${isAnn ? 'border-amber-500/60 bg-amber-500/5' : ''} ${selRule === String(r.id) ? 'border-gold-500 bg-navy-700 text-gold-300' : 'border-navy-600 text-navy-200 hover:border-navy-500'}`}>
+                  <div className="font-semibold flex items-center gap-1.5">
+                    {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">อั้น</span>}
+                    {r.name_th}
+                  </div>
+                  <div className="text-xs text-navy-300">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `เลือก ${r.digits} ราศีตามลำดับ` : 'เลือก 1 ใน 12 ราศี') : `${r.digits} หลัก`} • จ่าย x{r.payout_multiplier}{isAnn ? ' (ครึ่งรางวัลหลัก)' : ''}</div>
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
-              {isPattana ? (
+              {isZodiac ? (
+              <div className="sm:col-span-2">
+                <label className="text-sm text-navy-300">เลือกดวงราศี {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับที่คาดว่าออก)` : '(1 ใน 12)'}</label>
+                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 mt-2">
+                  {ZODIAC.map(z => {
+                    const idx = zodiacPicks.indexOf(z);
+                    const sel = idx >= 0;
+                    const full = !sel && zodiacPicks.length >= zodiacDigits;
+                    return (
+                      <button key={z} type="button" onClick={() => toggleZodiac(z)} disabled={full}
+                        className={`py-2 rounded-lg text-xs border transition ${sel ? 'bg-violet-500 text-white border-violet-400 font-bold' : 'bg-navy-900 border-navy-600 text-navy-200 hover:border-violet-400'} disabled:opacity-40`}>
+                        {sel ? `${idx + 1}. ${z}` : `ราศี${z}`}
+                      </button>
+                    );
+                  })}
+                </div>
+                {zodiacPicks.length > 0 && (
+                  <div className="mt-2 text-sm font-mono text-violet-300">ผล: {zodiacPicks.join(' → ')}</div>
+                )}
+                <div className="mt-3 rounded-lg bg-violet-500/10 border border-violet-500/30 p-3 text-xs text-navy-200 space-y-1">
+                  <div className="font-semibold text-violet-300">📖 ผลรางวัล = ราศี 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
+                  <div>เช่น <span className="font-mono text-gold-300">สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร</span></div>
+                  <div>① ตัวแรก = รางวัลใหญ่ • ④⑤⑥ สามตัวท้าย = 3 ราศีบน • ⑤⑥ สองตัวท้าย = 2 ราศีล่าง • ราศีไหนก็ได้ = วิ่งราศี</div>
+                  {rule?.bet_type && ZODIAC_HINT[rule.bet_type] && (
+                    <div className="text-violet-300 font-medium">→ {ZODIAC_HINT[rule.bet_type]}</div>
+                  )}
+                </div>
+              </div>
+              ) : isPattana ? (
               <div className="sm:col-span-2">
                 <label className="text-sm text-navy-300">เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)</label>
                 <div className="grid grid-cols-5 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5 mt-2">
@@ -221,7 +335,7 @@ export default function PlaceBet() {
                   className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition disabled:opacity-40">
                   🔁 กลับเลข
                 </button>
-                {rule.digits === 2 && (
+                {rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
                   <button type="button" onClick={addRud19}
                     className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition">
                     🎯 รูด 19 ประตู
@@ -235,6 +349,22 @@ export default function PlaceBet() {
                 <input value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                   inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
                   className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl tracking-[0.4em] text-center text-gold-300 font-mono focus:outline-none focus:border-gold-500" />
+                {showTodHint && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="text-[10px] text-sky-400/80">💡 ผลครบทุกหลักแต่สลับลำดับ → จ่ายโต๊ด x{todRate}</div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button type="button" onClick={() => setBetMode('teng')}
+                        className={`text-xs py-2 rounded-lg border font-semibold transition ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
+                        เต็งอย่างเดียว
+                      </button>
+                      <button type="button" onClick={() => setBetMode('tengtod')}
+                        className={`text-xs py-2 rounded-lg border font-semibold transition ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
+                        เต็ง + โต๊ด ×2
+                      </button>
+                    </div>
+                    {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">เงิน ÷2 ต่อประเภท — เสียรวมเป็น ×2 (เช่น ฿100 → เต็ง 100 + โต๊ด 100)</div>}
+                  </div>
+                )}
               </div>
             </>
             )}
@@ -257,12 +387,21 @@ export default function PlaceBet() {
       <div className="lg:col-span-2">
         <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-5 sticky top-24 shadow-xl shadow-gold-500/5">
           <h2 className={`font-bold mb-3 ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
+          {repeat && slip.length > 0 && (
+            <div className="mb-3 text-[11px] bg-sky-500/10 border border-sky-500/40 text-sky-300 rounded-lg px-3 py-2 flex items-center justify-between">
+              <span>🔁 bettor ซ้ำจากโพย {repeat.ref} — ตรวจสอบแล้วยืนยันได้เลย</span>
+              <button onClick={() => { setSlip([]); repeatDone.current = true; navigate(location.pathname, { replace: true }); }}
+                className="text-sky-400 hover:underline shrink-0 ml-2">ล้าง</button>
+            </div>
+          )}
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {slip.map((i, idx) => (
               <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm">
                 <div>
                   <span className="text-white font-mono text-lg">{i.number}</span>
                   <span className="text-navy-300 ml-2">{i.name}</span>
+                  {i.isAnn && <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">เลขอั้น</span>}
+                  {i.isTod && <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300">โต๊ด</span>}
                   <div className="text-[10px] text-navy-500">ถ้าถูก ≈ ฿{satang(itemPotential(i))} (ไม่รวมทุน)</div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -272,6 +411,16 @@ export default function PlaceBet() {
               </div>
             ))}
             {!slip.length && <div className="text-navy-400 text-sm text-center py-6">ยังไม่มีรายการ — เลือกประเภทและกรอกตัวเลขทางซ้าย</div>}
+          {slip.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-navy-700">
+              <div className="text-[10px] text-navy-400 mb-1.5">สรุปตามประเภท ({slip.length} รายการ)</div>
+              <div className="flex flex-wrap gap-1.5">
+                {[...slip.reduce((m, i) => m.set(i.name, (m.get(i.name) || 0) + 1), new Map())].map(([name, n]) => (
+                  <span key={name} className="text-[10px] px-2 py-0.5 rounded-full bg-navy-900 border border-navy-600 text-navy-300">{name} ×{n}</span>
+                ))}
+              </div>
+            </div>
+          )}
           </div>
           <div className="border-t border-navy-700 mt-4 pt-4 space-y-1 text-sm">
             <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-lg">฿{satang(totalSatang)}</span></div>
@@ -280,6 +429,8 @@ export default function PlaceBet() {
             )}
             <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300">฿{satang(balance - totalSatang)}</span></div>
           </div>
+          <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
+            📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>
           <button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
             className="mt-4 w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-40">
             ตรวจสอบและยืนยันโพย
@@ -308,7 +459,7 @@ export default function PlaceBet() {
             <div className="space-y-1.5 max-h-56 overflow-y-auto mb-4">
               {slip.map((i, idx) => (
                 <div key={idx} className="flex justify-between text-sm bg-navy-900 rounded-lg px-3 py-2">
-                  <span><span className="font-mono text-gold-300 text-base">{i.number}</span> <span className="text-navy-300">{i.name}</span></span>
+                  <span><span className="text-navy-400 font-mono text-xs mr-1">{idx + 1}.</span><span className="font-mono text-gold-300 text-base">{i.number}</span> <span className="text-navy-300">{i.name}</span></span>
                   <span className="text-gold-300">฿{satang(i.stakeSatang)}</span>
                 </div>
               ))}

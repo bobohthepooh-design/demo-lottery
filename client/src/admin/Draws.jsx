@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime } from '../api.js';
+import { api, fmtDateTime, satang } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
+import { annSummary, annToInput, parseAnnInput } from '../ann.js';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -48,22 +49,41 @@ export default function AdminDraws() {
       ? { title: '⚠️ ยืนยันยกเลิกรอบ', message: `ยกเลิกรอบ "${d?.draw_code}" ถาวร?\nรอบที่ยกเลิกจะไม่สามารถแก้ไขได้`, danger: true, confirmLabel: 'ยกเลิกรอบ' }
       : { title: 'ยืนยันเปลี่ยนสถานะ', message: `เปลี่ยนสถานะรอบ "${d?.draw_code}" เป็น "${STATUS_TH[status]}" ใช่หรือไม่?` };
     if (!(await confirmAction(warn))) return;
-    try { await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } }); load(); }
+    try {
+      const r = await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } });
+      if (status === 'cancelled' && r?.refundedSlips) {
+        toast(`คืนเครดิตอัตโนมัติ ${r.refundedSlips} โพย รวม ฿${satang(r.refundedAmount)} + แจ้งเตือนสมาชิกแล้ว`, 'success');
+      }
+      load();
+    }
     catch (e) { toast(e.message, 'error'); }
   };
 
-  const openEdit = (d) => setEditDraw({
-    id: d.id, draw_code: d.draw_code,
-    draw_at: utcToLocalInput(d.draw_at), close_at: utcToLocalInput(d.close_at),
-  });
+  const openEdit = (d) => {
+    setEditDraw({
+      id: d.id, draw_code: d.draw_code,
+      draw_at: utcToLocalInput(d.draw_at), close_at: utcToLocalInput(d.close_at),
+      announce_top: annToInput(d.announce, 'top'), announce_bottom: annToInput(d.announce, 'bottom'),
+    });
+  };
 
   const saveEdit = async () => {
     if (!(await confirmAction({ title: 'ยืนยันแก้ไขรอบหวย', message: `บันทึกการแก้ไขรอบ "${editDraw.draw_code}" ใช่หรือไม่?` }))) return;
+    // รูปแบบ: "123:400, 456" — :ตัวคูณ = อัตราจ่ายเฉพาะรายเลข (เว้นว่าง = default ครึ่งรางวัลหลัก)
+    const top = parseAnnInput(editDraw.announce_top, 3);
+    const bottom = parseAnnInput(editDraw.announce_bottom, 2);
+    const badTop = (editDraw.announce_top || '').trim() && top.length === 0;
+    const badBottom = (editDraw.announce_bottom || '').trim() && bottom.length === 0;
+    if (badTop || badBottom) {
+      toast(badTop ? 'เลขอั้นบนต้องเป็นตัวเลข 3 หลัก (เช่น 123:400, 456)' : 'เลขอั้นล่างต้องเป็นตัวเลข 2 หลัก', 'error');
+      return;
+    }
     try {
       await api(`/admin/draws/${editDraw.id}`, { method: 'PATCH', body: {
         draw_code: editDraw.draw_code,
         draw_at: editDraw.draw_at.replace('T', ' '),
         close_at: editDraw.close_at.replace('T', ' '),
+        announce: top.length || bottom.length ? { top, bottom } : null,
       }});
       setEditDraw(null); load();
     } catch (e) { toast(e.message, 'error'); }
@@ -105,7 +125,12 @@ export default function AdminDraws() {
           <tbody className="divide-y divide-navy-700">
             {draws.map(d => (
               <tr key={d.id} className="hover:bg-navy-700/40">
-                <td className="px-4 py-3 font-mono text-gold-300">{d.draw_code}</td>
+                <td className="px-4 py-3 font-mono text-gold-300">
+                  {d.draw_code}
+                  {(() => { const s = annSummary(d.announce); return s ? (
+                    <div className="text-[10px] text-amber-300 font-sans mt-0.5">เลขอั้น: {s}</div>
+                  ) : null; })()}
+                </td>
                 <td className="px-4 py-3 text-white">{d.type_name_th}{d.category_name_th ? <span className="text-navy-300 text-xs"> — {d.category_name_th}</span> : null}</td>
                 <td className="px-4 py-3 text-navy-300 text-xs">{fmtDateTime(d.draw_at)}</td>
                 <td className="px-4 py-3 text-navy-300 text-xs">{fmtDateTime(d.close_at)}</td>
@@ -145,6 +170,19 @@ export default function AdminDraws() {
                 <label className="text-xs text-navy-300">เวลาปิดรับโพย (ต้องก่อนเวลาออกรางวัล)</label>
                 <input type="datetime-local" value={editDraw.close_at} onChange={e => setEditDraw({...editDraw, close_at: e.target.value})}
                   className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
+              </div>
+              <div className="border-t border-navy-700 pt-3">
+                <label className="text-xs text-amber-300 font-semibold">เลขอั้น (ประกาศล่วงหน้าให้ผู้แทงเห็น)</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <input placeholder="เลขบน เช่น 123:400, 456" value={editDraw.announce_top || ''} onChange={e => setEditDraw({...editDraw, announce_top: e.target.value})}
+                    className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 font-mono" />
+                  <input placeholder="เลขล่าง เช่น 45:50, 67" value={editDraw.announce_bottom || ''} onChange={e => setEditDraw({...editDraw, announce_bottom: e.target.value})}
+                    className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 font-mono" />
+                </div>
+                <p className="text-[10px] text-navy-500 mt-1">
+                  หลายเลขคั่นด้วย , • <code>เลข:ตัวคูณ</code> = อัตราจ่ายเฉพาะรายเลข (เช่น 123:400 จ่าย x400) • เว้นว่างตัวคูณ = ใช้ค่าเริ่มต้น (ครึ่งรางวัลหลัก)
+                  • ผู้แทงจะเห็นในหน้ารอบหวยและหน้แทง และ<strong>แทงได้เฉพาะเลขที่ประกาศ</strong>
+                </p>
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={saveEdit} className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">บันทึก</button>

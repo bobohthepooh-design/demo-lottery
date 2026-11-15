@@ -52,12 +52,12 @@ async function loginAs(username, password) {
   return { agent: a, res: r };
 }
 
-let member, adminAgent, drawId, ruleBottom2, ruleTop3;
+let member, adminAgent, drawId, ruleBottom2, ruleTop3, settledBalance;
 const ts = Date.now().toString(36);
 
 beforeAll(async () => {
   // create member
-  await makeAgent().post('/auth/register', { username: `m${ts}`, email: `m${ts}@t.local`, password: 'Password123' });
+  await makeAgent().post('/auth/register', { username: `m${ts}`, email: `m${ts}@t.local`, password: 'Password123', ageConfirmed: true });
   member = await loginAs(`m${ts}`, 'Password123');
 
   // admin: login + MFA setup/enable/verify
@@ -104,7 +104,7 @@ describe('auth', () => {
     expect(r.status).toBe(401);
   });
   it('register rejects duplicate', async () => {
-    const r = await makeAgent().post('/auth/register', { username: `m${ts}`, email: `dup${ts}@test.com`, password: 'Password123' });
+    const r = await makeAgent().post('/auth/register', { username: `m${ts}`, email: `dup${ts}@test.com`, password: 'Password123', ageConfirmed: true });
     expect(r.status).toBe(409);
   });
   it('member cannot access admin', async () => {
@@ -142,9 +142,10 @@ describe('betting', () => {
     const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '542', bottom2: '42' } });
     expect(r.status).toBe(200);
     expect(r.body.winningItems).toBe(1);
-    // balance: 5000 -1000 -500 + 1000*60 = 63500
+    // balance: 5000 -1000 -500 + 1000*payout_multiplier (คำนวณจาก rule จริง ไม่ hardcode)
+    settledBalance = 3500 + 1000 * Number(ruleBottom2.payout_multiplier);
     const me = await member.agent.get('/auth/me');
-    expect(me.body.balance).toBe(63500);
+    expect(me.body.balance).toBe(settledBalance);
   });
   it('double settle rejected', async () => {
     const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '111' } });
@@ -159,7 +160,7 @@ describe('phone otp', () => {
     const req = await a.post('/auth/otp/request', { phone, purpose: 'register' });
     expect(req.status).toBe(200);
     expect(req.body.devCode).toMatch(/^\d{6}$/);
-    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register', displayName: 'OTP User' });
+    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register', displayName: 'OTP User', ageConfirmed: true });
     expect(v.status).toBe(200);
     expect(v.body.user.roles).toContain('member');
     const me = await a.get('/auth/me');
@@ -170,13 +171,13 @@ describe('phone otp', () => {
     const a = makeAgent();
     const req = await a.post('/auth/otp/request', { phone: p2, purpose: 'register' });
     const wrong = req.body.devCode === '000000' ? '000001' : '000000';
-    const v = await a.post('/auth/otp/verify', { phone: p2, code: wrong, purpose: 'register' });
+    const v = await a.post('/auth/otp/verify', { phone: p2, code: wrong, purpose: 'register', ageConfirmed: true });
     expect(v.status).toBe(401);
   });
   it('rejects duplicate phone registration', async () => {
     const a = makeAgent();
     const req = await a.post('/auth/otp/request', { phone, purpose: 'register' });
-    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register' });
+    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register', ageConfirmed: true });
     expect(v.status).toBe(409);
   });
   it('logs in via OTP for existing phone user', async () => {
@@ -210,7 +211,7 @@ describe('wallet', () => {
       userId: m.id, amount: 5000, direction: 'credit', reason: 'test credit', idempotencyKey: `test-${ts}`,
     });
     expect(r.status).toBe(200);
-    expect(r.body.balance).toBe(68500); // 63500 + 5000
+    expect(r.body.balance).toBe(settledBalance + 5000);
   });
   it('duplicate idempotency key rejected', async () => {
     const members = await adminAgent.get('/admin/members');
@@ -231,7 +232,7 @@ describe('wallet', () => {
   it('admin-unlocked withdrawable excludes un-clawed signup credit', async () => {
     const u = `w${ts}`;
     const ag = makeAgent();
-    await ag.post('/auth/register', { username: u, email: `${u}@t.local`, password: 'Password123' });
+    await ag.post('/auth/register', { username: u, email: `${u}@t.local`, password: 'Password123', ageConfirmed: true });
     await ag.post('/auth/login', { username: u, password: 'Password123' });
     const me = await ag.get('/auth/me');
     // จำลองเคส flag ถูกปลดล็อกโดยตรง (ยังไม่ได้ clawback เครดิตแถม)

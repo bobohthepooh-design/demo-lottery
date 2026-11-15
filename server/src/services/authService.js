@@ -25,7 +25,8 @@ export function getSession(req) {
   const token = parseCookies(req)[SESSION_COOKIE];
   if (!token) return null;
   const db = getDb();
-  const s = db.prepare(`SELECT s.*, u.username, u.email, u.display_name, u.status AS user_status, u.mfa_enabled
+  const s = db.prepare(`SELECT s.*, u.username, u.email, u.display_name, u.status AS user_status, u.mfa_enabled,
+                               u.age_confirmed, u.self_excluded_until, u.daily_limit_satang, u.monthly_limit_satang
                         FROM user_sessions s JOIN users u ON u.id = s.user_id
                         WHERE s.id = ? AND s.revoked_at IS NULL AND s.expires_at > datetime('now')`)
     .get(token);
@@ -36,8 +37,17 @@ export function getSession(req) {
 export function requireAuth(req, res, next) {
   const s = getSession(req);
   if (!s) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
+  // Sliding renewal — session เหลืออายุ <6 ชม. → ต่ออายุอีกเต็ม TTL + set cookie ใหม่
+  // (กันผู้ใช้ที่เปิดเว็บค้างไว้ถูกเตะออกกลางทางทั้งที่ยังใช้งานอยู่)
+  const renewed = getDb().prepare(
+    `UPDATE user_sessions SET expires_at = datetime('now', '+${config.sessionTtlHours} hours')
+     WHERE id = ? AND expires_at < datetime('now', '+6 hours')`
+  ).run(s.id);
+  if (renewed.changes) setSessionCookie(res, s.id);
   req.session = s;
-  req.user = { id: s.user_id, username: s.username, email: s.email, displayName: s.display_name, mfaEnabled: s.mfa_enabled };
+  req.user = { id: s.user_id, username: s.username, email: s.email, displayName: s.display_name, mfaEnabled: s.mfa_enabled,
+    ageConfirmed: !!s.age_confirmed, selfExcludedUntil: s.self_excluded_until,
+    dailyLimitSatang: s.daily_limit_satang, monthlyLimitSatang: s.monthly_limit_satang };
   next();
 }
 
@@ -58,7 +68,7 @@ export function register({ username, email, password, displayName, ip, userAgent
   if (password.length < 8) throw new HttpError(400, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
 
   const db = getDb();
-  const dup = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email.toLowerCase());
+  const dup = db.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?').get(username, email.toLowerCase());
   if (dup) throw new HttpError(409, 'ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้งานแล้ว');
 
   const userId = tx((d) => {
@@ -88,7 +98,7 @@ export function register({ username, email, password, displayName, ip, userAgent
 
 export function login({ username, password, ip, userAgent }) {
   const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?')
+  const user = db.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE OR email = ?')
     .get(username, (username || '').toLowerCase());
 
   if (!user) {
@@ -253,8 +263,9 @@ export function requestOtp({ phone, purpose, ip }) {
     .run(p, hashOtp(code), purpose, ip || null);
   audit({ action: 'user.otp_requested', entityType: 'phone', entityId: p, detail: { purpose } });
   securityEvent({ eventType: 'otp.requested', ip, detail: { phone: p, purpose } });
-  // DEMO ONLY: ไม่ได้ส่ง SMS จริง — ส่งรหัสกลับใน response ให้ frontend แสดง
-  return { devCode: code, expiresInSec: OTP_TTL_MINUTES * 60 };
+  // DEMO ONLY: ไม่ได้ส่ง SMS จริง — ส่งรหัสกลับใน response เฉพาะเมื่อ OTP_DEV_ECHO เปิด
+  // (default: dev เท่านั้น — production ปิดเพื่อไม่ให้ login เป็นเบอร์ใครก็ได้)
+  return { ...(config.otpDevEcho ? { devCode: code } : {}), expiresInSec: OTP_TTL_MINUTES * 60 };
 }
 
 function consumeOtp(phone, code, purpose) {

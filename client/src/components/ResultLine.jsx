@@ -1,5 +1,7 @@
 import { fmtDate, thaiTime } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
+import { ZodiacChip, zodiacList } from './ZodiacChip.jsx';
+import { sourceBadge } from '../resultSource.js';
 
 // ธงประเทศเป็น SVG — flag emoji ไม่ render บน Windows desktop และบาง platform แสดงผลไม่เหมือนกัน
 function FlagTH() {
@@ -31,7 +33,23 @@ function FlagVN() {
     </svg>
   );
 }
-const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN };
+function FlagHR() {
+  // หวยราศี — โลโก้สัญลักษณ์ราศี ♈ บนพื้นไล่สีม่วง-ทอง
+  return (
+    <svg viewBox="0 0 30 20" className="w-full h-full" aria-label="HR">
+      <defs>
+        <linearGradient id="hr-flag-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#6d28d9" />
+          <stop offset="1" stopColor="#f59e0b" />
+        </linearGradient>
+      </defs>
+      <rect width="30" height="20" fill="url(#hr-flag-g)" />
+      <circle cx="15" cy="10" r="8" fill="#ffffff" opacity="0.92" />
+      <text x="15" y="14.5" fontSize="10" textAnchor="middle" fill="#6d28d9">♈</text>
+    </svg>
+  );
+}
+const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN, HR: FlagHR };
 
 export function FlagIcon({ code, className = '' }) {
   const F = FLAGS[code];
@@ -54,10 +72,15 @@ export default function ResultLine({ r }) {
   const cell = (key, label, raw) => {
     const vals = raw === undefined || raw === null || raw === '' ? '—'
       : (Array.isArray(raw) ? raw : [raw]).join(', ');
+    const tokens = String(vals).split(/([,\s]+)/);
     return (
       <div key={key} className="shrink-0 text-center min-w-[3.4rem]">
         <div className="text-[9px] leading-tight text-navy-400">{label}</div>
-        <div className="text-xs font-mono font-bold text-amber-600 whitespace-nowrap">{vals}</div>
+        <div className="text-xs font-mono font-bold text-amber-600 whitespace-nowrap flex flex-wrap justify-center gap-0.5">
+          {tokens.map((t, ti) => /^\d/.test(t) ? (
+            <span key={ti} className="lotto-ball" style={{ fontSize: '0.8em' }}>{t}</span>
+          ) : <span key={ti}>{t}</span>)}
+        </div>
       </div>
     );
   };
@@ -66,17 +89,37 @@ export default function ResultLine({ r }) {
       <div className="flex items-center gap-2 text-[11px]">
         <FlagIcon code={r.type_code} className="w-6 h-6 text-[10px]" />
         <span className="font-semibold text-navy-950">{r.category_name_th || r.type_name_th}</span>
-        {r.source && (
-          <span className={`text-[9px] px-1.5 py-0.5 rounded ${r.source === 'manual' ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-            {r.source === 'manual' ? '✏️ กรอกเอง' : '🤖 อัตโนมัติ'}
-          </span>
+        {(() => { const b = sourceBadge(r.source); return b && (
+          <span className={`text-[9px] px-1.5 py-0.5 rounded ${b.cls}`} title={r.source}>{b.label}</span>
+        ); })()}
+        {r.fairness?.method === 'deterministic' && (
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
+            title={`Provably fair — ผล generate จาก seed "${r.fairness.seed}" ตรวจสอบย้อนหลังได้ที่ /api/lottery/fairness/gen?kind=${r.fairness.kind}&code=${r.draw_code}`}>🔐 ตรวจสอบได้</span>
         )}
         <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.</span>
       </div>
+      {r.type_code === 'HR' ? (
+        // หวยราษี — แสดงผลเป็นชิปราศีเหมือนช่องสัญลักษณ์หวยขูด
+        <div className="flex gap-4 mt-1.5 flex-wrap items-center">
+          {data?.zodiac ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-navy-400">รางวัลใหญ่</span>
+              <ZodiacChip sign={String(data.zodiac)} hero small />
+            </div>
+          ) : null}
+          {data?.seq ? (
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[9px] text-navy-400 mr-1">ผล 6 ราศี</span>
+              {zodiacList(data.seq).map((s, i) => <ZodiacChip key={i} sign={s} hero={i === 0} small />)}
+            </div>
+          ) : null}
+        </div>
+      ) : (
       <div className="flex gap-5 mt-1.5 overflow-x-auto pb-0.5">
         {fields.map(f => cell(f.key, f.short || f.label, data?.[f.key]))}
         {extras.map(([k, v]) => cell(k, k, v))}
       </div>
+      )}
     </div>
   );
 }

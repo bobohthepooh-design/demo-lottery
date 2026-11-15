@@ -37,6 +37,17 @@ export const config = {
     callbackUrl: process.env.LINE_CALLBACK_URL || '',
   },
   isProd: (process.env.NODE_ENV || 'development') === 'production',
+  // TRUST_PROXY: ตั้ง 'true' เฉพาะเมื่อรันหลัง reverse proxy (nginx/caddy)
+  // ถ้า expose node ตรงๆ ต้องเป็น false ไม่งั้น client spoof X-Forwarded-For
+  // หลอก rate-limit/audit log ได้
+  trustProxy: process.env.TRUST_PROXY
+    ? (process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY === 'false' ? false : parseInt(process.env.TRUST_PROXY, 10) || 1)
+    : ((process.env.NODE_ENV || 'development') === 'production' ? false : 1),
+  // OTP_DEV_ECHO: ส่งรหัส OTP กลับใน API response (demo only — ห้ามเปิดบน internet
+  // เพราะใครก็ login เป็นเบอร์ไหนก็ได้) default: เปิดเฉพาะ dev
+  otpDevEcho: process.env.OTP_DEV_ECHO !== undefined
+    ? process.env.OTP_DEV_ECHO === 'true'
+    : (process.env.NODE_ENV || 'development') !== 'production',
 };
 
 if (config.isProd && config.sessionSecret === 'dev-insecure-secret-change-me') {

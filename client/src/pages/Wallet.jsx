@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
+import { sfx } from '../sound.js';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -70,6 +72,7 @@ export default function Wallet() {
       if (s && sessionStorage.getItem(`celebrated-${s.slip_ref}`) !== '1') {
         sessionStorage.setItem(`celebrated-${s.slip_ref}`, '1');
         setCelebration({ kind: s.status === 'lost' ? 'lose' : 'win', slip: s });
+        if (s.status === 'lost') sfx.lose(); else sfx.win();
       }
     }).catch(() => {});
   }, []);
@@ -124,8 +127,32 @@ export default function Wallet() {
 
       <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-navy-700 font-bold text-white">ประวัติธุรกรรมเครดิต</div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[620px]">
+        {/* มือถือ/แท็บเล็ต: การ์ดเรียงแนวตั้ง ไม่ล้นจอ */}
+        <div className="md:hidden divide-y divide-navy-700">
+          {txs.map(t => (
+            <div key={t.id} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-sm text-white font-semibold">{TYPE_TH[t.type] || t.type}</div>
+                  <div className="text-[11px] text-navy-400 font-mono truncate">{t.reference}</div>
+                  {t.description && <div className="text-[11px] text-navy-300 truncate mt-0.5">{t.description}</div>}
+                  <div className="text-[11px] text-navy-400 mt-0.5">{fmtDateTime(t.created_at)}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className={`font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
+                    {t.direction === 'credit' ? '+' : '−'}฿{satang(t.amount)}
+                  </div>
+                  <div className="text-[11px] text-amber-600">คงเหลือ ฿{satang(t.balance_after)}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!loading && !txs.length && <div className="px-4 py-8 text-center"><span className="text-3xl">📭</span><div className="text-navy-300 mt-1">ยังไม่มีธุรกรรม — เติมเครดิตเพื่อเริ่มใช้งาน</div></div>}
+          {loading && <div className="p-4 space-y-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-14 w-full" />)}</div>}
+        </div>
+        {/* Desktop: ตารางเต็ม */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm">
             <thead className="bg-navy-900 text-navy-300 text-xs">
               <tr><th className="text-left px-4 py-3">อ้างอิง</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-right px-4 py-3">จำนวน</th><th className="text-right px-4 py-3">คงเหลือหลังรายการ</th><th className="text-left px-4 py-3">เวลา</th><th className="text-left px-4 py-3">รายละเอียด</th></tr>
             </thead>
@@ -149,9 +176,9 @@ export default function Wallet() {
         </div>
       </div>
 
-      {/* modal เติม/ถอนเครดิต */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setModal(null)}>
+      {/* modal เติม/ถอนเครดิต — portal ไปที่ body เช่นกัน */}
+      {modal && createPortal(
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setModal(null)}>
           <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 ถอนเครดิตจำลอง'}</h2>
             <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน ฿{satang(balance)} • สำหรับ Demo เท่านั้น</p>
@@ -241,12 +268,14 @@ export default function Wallet() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* overlay ฉลอง/เสียใจผลโพยล่าสุด */}
-      {celebration && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 overflow-hidden">
+      {/* overlay ฉลอง/เสียใจผลโพยล่าสุด — portal ไปที่ body เพื่ออยู่บนสุดเสมอ
+          (กัน ancestor ที่มี transform/animation ทำ fixed หลุดจาก viewport) */}
+      {celebration && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/75">
           {celebration.kind === 'win' ? (
             <>
               {Array.from({ length: 40 }).map((_, i) => (
@@ -272,7 +301,8 @@ export default function Wallet() {
               ))}
             </>
           )}
-          <div className={`relative bg-navy-800 border rounded-3xl p-8 max-w-sm w-full text-center animate-result-pop ${celebration.kind === 'win' ? 'border-gold-500/60 animate-win' : 'border-blue-500/40'}`}>
+          <div className="min-h-full flex">
+          <div className={`relative m-auto bg-navy-800 border rounded-3xl p-6 sm:p-8 max-w-sm w-full max-h-[92dvh] overflow-y-auto text-center animate-result-pop ${celebration.kind === 'win' ? 'border-gold-500/60 animate-win' : 'border-blue-500/40'}`}>
             {celebration.kind === 'win' ? (
               <>
                 <div className="text-6xl animate-coin mb-2">🎉🏆</div>
@@ -293,9 +323,11 @@ export default function Wallet() {
             <button onClick={() => setCelebration(null)}
               className={`w-full font-bold py-3 rounded-xl ${celebration.kind === 'win' ? 'bg-gold-500 text-navy-950 hover:bg-gold-400' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
               {celebration.kind === 'win' ? 'รับทราบ ขอบคุณ! 🎊' : 'เป็นกำลังใจให้นะ 💙'}
-            </button>
+              </button>
           </div>
-        </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

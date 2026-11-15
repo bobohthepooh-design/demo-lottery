@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview — Popup ผลรางวัลฉบับย่อ (ทุกประเภท)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Sarabun','Segoe UI',sans-serif; }
+  body { background:#060a18; color:#e8ecf8; min-height:100vh; padding:24px; }
+  .wrap { max-width:1100px; margin:0 auto; }
+  h1 { font-size:20px; color:#f4c94e; margin-bottom:4px; }
+  .sub { font-size:13px; color:#8b9cc4; margin-bottom:20px; }
+  .stage { position:relative; border:1px dashed #2b3a63; border-radius:16px; min-height:720px; padding:20px;
+    background:
+      radial-gradient(700px 420px at 85% -5%, rgba(226,168,18,.10), transparent 60%),
+      radial-gradient(560px 420px at -10% 30%, rgba(124,58,237,.14), transparent 60%), #0c1428; overflow:hidden; }
+  .mock-card { background:#131c38; border:1px solid #22315a; border-radius:14px; padding:14px; margin-bottom:12px; }
+  .mock-card .t { color:#f4c94e; font-weight:700; font-size:14px; }
+  .mock-card .d { color:#8b9cc4; font-size:12px; margin-top:4px; }
+  .badge-note { position:absolute; top:10px; right:12px; font-size:11px; color:#8b9cc4; background:#131c38; border:1px solid #2b3a63; padding:4px 10px; border-radius:999px; }
+
+  /* ============ MINI RESULT POPUP (ฉบับย่อ) ============ */
+  .mini-popup {
+    position:absolute; right:18px; width:310px;
+    background:linear-gradient(180deg,#131c38,#0c1428);
+    border:1px solid rgba(226,168,18,.5); border-radius:16px;
+    box-shadow:0 14px 40px rgba(0,0,0,.6), 0 0 24px rgba(226,168,18,.15);
+    overflow:hidden; animation:mini-in .45s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  /* queue: ใบหลังซ้อนบนกันจางลง */
+  .mini-popup.q2 { bottom:470px; opacity:.5; transform:scale(.95); }
+  .mini-popup.q3 { bottom:640px; opacity:.3; transform:scale(.9); }
+  .mini-popup.q1 { bottom:18px; }
+  @keyframes mini-in { from { transform:translateY(24px) scale(.92); opacity:0 } to { transform:none; opacity:1 } }
+  .mini-shine { height:3px; background:linear-gradient(90deg,#b45309,#f59e0b,#ef4444,#f59e0b,#b45309); background-size:200% 100%; animation:shine 3s linear infinite; }
+  @keyframes shine { to { background-position:200% 0 } }
+  .mini-head { display:flex; align-items:center; gap:8px; padding:10px 12px 6px; }
+  .flag { width:26px; height:18px; border-radius:3px; overflow:hidden; flex-shrink:0; box-shadow:0 0 0 1px rgba(255,255,255,.2); position:relative; }
+  .flag.th { background:#A51931; }
+  .flag.th::before,.flag.th::after { content:''; position:absolute; left:0; right:0; background:#fff; }
+  .flag.th::before { top:4px; height:3px } .flag.th::after { top:9px; height:4px; background:#2D2A4A }
+  .flag.la { background:#CE1126; }
+  .flag.la::after { content:''; position:absolute; top:0; bottom:0; left:33%; width:34%; background:#002868; }
+  .flag.la i { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:6px; height:6px; border-radius:50%; background:#fff; z-index:1; }
+  .flag.hn { background:#DA251D; }
+  .flag.hn::after { content:'★'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#ff0; font-size:9px; }
+  .flag.hr { background:linear-gradient(135deg,#6d28d9,#f59e0b); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; }
+  .mini-head .name { font-size:12px; font-weight:700; color:#f2f4fd; line-height:1.15; }
+  .mini-head .meta { font-size:9.5px; color:#8b9cc4; }
+  .mini-close { margin-left:auto; width:20px; height:20px; border-radius:6px; border:none; background:#1e2a4e; color:#8b9cc4; font-size:11px; cursor:pointer; }
+  .mini-body { padding:4px 12px 10px; }
+  .hero-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .hero-label { font-size:9.5px; color:#8b9cc4; width:52px; flex-shrink:0; }
+  .balls { display:inline-flex; gap:3px; flex-wrap:wrap; }
+  .ball { min-width:24px; height:24px; padding:0 4px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 32% 26%,#fff8dc,#f4c94e 38%,#b8860b 78%,#6e4b05); color:#3a2405; font-weight:800; font-size:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,.5), inset 0 -2px 3px rgba(0,0,0,.28), inset 0 1px 2px rgba(255,255,255,.5); }
+  .ball.gold { background:radial-gradient(circle at 32% 26%,#fff8dc,#fde68a 38%,#f59e0b 78%,#92400e); font-size:14px; min-width:28px; height:28px; }
+  .zrow { display:inline-flex; gap:3px; align-items:center; flex-wrap:wrap; }
+  .zchip { width:23px; height:27px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#fde68a,#f59e0b); color:#3a2405; font-size:12px; font-weight:800; border:1px solid rgba(244,201,78,.6); }
+  .zchip.hero { width:27px; height:31px; font-size:14px; box-shadow:0 0 10px rgba(244,201,78,.5); }
+  .sub-prizes { display:flex; gap:4px; flex-wrap:wrap; }
+  .sub { font-size:9px; color:#8b9cc4; background:#0c1428; border:1px solid #22315a; border-radius:6px; padding:2px 6px; }
+  .sub b { color:#f4c94e; font-family:monospace; }
+  .mini-foot { display:flex; align-items:center; gap:6px; padding:6px 12px; border-top:1px solid #22315a; background:#0a1122; }
+  .queue-pill { font-size:9.5px; color:#8b9cc4; }
+  .next-btn { font-size:10px; font-weight:700; color:#3a2405; background:linear-gradient(135deg,#ffe9a8,#f0b429,#d18f00); border:none; border-radius:7px; padding:3px 9px; cursor:pointer; }
+  .timer { margin-left:auto; font-size:9px; color:#5a6b96; }
+
+  .legend { position:absolute; left:18px; bottom:18px; font-size:11px; color:#8b9cc4; background:#0a1122cc; border:1px solid #22315a; border-radius:10px; padding:10px 14px; line-height:1.9; }
+  .legend b { color:#f4c94e; }
+
+  .notes { margin-top:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+  .note { background:#131c38; border:1px solid #22315a; border-radius:12px; padding:14px; font-size:12px; color:#bcc6e8; line-height:1.7; }
+  .note b { color:#f4c94e; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎰 Preview: Popup ผลรางวัล "ฉบับย่อ" — ทุกประเภทหวย</h1>
+  <div class="sub">mockup หน้าจอจริง — popup มุมขวาล่าง ~310px, แสดง queue 3 ใบซ้อนกัน (ข้างหลังจางลง)</div>
+
+  <div class="stage">
+    <div class="badge-note">ตัวอย่าง mockup — ไม่ใช่หน้าเว็บจริง</div>
+    <div class="mock-card"><div class="t">🏠 หน้าแรก (mockup)</div><div class="d">การ์ดเกม / ตลาดหวย / ผลล่าสุด จะแสดงอยู่ด้านหลัง popup</div></div>
+    <div class="mock-card"><div class="t">📋 ผลล่าสุด (mockup)</div><div class="d">ticker + การ์ดผลรางวัลเดิมยังอยู่ครบ</div></div>
+
+    <!-- Queue ใบที่ 3 (เก่าสุด — บนสุด จางสุด) -->
+    <div class="mini-popup q3">
+      <div class="mini-shine"></div>
+      <div class="mini-head">
+        <span class="flag hr">♈</span>
+        <div><div class="name">หวยราศี</div><div class="meta">รอบ 13:00 • ออก 13:00 น.</div></div>
+        <button class="mini-close">✕</button>
+      </div>
+      <div class="mini-body">
+        <div class="hero-row">
+          <span class="hero-label">รางวัลใหญ่</span>
+          <span class="zrow"><span class="zchip hero">♍</span><span class="zchip">♎</span><span class="zchip">♏</span><span class="zchip">♐</span><span class="zchip">♑</span><span class="zchip">♒</span></span>
+        </div>
+        <div class="sub-prizes"><span class="sub">กันย์-ตุลย์-พิจิก</span></div>
+      </div>
+      <div class="mini-foot"><button class="next-btn">ผลถัดไป ▶</button><span class="timer">ปิดใน 8 วิ</span></div>
+    </div>
+
+    <!-- Queue ใบที่ 2 -->
+    <div class="mini-popup q2">
+      <div class="mini-shine"></div>
+      <div class="mini-head">
+        <span class="flag la"><i></i></span>
+        <div><div class="name">หวยลาว</div><div class="meta">งวด 13/11/2026 • ออก 20:00 น.</div></div>
+        <button class="mini-close">✕</button>
+      </div>
+      <div class="mini-body">
+        <div class="hero-row">
+          <span class="hero-label">ท้าย 4 ตัว</span>
+          <span class="balls"><span class="ball gold">7</span><span class="ball gold">3</span><span class="ball gold">0</span><span class="ball gold">8</span></span>
+        </div>
+        <div class="sub-prizes">
+          <span class="sub">ท้าย3 <b>308</b></span>
+          <span class="sub">ท้าย2 <b>08</b></span>
+        </div>
+      </div>
+      <div class="mini-foot"><button class="next-btn">ผลถัดไป ▶</button><span class="timer">ปิดใน 8 วิ</span></div>
+    </div>
+
+    <!-- Queue ใบที่ 1 (ล่าสุด — ล่างสุด ชัดสุด) -->
+    <div class="mini-popup q1">
+      <div class="mini-shine"></div>
+      <div class="mini-head">
+        <span class="flag th"></span>
+        <div><div class="name">หวยไทย</div><div class="meta">งวด 13/11/2026 • ออก 15:00 น.</div></div>
+        <button class="mini-close">✕</button>
+      </div>
+      <div class="mini-body">
+        <div class="hero-row">
+          <span class="hero-label">รางวัลที่ 1</span>
+          <span class="balls"><span class="ball gold">8</span><span class="ball gold">2</span><span class="ball gold">4</span><span class="ball gold">5</span><span class="ball gold">1</span><span class="ball gold">9</span></span>
+        </div>
+        <div class="sub-prizes">
+          <span class="sub">หน้า3 <b>245</b></span>
+          <span class="sub">ท้าย3 <b>519</b></span>
+          <span class="sub">ท้าย2 <b>19</b></span>
+        </div>
+      </div>
+      <div class="mini-foot">
+        <button class="next-btn">ผลถัดไป ▶</button>
+        <span class="queue-pill">อีก 2 ผล</span>
+        <span class="timer">ปิดใน 8 วิ</span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>ตัวอย่างทุกประเภท:</b><br>
+      🇹🇭 <b>หวยไทย</b> — เลข 6 ตัว (ลูกบอลทอง) + รางวัลรอง<br>
+      🇱🇦 <b>หวยลาว</b> — ท้าย 4/3/2 ตัว (ลูกบอล)<br>
+      🇻🇳 <b>ฮานอย</b> — เหมือนลาว (4ตัว+3บน+2ล่าง)<br>
+      ♈ <b>ราศี</b> — ชิปราศี ♈-♓ 6 ช่อง (ตัวแรก=รางวัลใหญ่)
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>📐 ฉบับย่อ vs popup เดิม</b><br>popup เดิม = modal เต็มจอใหญ่ (max-w-md + confetti + ปุ่มปิด) — ฉบับย่อ = การ์ดเล็ก ~310px มุมขวาล่าง ไม่บังเนื้อหา เล่นหลายผลต่อเนื่องได้</div>
+    <div class="note"><b>🎯 เนื้อหาที่ย่อมา</b><br>ธง + ชื่อประเภท + เวลาออก → เลขรางวัลหลัก (lotto balls / ชิปราศี) → รางวัลรอง 2-3 ชิ้น → footer: ปุ่มผลถัดไป + จำนวนคิว + ตัวนับถอยหลังปิด</div>
+    <div class="note"><b>⚙️ พฤติกรรม</b><br>เด้งเมื่อผลใหม่ publish (SSE 'results' เหมือนเดิม) • auto-hide ~8-10 วิ • กด ✕ หรือ คลิกนอกปิดได้ • queue สูงสุด 3-4 ผล เรียงตามเวลา • เคารพ prefers-reduced-motion</div>
+    <div class="note"><b>❓ ก่อน implement — เลือก</b><br>ตำแหน่ง: ขวาล่าง (แบบนี้) / ขวาบนใต้ header / กลางบน? และ popup เต็มจอเดิม จะเก็บคู่กันหรือเอาออกใช้แค่ฉบับย่อ?</div>
+  </div>
+</div>
+</body>
+</html>

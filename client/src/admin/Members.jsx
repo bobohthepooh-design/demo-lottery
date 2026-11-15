@@ -37,7 +37,7 @@ export default function AdminMembers() {
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
-            <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="px-4 py-3"></th></tr>
+            <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="text-left px-4 py-3">18+/RG</th><th className="px-4 py-3"></th></tr>
           </thead>
           <tbody className="divide-y divide-navy-700">
             {members.map(m => (
@@ -49,6 +49,13 @@ export default function AdminMembers() {
                 <td className="px-4 py-3 text-right text-gold-300 font-bold">฿{satang(m.balance)}</td>
                 <td className="px-4 py-3"><span className={m.status === 'active' ? 'text-green-400' : 'text-red-400'}>{m.status}</span></td>
                 <td className="px-4 py-3 text-xs">{m.mfaEnabled ? '✅' : '—'}{m.withdrawUnlocked ? ' 💸' : ''}</td>
+                <td className="px-4 py-3 text-xs whitespace-nowrap">
+                  {m.selfExcludedUntil ? <span className="text-red-400 font-bold" title={m.selfExcludedUntil === 'permanent' ? 'ระงับถาวร' : `ระงับถึง ${m.selfExcludedUntil}`}>⛔{m.selfExcludedUntil === 'permanent' ? 'ถาวร' : ''}</span>
+                    : m.dailyLimitSatang || m.monthlyLimitSatang
+                      ? <span className="text-amber-300" title={`วัน ฿${satang(m.dailyLimitSatang || 0)} / เดือน ฿${satang(m.monthlyLimitSatang || 0)}`}>⚠️จำกัด</span>
+                      : <span className="text-navy-400">—</span>}
+                  {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
+                </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <button onClick={() => setEdit({ ...m })} className="text-gold-400 text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
@@ -83,6 +90,16 @@ export default function AdminMembers() {
                   💸 <b>อนุญาตให้ถอนเครดิต</b> — ถอนได้เต็มยอดคงเหลือ แต่ระบบจะ<b>หักเครดิตแถม ฿50 ออก</b> และต้องเหลืออย่างน้อย ฿50 จึงจะถอนได้
                 </label>
               </div>
+              {(edit.selfExcludedUntil || edit.dailyLimitSatang || edit.monthlyLimitSatang || !edit.ageConfirmed) && (
+                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs space-y-1">
+                  <div className="text-navy-300 font-semibold mb-1">สถานะ Responsible Gambling</div>
+                  {!edit.ageConfirmed && <div className="text-red-300">❗ ยังไม่ยืนยันอายุ 18+</div>}
+                  {edit.selfExcludedUntil && <div className="text-red-300">⛔ ระงับการแทง{edit.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${edit.selfExcludedUntil}`}</div>}
+                  {(edit.dailyLimitSatang || edit.monthlyLimitSatang) && (
+                    <div className="text-amber-300">⚠️ วงเงิน: วัน ฿{satang(edit.dailyLimitSatang || 0)} • เดือน ฿{satang(edit.monthlyLimitSatang || 0)}</div>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="text-xs text-navy-300">รีเซ็ตรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label>
                 <input type="password" value={edit.password || ''} onChange={e => setEdit({...edit, password: e.target.value})} placeholder="อย่างน้อย 8 ตัว"

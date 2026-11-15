@@ -1,6 +1,7 @@
 import { getDb, tx, makeReference } from '../db/index.js';
 import { HttpError, audit } from '../lib/audit.js';
 import { getSetting } from './settingsService.js';
+import { notify } from './notifyService.js';
 
 function getWalletTx(d, userId) {
   const w = d.prepare('SELECT * FROM virtual_wallets WHERE user_id = ?').get(userId);
@@ -61,6 +62,12 @@ export function adminAdjust({ adminId, targetUserId, amount, direction, reason, 
     });
     audit({ userId: adminId, action: `wallet.${direction}_adjust`, entityType: 'wallet', entityId: String(w.id),
       detail: { targetUserId, amount, reason }, req: null });
+    if (direction === 'credit') {
+      notify(targetUserId, {
+        type: 'credit', title: `ได้รับเครดิตจากแอดมิน +฿${(amount / 100).toLocaleString('th-TH')}`,
+        body: reason, link: '/wallet',
+      }, d);
+    }
     return { transaction: t, balance: newBalance };
   });
 }
@@ -129,6 +136,11 @@ export function memberWalletAction(userId, { direction, amount, description }) {
     });
     audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
       detail: { amount }, req: null });
+    notify(userId, {
+      type: isCredit ? 'deposit' : 'withdraw',
+      title: isCredit ? `เติมเครดิตสำเร็จ +฿${(amount / 100).toLocaleString('th-TH')}` : `ถอนเครดิต ฿${(amount / 100).toLocaleString('th-TH')} สำเร็จ`,
+      body: description, link: '/wallet',
+    }, d);
     return { transaction: t, balance: newBalance };
   });
 }

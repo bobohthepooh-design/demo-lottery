@@ -53,9 +53,27 @@ function ItemRow({ i }) {
   );
 }
 
+// export CSV — BOM ให้ Excel เปิดภาษาไทยได้
+function exportCsv(rows, filename) {
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const head = ['เลขโพย', 'สมาชิก', 'รอบหวย', 'ประเภท', 'ยอดเดิมพัน', 'ยอดจ่าย', 'สถานะ', 'เวลา'];
+  const lines = [head.join(',')];
+  for (const s of rows) {
+    lines.push([s.slip_ref, s.username, s.draw_code, s.type_name_th || s.category_name_th || '',
+      s.total_stake, s.total_payout, STATUS_TH[s.status] || s.status, s.created_at].map(esc).join(','));
+  }
+  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 export default function AdminBets() {
   const [slips, setSlips] = useState([]);
   const [status, setStatus] = useState('');
+  const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState('');
 
@@ -64,18 +82,35 @@ export default function AdminBets() {
     .catch(e => { setSlips([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); });
   useEffect(() => { load(); }, [status]);
 
+  const filtered = (Array.isArray(slips) ? slips : []).filter(s => {
+    if (!q.trim()) return true;
+    const t = q.trim().toLowerCase();
+    return [s.slip_ref, s.username, s.draw_code, s.type_name_th, s.category_name_th]
+      .filter(Boolean).some(v => String(v).toLowerCase().includes(t));
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">ตรวจสอบโพย (Bet Monitoring)</h1>
-        <select value={status} onChange={e => setStatus(e.target.value)} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
-          <option value="">ทุกสถานะ</option>
-          {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        <div className="flex items-center gap-2">
+          <input value={q} onChange={e => setQ(e.target.value)}
+            placeholder="ค้นหา username / เลขโพย / รอบหวย..."
+            className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-64" />
+          <select value={status} onChange={e => setStatus(e.target.value)} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+            <option value="">ทุกสถานะ</option>
+            {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <button onClick={() => exportCsv(filtered, `bets-${new Date().toISOString().slice(0, 10)}.csv`)}
+            className="bg-navy-900 border border-navy-600 hover:border-gold-500/50 text-navy-200 hover:text-gold-300 text-sm px-3 py-2 rounded-lg transition"
+            title="ดาวน์โหลดโพยที่กรองอยู่เป็น CSV">
+            ⬇ CSV
+          </button>
+        </div>
       </div>
       {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>}
       <div className="space-y-2">
-        {(Array.isArray(slips) ? slips : []).map(s => {
+        {filtered.map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
           const settled = ['won', 'lost', 'partial'].includes(s.status);
           return (
@@ -109,7 +144,7 @@ export default function AdminBets() {
             </div>
           );
         })}
-        {!slips.length && <div className="text-center text-navy-400 py-10">ไม่มีโพย</div>}
+        {!filtered.length && <div className="text-center text-navy-400 py-10">{slips.length ? 'ไม่พบโพยที่ตรงกับคำค้น' : 'ไม่มีโพย'}</div>}
       </div>
     </div>
   );

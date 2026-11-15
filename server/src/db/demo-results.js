@@ -1,5 +1,6 @@
 import { getDb } from './index.js';
 import { settleDraw } from '../services/lotteryService.js';
+import { ZODIAC_SIGNS } from '../lib/zodiac.js';
 
 /**
  * สร้างผลรางวัลตัวอย่างให้รอบที่เปิดรับอยู่ — รอบละ 1 ใบต่อประเทศ/หมวด
@@ -34,6 +35,12 @@ function winningFor(typeCode, categoryCode) {
   if (typeCode === 'HN') {
     const main = rnd(6);
     return { main, num4: rnd(4), top3: rnd(3), top2: rnd(2), bottom2: rnd(2) };
+  }
+  if (typeCode === 'HR') {
+    const pool = [...ZODIAC_SIGNS];
+    const seq = [];
+    for (let i = 0; i < 6; i++) seq.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    return { zodiac: seq[0], seq };
   }
   return { main: rnd(6) };
 }

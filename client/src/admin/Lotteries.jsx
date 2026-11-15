@@ -12,17 +12,24 @@ const SOURCE_TH = {
   first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน',
   bottom2: 'เลขท้าย 2 ตัว', last4: 'เลขท้าย 4 ตัว', last3: 'เลขท้าย 3 ตัว',
   last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', top2: 'เลข 2 ตัวบน', main: 'เลขหลัก',
+  zodiac: 'ราศีรางวัลใหญ่', seq: 'เลขรางวัล 6 ราศี', hilo: 'เต๋าไฮโล',
 };
 const MODE_TH = {
   exact: 'ตรงกันเป๊ะ', sorted: 'โต๊ด (สลับหลักได้)', digit_contains: 'วิ่ง (มีเลขนั้น)',
-  tail: 'เทียบท้าย', head: 'เทียบหน้า',
+  tail: 'เทียบท้าย', head: 'เทียบหน้า', seq_tail: 'ราศีท้ายตามลำดับ', contains: 'ราศีอยู่ในผล',
+  hilo: 'ไฮโล 3 ลูก', scratch: 'ขูด Match-3',
 };
 function matchLabel(cfg) {
   try {
     const c = JSON.parse(cfg);
-    return `${SOURCE_TH[c.source] || c.source} • ${MODE_TH[c.mode] || c.mode}`;
+    const mode = MODE_TH[c.mode] || c.mode;
+    const src = c.source ? (SOURCE_TH[c.source] || c.source) : null;
+    return src ? `${src} • ${mode}` : String(mode);
   } catch { return cfg; }
 }
+
+// กติกาเกมด่วนที่ผูกกับ service จริง — ให้แก้ match_config ได้แม้ตอน edit
+const INSTANT_BET_TYPES = ['scratch', 'hilo', 'hilo_low', 'hilo_high', 'hilo_eleven'];
 
 const emptyRule = (typeId) => ({
   lottery_type_id: typeId, category_id: null, bet_type: '', name_th: '', name_en: '',
@@ -181,7 +188,15 @@ export default function AdminLotteries() {
                 <div className="text-navy-400 mt-1">กรอกที่แท็บ "ออกผลรางวัล" ด้านบนของหน้านี้</div>
               </div>
             )}
-            <div className="text-xs text-navy-400 mt-2">{rules.filter(r => r.lottery_type_id === t.id && r.is_active).length} ประเภทการแทงที่ใช้งาน</div>
+            <div className="text-xs text-navy-400 mt-2">
+              {(() => {
+                const rs = rules.filter(r => r.lottery_type_id === t.id && r.is_active);
+                if (!rs.length) return 'ยังไม่มีกติกาที่ใช้งาน';
+                const byCat = {};
+                for (const r of rs) { const n = r.category_id ? catName(r.category_id) : 'ทั่วไป'; byCat[n] = (byCat[n] || 0) + 1; }
+                return `${rs.length} กติกา (${Object.entries(byCat).map(([k, v]) => `${k} ${v}`).join(' • ')})`;
+              })()}
+            </div>
           </div>
         ))}
       </div>
@@ -230,9 +245,9 @@ export default function AdminLotteries() {
                           <div className="text-white font-medium">{r.name_th}</div>
                           <code className="text-[10px] text-navy-500">{r.bet_type}</code>
                         </td>
-                        <td className="px-3 py-2.5 text-center text-navy-200">{r.digits} หลัก</td>
+                        <td className="px-3 py-2.5 text-center text-navy-200">{r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : 'ราศี') : `${r.digits} หลัก`}</td>
                         <td className="px-3 py-2.5 text-navy-300 text-xs" title={r.match_config}>{matchLabel(r.match_config)}</td>
-                        <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">x{r.payout_multiplier}</td>
+                        <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">{r.bet_type === 'scratch' ? 'ตารางรางวัล' : r.bet_type === 'hilo' ? 'ราคาต่อครั้ง' : `x${r.payout_multiplier}`}</td>
                         <td className="px-3 py-2.5 text-center">
                           <button onClick={async () => {
                             const enabling = !r.is_active;
@@ -272,7 +287,7 @@ export default function AdminLotteries() {
                   className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
                   {types.map(t => <option key={t.id} value={t.id}>{t.name_th} ({t.code})</option>)}
                 </select></div>
-              <div><label className="text-navy-300 text-xs">หมวดหวย (เว้นว่าง = ทั่วไป)</label>
+              <div><label className="text-navy-300 text-xs">หมวดหวย (เว้นว่าง = ใช้กับทุกหมวดของประเภทนี้)</label>
                 <select value={editRule.category_id || ''} disabled={!!editRule.id} onChange={e => setEditRule({...editRule, category_id: e.target.value ? +e.target.value : null})}
                   className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
                   <option value="">— ทั่วไป —</option>
@@ -285,16 +300,28 @@ export default function AdminLotteries() {
                     <input value={editRule.bet_type} onChange={e => setEditRule({...editRule, bet_type: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
                   <div><label className="text-navy-300 text-xs">ชื่ออังกฤษ</label>
                     <input value={editRule.name_en || ''} onChange={e => setEditRule({...editRule, name_en: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-                  <div><label className="text-navy-300 text-xs">จำนวนหลัก</label>
-                    <input type="number" min="1" max="10" value={editRule.digits} onChange={e => setEditRule({...editRule, digits: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+                  <div><label className="text-navy-300 text-xs">จำนวนหลัก/ราศี (0 = ไม่ใช่ตัวเลข)</label>
+                    <input type="number" min="0" max="10" value={editRule.digits} onChange={e => setEditRule({...editRule, digits: +e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
                   <div className="sm:col-span-2"><label className="text-navy-300 text-xs">{`match_config (JSON: {"source":"...","mode":"exact|sorted|digit_contains|tail|head"})`}</label>
                     <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" /></div>
                   <div><label className="text-navy-300 text-xs">หน่วยเดิมพัน (บาท)</label>
                     <input type="number" step="0.01" value={toBaht(editRule.stake_unit)} onChange={e => setEditRule({...editRule, stake_unit: toSatang(e.target.value)})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
                 </>
               )}
+              {/* game ด่วน (ขูด/ไฮโล): match_config แก้ได้แม้ตอน edit — ใช้เก็บ option เสริมของเกม */}
+              {editRule.id && INSTANT_BET_TYPES.includes(editRule.bet_type) && (
+                <div className="sm:col-span-2"><label className="text-navy-300 text-xs">match_config (JSON)</label>
+                  <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" />
+                  <div className="text-[10px] text-navy-500 mt-1">เกมด่วน: ราคาอยู่ที่ "ขั้นต่ำ/สูงสุด" ด้านล่าง, อัตราจ่ายอยู่ที่ "อัตราจ่าย" — match_config เป็น option เสริมเท่านั้น</div></div>
+              )}
               <div><label className="text-navy-300 text-xs">ชื่อไทย (แสดงให้สมาชิก)</label>
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
+              {editRule.bet_type === 'scratch' ? (
+                <div className="sm:col-span-2"><label className="text-navy-300 text-xs">อัตราจ่าย</label>
+                  <div className="text-xs text-navy-300 bg-navy-900 border border-navy-700 rounded-lg px-3 py-2 mt-1">
+                    🎫 หวยขูดจ่ายตามตารางรางวัล (🍒–💎) ไม่ใช่ตัวคูณ — แก้รางวัลได้ที่ Settings → <code>scratch_prizes</code> (JSON) • ราคาบัตรแก้ที่ขั้นต่ำ/สูงสุดด้านล่าง (sync อัตโนมัติ)
+                  </div></div>
+              ) : (
               <div><label className="text-navy-300 text-xs">อัตราจ่าย (จ่ายกี่เท่า)</label>
                 <div className="flex items-center gap-2 mt-1">
                   <button type="button" onClick={() => setEditRule({...editRule, payout_multiplier: Math.max(0, +(Number(editRule.payout_multiplier) - 0.5).toFixed(2))})}
@@ -305,6 +332,7 @@ export default function AdminLotteries() {
                     className="w-9 h-9 shrink-0 bg-navy-900 border border-navy-600 rounded-lg text-gold-300 font-bold hover:bg-navy-700">+</button>
                 </div>
                 <div className="text-[10px] text-navy-500 mt-1">กด − / + เพื่อเพิ่มลดทีละ 0.5 หรือพิมพ์ตัวเลขเองได้เลย</div></div>
+              )}
               <div><label className="text-navy-300 text-xs">ขั้นต่ำ (บาท)</label>
                 <input type="number" step="0.01" min="0" value={toBaht(editRule.min_amount)} onChange={e => setEditRule({...editRule, min_amount: toSatang(e.target.value)})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               <div><label className="text-navy-300 text-xs">สูงสุด (บาท, เว้นว่าง = ไม่จำกัด)</label>

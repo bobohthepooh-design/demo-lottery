@@ -19,8 +19,9 @@ const LA = {
   fields: [
     { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
     { key: 'last4',   label: 'เลขท้าย 4 ตัว',     short: 'ท้าย4',   digits: 4, prizes: 1 },
-    { key: 'last3',   label: 'เลขท้าย 3 ตัว',     short: 'ท้าย3',   digits: 3, prizes: 1 },
-    { key: 'last2',   label: 'เลขท้าย 2 ตัว',     short: 'ท้าย2',   digits: 2, prizes: 1 },
+    { key: 'last3',   label: 'เลข 3 ตัว',         short: '3ตัว',    digits: 3, prizes: 1 },
+    { key: 'last2',   label: 'เลข 2 ตัวบน',       short: '2บน',    digits: 2, prizes: 1 },
+    { key: 'bottom2', label: 'เลข 2 ตัวล่าง',     short: '2ล่าง',  digits: 2, prizes: 1 },
   ],
 };
 
@@ -31,6 +32,7 @@ const LAD = {
     { key: 'main',    label: 'เลขหลัก',          short: 'หลัก',   digits: 6, optional: true },
     { key: 'num4',    label: 'เลข 4 ตัว',         short: '4ตัว',    digits: 4, prizes: 1 },
     { key: 'top3',    label: 'เลข 3 ตัวบน',       short: '3บน',    digits: 3, prizes: 1 },
+    { key: 'last2',   label: 'เลข 2 ตัวบน',       short: '2บน',    digits: 2, prizes: 1 },
     { key: 'bottom2', label: 'เลข 2 ตัวล่าง',     short: '2ล่าง',  digits: 2, prizes: 1 },
   ],
 };
@@ -46,9 +48,18 @@ const HN = {
   ],
 };
 
+// หวยรายชั่วโมง — ผลเป็นดวงราศี 1 ใน 12 (field zodiac = ข้อความ ไม่ใช่ตัวเลข)
+const HR = {
+  hero: 'zodiac',
+  fields: [
+    { key: 'zodiac', label: 'ราศีรางวัลใหญ่ (ตัวแรก)', short: 'รางวัลใหญ่', zodiac: true },
+    { key: 'seq',    label: 'เลขรางวัล 6 ราศี (คั่นด้วย -)', short: 'ผล 6 ราศี', seq: true },
+  ],
+};
+
 // เฉพาะหมวด LA ที่เป็นหวยลาวพัฒนาใช้ schema ต่างจากหวยลาวทั่วไป
 const BY_CATEGORY = { 'LA:LAD': LAD, 'LA:LADAM': LAD };
-const BY_TYPE = { TH, LA, HN };
+const BY_TYPE = { TH, LA, HN, HR };
 
 export function resultSchema(typeCode, categoryCode) {
   return BY_CATEGORY[`${typeCode}:${categoryCode}`] || BY_TYPE[typeCode] || null;
@@ -61,6 +72,13 @@ export const BET_TYPE_LABELS = {
   last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', top2: 'เลข 2 ตัวบน',
   // legacy (โพยเก่าก่อนปรับโครงสร้าง)
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
-  '3tod': '3 ตัวโต๊ด', 'run_top': 'เลขวิ่งบน', 'run_bottom': 'เลขวิ่งล่าง',
+  '3tod': '3 ตัวโต๊ด', 'front3tod': 'เลขหน้า 3 ตัวโต๊ด', 'top2tod': 'เลข 2 ตัวบนโต๊ด', 'bottom2tod': 'เลข 2 ตัวล่างโต๊ด',
+  'run_top': 'เลขวิ่งบน', 'run_bottom': 'เลขวิ่งล่าง',
   pattana5: 'สลากพัฒนา 5/45',
+  scratch: 'สลากขูด Match-3',
+  hilo: 'ไฮโลเต๋า',
+  zodiac: 'รางวัลใหญ่ (ราศีตัวแรก)',
+  zodiac3top: '3 ราศีบน (3 ตัวท้าย)',
+  zodiac2bottom: '2 ราศีล่าง (2 ตัวท้าย)',
+  zodiac_run: 'วิ่งราศี (อยู่ในผลก็ถูก)',
 };

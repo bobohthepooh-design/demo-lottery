@@ -8,7 +8,7 @@ import PhoneOtpForm from '../components/PhoneOtpForm.jsx';
 export default function Register() {
   const { login, refresh } = useAuth();
   const [tab, setTab] = useState('otp'); // 'otp' | 'password'
-  const [form, setForm] = useState({ username: '', email: '', password: '', displayName: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', displayName: '', ageConfirmed: false });
   const [showPw, setShowPw] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
@@ -64,6 +64,12 @@ export default function Register() {
               {showPw ? 'ซ่อน' : 'แสดง'}
             </button>
           </div>
+          <label className="flex items-start gap-2 text-xs text-navy-300 cursor-pointer">
+            <input type="checkbox" required checked={form.ageConfirmed}
+              onChange={e => setForm({...form, ageConfirmed: e.target.checked})}
+              className="mt-0.5 accent-amber-500" />
+            <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> และยอมรับเงื่อนไขการใช้งาน (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
+          </label>
           {err && <div className="text-red-400 text-sm">{err}</div>}
           <button disabled={busy} className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-50">
             {busy ? 'กำลังสมัคร...' : 'สมัครและเข้าใช้งานเลย'}

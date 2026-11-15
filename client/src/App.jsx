@@ -1,3 +1,4 @@
+import { Component } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth.jsx';
 import Layout from './components/Layout.jsx';
@@ -8,8 +9,11 @@ import ForgotPassword from './pages/ForgotPassword.jsx';
 import Profile from './pages/Profile.jsx';
 import Lotteries from './pages/Lotteries.jsx';
 import PlaceBet from './pages/PlaceBet.jsx';
+import Winners from './pages/Winners.jsx';
 import Wallet from './pages/Wallet.jsx';
 import MyBets from './pages/MyBets.jsx';
+import Scratch from './pages/Scratch.jsx';
+import Hilo from './pages/Hilo.jsx';
 import Performance from './pages/Performance.jsx';
 import AdminLayout from './admin/AdminLayout.jsx';
 import AdminOverview from './admin/Overview.jsx';
@@ -24,6 +28,7 @@ import AdminAudit from './admin/Audit.jsx';
 import AdminSecurity from './admin/Security.jsx';
 import AdminSettings from './admin/Settings.jsx';
 import AdminBanner from './admin/Banner.jsx';
+import AdminChat from './admin/Chat.jsx';
 
 function Protected({ children, admin = false }) {
   const { user, loading, isAdmin } = useAuth();
@@ -33,8 +38,27 @@ function Protected({ children, admin = false }) {
   return children;
 }
 
+class ErrorBoundary extends Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  render() {
+    if (this.state.err) return (
+      <div className="min-h-screen bg-navy-950 text-white p-6">
+        <div className="max-w-xl mx-auto mt-10 bg-red-500/10 border border-red-500/40 rounded-2xl p-6">
+          <h1 className="text-xl font-bold text-red-300 mb-2">เกิดข้อผิดพลาดของหน้าเว็บ</h1>
+          <pre className="text-xs text-navy-200 whitespace-pre-wrap break-all">{String(this.state.err?.message || this.state.err)}</pre>
+          <button onClick={() => { this.setState({ err: null }); window.location.reload(); }}
+            className="mt-4 bg-gold-500 text-navy-950 font-bold px-4 py-2 rounded-lg">โหลดหน้าใหม่</button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <Routes>
         <Route element={<Layout />}>
@@ -47,6 +71,9 @@ export default function App() {
           <Route path="/bet/:drawId" element={<Protected><PlaceBet /></Protected>} />
           <Route path="/wallet" element={<Protected><Wallet /></Protected>} />
           <Route path="/my-bets" element={<Protected><MyBets /></Protected>} />
+          <Route path="/winners" element={<Winners />} />
+          <Route path="/scratch" element={<Protected><Scratch /></Protected>} />
+          <Route path="/hilo" element={<Protected><Hilo /></Protected>} />
           <Route path="/performance" element={<Protected><Performance /></Protected>} />
           <Route path="/admin" element={<Protected admin><AdminLayout /></Protected>}>
             <Route index element={<AdminOverview />} />
@@ -62,10 +89,12 @@ export default function App() {
             <Route path="security" element={<AdminSecurity />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="banner" element={<AdminBanner />} />
+            <Route path="chat" element={<AdminChat />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }

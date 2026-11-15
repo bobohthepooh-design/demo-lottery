@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react';
-import { api, satang } from '../api.js';
+import { api, satang, fmtDateTime } from '../api.js';
 import { resultSchema } from '../lotterySchema.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
+import { sourceBadge } from '../resultSource.js';
+
+// 12 ราศี — ต้องตรงกับ server/src/lib/zodiac.js
+const ZODIAC = ['เมษ', 'พฤษภ', 'เมถุน', 'กรกฎ', 'สิงห์', 'กันย์', 'ตุลย์', 'พิจิก', 'ธนู', 'มังกร', 'กุมภ์', 'มีน'];
+const normZodiac = (s) => String(s || '').trim().replace(/^ราศี/, '');
+
+const ZodiacSelect = ({ value, onChange }) => (
+  <select value={value} onChange={e => onChange(e.target.value)}
+    className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 mt-1">
+    <option value="">— เลือกราศี —</option>
+    {ZODIAC.map(z => <option key={z} value={z}>ราศี{z}</option>)}
+  </select>
+);
 
 export default function AdminSettle() {
   const [draws, setDraws] = useState([]);
@@ -20,11 +33,12 @@ export default function AdminSettle() {
   const [autoMsg, setAutoMsg] = useState('');
   const [autoSources, setAutoSources] = useState([]); // [{code,label,ok,error}]
   const [autoBusy, setAutoBusy] = useState(false);
-  const [legacySel, setLegacySel] = useState(null);   // รอบเก่าที่ยังไม่ออกผล (แก้ไข/ออกผลย้อนหลัง)
-  const [legacyFields, setLegacyFields] = useState({});
-  const [legacyMsg, setLegacyMsg] = useState('');
 
-  const load = () => api('/admin/draws').then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
+  const [statusRows, setStatusRows] = useState([]);
+  const load = () => {
+    api('/admin/draws').then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
+    api('/admin/results/status').then(r => setStatusRows(r.status || [])).catch(() => {});
+  };
   useEffect(() => { load(); }, []);
 
   // สั่งระบบตรวจสอบ+ออกผลทุกผลที่ถึงเวลาแล้วทันที (ไม่ต้องรอ scheduler 15 นาที)
@@ -43,7 +57,9 @@ export default function AdminSettle() {
     finally { setAutoBusy(false); }
   };
 
-  const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
+  // เกมด่วน (ขูด/ไฮโล) เป็น standing draw ไม่มีผลออกรางวัล — ไม่ควรอยู่ในรายการกรอกผล
+  const isInstantType = (d) => d.type_code === 'SC' || d.type_code === 'HL';
+  const unsettled = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled' && !isInstantType(d));
   const settled = draws.filter(d => d.status === 'settled');
   // "รอบล่าสุด" = ออกรางวัลวันนี้ (เวลาไทย) หรือค้างไม่เกิน 48 ชม. — รอบวันถัดไปและค้างเก่าไปส่วนล่าง
   const drawMs = (s) => new Date(String(s).replace(' ', 'T') + 'Z').getTime();
@@ -54,8 +70,7 @@ export default function AdminSettle() {
   const otherUnsettled = unsettled.filter(d => !latestUnsettled.includes(d));
   const overdueUnsettled = otherUnsettled.filter(d => drawMs(d.draw_at) < Date.now() - 48 * 3600e3);
   const upcomingUnsettled = otherUnsettled.filter(d => !overdueUnsettled.includes(d));
-  const legacyDraw = otherUnsettled.find(d => d.id === legacySel) || null;
-  const legacySchema = legacyDraw ? resultSchema(legacyDraw.type_code, legacyDraw.category_code) : null;
+  const optLabel = d => `${d.draw_code} (${d.type_name_th}${d.category_name_th ? ' — ' + d.category_name_th : ''}) — ${d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}`;
 
   // เติมค่าลงช่องกรอกจาก winning_numbers object
   const fillFields = (wn, setter) => {
@@ -106,10 +121,23 @@ export default function AdminSettle() {
         winning[f.key] = nums;
         continue;
       }
+      // seq (หวยราศี): เลขรางวัล 6 ราศีคั่นด้วย -
+      if (f.seq) {
+        const arr = t.split('-').map(x => normZodiac(x)).filter(Boolean);
+        if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x)))
+          return setErr('เลขรางวัล 6 ราศีต้องเป็นราศี 6 ตัวคั่นด้วย - เช่น สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร');
+        winning[f.key] = arr;
+        continue;
+      }
       const parts = t.split(/[\s,]+/).map(x => x.trim()).filter(Boolean);
       const expected = f.prizes && f.prizes > 1 ? f.prizes : 1;
       // field ที่มีหลายรางวัล → เก็บเป็น array; ถ้ากรอกเลขเดียวก็เก็บ string
       const toVal = (x) => {
+        if (f.zodiac) {
+          const z = normZodiac(x);
+          if (!ZODIAC.includes(z)) throw new Error(`${f.label} ต้องเป็นดวงราศีที่ถูกต้อง`);
+          return z;
+        }
         if (!new RegExp(`^\\d{${f.digits}}$`).test(x)) throw new Error(`${f.label} ต้องเป็นตัวเลข ${f.digits} หลัก`);
         return x;
       };
@@ -133,15 +161,23 @@ export default function AdminSettle() {
       winning[k] = t;
     }
     if (!Object.keys(winning).length) return setErr('กรุณากรอกผลรางวัลอย่างน้อย 1 รายการ');
+    // จำลองผลก่อนยืนยัน — แสดงสถิติโพยที่จะถูกตรวจ/ถูกรางวัล/ยอดจ่ายรวม
+    let preview = null;
+    try {
+      preview = await api(`/admin/draws/${useSel}/settle-preview`, { method: 'POST', body: { winning_numbers: winning } });
+    } catch { /* preview ไม่ได้ไม่เป็นไร — settle ต่อได้ */ }
+    const previewText = preview
+      ? `\nสรุปก่อนออกผล: ตรวจ ${preview.evaluated ?? preview.pending} โพย • ถูกรางวัล ${preview.winningItems} • จ่ายรวม ฿${satang(preview.totalPayout)}`
+      : '';
     if (!(await confirmAction({
       title: '⚠️ ยืนยันออกผลรางวัล',
-      message: `ยืนยันออกผลรางวัลและจ่ายเครดิตโพยอัตโนมัติ?\n${useDraw?.draw_code || ''}\nการกระทำนี้ไม่สามารถย้อนกลับได้`,
+      message: `ยืนยันออกผลรางวัลและจ่ายเครดิตโพยอัตโนมัติ?\n${useDraw?.draw_code || ''}${previewText}\nการกระทำนี้ไม่สามารถย้อนกลับได้`,
       danger: true, confirmLabel: 'ยืนยันออกผล',
     }))) return;
     try {
       const r = await api(`/admin/draws/${useSel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
       setResult(r); load();
-      if (target) setLegacyMsg(`ออกผลย้อนหลังสำเร็จ: ตรวจ ${r.settledItems} รายการ • ถูกรางวัล ${r.winningItems} รายการ • จ่ายรวม ฿${satang(r.totalPayout)}`);
+      if (target) setErr(`ออกผลย้อนหลังสำเร็จ: ตรวจ ${r.settledItems} รายการ • ถูกรางวัล ${r.winningItems} รายการ • จ่ายรวม ฿${satang(r.totalPayout)}`);
     } catch (e) { setErr(e.message); }
   };
 
@@ -171,16 +207,66 @@ export default function AdminSettle() {
         )}
         {autoMsg && <div className={`w-full text-xs mt-1 ${autoMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{autoMsg}</div>}
       </div>
+
+      {/* สถานะการอัปเดตผลรางวัล — ล่าสุดของทุกประเภท/หมวด */}
+      {statusRows.length > 0 && (
+        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-white text-sm">สถานะการอัปเดตผลรางวัล</h2>
+            <button onClick={load} className="text-xs text-gold-400 hover:underline">รีเฟรช</button>
+          </div>
+          <div className="space-y-1.5">
+            {statusRows.map(r => (
+              <div key={`${r.type_id}-${r.cat_key}`} className="flex items-center gap-3 bg-navy-900/60 rounded-lg px-3 py-2">
+                <FlagIcon code={r.type_code} className="w-8 h-6 text-[9px] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white font-medium truncate">
+                    {r.type_name_th}{r.cat_name_th ? <span className="text-navy-300 text-xs"> — {r.cat_name_th}</span> : null}
+                  </div>
+                  <div className="text-[11px] text-navy-400 truncate">
+                    {r.published_at
+                      ? <>ล่าสุด: <span className="text-navy-200 font-mono">{fmtDateTime(r.published_at)}</span> • {r.draw_code} • {(() => { const b = sourceBadge(r.source); return b ? `${b.short} (${r.source})` : '⚡ อัตโนมัติ'; })()}</>
+                      : 'ยังไม่มีผลรางวัล'}
+                  </div>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full border ${r.published_at ? 'bg-green-500/15 border-green-500/40 text-green-300' : 'bg-navy-700 border-navy-600 text-navy-300'}`}>
+                  {r.published_at ? 'อัปเดตแล้ว' : 'ยังไม่มีผล'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">
         <div>
           <label className="text-sm text-navy-300">เลือกรอบหวย</label>
           <select value={sel || ''} onChange={e => setSel(e.target.value ? Number(e.target.value) : null)}
             className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 mt-1">
             <option value="">— เลือกรอบ —</option>
-            {latestUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'} — {d.status}</option>)}
+            {latestUnsettled.length > 0 && (
+              <optgroup label={`รอบล่าสุด (${latestUnsettled.length})`}>
+                {latestUnsettled.map(d => <option key={d.id} value={d.id}>{optLabel(d)} — {d.status}</option>)}
+              </optgroup>
+            )}
+            {overdueUnsettled.length > 0 && (
+              <optgroup label={`ค้างเก่า เกิน 48 ชม. (${overdueUnsettled.length})`}>
+                {overdueUnsettled.map(d => <option key={d.id} value={d.id}>{optLabel(d)}</option>)}
+              </optgroup>
+            )}
+            {upcomingUnsettled.length > 0 && (
+              <optgroup label={`รอบล่วงหน้า (${upcomingUnsettled.length})`}>
+                {upcomingUnsettled.map(d => <option key={d.id} value={d.id}>{optLabel(d)}</option>)}
+              </optgroup>
+            )}
           </select>
-          {otherUnsettled.length > 0 && (
-            <p className="text-xs text-navy-400 mt-1">มีรอบอื่นที่ยังไม่ออกผลอีก {otherUnsettled.length} รอบ (ค้างเก่า/ล่วงหน้า) — เลือกได้ที่ส่วน "รอบย้อนหลัง" ด้านล่าง</p>
+          {!unsettled.length && (
+            <p className="text-xs text-navy-400 mt-1">ไม่มีรอบที่รอออกผล — ทุกรอบออกผลครบแล้ว</p>
+          )}
+          {selDraw && (
+            <p className="text-xs text-navy-300 mt-2">
+              รอบที่เลือก: <span className="text-white font-semibold">{selDraw.draw_code}</span>
+              {' '}• ออกรางวัล {fmtDateTime(selDraw.draw_at)} • ปิดรับ {fmtDateTime(selDraw.close_at)} • สถานะ {selDraw.status}
+            </p>
           )}
         </div>
         {sel && selDraw && schema && (
@@ -193,10 +279,19 @@ export default function AdminSettle() {
                     {f.prizes > 1 && <span className="text-gold-400"> ({f.prizes} รางวัล)</span>}
                     {f.optional && <span className="text-navy-500 text-xs"> (ไม่บังคับ)</span>}
                   </label>
+                  {f.zodiac ? (
+                    <ZodiacSelect value={fields[f.key] || ''} onChange={v => setFields({ ...fields, [f.key]: v })} />
+                  ) : f.seq ? (
+                    <input value={fields[f.key] || ''}
+                      onChange={e => setFields({ ...fields, [f.key]: e.target.value })}
+                      className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
+                      placeholder="สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร" />
+                  ) : (
                   <input value={fields[f.key] || ''}
                     onChange={e => setFields({...fields, [f.key]: e.target.value.replace(f.set5 ? /[^\d,\s\-]/g : /[^\d,\s]/g, '').slice(0, f.set5 ? 40 : (f.prizes > 1 ? 60 : f.digits))})}
                     className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
                     placeholder={f.set5 ? 'เช่น 12, 7, 34, 19, 45' : (f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits))} />
+                  )}
                 </div>
               ))}
             </div>
@@ -216,7 +311,7 @@ export default function AdminSettle() {
               </div>
             )}
             <div className="flex gap-2">
-              {(selDraw?.type_code === 'TH' || selDraw?.type_code === 'HN') && selDraw?.result_mode !== 'manual' && (
+              {selDraw?.result_mode !== 'manual' && (
                 <button onClick={fetchAuto} className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-500">
                   ดึงผลอัตโนมัติ
                 </button>
@@ -261,8 +356,22 @@ export default function AdminSettle() {
             const winning = {};
             for (const [k, v] of Object.entries(editFields)) {
               const isSet5 = s.fields.some(f => f.key === k && f.set5);
+              const isZod = s.fields.some(f => f.key === k && f.zodiac);
+              const isSeqF = s.fields.some(f => f.key === k && f.seq);
               const parts = String(v).split(isSet5 ? /[\s,\-]+/ : /[\s,]+/).map(x => x.trim()).filter(Boolean);
               if (!parts.length) continue;
+              if (isSeqF) {
+                const arr = String(v).split('-').map(x => normZodiac(x)).filter(Boolean);
+                if (arr.length !== 6 || arr.some(x => !ZODIAC.includes(x))) return setEditMsg(`field "${k}" ต้องเป็นราศี 6 ตัวคั่นด้วย -`);
+                winning[k] = arr;
+                continue;
+              }
+              if (isZod) {
+                const z = normZodiac(parts[0]);
+                if (!ZODIAC.includes(z)) return setEditMsg(`field "${k}" ต้องเป็นดวงราศีที่ถูกต้อง`);
+                winning[k] = z;
+                continue;
+              }
               if (!parts.every(x => /^\d{1,10}$/.test(x))) return setEditMsg(`field "${k}" ต้องเป็นตัวเลข`);
               winning[k] = parts.length > 1 ? parts : parts[0];
             }
@@ -278,10 +387,19 @@ export default function AdminSettle() {
                 {s.fields.map(f => (
                   <div key={f.key}>
                     <label className="text-sm text-navy-300">{f.label}{f.prizes > 1 && <span className="text-gold-400"> ({f.prizes} รางวัล)</span>}</label>
+                    {f.zodiac ? (
+                      <ZodiacSelect value={editFields[f.key] || ''} onChange={v => setEditFields({ ...editFields, [f.key]: v })} />
+                    ) : f.seq ? (
+                      <input value={editFields[f.key] || ''}
+                        onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value })}
+                        className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
+                        placeholder="สิงห์-กันย์-ตุลย์-พิจิก-ธนู-มังกร" />
+                    ) : (
                     <input value={editFields[f.key] || ''}
                       onChange={e => setEditFields({ ...editFields, [f.key]: e.target.value.replace(/[^\d,\s]/g, '').slice(0, 60) })}
                       className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
                       placeholder={f.prizes > 1 ? 'คั่นด้วย comma' : '0'.repeat(f.digits)} />
+                    )}
                   </div>
                 ))}
               </div>
@@ -293,55 +411,6 @@ export default function AdminSettle() {
           );
         })()}
 
-        {/* รอบอื่นที่ยังไม่ออกผล — ค้างเก่า + รอบล่วงหน้า */}
-        {otherUnsettled.length > 0 && (
-          <div className="border-t border-navy-700 pt-4 space-y-3">
-            <h3 className="text-sm font-bold text-amber-300">⏳ รอบอื่นที่ยังไม่ออกผล ({otherUnsettled.length})</h3>
-            <select value={legacySel || ''}
-              onChange={e => {
-                const id = e.target.value ? Number(e.target.value) : null;
-                setLegacySel(id); setLegacyFields({}); setLegacyMsg(''); setErr('');
-              }}
-              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
-              <option value="">— เลือกรอบที่ต้องออกผล —</option>
-              {overdueUnsettled.length > 0 && (
-                <optgroup label={`ค้างเก่า เกิน 48 ชม. (${overdueUnsettled.length})`}>
-                  {overdueUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
-                </optgroup>
-              )}
-              {upcomingUnsettled.length > 0 && (
-                <optgroup label={`รอบล่วงหน้า (${upcomingUnsettled.length})`}>
-                  {upcomingUnsettled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
-                </optgroup>
-              )}
-            </select>
-            {legacyDraw && legacySchema && (
-              <>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {legacySchema.fields.map(f => (
-                    <div key={f.key}>
-                      <label className="text-sm text-navy-300">
-                        {f.label}
-                        {f.prizes > 1 && <span className="text-gold-400"> ({f.prizes} รางวัล)</span>}
-                        {f.optional && <span className="text-navy-500 text-xs"> (ไม่บังคับ)</span>}
-                      </label>
-                      <input value={legacyFields[f.key] || ''}
-                        onChange={e => setLegacyFields({ ...legacyFields, [f.key]: e.target.value.replace(f.set5 ? /[^\d,\s\-]/g : /[^\d,\s]/g, '').slice(0, f.set5 ? 40 : (f.prizes > 1 ? 60 : f.digits)) })}
-                        className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl font-mono text-center text-gold-300 mt-1"
-                        placeholder={f.set5 ? 'เช่น 12, 7, 34, 19, 45' : (f.prizes > 1 ? Array(f.prizes).fill('0'.repeat(f.digits)).join(', ') : '0'.repeat(f.digits))} />
-                    </div>
-                  ))}
-                </div>
-                {err && <div className="text-red-400 text-sm">{err}</div>}
-                {legacyMsg && <div className="text-green-400 text-sm">{legacyMsg}</div>}
-                <button onClick={() => settle({ id: legacySel, schema: legacySchema, fields: legacyFields, draw: legacyDraw })}
-                  className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400">
-                  ยืนยันออกผลย้อนหลังและ settle โพย
-                </button>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

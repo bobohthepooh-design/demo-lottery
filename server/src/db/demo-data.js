@@ -8,10 +8,11 @@ import { getDb } from './index.js';
  *  - หวยลาว:            จันทร์–ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
  *  - ลาวพัฒนา (ค่ำ):   จันทร์–ศุกร์ เวลา 20:30 (ปิดรับ 19:30)
  *  - ลาวพัฒนาเช้า:      ทุกวัน เวลา 09:00 (ปิดรับ 08:00) — ตลาดแยกต่างหาก
- *  - ฮานอยเฉพาะกิจ:  ทุกวัน เวลา 16:00 (ปิดรับ 15:00)
- *  - ฮานอยพิเศษ:     ทุกวัน เวลา 17:00 (ปิดรับ 16:00)
- *  - ฮานอยปกติ:      ทุกวัน เวลา 18:00 (ปิดรับ 17:00)
- *  - ฮานอย VIP:      ทุกวัน เวลา 19:00 (ปิดรับ 18:00)
+ *  - ฮานอยเฉพาะกิจ:  ทุกวัน เวลา 16:30 (ปิดรับ 15:30)
+ *  - ฮานอยพิเศษ:     ทุกวัน เวลา 17:30 (ปิดรับ 16:30)
+ *  - ฮานอยปกติ:      ทุกวัน เวลา 18:30 (ปิดรับ 17:30)
+ *  - ฮานอย VIP:      ทุกวัน เวลา 19:30 (ปิดรับ 18:30)
+ *  - หวยราศี:        ทุกชั่วโมงนาฬิกา (ปิดรับก่อนออกรางวัล 30 นาที) — ตลอด 24 ชม. ผลเป็นดวงราศี
  *  - ข้ามวันหยุดราชการไทย (ยกเว้นหวยไทยที่ออก 1/16 เสมอ)
  *
  * draw_at/close_at เป็นเวลา local ของ server → แปลงเป็น UTC ก่อนเก็บ
@@ -64,18 +65,38 @@ function scheduleFor(typeCode, catCode) {
     return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true }; // หวยลาวหลัก จ–ศ
   }
   if (typeCode === 'HN') {
+    // ฮานอยทางการ (Xổ số kiến thiết Thủ đô): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15–18:30 (เวลาไทย)
+    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true };
+    // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
-    return { kind: 'daily', hour: h, closeHour: h - 1, skipHoliday: true };
+    return { kind: 'daily', hour: h, minute: 30, closeHour: h, closeMinute: 30, skipHoliday: true };
   }
+  if (typeCode === 'HR') return { kind: 'hourly', closeBeforeMin: 30, skipHoliday: false }; // หวยราศี — ทายราศี ทุกชั่วโมง
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true };
 }
 
 const UPCOMING_PER_TARGET = 5;
+// หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่ (หวยลาวพัฒนาไม่มีแหล่งผลจริงแยกจากหวยลาวหลัก)
+const DISABLED_CATS = new Set(['LAD']);
+// เกมด่วน (ขูด/ไฮโล) ใช้ standing draw ถาวรอยู่แล้ว — ไม่ต้องสร้างรอบตามตาราง
+const INSTANT_TYPES = new Set(['SC', 'HL']);
 
 // สร้างวันที่ออกรางวัลลำดับถัดไป count ครั้ง (ข้ามวันที่ผ่านมาแล้ว/วันหยุด)
 function occurrences(sch, count = UPCOMING_PER_TARGET) {
   const out = [];
   const base = new Date(); base.setHours(0, 0, 0, 0);
+  const now = new Date();
+  if (sch.kind === 'hourly') {
+    // ออกรางวัลทุกชั่วโมงนาฬิกา (นาที 0) — ปิดรับก่อนเวลาออกรางวัล closeBeforeMin นาที
+    const first = new Date(now); first.setMinutes(0, 0, 0); first.setHours(first.getHours() + 1);
+    for (let i = 0; i < 24 * 40 && out.length < count; i++) {
+      const draw = new Date(first); draw.setHours(first.getHours() + i);
+      const close = new Date(draw); close.setMinutes(close.getMinutes() - (sch.closeBeforeMin || 30));
+      if (close <= now) continue;
+      out.push({ draw, close });
+    }
+    return out;
+  }
   for (let i = 0; i < 400 && out.length < count; i++) {
     const day = new Date(base); day.setDate(base.getDate() + i);
     if (sch.skipHoliday && isHoliday(day)) continue;
@@ -96,6 +117,7 @@ function drawCodeFor(typeCode, catCode, dt) {
     const yyyymm = `${dt.getFullYear()}${p(dt.getMonth() + 1)}`;
     return `TH-DEMO-${yyyymm}-${p(dt.getDate())}`; // รูปแบบเดิม TH-DEMO-202611-16
   }
+  if (typeCode === 'HR') return `HR-DEMO-${yyyymmdd}-${p(dt.getHours())}`; // รายชั่วโมง — แยกตามชั่วโมง
   return `${catCode}-DEMO-${yyyymmdd}`;
 }
 
@@ -105,18 +127,24 @@ export function seedDemoDraws() {
   let created = 0;
 
   for (const t of types) {
+    if (INSTANT_TYPES.has(t.code)) continue; // เกมด่วนไม่มีรอบตามตาราง
     const cats = db.prepare('SELECT id, code FROM lottery_categories WHERE lottery_type_id = ?').all(t.id);
     const targets = cats.length ? cats : [{ id: null, code: t.code }];
     for (const c of targets) {
+      if (DISABLED_CATS.has(c.code)) continue;
       const sch = scheduleFor(t.code, c.code);
-      for (const { draw, close } of occurrences(sch)) {
+      // รายชั่วโมง (ราศี) สร้างล่วงหน้าแค่รอบเดียว — ให้เหลือรอบเปิดรับปัจจุบัน ไม่ให้รอบซ้อนหลายใบ
+      const upcomingCount = sch.kind === 'hourly' ? 1 : UPCOMING_PER_TARGET;
+      for (const { draw, close } of occurrences(sch, upcomingCount)) {
         const drawCode = drawCodeFor(t.code, c.code, draw);
         if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(drawCode)) continue;
         const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        const status = toUtcSql(localDateSql(close, sch.closeHour, sch.closeMinute)) > nowUtc ? 'open' : 'scheduled';
+        // ใช้เวลา (ชม./นาที) จาก Date ที่ occurrences สร้าง — รองรับรอบรายชั่วโมงที่เวลาไม่คงที่
+        const localSqlOf = (dt) => localDateSql(dt, dt.getHours(), dt.getMinutes());
+        const status = toUtcSql(localSqlOf(close)) > nowUtc ? 'open' : 'scheduled';
         db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
                     VALUES (?, ?, ?, ?, ?, ?)`)
-          .run(t.id, c.id, drawCode, toUtcSql(localDateSql(draw, sch.hour, sch.minute)), toUtcSql(localDateSql(close, sch.closeHour, sch.closeMinute)), status);
+          .run(t.id, c.id, drawCode, toUtcSql(localSqlOf(draw)), toUtcSql(localSqlOf(close)), status);
         created++;
       }
     }

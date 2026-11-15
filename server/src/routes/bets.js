@@ -15,6 +15,7 @@ const betSchema = z.object({
     ruleId: z.number().int().positive(),
     number: z.string().min(1).max(20),
     amount: z.number().int().positive(),
+    tod: z.boolean().optional(), // แทงแบบโต๊ด — สลับลำดับหลักได้ จ่ายตามอัตราโต๊ดของกติกา
   })).min(1).max(50),
   idempotencyKey: z.string().max(64).optional(),
 });
@@ -35,6 +36,32 @@ router.get('/mine', (req, res) => {
 
 router.get('/stats', (req, res) => {
   res.json({ stats: svc.myStats(req.user.id) });
+});
+
+// export ประวัติโพยเป็น CSV — Excel อ่านไทยได้ (มี BOM)
+router.get('/export', (req, res, next) => {
+  try {
+    const rows = svc.exportMyBets(req.user.id);
+    const esc = (v) => {
+      const s = v == null ? '' : String(v);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const baht = (satang) => (Number(satang || 0) / 100).toFixed(2);
+    const head = ['slip_ref', 'bet_at', 'draw_code', 'category', 'type', 'rule', 'number', 'tod',
+      'amount_baht', 'item_status', 'payout_baht', 'slip_status', 'total_stake_baht', 'total_payout_baht', 'settled_at'];
+    const lines = [head.join(',')];
+    for (const r of rows) {
+      lines.push([
+        r.slip_ref, r.bet_at, r.draw_code, r.category_name, r.type_name, r.rule_name,
+        r.number, r.is_tod ? 'yes' : 'no',
+        baht(r.amount), r.item_status, baht(r.payout), r.slip_status,
+        baht(r.total_stake), baht(r.total_payout), r.settled_at || '',
+      ].map(esc).join(','));
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="bets-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.send('﻿' + lines.join('\r\n')); // UTF-8 BOM — ให้ Excel เปิดภาษาไทยถูกต้อง
+  } catch (e) { next(e); }
 });
 
 // ยกเลิกโพยของตัวเอง — เฉพาะตอนรอบยังเปิดรับ (คืนเครดิตเต็มจำนวน)

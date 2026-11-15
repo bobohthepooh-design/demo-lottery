@@ -1,4 +1,5 @@
 import { resultSchema } from '../lotterySchema.js';
+import { ZodiacChip, zodiacList } from './ZodiacChip.jsx';
 
 // แสดงผลรางวัลสไตล์เว็บออกผลทางการ — แสดงทุกรางวัลของประเทศนั้นครบถ้วน
 // field ที่ยังไม่มีผลจะแสดง "—" (รอประกาศ)
@@ -46,8 +47,29 @@ export default function WinningBoard({ winningNumbers, typeCode, categoryCode, c
       {rows.map(f => {
         const raw = data[f.key];
         const hasValue = raw !== undefined && raw !== null && raw !== '';
-        const values = hasValue ? (Array.isArray(raw) ? raw : [raw]).map(String) : [];
         const isHero = f.hero || f.key === schema?.hero;
+        // หวยราษี — แสดงเป็นชิปราศีเหมือนช่องสัญลักษณ์หวยขูด (ไม่ใช่กล่องตัวเลข)
+        if (f.zodiac || f.seq) {
+          const signs = hasValue ? zodiacList(raw) : [];
+          return (
+            <div key={f.key} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className={`${labelCls} text-navy-300 leading-tight`}>
+                {f.label}
+                {f.seq && <span className="block text-[10px] text-gold-500/80">6 รางวัล</span>}
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {!signs.length ? (
+                  <DigitBoxes pending compact={compact} />
+                ) : f.seq ? (
+                  signs.map((s, i) => <ZodiacChip key={i} sign={s} hero={i === 0} small={compact} />)
+                ) : (
+                  <ZodiacChip sign={signs[0]} hero={isHero || f.zodiac} small={compact} />
+                )}
+              </div>
+            </div>
+          );
+        }
+        const values = hasValue ? (Array.isArray(raw) ? raw : [raw]).map(String) : [];
         const prizeCount = f.set5 ? 1 : Math.max(values.length, f.prizes || 1);
         return (
           <div key={f.key} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">

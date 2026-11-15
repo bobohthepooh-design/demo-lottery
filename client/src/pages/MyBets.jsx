@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, satang, drawLabel, fmtDateTime } from '../api.js';
 import { BET_TYPE_LABELS } from '../lotterySchema.js';
 import { toast } from '../components/toast.js';
@@ -25,8 +26,8 @@ const STATUS_EMOJI = {
 };
 const ITEM_EMOJI = { won: '🎉', lost: '😢', pending: '⏳', cancelled: '🚫' };
 
-// เงินรางวัลที่จะได้ถ้าถูก = เงินเดิมพัน × อัตราจ่าย (สูตรเดียวกับตอน settle)
-const potential = (i) => Math.floor(i.amount * Number(i.payout_multiplier || 0));
+// เงินรางวัลที่จะได้ถ้าถูก = เงินเดิมพัน × อัตราจ่าย (est_payout = อัตราเฉพาะรายเลขของเลขอั้นถ้ามี)
+const potential = (i) => i.est_payout ?? Math.floor(i.amount * Number(i.payout_multiplier || 0));
 
 // แสดงปุ่มแชร์เมื่อชนะรางวัลตั้งแต่ ฿500 ขึ้นไป
 const SHARE_THRESHOLD = 50000; // สตางค์
@@ -75,6 +76,8 @@ function ItemRow({ i }) {
           <div className="flex items-center gap-2">
             <code className="text-gold-300 font-mono text-base">{i.number}</code>
             <span className="text-navy-300 text-xs truncate">{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
+            {i.is_ann && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">เลขอั้น</span>}
+            {i.is_tod ? <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300 shrink-0">โต๊ด</span> : null}
           </div>
           <div className="text-[11px] text-navy-400">เดิมพัน ฿{satang(i.amount)}</div>
         </div>
@@ -104,13 +107,29 @@ export default function MyBets() {
   const [open, setOpen] = useState(null);
   const [cancelAsk, setCancelAsk] = useState(null);
   const { setBalance } = useAuth();
+  const navigate = useNavigate();
 
   const load = () => api('/bets/mine?limit=100').then(r => setSlips(r.slips)).catch(() => {});
   useEffect(() => { load().finally(() => setLoading(false)); }, []);
+  // SSE — ผลรางวัลออก/โพยเปลี่ยนสถานะ → อัปเดตทันที
+  useEffect(() => {
+    const h = () => load();
+    window.addEventListener('sys:update', h);
+    return () => window.removeEventListener('sys:update', h);
+  }, []);
 
   // ยกเลิกได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const canCancel = (s) => s.status === 'pending' && s.draw_status === 'open' && s.close_at > nowSql;
+
+  // ยิงซ้ำได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่ — พาไปหน้แทงพร้อมรายการเดิมให้ตรวจก่อนส่ง
+  const canRepeat = (s) => s.status === 'pending' && s.draw_status === 'open' && s.close_at > nowSql
+    && (s.items || []).some(i => i.status === 'pending' && i.rule_id);
+  const repeatSlip = (s) => {
+    const items = (s.items || []).filter(i => i.status === 'pending' && i.rule_id)
+      .map(i => ({ ruleId: i.rule_id, number: i.number, amount: i.amount, isTod: !!i.is_tod }));
+    navigate(`/bet/${s.draw_id}`, { state: { repeat: { ref: s.slip_ref, items } } });
+  };
 
   const cancelSlip = async (s) => {
     if (cancelAsk !== s.id) {
@@ -129,7 +148,17 @@ export default function MyBets() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold text-white">ประวัติโพยของฉัน</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-2xl font-bold text-white">ประวัติโพยของฉัน</h1>
+        {slips.length > 0 && (
+          <a href="/api/bets/export" download
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition inline-flex items-center gap-1">
+            ⬇️ Export CSV
+          </a>
+        )}
+      </div>
+      <p className="text-[11px] text-navy-400 -mt-2">
+        📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนเวลาปิดรับ</p>
       {slips.map(s => {
         const won = s.items?.some(i => i.status === 'won') || s.status === 'won';
         const lost = !won && s.items?.every(i => i.status === 'lost');
@@ -137,7 +166,10 @@ export default function MyBets() {
         const net = (s.total_payout || 0) - (s.total_stake || 0);
         return (
           <div key={s.id} className={`bg-gradient-to-b from-navy-800 to-navy-900 border rounded-xl overflow-hidden hoverable ${s.status === 'won' ? 'border-green-500/40' : 'border-navy-700'} ${cardAnim}`}>
-            <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-4 flex items-center justify-between hover:bg-navy-700/40">
+            <div role="button" tabIndex={0}
+              onClick={() => setOpen(open === s.id ? null : s.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(open === s.id ? null : s.id); } }}
+              className="w-full px-5 py-4 flex items-center justify-between hover:bg-navy-700/40 cursor-pointer">
               <div className="text-left">
                 <div className="font-mono text-gold-300">{s.slip_ref}</div>
                 <div className="flex items-center gap-1.5 text-sm text-navy-300">
@@ -146,13 +178,27 @@ export default function MyBets() {
                 </div>
                 <div className="text-[11px] text-navy-500">แทงเมื่อ {fmtDateTime(s.created_at)}</div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end gap-1.5">
                 <div className="font-bold text-white">฿{satang(s.total_stake)}</div>
                 <span className={`text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 ${s.status === 'won' ? 'bg-green-500/20 text-green-300' : s.status === 'lost' ? 'bg-navy-700 text-navy-300' : s.status === 'partial' ? 'bg-gold-500/20 text-gold-300' : 'bg-blue-500/20 text-blue-300'}`}>
                   <span>{STATUS_EMOJI[s.status]}</span> {STATUS_TH[s.status]}
                 </span>
+                {/* ปุ่มลัดเห็นได้เลยไม่ต้องกางโพย — ยิงซ้ำ/ยกเลิก เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่ */}
+                {canRepeat(s) && (
+                  <button onClick={(e) => { e.stopPropagation(); repeatSlip(s); }}
+                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-sky-400/50 text-sky-300 hover:bg-sky-500/15">
+                    🔁 แทงซ้ำ
+                  </button>
+                )}
+                {canCancel(s) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); cancelSlip(s); }}
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${cancelAsk === s.id ? 'bg-red-500 text-white border-red-500 animate-pulse' : 'border-red-400/50 text-red-300 hover:bg-red-500/15'}`}>
+                    {cancelAsk === s.id ? '⚠️ ยืนยัน?' : '🚫 ยกเลิก'}
+                  </button>
+                )}
               </div>
-            </button>
+            </div>
             {open === s.id && (
               <div className="border-t border-navy-700 px-5 py-3 space-y-2">
                 {s.items.map(i => <ItemRow key={i.id} i={i} />)}
@@ -169,6 +215,14 @@ export default function MyBets() {
                 {s.total_payout >= SHARE_THRESHOLD && (
                   <div className="pt-1 border-t border-navy-700/60">
                     <ShareButtons s={s} />
+                  </div>
+                )}
+                {canRepeat(s) && (
+                  <div className="pt-1">
+                    <button onClick={() => repeatSlip(s)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-sky-400/60 text-sky-600 hover:bg-sky-50">
+                      🔁 แทงซ้ำโพยนี้ (รายการเดิม)
+                    </button>
                   </div>
                 )}
                 {canCancel(s) && (

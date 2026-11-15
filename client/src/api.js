@@ -21,8 +21,15 @@ export async function api(path, { method = 'GET', body } = {}) {
   });
   let json = null;
   try { json = await res.json(); } catch {}
-  if (res.status === 401 && !path.startsWith('/auth/login') && !path.startsWith('/auth/register')) {
-    window.dispatchEvent(new Event('auth:expired'));
+  if (res.status === 401) {
+    // auth:expired เฉพาะ 401 ที่หมายถึง session หมดอายุจริง —
+    // ยกเว้น auth endpoints ที่ 401 เพราะ credential ผิด (login/mfa/otp)
+    // ไม่งั้นแอดมินใส่รหัส MFA ผิดจะโดนเตะออกทั้งที่ session ยังดี
+    const isCredentialFail =
+      path.startsWith('/auth/login') || path.startsWith('/auth/register') ||
+      path.startsWith('/auth/mfa/') || path.startsWith('/auth/otp') ||
+      path.startsWith('/auth/phone');
+    if (!isCredentialFail) window.dispatchEvent(new Event('auth:expired'));
   }
   if (!res.ok) {
     const err = new Error(json?.error || `HTTP ${res.status}`);

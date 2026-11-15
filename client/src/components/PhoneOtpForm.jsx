@@ -7,6 +7,7 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
   const [phone, setPhone] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [code, setCode] = useState('');
+  const [ageOk, setAgeOk] = useState(false);
   const [devCode, setDevCode] = useState('');
   const [expiresIn, setExpiresIn] = useState(0);
   const [step, setStep] = useState('phone'); // 'phone' | 'code'
@@ -33,7 +34,7 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
     try {
       const r = await api('/auth/otp/verify', {
         method: 'POST',
-        body: { phone, code, purpose, displayName: displayName || undefined },
+        body: { phone, code, purpose, displayName: displayName || undefined, ageConfirmed: purpose === 'register' ? ageOk : undefined },
       });
       await onSuccess?.(r);
     } catch (e2) { setErr(e2.message); }
@@ -56,11 +57,17 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
           <div className="text-[10px] text-navy-500 mt-1">กรอกเฉพาะ 10 หลักหลัง +66 (เช่น 0812345678 → 812345678)</div>
         </div>
         {purpose === 'register' && (
-          <input value={displayName} onChange={e => setDisplayName(e.target.value)}
-            placeholder="ชื่อที่แสดง (ไม่บังคับ)" className={inputCls} />
+          <>
+            <input value={displayName} onChange={e => setDisplayName(e.target.value)}
+              placeholder="ชื่อที่แสดง (ไม่บังคับ)" className={inputCls} />
+            <label className="flex items-start gap-2 text-xs text-navy-300 cursor-pointer">
+              <input type="checkbox" checked={ageOk} onChange={e => setAgeOk(e.target.checked)} className="mt-0.5 accent-amber-500" />
+              <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> และยอมรับเงื่อนไขการใช้งาน (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
+            </label>
+          </>
         )}
         {err && <div className="text-red-400 text-sm">{err}</div>}
-        <button disabled={busy || phone.length < 9}
+        <button disabled={busy || phone.length < 9 || (purpose === 'register' && !ageOk)}
           className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-50">
           {busy ? 'กำลังส่งรหัส...' : '📱 ขอรหัส OTP'}
         </button>
@@ -84,7 +91,7 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
         inputMode="numeric" placeholder="กรอกรหัส 6 หลัก" maxLength={6}
         className={`${inputCls} text-center text-2xl tracking-[0.4em] text-gold-300 font-mono`} />
       {err && <div className="text-red-400 text-sm">{err}</div>}
-      <button disabled={busy || code.length !== 6}
+      <button disabled={busy || code.length !== 6 || (purpose === 'register' && !ageOk)}
         className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-50">
         {busy ? 'กำลังตรวจสอบ...' : purpose === 'register' ? 'ยืนยันสมัครสมาชิก' : 'เข้าสู่ระบบ'}
       </button>

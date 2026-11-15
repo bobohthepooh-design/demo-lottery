@@ -23,6 +23,27 @@ const ACCENTS = {
     btn: 'from-amber-200 to-amber-300 text-amber-800',
     btnLive: 'from-amber-500 to-amber-700 text-white',
   },
+  HR: {
+    bar: 'bg-violet-500', text: 'text-violet-400', chip: 'bg-violet-500/15 text-violet-300 border-violet-400/50',
+    border: 'border-violet-400/60', glow: 'hover:border-violet-400',
+    head: 'from-violet-500', dot: 'bg-violet-400',
+    btn: 'from-violet-500/40 to-purple-600/40 text-violet-200',
+    btnLive: 'from-violet-500 to-purple-700 text-white',
+  },
+  SC: {
+    bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-red-500/15 text-red-300 border-red-400/50',
+    border: 'border-red-400/60', glow: 'hover:border-red-400',
+    head: 'from-red-600', dot: 'bg-red-400',
+    btn: 'from-red-500/40 to-rose-700/40 text-red-200',
+    btnLive: 'from-red-500 to-rose-700 text-white',
+  },
+  HL: {
+    bar: 'bg-orange-500', text: 'text-orange-400', chip: 'bg-orange-500/15 text-orange-300 border-orange-400/50',
+    border: 'border-orange-400/60', glow: 'hover:border-orange-400',
+    head: 'from-orange-600', dot: 'bg-orange-400',
+    btn: 'from-orange-500/40 to-red-700/40 text-orange-200',
+    btnLive: 'from-orange-500 to-red-700 text-white',
+  },
 };
 
 const FALLBACK = {

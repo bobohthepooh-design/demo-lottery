@@ -1,34 +1,54 @@
-// แปลงเวลาที่เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' เป็น local time ของผู้ใช้
-export function fmtDateTime(s) {
-  if (!s) return '';
-  const d = new Date(String(s).replace(' ', 'T') + 'Z');
-  if (isNaN(d)) return s;
-  return d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-}
-export function fmtDate(s) {
-  if (!s) return '';
-  const d = new Date(String(s).replace(' ', 'T') + 'Z');
-  return isNaN(d) ? s : d.toLocaleDateString('th-TH');
-}
+// แปลงเวลาที่เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' เป็นเวลาที่ผู้ใช้เลือก
+// default = timezone ของอุปกรณ์ — ผู้ใช้เปลี่ยนได้ในโปรไฟล์ (เก็บ app_tz + sync server)
 
-const TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+export function getTz() {
+  try { return localStorage.getItem('app_tz') || undefined; } catch { return undefined; }
+}
+export function setTz(z) {
+  try { localStorage.setItem('app_tz', z || ''); } catch {}
+  window.dispatchEvent(new Event('tzchange'));
+}
 
 function toDate(s) {
   return new Date(String(s).replace(' ', 'T') + 'Z');
 }
 
-// "8 พ.ย. 2569" (พ.ศ.)
-export function thaiDate(s) {
+export function fmtDateTime(s) {
+  if (!s) return '';
   const d = toDate(s);
-  if (isNaN(d)) return '';
-  return `${d.getDate()} ${TH_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+  if (isNaN(d)) return s;
+  return d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short', timeZone: getTz() });
+}
+export function fmtDate(s) {
+  if (!s) return '';
+  const d = toDate(s);
+  return isNaN(d) ? s : d.toLocaleDateString('th-TH', { timeZone: getTz() });
+}
+
+const TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+// parts ตาม timezone ที่เลือก — ใช้ en-US เพื่อให้ parse ง่ายแล้ว map เป็นไทย/พ.ศ.
+function dtf(s, opts) {
+  const d = toDate(s);
+  if (isNaN(d)) return null;
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: getTz(), ...opts }).formatToParts(d);
+  const o = {};
+  for (const p of parts) o[p.type] = p.value;
+  return o;
+}
+
+// "8 พ.ย. 2569" (พ.ศ. ตาม timezone ที่เลือก)
+export function thaiDate(s) {
+  const p = dtf(s, { day: 'numeric', month: 'numeric', year: 'numeric' });
+  if (!p) return '';
+  return `${+p.day} ${TH_MONTHS[+p.month - 1]} ${+p.year + 543}`;
 }
 
 // "18:00"
 export function thaiTime(s) {
-  const d = toDate(s);
-  if (isNaN(d)) return '';
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const p = dtf(s, { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (!p) return '';
+  return `${p.hour}:${p.minute}`;
 }
 
 // ชื่อรอบแบบคนอ่าน: "หวยฮานอยปกติ • งวด 8 พ.ย. 2569 เวลา 18:00 น."

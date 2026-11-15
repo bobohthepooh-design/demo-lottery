@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, thaiDate, thaiTime } from '../api.js';
 import { FlagIcon } from './ResultLine.jsx';
 import { resultSchema } from '../lotterySchema.js';
+import { sourceBadge } from '../resultSource.js';
 
 // แถว ticker ผลรางวัล — เลขเด่นๆ จาก schema
 function tickerText(r) {
@@ -15,31 +16,67 @@ function tickerText(r) {
     return vals ? `${f.short || f.label} ${vals}` : null;
   }).filter(Boolean);
   const upd = r.published_at ? ` • อัปเดต ${thaiDate(r.published_at)} ${thaiTime(r.published_at)} น.` : '';
-  const src = r.source === 'manual' ? ' • ✏️ กรอกเอง' : r.source === 'auto' ? ' • 🤖 อัตโนมัติ' : '';
+  const b = sourceBadge(r.source);
+  const src = b ? ` • ${b.short}` : '';
   return `${r.category_name_th || r.type_name_th}: ${parts.join(' • ') || '—'}${src}${upd}`;
 }
 
 // Ticker ผลรางวัลล่าสุด — แสดงใต้แถบประกาศทุกหน้า
 export default function ResultsTicker() {
   const [results, setResults] = useState([]);
+  const [lastSync, setLastSync] = useState(null);
+  const [live, setLive] = useState(true); // SSE connection status
 
   useEffect(() => {
-    api('/lottery/results').then(r => setResults(r.results)).catch(() => {});
+    const load = () => api('/lottery/results').then(r => {
+      setResults(r.results);
+      setLastSync(new Date());
+    }).catch(() => {});
+    load();
+    const t = setInterval(load, 30000); // ผลรางวัลออกใหม่ทุกชั่วโมง — refresh อัตโนมัติทุก 30 วิ
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', load);
+    const onLive = (e) => setLive(!!e.detail?.live);
+    window.addEventListener('sys:live', onLive);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', load);
+      window.removeEventListener('sys:live', onLive);
+    };
+  }, []);
+
+  // SSE — ผลรางวัลออกปุ๊บอัปเดตทันที
+  useEffect(() => {
+    const h = () => api('/lottery/results').then(r => {
+      setResults(r.results);
+      setLastSync(new Date());
+    }).catch(() => {});
+    window.addEventListener('sys:update', h);
+    return () => window.removeEventListener('sys:update', h);
   }, []);
 
   if (!results.length) return null;
+  const syncStr = lastSync
+    ? `${String(lastSync.getHours()).padStart(2, '0')}:${String(lastSync.getMinutes()).padStart(2, '0')}:${String(lastSync.getSeconds()).padStart(2, '0')}`
+    : '—';
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 pt-3">
-      <div className="bg-navy-800/80 border border-gold-500/30 rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-1.5 bg-gold-500/10 border-b border-gold-500/20">
+      <div className="ticker-led ticker-scan rounded-xl overflow-hidden border">
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-black/60 border-b border-gold-500/25">
           <span className="text-xs font-bold text-gold-300">📢 ผลรางวัลล่าสุด</span>
-          <span className="text-[10px] text-navy-400">(ชี้เพื่อหยุดเลื่อน)</span>
+          <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${live ? 'bg-green-500/15 text-green-700' : 'bg-navy-700/30 text-navy-500'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-green-500 animate-pulse' : 'bg-navy-400'}`} />
+            {live ? 'อัปเดตอัตโนมัติ' : 'ออฟไลน์'}
+          </span>
+          <span className="text-[10px] text-navy-400">ซิงก์ {syncStr} น. • ชี้เพื่อหยุดเลื่อน</span>
         </div>
         <div className="overflow-hidden py-1.5">
-          <div className="flex w-max animate-marquee gap-8 px-4">
+          <div className="flex w-max animate-marquee-xfast gap-8 px-4">
             {[...results, ...results].map((r, i) => (
-              <span key={i} className="text-xs text-navy-200 whitespace-nowrap flex items-center gap-1.5">
+              <span key={i} className="ticker-item text-xs whitespace-nowrap flex items-center gap-1.5">
                 <FlagIcon code={r.type_code} className="w-5 h-5 text-[9px]" />
                 {tickerText(r)}
               </span>

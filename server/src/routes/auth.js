@@ -8,7 +8,7 @@ import { getBalance, getWallet, listTransactions } from '../services/walletServi
 import { getDb } from '../db/index.js';
 import { getSetting } from '../services/settingsService.js';
 import { randomToken } from '../lib/password.js';
-import { audit } from '../lib/audit.js';
+import { audit, HttpError } from '../lib/audit.js';
 
 const router = Router();
 
@@ -25,6 +25,7 @@ const registerSchema = z.object({
   email: z.string().email().max(200).optional(),
   password: z.string().min(8).max(128),
   displayName: z.string().max(100).optional(),
+  ageConfirmed: z.literal(true),
 });
 const loginSchema = z.object({
   username: z.string().min(1).max(200),
@@ -44,14 +45,16 @@ const otpVerifySchema = z.object({
   code: z.string().regex(/^\d{6}$/),
   purpose: z.enum(['register', 'login']),
   displayName: z.string().max(100).optional(),
+  ageConfirmed: z.boolean().optional(),
 });
 const mfaCodeSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 
-router.post('/register', (req, res, next) => {
+router.post('/register', loginLimiter, (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
     const email = data.email || `${data.username.toLowerCase()}@demo.local`;
     const userId = auth.register({ ...data, email, ip: req.ip, userAgent: req.headers['user-agent'] });
+    getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(userId);
     res.status(201).json({ ok: true, userId, message: 'สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ' });
   } catch (e) { next(e); }
 });
@@ -89,6 +92,67 @@ router.get('/me', auth.requireAuth, (req, res) => {
   });
 });
 
+// Responsible gambling — ตั้งวงเงินเดิมพัน + self-exclusion (แก้กลับ/ลดเวลาไม่ได้)
+const rgSchema = z.object({
+  dailyLimitBaht: z.number().min(0).max(10_000_000).nullable().optional(),
+  monthlyLimitBaht: z.number().min(0).max(100_000_000).nullable().optional(),
+  selfExcludeDays: z.union([z.literal(1), z.literal(7), z.literal(30), z.literal(36500)]).nullable().optional(),
+});
+router.patch('/me/responsible-gambling', auth.requireAuth, (req, res, next) => {
+  try {
+    const data = rgSchema.parse(req.body);
+    const db = getDb();
+    const u = db.prepare('SELECT self_excluded_until FROM users WHERE id = ?').get(req.user.id);
+    if (!u) throw new HttpError(404, 'ไม่พบผู้ใช้');
+    // self-exclusion: ตั้งได้เท่านั้น (ขยายเวลาได้) — ยกเลิกเองไม่ได้จนกว่าจะหมดเวลา
+    if (data.selfExcludeDays) {
+      const until = data.selfExcludeDays === 36500 ? 'permanent' : new Date(Date.now() + data.selfExcludeDays * 864e5).toISOString().slice(0, 19).replace('T', ' ');
+      const cur = u.self_excluded_until;
+      const curActive = cur === 'permanent' || (cur && cur > new Date().toISOString().slice(0, 19).replace('T', ' '));
+      if (curActive && !(data.selfExcludeDays === 36500 && cur !== 'permanent')) {
+        // อนุญาตเฉพาะการต่อเวลา (36500 = ถาวร) — ห้ามลด/ยกเลิก
+        if (!(data.selfExcludeDays === 36500)) throw new HttpError(400, 'อยู่ในช่วงระงับแล้ว — ต่อเวลาได้เฉพาะ "ถาวร" เท่านั้น');
+      }
+      db.prepare('UPDATE users SET self_excluded_until = ? WHERE id = ?').run(until, req.user.id);
+      audit({ userId: req.user.id, action: 'user.self_exclude', entityType: 'user', entityId: String(req.user.id), detail: { until } });
+    }
+    if (data.dailyLimitBaht !== undefined)
+      db.prepare('UPDATE users SET daily_limit_satang = ? WHERE id = ?').run(data.dailyLimitBaht === null ? null : Math.round(data.dailyLimitBaht * 100), req.user.id);
+    if (data.monthlyLimitBaht !== undefined)
+      db.prepare('UPDATE users SET monthly_limit_satang = ? WHERE id = ?').run(data.monthlyLimitBaht === null ? null : Math.round(data.monthlyLimitBaht * 100), req.user.id);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ค่าที่ผู้ใช้ตั้งเอง — ภาษา (th/lo) + timezone (IANA) สำหรับแสดงผล
+const prefsSchema = z.object({
+  language: z.enum(['th', 'lo']).optional(),
+  timezone: z.string().max(60).optional(),
+});
+router.patch('/me/prefs', auth.requireAuth, (req, res, next) => {
+  try {
+    const data = prefsSchema.parse(req.body);
+    const db = getDb();
+    if (data.language !== undefined) {
+      if (!['th', 'lo'].includes(data.language)) throw new HttpError(400, 'ภาษาไม่ถูกต้อง');
+      db.prepare('UPDATE users SET language = ? WHERE id = ?').run(data.language, req.user.id);
+    }
+    if (data.timezone !== undefined) {
+      // validate IANA timezone
+      try { new Intl.DateTimeFormat('en', { timeZone: data.timezone }); }
+      catch { throw new HttpError(400, 'Timezone ไม่ถูกต้อง'); }
+      db.prepare('UPDATE users SET timezone = ? WHERE id = ?').run(data.timezone, req.user.id);
+    }
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ยืนยันอายุ 18+ สำหรับบัญชีเก่า/LINE ที่ยังไม่ได้ยืนยัน (บังคับก่อนใช้งานต่อ — frontend แสดง banner)
+router.post('/me/confirm-age', auth.requireAuth, (req, res) => {
+  getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ? AND age_confirmed = 0').run(req.user.id);
+  res.json({ ok: true });
+});
+
 router.post('/change-password', auth.requireAuth, (req, res, next) => {
   try {
     const data = changePwSchema.parse(req.body);
@@ -118,7 +182,11 @@ router.post('/otp/request', loginLimiter, (req, res, next) => {
 router.post('/otp/verify', loginLimiter, (req, res, next) => {
   try {
     const data = otpVerifySchema.parse(req.body);
+    if (data.purpose === 'register' && data.ageConfirmed !== true)
+      throw new HttpError(400, 'ต้องยืนยันว่าอายุ 18 ปีขึ้นไป');
     const result = auth.verifyOtpLogin({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
+    if (data.purpose === 'register' && result.user?.id)
+      getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(result.user.id);
     auth.setSessionCookie(res, result.token);
     const needsMfa = result.requiresMfa;
     res.json({ ok: true, user: result.user, requiresMfa: needsMfa, mfaVerified: !needsMfa });
@@ -137,7 +205,7 @@ router.post('/mfa/enable', auth.requireAuth, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/mfa/verify', (req, res, next) => {
+router.post('/mfa/verify', loginLimiter, (req, res, next) => {
   try {
     const { code } = mfaCodeSchema.parse(req.body);
     const sessionId = auth.getSessionToken(req);
