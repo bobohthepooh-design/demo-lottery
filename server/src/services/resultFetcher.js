@@ -16,8 +16,25 @@ import { q, qGet, qRun } from '../db/pg.js';
 
 const UA = { 'User-Agent': 'demo-lottery/1.0', 'Content-Type': 'application/json' };
 
+// retry/backoff สำหรับ external fetch — กัน source สะดุดชั่วคราวทำให้ทั้งรอบพลาด
+// retry เฉพาะ network error / 5xx / 429 — ไม่ retry 4xx (request ผิดจริง)
+async function fetchResilient(url, options = {}, { retries = 2, baseMs = 800 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url, options);
+      if (r.ok || (r.status < 500 && r.status !== 429)) return r;
+      lastErr = new Error(`HTTP ${r.status}`);
+    } catch (e) {
+      lastErr = e; // network error / timeout — retry ได้
+    }
+    if (attempt < retries) await new Promise(res => setTimeout(res, baseMs * 2 ** attempt));
+  }
+  throw lastErr;
+}
+
 async function postJson(url, body = {}) {
-  const r = await fetch(url, { method: 'POST', headers: UA, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
+  const r = await fetchResilient(url, { method: 'POST', headers: UA, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
@@ -144,7 +161,7 @@ async function hanoiResultFor(draw) {
 }
 
 export async function fetchLotteryChecks(lottery) {
-  const r = await fetch(`https://lotterychecks.com/api/public/results?lottery=${lottery}&limit=1`,
+  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${lottery}&limit=1`,
     { signal: AbortSignal.timeout(20000) });
   if (!r.ok) throw new Error(`LC HTTP ${r.status}`);
   const j = await r.json();
@@ -169,7 +186,7 @@ async function xsmbRows() {
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
   const latest = xsmbCache.rows?.at(-1)?.date?.slice(0, 10);
   if (xsmbCache.rows && Date.now() - xsmbCache.at < 60 * 60 * 1000 && latest >= today) return xsmbCache.rows;
-  const r = await fetch(XSMB_URL, { signal: AbortSignal.timeout(60000) });
+  const r = await fetchResilient(XSMB_URL, { signal: AbortSignal.timeout(60000) }, { retries: 1, baseMs: 2000 });
   if (!r.ok) throw new Error(`XSMB HTTP ${r.status}`);
   const rows = await r.json();
   if (!Array.isArray(rows) || !rows.length) throw new Error('XSMB: no data');
@@ -195,7 +212,7 @@ export async function fetchHanoiResult() {
 }
 
 export async function fetchLaoResult() {
-  const r = await fetch('https://laodl.com/api/website/laolot/WinPrizeHistory?type=1',
+  const r = await fetchResilient('https://laodl.com/api/website/laolot/WinPrizeHistory?type=1',
     { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
   if (!r.ok) throw new Error(`LA HTTP ${r.status}`);
   const j = await r.json();

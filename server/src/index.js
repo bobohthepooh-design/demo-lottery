@@ -28,6 +28,7 @@ import * as hiloService from './services/hiloService.js';
 import * as kiwiService from './services/kiwiService.js';
 import kiwiRoutes from './routes/kiwi.js';
 import { logger } from './lib/logger.js';
+import { openApiSpec } from './lib/openapi.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -63,8 +64,12 @@ if (config.env !== 'test') {
   const cleanup = async () => {
     try {
       const d = getDb();
-      const s = await d.prepare(`DELETE FROM user_sessions WHERE expires_at < datetime('now', '-1 day') OR revoked_at < datetime('now', '-7 days')`).run();
-      const o = await d.prepare(`DELETE FROM otp_codes WHERE expires_at < datetime('now', '-1 day') OR (used = 1 AND created_at < datetime('now', '-1 day'))`).run();
+      const s = await d.prepare(`DELETE FROM user_sessions
+        WHERE expires_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '1 day'
+           OR revoked_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '7 days'`).run();
+      const o = await d.prepare(`DELETE FROM otp_codes
+        WHERE expires_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '1 day'
+           OR (used = 1 AND created_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '1 day')`).run();
       if (s.changes || o.changes) console.log(`[cleanup] sessions -${s.changes}, otp -${o.changes}`);
     } catch (e) { console.error('[cleanup] failed:', e.message); }
   };
@@ -89,19 +94,20 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // SSE connection เป็น long-lived — ไม่นับ rate limit (กัน client ค้าง/โดน 429)
-  skip: (req) => req.path === '/events' || req.originalUrl === '/api/events',
+  // รองรับทั้ง /api/events และ /api/v1/events
+  skip: (req) => /\/events$/.test(req.path) || /\/events$/.test(req.originalUrl),
   message: { error: 'คำขอมากเกินไป กรุณาลองใหม่ภายหลัง' },
 });
 app.use('/api/', limiter);
 
 // ensure csrf cookie on any api response (before protection so cookie exists)
 app.use('/api/', (req, res, next) => { ensureCsrf(req, res); next(); });
-app.get('/api/csrf-token', csrfTokenEndpoint);
+app.get(['/api/csrf-token', '/api/v1/csrf-token'], csrfTokenEndpoint);
 app.use('/api/', csrfProtection);
 
 // health check — /api/health ตอบเร็วเสมอ (uptime monitor ใช้ตัวนี้)
 // /api/health?deep=1 เช็ค DB ด้วย (ใช้ตรวจหลัง deploy/ก่อนเปิด traffic จริง)
-app.get('/api/health', async (req, res) => {
+app.get(['/api/health', '/api/v1/health'], async (req, res) => {
   const out = { ok: true, service: 'demo-lottery', env: config.env, features: { lineLogin: !!config.line.channelId } };
   if (req.query.deep === '1') {
     try {
@@ -115,20 +121,34 @@ app.get('/api/health', async (req, res) => {
   res.status(out.ok ? 200 : 503).json(out);
 });
 
-// SSE — client subscribe รับแจ้งเตือน real-time เมื่อข้อมูลเปลี่ยน (ผลรางวัล/รอบ/การตั้งค่า)
-app.get('/api/events', sseHandler);
+// API v1 — router ชุดเดียวกัน mount ซ้ำใต้ /api/v1 (backward compat: /api เดิมยังใช้ได้)
+// ลำดับต้องเหมือนกัน — /admin/chat ต้องก่อน /admin
+const apiRouters = [
+  ['/auth', authRoutes],
+  ['/lottery', lotteryRoutes],
+  ['/bets', betRoutes],
+  ['/notifications', notificationRoutes],
+  ['/scratch', scratchRoutes],
+  ['/hilo', hiloRoutes],
+  ['/kiwi', kiwiRoutes],
+  ['/push', pushRoutes],
+  ['/chat', chatMemberRoutes],
+  ['/admin/chat', chatAdminRoutes],
+  ['/admin', adminRoutes],
+];
+for (const [prefix, router] of apiRouters) {
+  app.use(`/api${prefix}`, router);
+  app.use(`/api/v1${prefix}`, router);
+}
 
-app.use('/api/auth', authRoutes);
-app.use('/api/lottery', lotteryRoutes);
-app.use('/api/bets', betRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/scratch', scratchRoutes);
-app.use('/api/hilo', hiloRoutes);
-app.use('/api/kiwi', kiwiRoutes);
-app.use('/api/push', pushRoutes);
-app.use('/api/chat', chatMemberRoutes);
-app.use('/api/admin/chat', chatAdminRoutes); // ต้องก่อน /api/admin (admin.js มี requirePerm dashboard.admin)
-app.use('/api/admin', adminRoutes);
+// OpenAPI spec — /api/openapi.json และ /api/v1/openapi.json
+app.get(['/api/openapi.json', '/api/v1/openapi.json'], (req, res) => {
+  res.json(openApiSpec);
+});
+
+// SSE — client subscribe รับแจ้งเตือน real-time เมื่อข้อมูลเปลี่ยน (ผลรางวัล/รอบ/การตั้งค่า)
+// รองรับทั้ง /api/events และ /api/v1/events
+app.get(['/api/events', '/api/v1/events'], sseHandler);
 
 app.use('/api/', notFound);
 
