@@ -62,9 +62,12 @@ function scheduleFor(typeCode, catCode) {
   if (typeCode === 'LA') {
     if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 30, closeHour: 19, closeMinute: 30, skipHoliday: true }; // ค่ำ จ–ศ
     if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0, skipHoliday: true }; // เช้า ทุกวัน
+    if (catCode === 'LAM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true }; // หวยลาวเช้า ออก 08:30 ทุกวัน
+    if (catCode === 'LADT') return { kind: 'daily', hour: 12, minute: 30, closeHour: 11, closeMinute: 30, skipHoliday: true }; // ลาวพัฒนาเที่ยง ออก 12:30 ทุกวัน
     return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true }; // หวยลาวหลัก จ–ศ
   }
   if (typeCode === 'HN') {
+    if (catCode === 'HNM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true }; // ฮานอยเช้า ออก 08:30 ทุกวัน
     // ฮานอยทางการ (Xổ số kiến thiết Thủ đô): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15–18:30 (เวลาไทย)
     if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true };
     // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)

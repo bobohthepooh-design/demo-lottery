@@ -24,10 +24,13 @@ const CAT_DEFS = [
   ['LA', 'LA', 'หวยลาว', 'mon-fri'],
   ['LA', 'LAD', 'หวยลาวพัฒนา', 'mon-fri 20:30'],
   ['LA', 'LADAM', 'หวยลาวพัฒนาเช้า', 'daily 09:00'],
+  ['LA', 'LAM', 'หวยลาวเช้า', 'daily 08:30'],
+  ['LA', 'LADT', 'หวยลาวพัฒนาเที่ยง', 'daily 12:30'],
   ['HN', 'HNS', 'ฮานอยเฉพาะกิจ', 'special'],
   ['HN', 'HNP', 'ฮานอยพิเศษ', 'special'],
   ['HN', 'HNN', 'ฮานอยปกติ', 'daily'],
   ['HN', 'HNV', 'ฮานอย VIP', 'vip'],
+  ['HN', 'HNM', 'ฮานอยเช้า', 'daily 08:30'],
   ['HN', 'HNST', 'ฮานอยทางการ', 'mon-thu 18:15'],
 ];
 
@@ -46,12 +49,15 @@ function buildRules(d) {
   const tid = async (code) => (await d.prepare('SELECT id FROM lottery_types WHERE code = ?').get(code))?.id;
 
   return (async () => {
-    let LA, LAD, LADAM, HNS, HNP, HNN, HNV, HNST;
+    const cats = {};
     for (const [tc, code, nameTh, pattern] of CAT_DEFS) {
       const id = await cat(tc, code, nameTh, pattern);
-      if (tc === 'LA') { if (code === 'LA') LA = id; else if (code === 'LAD') LAD = id; else LADAM = id; }
-      else { if (code === 'HNS') HNS = id; else if (code === 'HNP') HNP = id; else if (code === 'HNN') HNN = id; else if (code === 'HNV') HNV = id; else HNST = id; }
+      cats[`${tc}:${code}`] = id;
     }
+    const LA = cats['LA:LA'], LAD = cats['LA:LAD'], LADAM = cats['LA:LADAM'],
+          LAM = cats['LA:LAM'], LADT = cats['LA:LADT'],
+          HNS = cats['HN:HNS'], HNP = cats['HN:HNP'], HNN = cats['HN:HNN'],
+          HNV = cats['HN:HNV'], HNM = cats['HN:HNM'], HNST = cats['HN:HNST'];
     // sync draw_pattern ของ category ที่มีอยู่แล้ว (INSERT OR IGNORE ไม่ update)
     const LA_ID = await tid('LA');
     await d.prepare(`UPDATE lottery_categories SET draw_pattern='mon-fri' WHERE code='LA' AND lottery_type_id=?`).run(LA_ID);
@@ -81,8 +87,28 @@ function buildRules(d) {
     push(LA_ID, LA, 'last3',   'เลข 3 ตัว',      3, 'last3',   'exact', 900, 100, 100, 1000000, 150);
     push(LA_ID, LA, 'last2',   'เลข 2 ตัวบน',    2, 'last2',   'exact', 90,  100, 100, 1000000, 45);
     push(LA_ID, LA, 'bottom2', 'เลข 2 ตัวล่าง',  2, 'bottom2', 'exact', 90,  100, 100, 1000000, 45);
+    push(LA_ID, LA, 'run_top',  'เลขวิ่งบน',      1, 'last3',   'digit_contains', 3.5);
+    push(LA_ID, LA, 'run_bottom','เลขวิ่งล่าง',   1, 'last2',   'digit_contains', 4.2);
 
     // (หวยลาวพัฒนา LAD ปิดให้บริการ — ไม่มีแหล่งผลจริงแยกจากหวยลาวหลัก จึงไม่ seed กติกา/รอบใหม่)
+
+    // ===== หวยลาวเช้า (LAM) — เหมือนหวยลาว แต่ผลจาก lao-morning (5 หลัก) =====
+    push(LA_ID, LAM, 'last4',   'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 1000);
+    push(LA_ID, LAM, 'last3',   'เลข 3 ตัว',      3, 'last3',   'exact', 900, 100, 100, 1000000, 150);
+    push(LA_ID, LAM, 'last2',   'เลข 2 ตัวบน',    2, 'last2',   'exact', 90,  100, 100, 1000000, 45);
+    push(LA_ID, LAM, 'bottom2', 'เลข 2 ตัวล่าง',  2, 'bottom2', 'exact', 90,  100, 100, 1000000, 45);
+    push(LA_ID, LAM, 'run_top',  'เลขวิ่งบน',      1, 'last3',   'digit_contains', 3.5);
+    push(LA_ID, LAM, 'run_bottom','เลขวิ่งล่าง',   1, 'last2',   'digit_contains', 4.2);
+
+    // ===== หวยลาวพัฒนาเที่ยง (LADT) — ผล 6 หลักจาก lao-development-midday =====
+    // num4 = เลข 4 ตัวท้ายของเลขพิเศษ 6 หลัก, bottom2 = 2 ตัวแรก (ตามรางวัลจริง)
+    if (LADT) {
+      push(LA_ID, LADT, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 6000);
+      push(LA_ID, LADT, 'top3',     'เลข 3 ตัวบน',    3, 'top3',     'exact', 850, 100, 100, 1000000, 125);
+      push(LA_ID, LADT, 'bottom2',  'เลข 2 ตัวล่าง',  2, 'bottom2',  'exact', 90,  100, 100, 1000000, 60);
+      push(LA_ID, LADT, 'run_top',  'เลขวิ่งบน',      1, 'top3',     'digit_contains', 3.5);
+      push(LA_ID, LADT, 'run_bottom','เลขวิ่งล่าง',   1, 'bottom2',  'digit_contains', 4.2);
+    }
 
     // ===== หวยลาวพัฒนาเช้า (LADAM) — ทุกวัน 09:00 — ตามตลาดจริง: 4ตัว/3บน/2บน/2ล่าง/วิ่งบน/ล่าง =====
     push(LA_ID, LADAM, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 1000);
@@ -103,7 +129,7 @@ function buildRules(d) {
       push(HN, catId, 'run_top',  'เลขวิ่งบน',      1, 'top3',     'digit_contains', 3.2);
       push(HN, catId, 'run_bottom','เลขวิ่งล่าง',   1, 'bottom2',  'digit_contains', 4.2);
     };
-    [HNN, HNS, HNP, HNV, HNST].forEach(c => c && hnRules(c));
+    [HNN, HNS, HNP, HNV, HNST, HNM].forEach(c => c && hnRules(c));
 
     // ===== เลขอั้น — ไม่ใช่ประเภทแทงแยก: ผู้แทงใช้กติกาปกติ ถ้าเลขตรงเลขอั้นที่ admin
     // ประกาศรายรอบ → จ่ายตามอัตราเลขอั้น (ann_<side>_pay) หรือครึ่งหนึ่งของอัตรากติกานั้น

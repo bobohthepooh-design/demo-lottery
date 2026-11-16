@@ -150,34 +150,71 @@ export function generateByKind(kind, drawCode) {
   throw new HttpError(400, 'kind ไม่ถูกต้อง');
 }
 
-const LC_HN_MAP = { HNS: 'hanoi-adhoc', HNP: 'hanoi-special', HNV: 'hanoi-vip' };
-async function hanoiResultFor(draw) {
-  if (draw.cat_code === 'HNN' || draw.cat_code === 'HNST') return fetchHanoiResult();
-  const key = LC_HN_MAP[draw.cat_code];
-  if (!key) throw new HttpError(400, `หมวด ${draw.cat_code} ยังไม่มีแหล่งผล`);
-  return fetchLotteryChecks(key);
-}
+// ตลาดหวยย่อยจาก lotterychecks.com — slug จริงที่ยืนยันแล้วว่ามีผลทุกวัน
+// kind: lao5 = เลขพิเศษ 5 หลัก (last4/num4/top3/last3/last2/bottom2)
+//       lao6 = เลขพิเศษ 6 หลัก (ลาวพัฒนา — num4=4 ตัวท้าย, bottom2=2 ตัวแรก)
+//       hn   = โครงสร้างฮานอย (num4/top3/bottom2/db5)
+const LC_MARKET_MAP = {
+  LA:    { slug: 'lao-union',                kind: 'lao5' },
+  LAM:   { slug: 'lao-morning',              kind: 'lao5' },
+  LADAM: { slug: 'lao-development-morning',  kind: 'lao6' },
+  LADT:  { slug: 'lao-development-midday',   kind: 'lao6' },
+  HNS:   { slug: 'hanoi-adhoc',              kind: 'hn' },
+  HNP:   { slug: 'hanoi-special',            kind: 'hn' },
+  HNV:   { slug: 'hanoi-vip',                kind: 'hn' },
+  HNM:   { slug: 'hanoi-morning',            kind: 'hn' },
+};
 
-export async function fetchLotteryChecks(lottery) {
-  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${lottery}&limit=1`,
+// ดึงผลดิบจาก lotterychecks — คืน {date, special, top3, bottom2}
+async function fetchLCAll(slug) {
+  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${slug}&limit=1`,
     { signal: AbortSignal.timeout(20000) });
   if (!r.ok) throw new Error(`LC HTTP ${r.status}`);
   const j = await r.json();
   const d = j?.data?.[0];
-  if (!d || d.status !== 'complete') throw new Error(`LC ${lottery}: no result`);
-  const prize = (slug) => d.prizes?.find(p => p.slug === slug)?.numbers?.[0] || null;
-  const special = prize('special-prize'), top3 = prize('three-digit-top'), bottom2 = prize('two-digit-bottom');
-  if (!special || !top3 || !bottom2) throw new Error(`LC ${lottery}: incomplete prizes`);
-  const s5 = String(special).padStart(5, '0').slice(-5);
-  return {
-    date: String(d.drawDate).slice(0, 10),
-    winning: {
-      num4: s5.slice(0, 4),
-      top3: String(top3).padStart(3, '0').slice(-3),
-      bottom2: String(bottom2).padStart(2, '0').slice(-2),
-      db5: s5,
-    },
-  };
+  if (!d || d.status !== 'complete') throw new Error(`LC ${slug}: no result`);
+  const prize = (s) => d.prizes?.find(p => p.slug === s)?.numbers?.[0] || null;
+  const special = String(prize('special-prize') || '').replace(/\D/g, '');
+  const top3 = String(prize('three-digit-top') || '').padStart(3, '0').slice(-3);
+  const bottom2 = String(prize('two-digit-bottom') || '').padStart(2, '0').slice(-2);
+  if (special.length < 4 || !/^\d{3}$/.test(top3) || !/^\d{2}$/.test(bottom2))
+    throw new Error(`LC ${slug}: incomplete prizes`);
+  return { date: String(d.drawDate).slice(0, 10), special, top3, bottom2 };
+}
+
+function winningFor(kind, x) {
+  if (kind === 'lao5') {
+    const s5 = x.special.padStart(5, '0').slice(-5);
+    return {
+      last4: s5.slice(-4), num4: s5.slice(0, 4),
+      top3: x.top3, last3: x.top3, last2: x.top3.slice(-2), bottom2: x.bottom2,
+    };
+  }
+  if (kind === 'lao6') {
+    const s6 = x.special;
+    const s5 = s6.slice(-5);
+    return {
+      last4: s6.slice(-4), num4: s6.slice(-4), last5: s5, db5: s5,
+      top3: x.top3, last3: x.top3, last2: x.bottom2, bottom2: x.bottom2,
+    };
+  }
+  // hn
+  const s5 = x.special.padStart(5, '0').slice(-5);
+  return { num4: s5.slice(0, 4), top3: x.top3, bottom2: x.bottom2, db5: s5 };
+}
+
+// ผลตลาดย่อย (ลาวทุกหมวดยกเว้นพัฒนาบน XSMB ไม่มี, ฮานอยหมวดยกเว้น HNN/HNST)
+async function marketResultFor(catCode) {
+  const m = LC_MARKET_MAP[catCode];
+  if (!m) throw new HttpError(400, `หมวด ${catCode} ยังไม่มีแหล่งผล`);
+  const raw = await fetchLCAll(m.slug);
+  return { date: raw.date, winning: winningFor(m.kind, raw), slug: m.slug };
+}
+
+async function hanoiResultFor(draw) {
+  const cat = draw.cat_code || draw.category_code;
+  if (cat === 'HNN' || cat === 'HNST') return fetchHanoiResult();
+  return marketResultFor(cat);
 }
 
 async function xsmbRows() {
@@ -205,36 +242,6 @@ export async function fetchHanoiResult() {
       top2: s(p2, 5).slice(-2),
       bottom2: s(p7, 2),
       db5: s(special, 5),
-    },
-  };
-}
-
-// หวยลาว — laodl.com หยุดอัปเดต (ค้าง 13/11) → ใช้ lotterychecks.com แทน
-// เลือก lao-union (หวยลาวสามัคคี ออก 20:30 น. ทุกวัน — ใกล้เวลาออกรอบลาวของเรา 20:00 น. ที่สุด)
-const LA_SOURCE = 'lao-union';
-export async function fetchLaoResult() {
-  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${LA_SOURCE}&limit=1`,
-    { signal: AbortSignal.timeout(20000) });
-  if (!r.ok) throw new Error(`LC-LA HTTP ${r.status}`);
-  const j = await r.json();
-  const d = j?.data?.[0];
-  if (!d || d.status !== 'complete') throw new Error(`LC ${LA_SOURCE}: no result`);
-  const prize = (slug) => d.prizes?.find(p => p.slug === slug)?.numbers?.[0] || null;
-  const special = String(prize('special-prize') || '').replace(/\D/g, '');
-  const top3 = String(prize('three-digit-top') || '').padStart(3, '0').slice(-3);
-  const bottom2 = String(prize('two-digit-bottom') || '').padStart(2, '0').slice(-2);
-  if (special.length < 4 || !/^\d{3}$/.test(top3) || !/^\d{2}$/.test(bottom2))
-    throw new Error(`LC ${LA_SOURCE}: incomplete prizes`);
-  const s5 = special.padStart(5, '0').slice(-5);
-  return {
-    date: String(d.drawDate).slice(0, 10),
-    winning: {
-      last4: s5.slice(-4),
-      num4: s5.slice(0, 4),
-      top3,
-      last3: top3,
-      last2: top3.slice(-2),   // เลข 2 ตัวบน = 2 ตัวท้ายของเลข 3 ตัวบน
-      bottom2,                // เลข 2 ตัวล่าง = รางวัลแยก (ไม่ใช่ท้ายของ special)
     },
   };
 }
@@ -277,17 +284,16 @@ async function autoSettleResultsInner() {
   if (!draws.length) return out;
   const lcCache = new Map();
 
-  const need = { TH: false, HN: false, LA: false };
+  const need = { TH: false, HN: false };
   for (const d of draws) {
     if (d.result_mode === 'manual') continue;
     if (d.type_code === 'TH') need.TH = true;
-    else if (d.type_code === 'HN') need.HN = true;
-    else if (d.type_code === 'LA' && d.cat_code === 'LA') need.LA = true;
+    // XSMB ใช้เฉพาะฮานอยปกติ/ทางการ — หมวดอื่นไป lotterychecks (lazy fetch ในลูป)
+    else if (d.type_code === 'HN' && (d.cat_code === 'HNN' || d.cat_code === 'HNST')) need.HN = true;
   }
-  let thai = null, hanoi = null, lao = null;
+  let thai = null, hanoi = null;
   if (need.TH) thai = await tryFetch('TH', 'GLO (glo.or.th)', fetchThaiResult);
   if (need.HN) hanoi = await tryFetch('HN', 'XSMB (GitHub)', fetchHanoiResult);
-  if (need.LA) lao = await tryFetch('LA', 'lotterychecks(lao-union)', fetchLaoResult);
 
   for (const d of draws) {
     if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
@@ -296,28 +302,27 @@ async function autoSettleResultsInner() {
       if (thai && thai.date === drawLocalDate(d)) { src = thai; srcLabel = 'TH(GLO)'; }
       else { out.skipped.push(`${d.draw_code}: รอผล GLO จริง (ล่าสุด ${thai?.date || 'ไม่มีข้อมูล'})`); continue; }
     }
-    else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(lotterychecks)'; }
-    else if (d.type_code === 'LA') {
-      out.skipped.push(`${d.draw_code}: ลาวพัฒนาไม่มีแหล่งผลอัตโนมัติ — admin กรอกผลจริง`); continue;
-    }
     else if (d.type_code === 'HR') {
       src = { winning: generateZodiacResult(d.draw_code), date: drawLocalDate(d) }; srcLabel = 'HR(gen)';
     }
-    else if (d.type_code === 'HN') {
-      if (d.cat_code === 'HNN' || d.cat_code === 'HNST') {
-        if (hanoi && hanoi.date === drawLocalDate(d)) { src = hanoi; srcLabel = 'HN(XSMB)'; }
-        else { out.skipped.push(`${d.draw_code}: รอผล XSMB จริง (ล่าสุด ${hanoi?.date || 'ไม่มีข้อมูล'})`); continue; }
+    else if (d.type_code === 'HN' && (d.cat_code === 'HNN' || d.cat_code === 'HNST')) {
+      if (hanoi && hanoi.date === drawLocalDate(d)) { src = hanoi; srcLabel = 'HN(XSMB)'; }
+      else { out.skipped.push(`${d.draw_code}: รอผล XSMB จริง (ล่าสุด ${hanoi?.date || 'ไม่มีข้อมูล'})`); continue; }
+    }
+    else if (d.type_code === 'LA' || d.type_code === 'HN') {
+      const m = LC_MARKET_MAP[d.cat_code];
+      if (!m) { out.skipped.push(`${d.draw_code}: no source`); continue; }
+      let raw = lcCache.get(m.slug);
+      if (raw === undefined) {
+        try { raw = await fetchLCAll(m.slug); }
+        catch (e) { out.errors.push(`LC ${m.slug}: ${e.message}`); raw = null; }
+        lcCache.set(m.slug, raw);
+      }
+      if (raw && raw.date === drawLocalDate(d)) {
+        src = { date: raw.date, winning: winningFor(m.kind, raw) };
+        srcLabel = `${d.type_code}(${m.slug})`;
       } else {
-        const key = LC_HN_MAP[d.cat_code];
-        if (!key) { out.skipped.push(`${d.draw_code}: no source`); continue; }
-        let lc = lcCache.get(key);
-        if (lc === undefined) {
-          try { lc = await fetchLotteryChecks(key); }
-          catch (e) { out.errors.push(`LC ${key}: ${e.message}`); lc = null; }
-          lcCache.set(key, lc);
-        }
-        if (lc && lc.date === drawLocalDate(d)) { src = lc; srcLabel = `HN(${key})`; }
-        else { out.skipped.push(`${d.draw_code}: รอผล ${key} (ล่าสุด ${lc?.date || 'ไม่มีข้อมูล'})`); continue; }
+        out.skipped.push(`${d.draw_code}: รอผล ${m.slug} (ล่าสุด ${raw?.date || 'ไม่มีข้อมูล'})`); continue;
       }
     }
     if (!src) { out.skipped.push(`${d.draw_code}: no source`); continue; }
@@ -344,8 +349,7 @@ export async function fetchResultForDraw(drawId) {
   let src = null;
   if (draw.type_code === 'TH') src = await fetchThaiResult();
   else if (draw.type_code === 'HN') src = await hanoiResultFor(draw);
-  else if (draw.type_code === 'LA' && draw.category_code === 'LA') src = await fetchLaoResult();
-  else if (draw.type_code === 'LA') throw new HttpError(400, 'ลาวพัฒนาไม่มีแหล่งผลอัตโนมัติ — กรุณากรอกผลจริงเอง');
+  else if (draw.type_code === 'LA') src = await marketResultFor(draw.category_code || draw.cat_code);
   else if (draw.type_code === 'HR') return { date: drawLocalDate(draw), winning: generateZodiacResult(draw.draw_code) };
   else throw new HttpError(400, 'ไม่ทราบแหล่งผลสำหรับหวยประเภทนี้ — กรุณากรอกผลเอง');
   if (src.date && drawLocalDate(draw) !== src.date) {
