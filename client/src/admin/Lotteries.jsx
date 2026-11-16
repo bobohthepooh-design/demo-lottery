@@ -85,6 +85,7 @@ export default function AdminLotteries() {
   const [rules, setRules] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showInactive, setShowInactive] = useState(false);
+  const [showDead, setShowDead] = useState(false); // กติกาที่ถูกแทนที่แล้ว (*_old_*/_retired_) — ซ่อน default กันตารางยาว
   const [ruleQuery, setRuleQuery] = useState('');
   const [lastResults, setLastResults] = useState({});
   const [editRule, setEditRule] = useState(null);
@@ -196,7 +197,9 @@ export default function AdminLotteries() {
   const typeName = (id) => types.find(t => t.id === id)?.name_th || `#${id}`;
   const catName = (id) => categories.find(c => c.id === id)?.name_th || '';
   const typeOf = (id) => types.find(t => t.id === id);
-  const visibleRules = (showInactive ? rules : rules.filter(r => r.is_active))
+  const isDeadRule = (r) => /_(old|retired)_\d*$|_(old|retired)/.test(r.bet_type || '');
+  const liveInactive = rules.filter(r => !r.is_active && !isDeadRule(r));
+  const visibleRules = (showInactive ? rules.filter(r => !isDeadRule(r) || showDead) : rules.filter(r => r.is_active && !isDeadRule(r)))
     .filter(r => {
       const q = ruleQuery.trim().toLowerCase();
       if (!q) return true;
@@ -335,8 +338,14 @@ export default function AdminLotteries() {
               className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-1.5 text-sm w-64 text-white placeholder:text-navy-500" />
             <label className="text-xs text-navy-300 flex items-center gap-1.5">
               <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="accent-gold-500" />
-              แสดงที่ปิดใช้งาน ({rules.filter(r => !r.is_active).length})
+              แสดงที่ปิดใช้งาน ({liveInactive.length})
             </label>
+            {showInactive && (
+              <label className="text-xs text-navy-400 flex items-center gap-1.5">
+                <input type="checkbox" checked={showDead} onChange={e => setShowDead(e.target.checked)} className="accent-navy-400" />
+                รวมกติกาที่ถูกแทนที่แล้ว ({rules.filter(r => isDeadRule(r)).length})
+              </label>
+            )}
             <button onClick={exportRules} className="text-xs px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300">⤓ Export JSON</button>
             <label className="text-xs px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300 cursor-pointer">
               ⤒ Import JSON<input type="file" accept=".json" className="hidden" onChange={importRules} /></label>
