@@ -29,6 +29,19 @@ function resultSummary(w) {
   return parts;
 }
 
+// ผลย่อสำหรับตาราง — เลขหลักที่คนดูบ่อยสุดของแต่ละประเภท (3 ตัวบน + 2 ตัวล่าง + รางวัลใหญ่/หลัก)
+function compactSummary(w) {
+  if (!w) return null;
+  const parts = [];
+  const push = (v) => { if (v !== undefined && v !== null && v !== '') parts.push(asList(v)); };
+  if (w.first) parts.push(`รางวัล1: ${w.first}`);
+  if (w.main || w.num4) parts.push(w.main || w.num4);
+  if (w.zodiac) parts.push(w.zodiac);
+  push(w.top3 ?? w.last3 ?? w.front3);
+  push(w.bottom2 ?? w.last2 ?? w.top2);
+  return parts.length ? parts.join('  ·  ') : null;
+}
+
 function summarizeWinning(w) {
   if (!w) return '—';
   const parts = [];
@@ -48,6 +61,7 @@ function marketLabel(r) { return r.category_name_th || r.type_name_th; }
 export default function Results() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
+  const [expanded, setExpanded] = useState({}); // draw_id -> bool: แสดงผลละเอียด
 
   const load = () => api('/lottery/today').then(setData).catch(e => setErr(e.message));
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, []);
@@ -101,6 +115,8 @@ export default function Results() {
             const ac = typeAccent(d.type_code);
             const badge = sourceBadge(d.result_source);
             const sum = resultSummary(d.winning);
+            const compact = compactSummary(d.winning);
+            const open = !!expanded[d.id];
             return (
               <div key={d.id} className="px-4 py-3">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -117,7 +133,18 @@ export default function Results() {
                     {STATUS_TH[d.status] || d.status}
                   </span>
                 </div>
-                {sum && (
+                {sum && sum.length > 0 && (
+                  <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
+                    className="mt-1.5 w-full text-left text-xs text-slate-100 bg-navy-900/80 hover:bg-navy-900 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide transition">
+                    {compact || sum[0]}
+                    {sum.length > 1 && (
+                      <span className="block text-[10px] text-navy-400 font-sans mt-0.5">
+                        {open ? '▾ ย่อรายละเอียด' : '▸ ดูผลทุกรางวัล'}
+                      </span>
+                    )}
+                  </button>
+                )}
+                {open && sum && (
                   <div className="mt-1.5 text-xs text-slate-100 bg-navy-900/80 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide">
                     {sum.map((p, i) => <div key={i}>{p}</div>)}
                   </div>
