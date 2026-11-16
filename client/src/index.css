@@ -133,11 +133,21 @@ main table tbody tr:hover { background: #12233c; }
 main table tbody tr { border-color: #1e3a5f; }
 main table td, main table th { border-color: #1e3a5f; }
 
-/* ตัวหนังสือขนาดเล็ก — ขยายให้อ่านง่าย/เห็นชัดขึ้น */
-.text-xs { font-size: 13px; line-height: 1.45; }
-.text-sm { font-size: 15px; line-height: 1.5; }
-.text-\[10px\] { font-size: 12px; }
-.text-\[11px\] { font-size: 13px; }
+/* ตัวหนังสือขนาดเล็ก — ขยายให้อ่านง่าย/เห็นชัดขึ้น (มาตรฐานเดียวกันทุก platform) */
+.text-xs { font-size: 14px; line-height: 1.5; }
+.text-sm { font-size: 16px; line-height: 1.55; }
+.text-\[10px\] { font-size: 13px; }
+.text-\[11px\] { font-size: 14px; }
+.text-\[9px\] { font-size: 12px; }
+.text-\[8px\] { font-size: 11px; }
+.text-\[7px\] { font-size: 11px; }
+.text-\[13px\] { font-size: 14px; }
+.text-\[15px\] { font-size: 16px; }
+
+/* มือถือ/แท็บเล็ต — input/select font ≥16px กัน iOS zoom อัตโนมัติตอนแตะช่องกรอก */
+@media (max-width: 1023px) {
+  input, select, textarea { font-size: 16px; }
+}
 
 /* placeholder — มองเห็นชัดบนพื้น dark */
 ::placeholder { color: #6b8aa8; opacity: 1; }
