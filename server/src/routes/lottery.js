@@ -84,6 +84,7 @@ router.get('/draws', async (req, res, next) => {
     const draws = await svc.listDraws({
       lotteryTypeId,
       categoryId,
+      status: req.query.status || null,
       upcoming: req.query.upcoming === '1',
     });
     res.json({ draws });
@@ -181,6 +182,47 @@ router.get('/results', async (req, res) => {
     SELECT * FROM ranked WHERE rn = 1
     ORDER BY COALESCE(published_at, draw_at) DESC`).all();
   res.json({ results: rows.map(r => ({ ...r, fairness: fetcher.fairnessForSource(r.source, r.draw_code) })) });
+});
+
+// ตรวจเลข — ใส่เลข + เลือกรอบที่ออกผลแล้ว → บอกว่าถูกรางวัลอะไรบ้าง (public, ไม่ต้อง login)
+router.get('/check', async (req, res, next) => {
+  try {
+    const drawId = Number(req.query.draw_id);
+    if (!Number.isInteger(drawId) || drawId <= 0) throw new HttpError(400, 'ต้องระบุ draw_id');
+    const draw = await svc.getDraw(drawId);
+    if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+    const row = await getDb().prepare('SELECT winning_numbers, source FROM lottery_results WHERE draw_id = ?').get(drawId);
+    if (!row) throw new HttpError(400, 'รอบนี้ยังไม่ออกผล — เลือกรอบที่ออกผลแล้ว');
+    let winning;
+    try { winning = JSON.parse(row.winning_numbers); }
+    catch { throw new HttpError(400, 'ข้อมูลผลรางวัลไม่ถูกต้อง'); }
+    svc.mergeAnnounce(winning, draw.announce);
+    const rules = await svc.listRules(draw.lottery_type_id, { categoryId: draw.category_id });
+    const numbers = String(req.query.numbers || '').split(/[\s,;]+/).map(s => s.trim()).filter(Boolean).slice(0, 20);
+    if (!numbers.length) throw new HttpError(400, 'กรุณาใส่เลขอย่างน้อย 1 เลข (คั่นด้วยช่องว่างหรือ ,)');
+
+    const out = numbers.map(num => {
+      const hits = [];
+      for (const r of rules) {
+        try { svc.validateBetNumber(r, num); } catch { continue; } // เลขไม่ตรงจำนวนหลักของกติกานี้ — ข้าม
+        const win = svc.evaluateBet(r, num, winning, {});
+        if (win.win) hits.push({ name: r.name_th, kind: 'เต็ง', mult: win.multiplier });
+        else {
+          const tod = svc.evaluateBet(r, num, winning, { todBet: true });
+          if (tod.win) hits.push({ name: r.name_th, kind: 'โต๊ด', mult: tod.multiplier });
+        }
+      }
+      return { number: num, hits };
+    });
+    res.json({
+      draw: {
+        id: draw.id, draw_code: draw.draw_code, draw_at: draw.draw_at,
+        type_name_th: draw.type_name_th, category_name_th: draw.category_name_th,
+      },
+      winning,
+      numbers: out,
+    });
+  } catch (e) { next(e); }
 });
 
 export default router;

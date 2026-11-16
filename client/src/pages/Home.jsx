@@ -9,6 +9,7 @@ import { GameArt } from '../components/GameArt.jsx';
 import { mergeBanner } from '../bannerConfig.js';
 import { kindBadge, marketInfo, MODE_BADGE } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
+import CheckNumbers from '../components/CheckNumbers.jsx';
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
 function useNow() {
@@ -240,6 +241,9 @@ export default function Home() {
         </div>
       </section>
       )}
+
+      {/* ตรวจเลข — ใส่เลขเช็คผลรางวัลย้อนหลังได้ทันที ไม่ต้อง login */}
+      <CheckNumbers />
 
       {/* เกมด่วน — สล็อต/ไฮโล แสดงก่อนเสมอ เล่นได้ทันทีไม่ต้องรอผลออกรางวัล */}
       {topRowTypes.length > 0 && (
