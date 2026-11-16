@@ -108,13 +108,10 @@ export default function Layout() {
         <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
-              <img src="/money-bag.svg" alt="กระเป๋าเงิน" className="w-7 h-7" />
+            <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
+              <img src="/icon.svg" alt="โลโก้" className="w-8 h-8" />
             </div>
-            <div>
-              <div className="font-display font-bold text-gold-300 leading-tight tracking-[0.18em] text-sm">DEMO LOTTERY</div>
-              <div className="text-[9px] text-navy-400 tracking-widest uppercase -mt-0.5">Premium Lottery Lounge</div>
-            </div>
+            <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base">DEMO LOTTERY</div>
           </Link>
 
           <nav className="hidden xl:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

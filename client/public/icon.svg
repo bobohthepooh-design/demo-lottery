@@ -1,14 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#FFF9F5"/>
-  <!-- เชือกผูกปากถุง -->
-  <path d="M170 130c40-56 132-56 172 0" stroke="#8E3A56" stroke-width="26" fill="none" stroke-linecap="round"/>
-  <circle cx="168" cy="126" r="24" fill="#8E3A56"/>
-  <circle cx="344" cy="126" r="24" fill="#8E3A56"/>
-  <!-- ตัวถุง -->
-  <path d="M118 190c0-30 30-52 68-60h140c38 8 68 30 68 60v150c0 70-54 126-138 126S118 410 118 340V190z" fill="#F6B8C8"/>
-  <!-- ปากถุง -->
-  <rect x="156" y="168" width="200" height="62" rx="31" fill="#D96C8F"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- พื้นหลังสี่เหลี่ยมมนโทน navy -->
+  <rect width="64" height="64" rx="14" fill="#0a1526"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" fill="none" stroke="#f5c518" stroke-width="3" opacity="0.9"/>
   <!-- เหรียญทอง -->
-  <circle cx="256" cy="320" r="72" fill="#FFE9A8" stroke="#D9A441" stroke-width="18"/>
-  <text x="256" y="352" font-size="88" text-anchor="middle" fill="#8E5A00" font-family="Arial, sans-serif" font-weight="bold">฿</text>
+  <circle cx="32" cy="32" r="21" fill="#f5c518"/>
+  <circle cx="32" cy="32" r="21" fill="none" stroke="#b8860b" stroke-width="2"/>
+  <!-- ขอบเหรียญแบบ ridged -->
+  <circle cx="32" cy="32" r="17.5" fill="none" stroke="#d9a520" stroke-width="2.5" stroke-dasharray="4 3"/>
+  <circle cx="32" cy="32" r="14.5" fill="#0a1526"/>
+  <!-- สัญลักษณ์บาท -->
+  <text x="32" y="41.5" font-size="21" text-anchor="middle" fill="#f5c518" font-family="Arial, Helvetica, sans-serif" font-weight="bold">฿</text>
 </svg>
