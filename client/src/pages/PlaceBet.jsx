@@ -579,7 +579,7 @@ export default function PlaceBet() {
 
       {/* floating bet bar — มือถือ/แท็บเล็ต (slip panel อยู่ล่างจอ) */}
       {!closed && slip.length > 0 && !done && (
-        <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-4">
+        <div className="sm:hidden fixed bottom-16 inset-x-0 z-30 px-4">
           <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
             className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-5 disabled:opacity-50">
             <span className="text-sm">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>

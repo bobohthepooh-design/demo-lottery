@@ -114,7 +114,7 @@ export default function Layout() {
             <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base">DEMO LOTTERY</div>
           </Link>
 
-          <nav className="hidden xl:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav className="hidden sm:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end
               className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
               <Icon name="home" className="w-5 h-5" />{t('home')}
@@ -135,7 +135,7 @@ export default function Layout() {
 
           <div className="flex items-center gap-3">
             {isAdmin && (
-              <div className="relative hidden xl:block" onClick={e => e.stopPropagation()}>
+              <div className="relative hidden sm:block" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setAdminMenuOpen(v => !v)}
                   className={`px-3 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
                   <Icon name="dashboard" className="w-5 h-5" />{t('admin')}
@@ -189,14 +189,14 @@ export default function Layout() {
               className="text-sm px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition inline-flex items-center">
               <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4" />
             </button>
-            <button className="xl:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
+            <button className="sm:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
           </div>
         </div>
       </header>
 
       {/* เมนูมือถือ/แท็บเล็ต — overlay เต็มจอ เปิดได้จากปุ่ม ☰ หรือ "เพิ่มเติม" ใน bottom nav */}
       {menuOpen && (
-        <div className="xl:hidden fixed inset-0 z-50 bg-[#040a14]/97 backdrop-blur-md overflow-y-auto" onClick={() => setMenuOpen(false)}>
+        <div className="sm:hidden fixed inset-0 z-50 bg-[#040a14]/97 backdrop-blur-md overflow-y-auto" onClick={() => setMenuOpen(false)}>
           <div className="suit-pattern min-h-full px-4 py-4 space-y-1" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-3 pt-1 pb-3 sticky top-0 bg-[#040a14]/95 backdrop-blur-md">
               <span className="kicker">{t('menu')}</span>
@@ -264,12 +264,12 @@ export default function Layout() {
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 xl:pb-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
         <Outlet />
       </main>
 
       {/* Bottom navigation — มือถือ/แท็บเล็ต (< xl) แถบติดขอบล่าง + ปุ่มเพิ่มเติมเปิดเมนูเต็ม */}
-      <nav className="xl:hidden fixed bottom-0 inset-x-0 z-40"
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
         <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
@@ -318,7 +318,7 @@ export default function Layout() {
         </div>
       </nav>
 
-      <footer className="border-t border-navy-800 py-4 pb-20 xl:pb-4 text-center text-xs text-navy-300">
+      <footer className="border-t border-navy-800 py-4 pb-20 sm:pb-4 text-center text-xs text-navy-300">
         {t('footer')}
       </footer>
 

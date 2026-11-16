@@ -874,7 +874,7 @@ main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !importa
 @media (min-width:1024px){.instant-betbar{bottom:0;padding-bottom:0.75rem}}
 /* เว้นที่ว่างท้ายหน้าไม่ให้แถบไปทับเนื้อหา (มือถือมี bottom nav 64px + แถบ ~60px) */
 .instant-page{padding-bottom:9.5rem}
-@media (min-width:1024px){.instant-page{padding-bottom:6rem}}
+@media (min-width:640px){.instant-page{padding-bottom:6rem}}
 
 /* ================= Phase A: Accessibility — focus ring ชัดทุก interactive element ================= */
 :focus-visible {
