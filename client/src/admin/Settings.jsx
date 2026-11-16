@@ -110,12 +110,13 @@ export default function AdminSettings() {
       {/* Blind mode — ซ่อนเมนูแทงหวยจากสมาชิก */}
       <div className={`rounded-xl border p-4 flex items-center gap-4 ${betMenuOn ? 'bg-navy-800 border-navy-700' : 'bg-red-500/10 border-red-500/40'}`}>
         <div className="flex-1">
-          <div className="font-bold text-white">🎰 เมนูแทงหวย (Blind Mode)</div>
+          <div className="font-bold text-white">🎰 แสดงเมนูแทงหวย (Blind Mode)</div>
           <div className="text-xs text-navy-300 mt-0.5">
             {betMenuOn
               ? '🟢 เปิดอยู่ — สมาชิกเห็นเมนูหวยตามปกติ'
-              : '🔴 ปิดอยู่ — สมาชิกไม่เห็นเมนูประเภทหวย/ปุ่มหวย (admin ยังใช้งานได้ปกติ)'}
+              : '🔴 ซ่อนอยู่ — ซ่อนเฉพาะเมนู/ปุ่ม (สมาชิกยังแทงผ่านลิงก์ตรงได้ • รอบหวยยังสร้างปกติ)'}
           </div>
+          <div className="text-[11px] text-navy-500 mt-1">⚠️ อันนี้แค่ซ่อนเมนู — ถ้าต้องการปิดตลาดจริง (หยุดสร้างรอบ/หยุดรับแทง) ไปที่ <b>ประเภทหวย &amp; กติกา → ปิดประเภท</b></div>
         </div>
         <button onClick={toggleBetMenu}
           className={`font-bold px-5 py-2.5 rounded-lg text-sm transition ${betMenuOn ? 'bg-red-500/80 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
@@ -126,8 +127,8 @@ export default function AdminSettings() {
       {/* เลือกซ่อนรายประเภท — มีผลเมื่อเปิดเมนูรวมอยู่ */}
       {betMenuOn && lotteryTypes.length > 0 && (
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-          <div className="text-sm font-bold text-white mb-1">🎯 เลือกประเภทหวยที่ต้องการซ่อนเมนู</div>
-          <div className="text-xs text-navy-400 mb-3">ติ๊ก "แสดง" = สมาชิกเห็นเมนูประเภทนั้น • ติ๊กออก = ซ่อน (blind) เฉพาะประเภทนั้น</div>
+          <div className="text-sm font-bold text-white mb-1">🎯 ซ่อนเมนูเฉพาะประเภท (แสดงผลอย่างเดียว)</div>
+          <div className="text-xs text-navy-400 mb-1">ติ๊ก "แสดง" = สมาชิกเห็นเมนูประเภทนั้น • ติ๊กออก = ซ่อนการ์ดเมนูเฉยๆ — <b className="text-amber-300">ระบบยังสร้างรอบและรับแทงได้ปกติ</b> (ต่างจากปิดตลาดจริงที่หน้าประเภทหวย &amp; กติกา)</div>
           <div className="grid sm:grid-cols-2 gap-2">
             {lotteryTypes.map(t => {
               const shown = !hiddenTypes.includes(t.code);
