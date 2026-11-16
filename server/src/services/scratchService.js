@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { getDb, tx, txAsync, isPg, makeReference } from '../db/index.js';
+import { txAsync, makeReference } from '../db/index.js';
 import { HttpError, audit } from '../lib/audit.js';
 import { debitForBetTx, creditTx, getBalance } from './walletService.js';
 import { getSetting, setSetting } from './settingsService.js';
@@ -15,8 +15,6 @@ import { q, qGet, qRun } from '../db/pg.js';
  * - ทุกการซื้อสร้าง bet_slip + bet_item ปกติ → แสดงใน "โพยของฉัน"/ประวัติ-wallet อัตโนมัติ
  * - reveal: คำนวณผลจาก grid อีกครั้ง → ถูก = เครดิต win_credit ทันที
  */
-
-const CARD_PRICE_SATANG = () => parseInt(getSetting('scratch_price', '5000'), 10) || 5000;
 
 const SYMBOLS = [
   { icon: '🍒', name: 'เชอร์รี่', weight: 330, pay3: 150    },
@@ -52,29 +50,15 @@ function ovMap(j) {
   if (Array.isArray(j)) for (const p of j) if (p?.icon && Number(p.prize) > 0) ov[p.icon] = Math.floor(Number(p.prize));
   return ov;
 }
-function effectiveSymbolsSync() {
-  let j = prizesFromRule(scratchRule());
-  if (!j) { try { j = JSON.parse(getSetting('scratch_prizes', '[]') || '[]'); } catch { j = null; } }
-  const ov = ovMap(j);
-  return SYMBOLS.map(s => ({ ...s, pay3: ov[s.icon] ?? s.pay3 }));
-}
-async function effectiveSymbolsPg() {
-  let j = prizesFromRule(await scratchRulePg());
+async function effectiveSymbols() {
+  let j = prizesFromRule(await scratchRule());
   if (!j) { try { j = JSON.parse(await getSetting('scratch_prizes', '[]') || '[]'); } catch { j = null; } }
   const ov = ovMap(j);
   return SYMBOLS.map(s => ({ ...s, pay3: ov[s.icon] ?? s.pay3 }));
 }
 
-export function prizeTable() {
-  if (isPg()) return prizeTablePg();
-  return effectiveSymbolsSync().map(s => ({
-    icon: s.icon, name: s.name,
-    prize: s.pay3,
-    max: s.pay3 * TIER[5],
-  }));
-}
-async function prizeTablePg() {
-  return (await effectiveSymbolsPg()).map(s => ({
+export async function prizeTable() {
+  return (await effectiveSymbols()).map(s => ({
     icon: s.icon, name: s.name,
     prize: s.pay3,
     max: s.pay3 * TIER[5],
@@ -138,48 +122,14 @@ function evaluateGridWith(syms, grid) {
   return { win: true, symbol: best.icon, name: best.name, prize: total, count: lines.length, lines };
 }
 
-export function evaluateGrid(grid) {
-  if (isPg()) return evaluateGridPg(grid);
-  return evaluateGridWith(effectiveSymbolsSync(), grid);
-}
-async function evaluateGridPg(grid) {
-  return evaluateGridWith(await effectiveSymbolsPg(), grid);
+export async function evaluateGrid(grid) {
+  return evaluateGridWith(await effectiveSymbols(), grid);
 }
 
 // ---------- infra ----------
 let infraReady = false;
-export function ensureInfra() {
+export async function ensureInfra() {
   if (infraReady) return;
-  if (isPg()) return ensureInfraPg();
-  const db = getDb();
-  let type = db.prepare(`SELECT id FROM lottery_types WHERE code = 'SC'`).get();
-  if (!type) {
-    db.prepare(`INSERT INTO lottery_types (code, name_th, name_en, description, is_active, result_mode)
-                VALUES ('SC','สล็อต','Slot Machine','สล็อต 5 รีล 3 แถว 20 เพย์ไลน์ — สปินแล้วรอลุ้นผลทันที',1,'manual')`)
-      .run();
-    type = db.prepare(`SELECT id FROM lottery_types WHERE code = 'SC'`).get();
-  }
-  const typeId = type.id;
-  if (!db.prepare(`SELECT id FROM lottery_rules WHERE lottery_type_id = ? AND bet_type = 'scratch'`).get(typeId)) {
-    db.prepare(`INSERT INTO lottery_rules
-      (lottery_type_id, category_id, bet_type, name_th, name_en, digits, match_config, payout_multiplier, stake_unit, min_amount, max_amount, is_active)
-      VALUES (?, NULL, 'scratch', 'สล็อต 5 รีล 3 แถว 20 เพย์ไลน์', 'Slot 5-Reel 20-Paylines', 0, '{"mode":"scratch"}', 0, 1, 5000, 5000, 1)`)
-      .run(typeId);
-  }
-  if (!db.prepare(`SELECT id FROM lottery_draws WHERE draw_code = 'SC-STANDING'`).get()) {
-    db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
-                VALUES (?, NULL, 'SC-STANDING', '2026-01-01 00:00:00', '2026-01-01 00:00:00', 'closed')`).run(typeId);
-  }
-  db.prepare(`UPDATE lottery_types SET name_th='สล็อต', name_en='Slot Machine', description='สล็อต 5 รีล 3 แถว 20 เพย์ไลน์ — สปินแล้วรอลุ้นผลทันที' WHERE code = 'SC'`).run();
-  db.prepare(`UPDATE lottery_rules SET name_th='สล็อต 5 รีล 3 แถว 20 เพย์ไลน์', name_en='Slot 5-Reel 20-Paylines' WHERE bet_type = 'scratch'`).run();
-  if (getSetting('scratch_price') == null) setSetting('scratch_price', 5000);
-  if (getSetting('scratch_prizes') == null) {
-    setSetting('scratch_prizes', JSON.stringify(SYMBOLS.map(s => ({ icon: s.icon, prize: s.pay3 }))));
-  }
-  infraReady = true;
-}
-
-async function ensureInfraPg() {
   let type = await qGet(`SELECT id FROM lottery_types WHERE code = 'SC'`);
   if (!type) {
     await qRun(`INSERT INTO lottery_types (code, name_th, name_en, description, is_active, result_mode)
@@ -205,40 +155,21 @@ async function ensureInfraPg() {
   infraReady = true;
 }
 
-function standingDraw() {
-  if (isPg()) return standingDrawPg();
-  ensureInfra();
-  return getDb().prepare(`SELECT d.*, lt.code AS type_code, c.code AS cat_code
-    FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
-    LEFT JOIN lottery_categories c ON c.id = d.category_id
-    WHERE d.draw_code = 'SC-STANDING'`).get();
-}
-async function standingDrawPg() {
-  await ensureInfraPg();
+async function standingDraw() {
+  await ensureInfra();
   return qGet(`SELECT d.*, lt.code AS type_code, c.code AS cat_code
     FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
     LEFT JOIN lottery_categories c ON c.id = d.category_id
     WHERE d.draw_code = 'SC-STANDING'`);
 }
-function scratchRule() {
-  const draw = standingDraw();
-  return getDb().prepare(`SELECT * FROM lottery_rules WHERE lottery_type_id = ? AND bet_type = 'scratch' AND is_active = 1`)
-    .get(draw.lottery_type_id);
-}
-async function scratchRulePg() {
+async function scratchRule() {
   const draw = await standingDraw();
   return qGet(`SELECT * FROM lottery_rules WHERE lottery_type_id = $1 AND bet_type = 'scratch' AND is_active = 1`,
     [draw.lottery_type_id]);
 }
 
-export function cardPrice() {
-  if (isPg()) return cardPricePg();
-  const r = scratchRule();
-  const p = r ? Number(r.min_amount) : NaN;
-  return Number.isInteger(p) && p > 0 ? p : parseInt(getSetting('scratch_price', '5000'), 10) || 5000;
-}
-async function cardPricePg() {
-  const r = await scratchRulePg();
+export async function cardPrice() {
+  const r = await scratchRule();
   const p = r ? Number(r.min_amount) : NaN;
   return Number.isInteger(p) && p > 0 ? p : parseInt(await getSetting('scratch_price', '5000'), 10) || 5000;
 }
@@ -259,68 +190,13 @@ const cardView = (c, revealOutcome = false) => ({
     : {}),
 });
 
-export function buyCard(userId, idemKey = null) {
-  if (isPg()) return buyCardPg(userId, idemKey);
-  ensureInfra();
+export async function buyCard(userId, idemKey = null) {
+  await ensureInfra();
   if (idemKey != null && (typeof idemKey !== 'string' || idemKey.length > 64))
     throw new HttpError(400, 'idempotencyKey ไม่ถูกต้อง');
-  const price = cardPrice();
-  const draw = standingDraw();
-  const rule = scratchRule();
-  if (!draw || !rule) throw new HttpError(500, 'ระบบสล็อตยังไม่พร้อมใช้งาน');
-
-  const serverSeed = randomBytes(32).toString('hex');
-  const commitHash = commitOf(serverSeed);
-  const grid = genGrid(serverSeed);
-  const cardRef = makeReference('SC');
-  const slipRef = makeReference('BET');
-  const slipKey = idemKey ? `scratch-idem:${idemKey}` : `scratch-${cardRef}`;
-
-  const findExisting = (d) => idemKey
-    ? d.prepare(`SELECT s.slip_ref, s.total_stake, c.id AS card_id
-                 FROM bet_slips s JOIN scratch_cards c ON c.slip_id = s.id
-                 WHERE s.user_id = ? AND s.idempotency_key = ?`).get(userId, slipKey)
-    : null;
-
-  let result;
-  try {
-    result = tx((d) => {
-      const ex = findExisting(d);
-      if (ex) return { duplicate: true, cardId: ex.card_id, slipRef: ex.slip_ref, price: ex.total_stake };
-      const slip = d.prepare(`INSERT INTO bet_slips (slip_ref, user_id, draw_id, status, total_stake, idempotency_key)
-                              VALUES (?, ?, ?, 'pending', ?, ?)`).run(slipRef, userId, draw.id, price, slipKey);
-      const slipId = Number(slip.lastInsertRowid);
-      d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount)
-                 VALUES (?, ?, ?, 'scratch', ?, ?)`).run(slipId, draw.id, rule.id, cardRef, price);
-      debitForBetTx(d, { userId, slipRef, totalStake: price, idempotencyKey: `bet-debit-${slipRef}` });
-      const card = d.prepare(`INSERT INTO scratch_cards (user_id, slip_id, grid, outcome, status, server_seed, commit_hash)
-                              VALUES (?, ?, ?, '{}', 'hidden', ?, ?)`).run(userId, slipId, JSON.stringify(grid), serverSeed, commitHash);
-      audit({ userId, action: 'scratch.buy', entityType: 'scratch_card', entityId: String(card.lastInsertRowid),
-        detail: { price, slipRef }, req: null });
-      return { cardId: Number(card.lastInsertRowid), slipRef, price };
-    });
-  } catch (e) {
-    if (idemKey && /UNIQUE|constraint/i.test(String(e.message))) {
-      const db = getDb();
-      const ex = db.prepare(`SELECT s.slip_ref, s.total_stake, c.id AS card_id
-                             FROM bet_slips s JOIN scratch_cards c ON c.slip_id = s.id
-                             WHERE s.user_id = ? AND s.idempotency_key = ?`).get(userId, slipKey);
-      if (ex) result = { duplicate: true, cardId: ex.card_id, slipRef: ex.slip_ref, price: ex.total_stake };
-      else throw e;
-    } else throw e;
-  }
-
-  const card = getDb().prepare(`SELECT c.*, s.slip_ref, s.created_at FROM scratch_cards c
-    JOIN bet_slips s ON s.id = c.slip_id WHERE c.id = ?`).get(result.cardId);
-  return { ...result, balance: getBalance(userId), card: cardView(card) };
-}
-async function buyCardPg(userId, idemKey = null) {
-  await ensureInfraPg();
-  if (idemKey != null && (typeof idemKey !== 'string' || idemKey.length > 64))
-    throw new HttpError(400, 'idempotencyKey ไม่ถูกต้อง');
-  const price = await cardPricePg();
+  const price = await cardPrice();
   const draw = await standingDraw();
-  const rule = await scratchRulePg();
+  const rule = await scratchRule();
   if (!draw || !rule) throw new HttpError(500, 'ระบบสล็อตยังไม่พร้อมใช้งาน');
 
   const serverSeed = randomBytes(32).toString('hex');
@@ -368,31 +244,15 @@ async function buyCardPg(userId, idemKey = null) {
   return { ...result, balance: await getBalance(userId), card: cardView(card) };
 }
 
-export function listMyCards(userId, { limit = 50 } = {}) {
-  if (isPg()) return listMyCardsPg(userId, { limit });
-  ensureInfra();
-  const rows = getDb().prepare(`SELECT c.*, s.slip_ref, s.created_at, s.status AS slip_status
-    FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
-    WHERE c.user_id = ? ORDER BY c.id DESC LIMIT ?`).all(userId, limit);
-  return rows.map(c => cardView({ ...c, created_at: c.created_at }));
-}
-async function listMyCardsPg(userId, { limit = 50 } = {}) {
-  await ensureInfraPg();
+export async function listMyCards(userId, { limit = 50 } = {}) {
+  await ensureInfra();
   const rows = await q(`SELECT c.*, s.slip_ref, s.created_at, s.status AS slip_status
     FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
     WHERE c.user_id = $1 ORDER BY c.id DESC LIMIT $2`, [userId, limit]);
   return rows.map(c => cardView({ ...c, created_at: c.created_at }));
 }
 
-export function getCard(userId, cardId) {
-  if (isPg()) return getCardPg(userId, cardId);
-  const c = getDb().prepare(`SELECT c.*, s.slip_ref, s.created_at, s.status AS slip_status
-    FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
-    WHERE c.id = ? AND c.user_id = ?`).get(cardId, userId);
-  if (!c) throw new HttpError(404, 'ไม่พบบัตรสล็อต');
-  return cardView(c);
-}
-async function getCardPg(userId, cardId) {
+export async function getCard(userId, cardId) {
   const c = await qGet(`SELECT c.*, s.slip_ref, s.created_at, s.status AS slip_status
     FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
     WHERE c.id = $1 AND c.user_id = $2`, [cardId, userId]);
@@ -400,60 +260,13 @@ async function getCardPg(userId, cardId) {
   return cardView(c);
 }
 
-export function verifyScratchSeed(seed) {
-  if (isPg()) return verifyScratchSeedPg(seed);
-  if (!seed || typeof seed !== 'string' || seed.length > 200) throw new HttpError(400, 'seed ไม่ถูกต้อง');
-  const grid = genGrid(seed);
-  return { commit: commitOf(seed), grid, outcome: evaluateGrid(grid) };
-}
-async function verifyScratchSeedPg(seed) {
+export async function verifyScratchSeed(seed) {
   if (!seed || typeof seed !== 'string' || seed.length > 200) throw new HttpError(400, 'seed ไม่ถูกต้อง');
   const grid = genGrid(seed);
   return { commit: commitOf(seed), grid, outcome: await evaluateGrid(grid) };
 }
 
-export function revealCard(userId, cardId) {
-  if (isPg()) return revealCardPg(userId, cardId);
-  const card = getDb().prepare(`SELECT c.*, s.slip_ref, s.status AS slip_status
-    FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
-    WHERE c.id = ? AND c.user_id = ?`).get(cardId, userId);
-  if (!card) throw new HttpError(404, 'ไม่พบบัตรสล็อต');
-  if (card.status === 'revealed') return { ...cardView(card), balance: getBalance(userId), duplicate: true };
-  if (card.slip_status !== 'pending') throw new HttpError(400, 'โพยนี้ถูกยกเลิกแล้ว');
-
-  const grid = JSON.parse(card.grid);
-  const outcome = evaluateGrid(grid);
-  tx((d) => {
-    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-    const upd = d.prepare(`UPDATE scratch_cards SET status = 'revealed', outcome = ?, revealed_at = ? WHERE id = ? AND status = 'hidden'`)
-      .run(JSON.stringify(outcome), now, cardId);
-    if (upd.changes === 0) throw new HttpError(409, 'บัตรนี้ถูกเปิดหรือยกเลิกไปแล้ว', 'CARD_CLOSED');
-    const slipUpd = outcome.win
-      ? d.prepare(`UPDATE bet_slips SET status = 'won', total_payout = ?, settled_at = ? WHERE id = ? AND status = 'pending'`)
-          .run(outcome.prize, now, card.slip_id)
-      : d.prepare(`UPDATE bet_slips SET status = 'lost', total_payout = 0, settled_at = ? WHERE id = ? AND status = 'pending'`)
-          .run(now, card.slip_id);
-    if (slipUpd.changes === 0) throw new HttpError(409, 'โพยนี้ถูกยกเลิกหรือออกผลแล้ว', 'SLIP_CLOSED');
-    if (outcome.win) {
-      d.prepare(`UPDATE bet_items SET status = 'won', payout = ? WHERE slip_id = ? AND bet_type = 'scratch'`)
-        .run(outcome.prize, card.slip_id);
-      creditTx(d, {
-        userId, type: 'win_credit', amount: outcome.prize,
-        description: `รางวัลสล็อต ${card.slip_ref} — ${outcome.symbol} x${outcome.count}`,
-        idempotencyKey: `scratch-win-${card.slip_ref}`,
-      });
-    } else {
-      d.prepare(`UPDATE bet_items SET status = 'lost', payout = 0 WHERE slip_id = ? AND bet_type = 'scratch'`).run(card.slip_id);
-    }
-    audit({ userId, action: 'scratch.reveal', entityType: 'scratch_card', entityId: String(cardId),
-      detail: { outcome }, req: null });
-  });
-
-  const fresh = getDb().prepare(`SELECT c.*, s.slip_ref, s.created_at FROM scratch_cards c
-    JOIN bet_slips s ON s.id = c.slip_id WHERE c.id = ?`).get(cardId);
-  return { ...cardView(fresh), balance: getBalance(userId) };
-}
-async function revealCardPg(userId, cardId) {
+export async function revealCard(userId, cardId) {
   const card = await qGet(`SELECT c.*, s.slip_ref, s.status AS slip_status
     FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
     WHERE c.id = $1 AND c.user_id = $2`, [cardId, userId]);
@@ -494,38 +307,8 @@ async function revealCardPg(userId, cardId) {
   return { ...cardView(fresh), balance: await getBalance(userId) };
 }
 
-export function cancelCard(userId, cardId) {
-  if (isPg()) return cancelCardPg(userId, cardId);
-  ensureInfra();
-  return tx((d) => {
-    const c = d.prepare(`SELECT c.*, s.slip_ref, s.status AS slip_status, s.total_stake
-      FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id
-      WHERE c.id = ? AND c.user_id = ?`).get(cardId, userId);
-    if (!c) throw new HttpError(404, 'ไม่พบบัตร');
-    if (c.status !== 'hidden') throw new HttpError(400, 'ยกเลิกได้เฉพาะบัตรที่ยังไม่ได้สปิน');
-    if (c.slip_status !== 'pending') throw new HttpError(400, 'โพยนี้ถูกยกเลิกหรือออกผลแล้ว');
-    const upd = d.prepare(`UPDATE scratch_cards SET status = 'cancelled' WHERE id = ? AND status = 'hidden'`).run(cardId);
-    if (upd.changes === 0) throw new HttpError(409, 'บัตรนี้ถูกเปิดหรือยกเลิกไปแล้ว', 'CARD_CLOSED');
-    d.prepare(`UPDATE bet_items SET status = 'cancelled' WHERE slip_id = ? AND status = 'pending'`).run(c.slip_id);
-    const slipUpd = d.prepare(`UPDATE bet_slips SET status = 'cancelled' WHERE id = ? AND status = 'pending'`).run(c.slip_id);
-    if (slipUpd.changes === 0) throw new HttpError(409, 'โพยนี้ถูกยกเลิกหรือออกผลแล้ว', 'SLIP_CLOSED');
-    creditTx(d, {
-      userId, type: 'bet_refund', amount: c.total_stake,
-      description: `คืนเครดิตบัตรสล็อต ${c.slip_ref} (ยกเลิกก่อนสปิน)`,
-      idempotencyKey: `scratch-refund-${c.slip_ref}`,
-    });
-    notify(userId, {
-      type: 'refund', title: `คืนเครดิตบัตรสล็อต ${c.slip_ref}`,
-      body: `ยกเลิกบัตรก่อนสปิน คืนเครดิต ฿${(c.total_stake / 100).toLocaleString('th-TH')}`,
-      link: '/scratch',
-    }, d);
-    audit({ userId, action: 'scratch.cancel', entityType: 'scratch_card', entityId: String(cardId),
-      detail: { slipRef: c.slip_ref, refunded: c.total_stake } });
-    return { slipRef: c.slip_ref, refunded: c.total_stake, balance: getBalance(userId) };
-  });
-}
-async function cancelCardPg(userId, cardId) {
-  await ensureInfraPg();
+export async function cancelCard(userId, cardId) {
+  await ensureInfra();
   return txAsync(async (d) => {
     const c = await d.prepare(`SELECT c.*, s.slip_ref, s.status AS slip_status, s.total_stake
       FROM scratch_cards c JOIN bet_slips s ON s.id = c.slip_id

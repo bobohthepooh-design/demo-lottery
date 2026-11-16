@@ -4,7 +4,6 @@ import * as svc from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
 import * as hilo from '../services/hiloService.js';
 import * as scratch from '../services/scratchService.js';
-import { getDb, isPg } from '../db/index.js';
 import { qGet } from '../db/pg.js';
 import { requireAuth, requireAgeConfirmed } from '../services/authService.js';
 import { requirePerm } from '../middleware/rbac.js';
@@ -73,13 +72,9 @@ router.get('/export', async (req, res, next) => {
 // เกมด่วน (สล็อต/ไฮโล) ใช้ตั๋ว/บัตรของตัวเอง — ค้นจาก slip_id แล้วยกเลิกผ่าน service นั้น
 // คืน null ถ้าไม่ใช่โพยเกมด่วนที่ยกเลิกได้
 async function cancelInstantBySlip(userId, slipId) {
-  const hiloTicket = isPg()
-    ? await qGet(`SELECT id FROM hilo_tickets WHERE slip_id = $1 AND user_id = $2 AND status = 'awaiting'`, [slipId, userId])
-    : getDb().prepare(`SELECT id FROM hilo_tickets WHERE slip_id = ? AND user_id = ? AND status = 'awaiting'`).get(slipId, userId);
+  const hiloTicket = await qGet(`SELECT id FROM hilo_tickets WHERE slip_id = $1 AND user_id = $2 AND status = 'awaiting'`, [slipId, userId]);
   if (hiloTicket) return hilo.cancelTicket(userId, hiloTicket.id);
-  const scratchCard = isPg()
-    ? await qGet(`SELECT id FROM scratch_cards WHERE slip_id = $1 AND user_id = $2 AND status = 'hidden'`, [slipId, userId])
-    : getDb().prepare(`SELECT id FROM scratch_cards WHERE slip_id = ? AND user_id = ? AND status = 'hidden'`).get(slipId, userId);
+  const scratchCard = await qGet(`SELECT id FROM scratch_cards WHERE slip_id = $1 AND user_id = $2 AND status = 'hidden'`, [slipId, userId]);
   if (scratchCard) return scratch.cancelCard(userId, scratchCard.id);
   return null;
 }

@@ -1,6 +1,3 @@
-import { DatabaseSync } from 'node:sqlite';
-import fs from 'node:fs';
-import path from 'node:path';
 import { config } from '../config.js';
 import { getPool, translate, closePool } from './pg.js';
 
@@ -42,67 +39,32 @@ function makePgDb() {
 
 export function getDb() {
   if (db) return db;
-  if (config.databaseUrl) {
-    db = makePgDb();
-    return db;
+  // P1: PostgreSQL is the only supported dialect — SQLite path removed.
+  // (sync *Sync code paths remain as dead code pending incremental deletion;
+  //  isPg() is now always true at runtime.)
+  if (!config.databaseUrl) {
+    throw new Error('DATABASE_URL is required — PostgreSQL is the only supported database (SQLite support removed)');
   }
-  fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
-  db = new DatabaseSync(config.databasePath);
-  db.exec('PRAGMA journal_mode = WAL');
-  db.exec('PRAGMA foreign_keys = ON');
-  db.exec('PRAGMA busy_timeout = 5000');
-  db.exec('PRAGMA synchronous = NORMAL');
+  db = makePgDb();
   return db;
 }
 
-export const isPg = () => !!config.databaseUrl;
+// SQLite dialect removed (P1) — ทุก code path ใช้ PostgreSQL เสมอ
+export const isPg = () => true;
 
 export async function closeDb() {
   if (!db) return;
-  if (db.__pg) await closePool(); else db.close();
+  await closePool();
   db = null;
 }
 
 /**
- * tx() — SYNC เดิม (sqlite เท่านั้น) — pg mode จะ throw เพื่อบังคับให้ code ที่ยังไม่ port
- * ใช้ txAsync แทน ช่วง migration (ดู MIGRATION.md Step 3)
- */
-export function tx(fn) {
-  const d = getDb();
-  if (d.__pg) throw new Error('tx() ไม่รองรับ PostgreSQL — ใช้ txAsync() แทน (code ยังไม่ port)');
-  d.exec('BEGIN IMMEDIATE');
-  try {
-    const result = fn(d);
-    d.exec('COMMIT');
-    return result;
-  } catch (err) {
-    try { d.exec('ROLLBACK'); } catch { /* already rolled back */ }
-    throw err;
-  }
-}
-
-/**
- * txAsync() — ใช้แทน tx() ใน code ที่ port แล้ว
+ * txAsync() — transaction เดียวของระบบ (PostgreSQL only)
  * fn เป็น async เสมอ: `await txAsync(async (d) => { ... await d.prepare(...)... })`
- * ใน fn ใช้ d.prepare().get/all/run แบบ await ได้ทั้ง sqlite และ pg
  */
 export async function txAsync(fn) {
-  const d = getDb();
-  if (d.__pg) {
-    const { pgTx } = await import('./pg.js');
-    // ส่ง facade ที่มี .prepare() เหมือน DatabaseSync — code ที่ port แล้วใช้
-    // `await d.prepare(sql).get/all/run(...)` ได้เหมือนเดิมทั้ง 2 โหมด
-    return pgTx(async (client) => fn({ __pg: true, prepare: (sql) => pgPrepare(client, sql) }));
-  }
-  d.exec('BEGIN IMMEDIATE');
-  try {
-    const result = await fn(d);
-    d.exec('COMMIT');
-    return result;
-  } catch (err) {
-    try { d.exec('ROLLBACK'); } catch { /* already rolled back */ }
-    throw err;
-  }
+  const { pgTx } = await import('./pg.js');
+  return pgTx(async (client) => fn({ __pg: true, prepare: (sql) => pgPrepare(client, sql) }));
 }
 
 /** Generate a unique reference like TX-20261107-AB12CD */

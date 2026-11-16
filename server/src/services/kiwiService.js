@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { getDb, tx, txAsync, isPg, makeReference } from '../db/index.js';
+import { txAsync, makeReference } from '../db/index.js';
 import { HttpError, audit } from '../lib/audit.js';
 import { debitForBetTx, creditTx, getBalance } from './walletService.js';
 import { getSetting, setSetting } from './settingsService.js';
@@ -128,50 +128,10 @@ function settleDice(betType, sel, dice, mults = DICE_MULTS_DEFAULT) {
   }
 }
 
-
 // ---------- infra: type KI + rules + standing draw ----------
 let infraReady = false;
-export function ensureInfra() {
+export async function ensureInfra() {
   if (infraReady) return;
-  if (isPg()) return ensureInfraPg();
-  const db = getDb();
-  let type = db.prepare(`SELECT id FROM lottery_types WHERE code = 'KI'`).get();
-  if (!type) {
-    db.prepare(`INSERT INTO lottery_types (code, name_th, name_en, description, is_active, result_mode)
-                VALUES ('KI','หวยยี่กี','Yi Ki Lottery','เลือกเลขทายผลไว — รู้ผลทันที',1,'manual')`)
-      .run();
-    type = db.prepare(`SELECT id FROM lottery_types WHERE code = 'KI'`).get();
-  }
-  const typeId = type.id;
-  for (const [game, g] of Object.entries(GAMES)) {
-    if (!db.prepare(`SELECT id FROM lottery_rules WHERE lottery_type_id = ? AND bet_type = ?`).get(typeId, game)) {
-      db.prepare(`INSERT INTO lottery_rules
-        (lottery_type_id, category_id, bet_type, name_th, name_en, digits, match_config, payout_multiplier, stake_unit, min_amount, max_amount, is_active)
-        VALUES (?, NULL, ?, ?, ?, 0, '{"mode":"kiwi"}', 0, 1, ?, ?, 1)`)
-        .run(typeId, game, `ยี่กี — ${g.label}`, `Kiwi ${game}`, g.price, g.price);
-    }
-  }
-  if (!db.prepare(`SELECT id FROM lottery_draws WHERE draw_code = 'KI-STANDING'`).get()) {
-    db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
-                VALUES (?, NULL, 'KI-STANDING', '2026-01-01 00:00:00', '2026-01-01 00:00:00', 'closed')`).run(typeId);
-  }
-  db.prepare(`UPDATE lottery_types SET name_th='หวยยี่กี', name_en='Yi Ki Lottery', description='เลือกเลขทายผลไว — รู้ผลทันที' WHERE code='KI'`).run();
-  const RULE_NAMES = { kiwi: ['ยี่กี', 'Yi Ki'], kiwi_vip: ['ยี่กี VIP', 'Yi Ki VIP'], kiwi_dice: ['น้ำเต้าปูปลา', 'Nam Tao Pu Pla'] };
-  for (const [g, [th, en]] of Object.entries(RULE_NAMES)) {
-    db.prepare(`UPDATE lottery_rules SET name_th = ?, name_en = ? WHERE bet_type = ? AND lottery_type_id = ?`)
-      .run(th, en, g, typeId);
-  }
-  for (const [g, def] of Object.entries(GAMES)) {
-    const k = `kiwi_price_${g}`;
-    if (getSetting(k) == null) setSetting(k, def.price);
-    const price = Number(getSetting(k)) || def.price;
-    db.prepare(`UPDATE lottery_rules SET min_amount = ?, max_amount = ? WHERE bet_type = ? AND lottery_type_id = ?`)
-      .run(price, price, g, typeId);
-  }
-  infraReady = true;
-}
-
-async function ensureInfraPg() {
   let type = await qGet(`SELECT id FROM lottery_types WHERE code = 'KI'`);
   if (!type) {
     await qRun(`INSERT INTO lottery_types (code, name_th, name_en, description, is_active, result_mode)
@@ -207,63 +167,31 @@ async function ensureInfraPg() {
   infraReady = true;
 }
 
-function standingDraw() {
-  if (isPg()) return standingDrawPg();
-  ensureInfra();
-  return getDb().prepare(`SELECT d.* FROM lottery_draws d WHERE d.draw_code = 'KI-STANDING'`).get();
-}
-async function standingDrawPg() {
-  await ensureInfraPg();
+async function standingDraw() {
+  await ensureInfra();
   return qGet(`SELECT d.* FROM lottery_draws d WHERE d.draw_code = 'KI-STANDING'`);
 }
-function gameRule(game) {
-  const draw = standingDraw();
-  return getDb().prepare(`SELECT * FROM lottery_rules WHERE lottery_type_id = ? AND bet_type = ? AND is_active = 1`)
-    .get(draw.lottery_type_id, game);
-}
-async function gameRulePg(game) {
+async function gameRule(game) {
   const draw = await standingDraw();
   return qGet(`SELECT * FROM lottery_rules WHERE lottery_type_id = $1 AND bet_type = $2 AND is_active = 1`,
     [draw.lottery_type_id, game]);
 }
 
-const gamePrice = (game) => {
-  const s = Number(getSetting(`kiwi_price_${game}`));
+const gamePrice = async (game) => {
+  const s = Number(await getSetting(`kiwi_price_${game}`));
   if (Number.isInteger(s) && s > 0) return s;
-  const r = gameRule(game);
+  const r = await gameRule(game);
   const p = r ? Number(r.min_amount) : NaN;
   return Number.isInteger(p) && p > 0 ? p : GAMES[game].price;
 };
-async function gamePricePg(game) {
-  const s = Number(await getSetting(`kiwi_price_${game}`));
-  if (Number.isInteger(s) && s > 0) return s;
-  const r = await gameRulePg(game);
-  const p = r ? Number(r.min_amount) : NaN;
-  return Number.isInteger(p) && p > 0 ? p : GAMES[game].price;
-}
 
-export function kiwiInfo() {
-  if (isPg()) return kiwiInfoPg();
-  ensureInfra();
-  return KIWI_GAMES.map(g => {
-    const po = payoutsOf(gameRule(g), g);
-    return {
-      game: g, label: GAMES[g].label, price: gamePrice(g),
-      poolSize: GAMES[g].poolSize, pickCount: GAMES[g].pickCount,
-      zodiac: GAMES[g].zodiac, symbols: GAMES[g].symbols || null,
-      dice: !!GAMES[g].dice, diceSymbols: GAMES[g].diceSymbols || null,
-      diceBets: GAMES[g].dice ? diceBetsOf(po.mults) : null,
-      tiers: po.tiers,
-    };
-  });
-}
-async function kiwiInfoPg() {
-  await ensureInfraPg();
+export async function kiwiInfo() {
+  await ensureInfra();
   const out = [];
   for (const g of KIWI_GAMES) {
-    const po = payoutsOf(await gameRulePg(g), g);
+    const po = payoutsOf(await gameRule(g), g);
     out.push({
-      game: g, label: GAMES[g].label, price: await gamePricePg(g),
+      game: g, label: GAMES[g].label, price: await gamePrice(g),
       poolSize: GAMES[g].poolSize, pickCount: GAMES[g].pickCount,
       zodiac: GAMES[g].zodiac, symbols: GAMES[g].symbols || null,
       dice: !!GAMES[g].dice, diceSymbols: GAMES[g].diceSymbols || null,
@@ -290,99 +218,12 @@ const normPicks = (game, picks) => {
   return vals.sort((a, b) => a - b);
 };
 
-export function playKiwi(userId, game, picks, betType = null, idemKey = null) {
-  if (isPg()) return playKiwiPg(userId, game, picks, betType, idemKey);
+export async function playKiwi(userId, game, picks, betType = null, idemKey = null) {
   if (!GAMES[game]) throw new HttpError(400, 'ไม่รู้จักเกม');
+  await ensureInfra();
   const g = GAMES[game];
-  const price = gamePrice(game);
-  const rule = gameRule(game);
-  const draw = standingDraw();
-  if (!rule || !draw) throw new HttpError(500, 'ระบบยี่กียังไม่พร้อมใช้งาน');
-
-  const serverSeed = randomBytes(32).toString('hex');
-  const commitHash = commitOf(serverSeed);
-  const slipRef = makeReference('BET');
-  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-  const po = payoutsOf(rule, game);
-  if (idemKey != null && (typeof idemKey !== 'string' || idemKey.length > 64))
-    throw new HttpError(400, 'idempotencyKey ไม่ถูกต้อง');
-  const slipKey = idemKey ? `kiwi-idem:${idemKey}` : `kiwi-${slipRef}`;
-
-  let sel, drawn, hits, mult, payout, detail;
-  if (g.dice) {
-    sel = normDiceBet(betType, picks);
-    drawn = drawDice(serverSeed);
-    const r = settleDice(betType, sel, drawn, po.mults);
-    mult = r.win ? r.mult : 0;
-    payout = mult ? Math.floor(price * mult) : 0;
-    hits = r.hits ?? (r.win ? 1 : 0);
-    detail = { betType, sel, dice: drawn, sum: r.sum, mult: r.mult };
-  } else {
-    sel = normPicks(game, picks);
-    drawn = g.zodiac ? drawZodiac(serverSeed) : drawNumbers(serverSeed, g.poolSize, g.pickCount);
-    hits = hitsOf(sel, drawn);
-    mult = po.tiers[hits] || 0;
-    payout = mult ? Math.floor(price * mult) : 0;
-    detail = { picks: sel, drawn, hits, mult };
-  }
-
-  const findExisting = (d) => idemKey
-    ? d.prepare(`SELECT s.slip_ref, t.id AS ticket_id FROM bet_slips s
-                 JOIN kiwi_tickets t ON t.slip_id = s.id
-                 WHERE s.user_id = ? AND s.idempotency_key = ?`).get(userId, slipKey)
-    : null;
-
-  let txResult;
-  try {
-    txResult = tx((d) => {
-      const ex = findExisting(d);
-      if (ex) return { duplicate: true, ticketId: ex.ticket_id };
-      const slip = d.prepare(`INSERT INTO bet_slips (slip_ref, user_id, draw_id, status, total_stake, total_payout, idempotency_key)
-                              VALUES (?, ?, ?, ?, ?, ?, ?)`).run(slipRef, userId, draw.id,
-        payout ? 'won' : 'lost', price, payout, slipKey);
-      const slipId = Number(slip.lastInsertRowid);
-      d.prepare(`INSERT INTO bet_items (slip_id, draw_id, rule_id, bet_type, number, amount, status, payout, result_detail)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(slipId, draw.id, rule.id, game,
-        JSON.stringify(sel), price, payout ? 'won' : 'lost', payout,
-        JSON.stringify(detail));
-      debitForBetTx(d, { userId, slipRef, totalStake: price, idempotencyKey: `bet-debit-${slipRef}` });
-      if (payout) {
-        d.prepare(`UPDATE bet_slips SET settled_at = ? WHERE id = ?`).run(now, slipId);
-        creditTx(d, { userId, type: 'win_credit', amount: payout,
-          description: `รางวัล${g.dice ? 'น้ำเต้าปูปลา' : 'ยี่กี'} ${GAMES[game].label} ${slipRef}`,
-          idempotencyKey: `kiwi-win-${slipRef}` });
-      }
-      const t = d.prepare(`INSERT INTO kiwi_tickets (user_id, slip_id, game, bet_type, picks, drawn, hits, payout, status, server_seed, commit_hash, revealed_at)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'revealed', ?, ?, ?)`)
-        .run(userId, slipId, game, g.dice ? betType : null, JSON.stringify(sel), JSON.stringify(drawn), hits, payout, serverSeed, commitHash, now);
-      audit({ userId, action: 'kiwi.play', entityType: 'kiwi_ticket', entityId: String(t.lastInsertRowid),
-        detail: { game, betType, picks: sel, drawn, hits, payout }, req: null });
-      return { ticketId: Number(t.lastInsertRowid) };
-    });
-  } catch (e) {
-    if (idemKey && /UNIQUE|constraint/i.test(String(e.message))) {
-      const ex = getDb().prepare(`SELECT t.id AS ticket_id FROM bet_slips s
-        JOIN kiwi_tickets t ON t.slip_id = s.id
-        WHERE s.user_id = ? AND s.idempotency_key = ?`).get(userId, slipKey);
-      if (ex) txResult = { duplicate: true, ticketId: ex.ticket_id };
-      else throw e;
-    } else throw e;
-  }
-
-  const ticket = getDb().prepare(`SELECT t.*, s.slip_ref, s.created_at FROM kiwi_tickets t
-    JOIN bet_slips s ON s.id = t.slip_id WHERE t.id = ?`).get(txResult.ticketId);
-  // duplicate → คืนผลของตั๋วเดิม (payout/hits ที่บันทึกไว้) ไม่ใช่การคำนวณใหม่
-  const outPayout = txResult.duplicate ? ticket.payout : payout;
-  return { ...ticketView(ticket, null, { [game]: po }), balance: getBalance(userId),
-    outcome: outPayout ? 'win' : 'lose', payout: outPayout,
-    ...(txResult.duplicate ? { duplicate: true } : {}) };
-}
-async function playKiwiPg(userId, game, picks, betType, idemKey = null) {
-  if (!GAMES[game]) throw new HttpError(400, 'ไม่รู้จักเกม');
-  await ensureInfraPg();
-  const g = GAMES[game];
-  const price = await gamePricePg(game);
-  const rule = await gameRulePg(game);
+  const price = await gamePrice(game);
+  const rule = await gameRule(game);
   const draw = await standingDraw();
   if (!rule || !draw) throw new HttpError(500, 'ระบบยี่กียังไม่พร้อมใช้งาน');
 
@@ -458,27 +299,19 @@ async function playKiwiPg(userId, game, picks, betType, idemKey = null) {
 
   const ticket = await qGet(`SELECT t.*, s.slip_ref, s.created_at FROM kiwi_tickets t
     JOIN bet_slips s ON s.id = t.slip_id WHERE t.id = $1`, [txResult.ticketId]);
+  // duplicate → คืนผลของตั๋วเดิม (payout/hits ที่บันทึกไว้) ไม่ใช่การคำนวณใหม่
   const outPayout = txResult.duplicate ? ticket.payout : payout;
   return { ...ticketView(ticket, { [game]: price }, { [game]: po }), balance: await getBalance(userId),
     outcome: outPayout ? 'win' : 'lose', payout: outPayout,
     ...(txResult.duplicate ? { duplicate: true } : {}) };
 }
 
-export function listMyKiwi(userId, { limit = 50 } = {}) {
-  if (isPg()) return listMyKiwiPg(userId, { limit });
-  ensureInfra();
-  const rows = getDb().prepare(`SELECT t.*, s.slip_ref, s.created_at FROM kiwi_tickets t
-    JOIN bet_slips s ON s.id = t.slip_id WHERE t.user_id = ? ORDER BY t.id DESC LIMIT ?`).all(userId, limit);
-  const payouts = {};
-  for (const g of KIWI_GAMES) payouts[g] = payoutsOf(gameRule(g), g);
-  return rows.map(t => ticketView(t, null, payouts));
-}
-async function listMyKiwiPg(userId, { limit = 50 } = {}) {
-  await ensureInfraPg();
+export async function listMyKiwi(userId, { limit = 50 } = {}) {
+  await ensureInfra();
   const rows = await q(`SELECT t.*, s.slip_ref, s.created_at FROM kiwi_tickets t
     JOIN bet_slips s ON s.id = t.slip_id WHERE t.user_id = $1 ORDER BY t.id DESC LIMIT $2`, [userId, limit]);
   const prices = {}, payouts = {};
-  for (const g of KIWI_GAMES) { prices[g] = await gamePricePg(g); payouts[g] = payoutsOf(await gameRulePg(g), g); }
+  for (const g of KIWI_GAMES) { prices[g] = await gamePrice(g); payouts[g] = payoutsOf(await gameRule(g), g); }
   return rows.map(t => ticketView(t, prices, payouts));
 }
 
@@ -495,7 +328,7 @@ const LEGACY_LABELS = { kiwi_zodiac: 'ยี่กีราศี', kiwi_animal:
 
 const ticketView = (t, prices = null, payouts = null) => {
   const g = GAMES[t.game] || {};
-  const priceOf = (gm) => prices ? (prices[gm] ?? GAMES[gm]?.price ?? 0) : gamePrice(gm);
+  const priceOf = (gm) => prices ? (prices[gm] ?? GAMES[gm]?.price ?? 0) : (GAMES[gm]?.price ?? 0);
   const po = payouts?.[t.game] || payoutsOf(null, t.game);
   return {
     id: t.id, slipRef: t.slip_ref, game: t.game, gameLabel: g.label || LEGACY_LABELS[t.game] || t.game,

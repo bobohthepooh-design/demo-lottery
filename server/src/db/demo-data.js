@@ -1,4 +1,3 @@
-import { getDb, isPg } from './index.js';
 import { q } from './pg.js';
 
 /**
@@ -153,24 +152,7 @@ function planDraws(types) {
 
 const nowUtc = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-function seedDemoDrawsSync() {
-  const db = getDb();
-  const types = db.prepare('SELECT id, code FROM lottery_types WHERE is_active = 1').all()
-    .map(t => ({ ...t, cats: db.prepare('SELECT id, code FROM lottery_categories WHERE lottery_type_id = ?').all(t.id) }));
-  let created = 0;
-  for (const p of planDraws(types)) {
-    if (db.prepare('SELECT id FROM lottery_draws WHERE draw_code = ?').get(p.drawCode)) continue;
-    const status = p.closeAt > nowUtc() ? 'open' : 'scheduled';
-    db.prepare(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
-                VALUES (?, ?, ?, ?, ?, ?)`)
-      .run(p.lotteryTypeId, p.categoryId, p.drawCode, p.drawAt, p.closeAt, status);
-    created++;
-  }
-  console.log(`[demo-data] created ${created} draws`);
-  return created;
-}
-
-async function seedDemoDrawsPg() {
+export async function seedDemoDraws() {
   const types = (await q('SELECT id, code FROM lottery_types WHERE is_active = 1'))
     .map(t => ({ ...t, cats: [] }));
   for (const t of types) {
@@ -185,13 +167,8 @@ async function seedDemoDrawsPg() {
       [p.lotteryTypeId, p.categoryId, p.drawCode, p.drawAt, p.closeAt, status]);
     created++;
   }
-  console.log(`[demo-data:pg] created ${created} draws`);
+  console.log(`[demo-data] created ${created} draws`);
   return created;
-}
-
-// dual-mode: sqlite sync / pg คืน Promise — caller await ได้ทั้งคู่
-export function seedDemoDraws() {
-  return isPg() ? seedDemoDrawsPg() : seedDemoDrawsSync();
 }
 
 if (process.argv[1] && process.argv[1].endsWith('demo-data.js')) {

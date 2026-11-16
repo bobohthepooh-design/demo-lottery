@@ -1,23 +1,9 @@
-import { getDb, isPg } from '../db/index.js';
 import { HttpError } from '../lib/audit.js';
 import { q } from '../db/pg.js';
 
 const permCache = new Map(); // userId -> {at, perms}
 const TTL = 30_000;
 
-function userPermissionsSync(userId) {
-  const hit = permCache.get(userId);
-  if (hit && Date.now() - hit.at < TTL) return hit.perms;
-  const db = getDb();
-  const rows = db.prepare(`
-    SELECT DISTINCT p.code FROM permissions p
-    JOIN role_permissions rp ON rp.permission_id = p.id
-    JOIN user_roles ur ON ur.role_id = rp.role_id
-    WHERE ur.user_id = ?`).all(userId);
-  const perms = new Set(rows.map(r => r.code));
-  permCache.set(userId, { at: Date.now(), perms });
-  return perms;
-}
 async function userPermissionsPg(userId) {
   const hit = permCache.get(userId);
   if (hit && Date.now() - hit.at < TTL) return hit.perms;
@@ -31,28 +17,20 @@ async function userPermissionsPg(userId) {
   return perms;
 }
 
-// dual-mode: sqlite คืน Set ทันที / pg คืน Promise<Set> — caller await ได้ทั้งคู่
 export function userPermissions(userId) {
-  return isPg() ? userPermissionsPg(userId) : userPermissionsSync(userId);
+  return userPermissionsPg(userId);
 }
 
 export function invalidatePermCache(userId) { permCache.delete(userId); }
 
-function hasRoleSync(userId, names) {
-  const db = getDb();
-  const rows = db.prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ?`).all(userId);
-  const set = new Set(rows.map(r => r.name));
-  return names.some(n => set.has(n));
-}
 async function hasRolePg(userId, names) {
   const rows = await q(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = $1`, [userId]);
   const set = new Set(rows.map(r => r.name));
   return names.some(n => set.has(n));
 }
 
-// dual-mode เหมือน userPermissions
 export function hasRole(userId, ...names) {
-  return isPg() ? hasRolePg(userId, names) : hasRoleSync(userId, names);
+  return hasRolePg(userId, names);
 }
 
 export function requirePerm(...codes) {

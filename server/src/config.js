@@ -16,18 +16,13 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const dbPath = process.env.DATABASE_PATH
-  ? path.resolve(__dirname, '..', process.env.DATABASE_PATH)
-  : path.resolve(__dirname, '..', 'data', 'demo-lottery.db');
-
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '4000', 10),
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   sessionSecret: process.env.SESSION_SECRET || 'dev-insecure-secret-change-me',
   sessionTtlHours: parseInt(process.env.SESSION_TTL_HOURS || '12', 10),
-  databasePath: dbPath,
-  // PostgreSQL — เมื่อมีค่านี้จะใช้ pg แทน SQLite (migration อยู่ระหว่างทำ — ดู MIGRATION.md)
+  // PostgreSQL — runtime บังคับใช้ PG เท่านั้น (SQLite support ถูกลบออกแล้ว)
   databaseUrl: process.env.DATABASE_URL || null,
   initialCredit: parseInt(process.env.INITIAL_CREDIT || '5000', 10),
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),

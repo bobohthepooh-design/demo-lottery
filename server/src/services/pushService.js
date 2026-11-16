@@ -1,7 +1,6 @@
 import webpush from 'web-push';
-import { getDb, isPg } from '../db/index.js';
 import { getSetting, setSetting } from './settingsService.js';
-import { q, qGet, qRun, qInsert } from '../db/pg.js';
+import { q, qGet, qRun } from '../db/pg.js';
 
 let vapidReady = false;
 
@@ -30,60 +29,38 @@ export async function saveSubscription(userId, sub) {
   const p256dh = String(sub?.keys?.p256dh || '');
   const auth = String(sub?.keys?.auth || '');
   if (!endpoint.startsWith('https://') || !p256dh || !auth) return false;
-  if (isPg()) {
-    await q(`INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT(endpoint) DO UPDATE SET user_id = EXCLUDED.user_id,
-               p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth,
-               last_seen_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')`,
-      [userId, endpoint.slice(0, 1000), p256dh, auth]);
-    return true;
-  }
-  getDb().prepare(`INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
-                   VALUES (?, ?, ?, ?)
-                   ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id,
-                     p256dh = excluded.p256dh, auth = excluded.auth, last_seen_at = datetime('now')`)
-    .run(userId, endpoint.slice(0, 1000), p256dh, auth);
+  await q(`INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT(endpoint) DO UPDATE SET user_id = EXCLUDED.user_id,
+             p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth,
+             last_seen_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')`,
+    [userId, endpoint.slice(0, 1000), p256dh, auth]);
   return true;
 }
 
 export async function removeSubscription(userId, endpoint) {
-  if (isPg()) {
-    await qRun('DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2',
-      [userId, String(endpoint || '').slice(0, 1000)]);
-    return;
-  }
-  getDb().prepare('DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?')
-    .run(userId, String(endpoint || '').slice(0, 1000));
+  await qRun('DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2',
+    [userId, String(endpoint || '').slice(0, 1000)]);
 }
 
 export async function subscriptionCount(userId) {
-  if (isPg()) {
-    const r = await qGet('SELECT COUNT(*)::int c FROM push_subscriptions WHERE user_id = $1', [userId]);
-    return r.c;
-  }
-  return getDb().prepare('SELECT COUNT(*) c FROM push_subscriptions WHERE user_id = ?').get(userId).c;
+  const r = await qGet('SELECT COUNT(*)::int c FROM push_subscriptions WHERE user_id = $1', [userId]);
+  return r.c;
 }
 
 /** ส่ง push ให้สมาชิกทุกอุปกรณ์ที่ subscribe — fire-and-forget, ลบ sub ที่หมดอายุ (404/410) */
 export async function sendToUser(userId, payload) {
   try {
     await ensureVapid();
-    const subs = isPg()
-      ? await q('SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = $1', [userId])
-      : getDb().prepare('SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?').all(userId);
+    const subs = await q('SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = $1', [userId]);
     if (!subs.length) return;
     const data = JSON.stringify({
       title: String(payload.title || 'Demo Lottery').slice(0, 120),
       body: String(payload.body || '').slice(0, 300),
       link: payload.link || '/',
     });
-    const touch = (id) => isPg()
-      ? qRun(`UPDATE push_subscriptions SET last_seen_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = $1`, [id])
-      : getDb().prepare(`UPDATE push_subscriptions SET last_seen_at = datetime('now') WHERE id = ?`).run(id);
-    const del = (id) => isPg()
-      ? qRun('DELETE FROM push_subscriptions WHERE id = $1', [id])
-      : getDb().prepare('DELETE FROM push_subscriptions WHERE id = ?').run(id);
+    const touch = (id) => qRun(`UPDATE push_subscriptions SET last_seen_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = $1`, [id]);
+    const del = (id) => qRun('DELETE FROM push_subscriptions WHERE id = $1', [id]);
     await Promise.allSettled(subs.map(async (s) => {
       try {
         await webpush.sendNotification(

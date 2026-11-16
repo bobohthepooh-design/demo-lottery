@@ -1,18 +1,19 @@
-// Integration tests — run against a throwaway DB
-process.env.DATABASE_PATH = './test-tmp.db';
+// Integration tests — run against a throwaway PostgreSQL database.
+// P1: SQLite removed — tests require TEST_DATABASE_URL pointing to a dedicated
+// empty database (the app auto-migrates + seeds on boot). Example:
+//   TEST_DATABASE_URL=postgres://lottery:PASS@127.0.0.1:5432/lottery_test npm test
 process.env.SESSION_SECRET = 'test-secret';
 process.env.NODE_ENV = 'test';
 process.env.LOGIN_RATE_LIMIT_MAX = '200';
+// .env root มี INITIAL_CREDIT=0 (production) — test ต้องการเครดิตเริ่มต้น
+process.env.INITIAL_CREDIT = '5000';
+if (!process.env.TEST_DATABASE_URL) {
+  throw new Error('TEST_DATABASE_URL is required (e.g. postgres://lottery:PASS@127.0.0.1:5432/lottery_test)');
+}
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbFile = path.resolve(__dirname, '..', 'test-tmp.db');
-for (const ext of ['', '-wal', '-shm']) { try { fs.unlinkSync(dbFile + ext); } catch {} }
 
 const { default: app } = await import('../src/index.js');
 const { getDb, closeDb } = await import('../src/db/index.js');
@@ -54,8 +55,12 @@ async function loginAs(username, password) {
 
 let member, adminAgent, drawId, ruleBottom2, ruleTop3, settledBalance;
 const ts = Date.now().toString(36);
+const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
 
 beforeAll(async () => {
+  // test DB เป็น persistent — reset MFA ของ admin ให้ setup/enable ทำซ้ำได้ทุกรอบ
+  await getDb().prepare(`UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE username = 'admin'`).run();
   // create member
   await makeAgent().post('/auth/register', { username: `m${ts}`, email: `m${ts}@t.local`, password: 'Password123', ageConfirmed: true });
   member = await loginAs(`m${ts}`, 'Password123');
@@ -80,23 +85,22 @@ beforeAll(async () => {
   expect(v.status).toBe(200);
   adminAgent = a2;
 
-  // create + open draw
+  // create + open draw — ใช้ฮานอย (type 3, cat HNN=6) เพราะหวยไทยบังคับผลทางการจาก GLO
+  // เท่านั้น (admin settle ตรงไม่ได้) — เวลาต้อง close_at < draw_at เสมอ (กติกา createDraw)
   const now = Date.now();
-  const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
   const d = await adminAgent.post('/admin/draws', {
-    lottery_type_id: 1, draw_code: `T${ts}`,
+    lottery_type_id: 3, category_id: 6, draw_code: `T${ts}`,
     draw_at: fmt(now + 7200e3), close_at: fmt(now + 3600e3),
   });
   drawId = d.body.id;
   await adminAgent.patch(`/admin/draws/${drawId}/status`, { status: 'open' });
 
-  const t = await member.agent.get('/lottery/types/1');
+  const t = await member.agent.get(`/lottery/draws/${drawId}/rules`);
   ruleBottom2 = t.body.rules.find(r => r.bet_type === 'bottom2');
   ruleTop3 = t.body.rules.find(r => r.bet_type === 'top3');
 });
 
-afterAll(() => { closeDb(); for (const ext of ['', '-wal', '-shm']) { try { fs.unlinkSync(dbFile + ext); } catch {} } });
+afterAll(async () => { await closeDb(); });
 
 describe('auth', () => {
   it('rejects wrong password', async () => {
@@ -120,14 +124,14 @@ describe('auth', () => {
 describe('betting', () => {
   it('places bet and deducts balance', async () => {
     const r = await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleBottom2.id, number: '42', amount: 1000 }] });
-    expect(r.status).toBe(201);
+    expect(r.status, JSON.stringify(r.body)).toBe(201);
     expect(r.body.balance).toBe(4000); // 5000 - 1000
   });
   it('rejects bet on closed draw', async () => {
     const now = Date.now();
     const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
-    const d = await adminAgent.post('/admin/draws', { lottery_type_id: 1, draw_code: `C${ts}`, draw_at: fmt(now-1800e3), close_at: fmt(now-3600e3) });
+    const d = await adminAgent.post('/admin/draws', { lottery_type_id: 3, category_id: 6, draw_code: `C${ts}`, draw_at: fmt(now-1800e3), close_at: fmt(now-3600e3) });
     await adminAgent.patch(`/admin/draws/${d.body.id}/status`, { status: 'open' }); // will auto-close since close_at passed
     const r = await member.agent.post('/bets', { drawId: d.body.id, items: [{ ruleId: ruleBottom2.id, number: '42', amount: 100 }] });
     expect(r.status).toBe(400);
@@ -137,8 +141,12 @@ describe('betting', () => {
     expect(r.status).toBe(400);
   });
   it('settles draw and pays winner', async () => {
-    // winning bottom2 = '42' → bottom2 bet wins x60 (standard payout); place another losing bet
-    await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleTop3.id, number: '999', amount: 500 }] });
+    // winning bottom2 = '42' → bottom2 bet wins; place another losing bet ก่อนปิดรอบ
+    const lb = await member.agent.post('/bets', { drawId, items: [{ ruleId: ruleTop3.id, number: '999', amount: 500 }] });
+    expect(lb.status).toBe(201);
+    // เลื่อนเวลาออกรางวัลมาย้อนหลัง เพื่อให้ settle ได้ (ต้อง close_at < draw_at <= now)
+    const pt = await adminAgent.patch(`/admin/draws/${drawId}`, { draw_at: fmt(Date.now() - 3600e3), close_at: fmt(Date.now() - 7200e3) });
+    expect(pt.status, JSON.stringify(pt.body)).toBe(200);
     const r = await adminAgent.post(`/admin/draws/${drawId}/settle`, { winning_numbers: { top3: '542', bottom2: '42' } });
     expect(r.status).toBe(200);
     expect(r.body.winningItems).toBe(1);
@@ -236,7 +244,7 @@ describe('wallet', () => {
     await ag.post('/auth/login', { username: u, password: 'Password123' });
     const me = await ag.get('/auth/me');
     // จำลองเคส flag ถูกปลดล็อกโดยตรง (ยังไม่ได้ clawback เครดิตแถม)
-    getDb().prepare('UPDATE users SET withdraw_unlocked=1 WHERE id=?').run(me.body.user.id);
+    await getDb().prepare('UPDATE users SET withdraw_unlocked=1 WHERE id=?').run(me.body.user.id);
     const w = await ag.get('/bets/wallet');
     expect(w.body.withdrawable.unlocked).toBe(true);
     expect(w.body.withdrawable.withdrawable).toBe(0); // ยอดคือเครดิตแถม ฿50 ล้วน

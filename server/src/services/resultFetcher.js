@@ -1,4 +1,4 @@
-import { getDb, tx, txAsync, isPg, makeReference } from '../db/index.js';
+import { txAsync, makeReference } from '../db/index.js';
 import { settleDraw, getDraw, evaluateBet, listRules, mergeAnnounce, validateWinningNumbers } from './lotteryService.js';
 import { audit, HttpError } from '../lib/audit.js';
 import { broadcast } from './events.js';
@@ -230,12 +230,6 @@ const PENDING_DRAWS_SQL = `SELECT d.*, lt.code AS type_code, lt.result_mode AS r
     ORDER BY d.draw_at`;
 
 function pendingDraws() {
-  if (isPg()) return pendingDrawsPg();
-  const db = getDb();
-  const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  return db.prepare(PENDING_DRAWS_SQL).all(nowUtc);
-}
-async function pendingDrawsPg() {
   const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
   return q(PENDING_DRAWS_SQL, [nowUtc]);
 }
@@ -336,93 +330,7 @@ export async function fetchResultForDraw(drawId) {
   return { date: src.date, winning: src.winning };
 }
 
-/** admin แก้ไขผลหลังออกผลแล้ว — คำนวณส่วนต่างเครดิต/เดบิตใหม่ทั้งโพย */
-export function updateDrawResult(adminId, drawId, winningNumbers) {
-  if (isPg()) return updateDrawResultPg(adminId, drawId, winningNumbers);
-  return updateDrawResultSync(adminId, drawId, winningNumbers);
-}
-
-function updateDrawResultSync(adminId, drawId, winningNumbers) {
-  const db = getDb();
-  const draw = getDraw(drawId);
-  if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
-  if (draw.type_code === 'HR') throw new HttpError(403, 'ผลหวยราศีสุ่มโดยระบบ — admin แก้ไขผลไม่ได้');
-  const result = db.prepare('SELECT * FROM lottery_results WHERE draw_id = ?').get(drawId);
-  if (!result) throw new HttpError(400, 'รอบนี้ยังไม่ออกผล — ใช้ปุ่มออกผลแทน');
-  const rules = listRules(draw.lottery_type_id, { categoryId: draw.category_id });
-  const ruleById = new Map(rules.map(r => [r.id, r]));
-
-  return tx((d) => {
-    winningNumbers = { ...winningNumbers };
-    validateWinningNumbers(winningNumbers);
-    mergeAnnounce(winningNumbers, draw.announce);
-    d.prepare(`UPDATE lottery_results SET winning_numbers = ?, source = 'manual' WHERE draw_id = ?`)
-      .run(JSON.stringify(winningNumbers), drawId);
-    d.prepare(`UPDATE lottery_draws SET result_numbers = ?, updated_at = datetime('now') WHERE id = ?`)
-      .run(JSON.stringify(winningNumbers), drawId);
-
-    const items = d.prepare(`SELECT bi.*, bs.user_id AS owner_id, bs.slip_ref, bs.status AS slip_status
-      FROM bet_items bi JOIN bet_slips bs ON bs.id = bi.slip_id
-      WHERE bi.draw_id = ? AND bi.status != 'cancelled' AND bs.status NOT IN ('cancelled','refunded')`).all(drawId);
-    const slipMap = new Map();
-    const slipItemCount = new Map();
-    const userDiff = new Map();
-    for (const item of items) {
-      slipItemCount.set(item.slip_id, (slipItemCount.get(item.slip_id) || 0) + 1);
-      const rule = ruleById.get(item.rule_id);
-      if (!rule) continue;
-      const effRule = item.match_config != null
-        ? { ...rule, match_config: item.match_config, payout_multiplier: item.payout_multiplier ?? rule.payout_multiplier }
-        : rule;
-      const ev = evaluateBet(effRule, item.number, winningNumbers, { todBet: !!item.is_tod });
-      const newPayout = ev.win ? Math.floor(item.amount * Number(ev.multiplier ?? effRule.payout_multiplier)) : 0;
-      const diff = newPayout - item.payout;
-      if (diff !== 0) userDiff.set(item.owner_id, (userDiff.get(item.owner_id) || 0) + diff);
-      d.prepare(`UPDATE bet_items SET status = ?, payout = ?, result_detail = ? WHERE id = ?`)
-        .run(ev.win ? 'won' : 'lost', newPayout, JSON.stringify(ev.detail), item.id);
-      const st = slipMap.get(item.slip_id) || { won: 0, payout: 0, stake: 0 };
-      st.payout += newPayout; st.stake += item.amount; if (ev.win) st.won++;
-      slipMap.set(item.slip_id, st);
-    }
-    for (const [slipId, st] of slipMap) {
-      const total = slipItemCount.get(slipId) || 1;
-      const status = st.won === 0 ? 'lost' : st.won === total ? 'won' : 'partial';
-      d.prepare(`UPDATE bet_slips SET status = ?, total_payout = ? WHERE id = ?`).run(status, st.payout, slipId);
-    }
-    // ปรับเครดิตรวมต่อ user ครั้งเดียว — version check กัน race, ยอดติดลบ = ยกเลิกทั้งการแก้ไขผล
-    for (const [uid, diff] of userDiff) {
-      if (!diff) continue;
-      const w = d.prepare('SELECT id, balance, version FROM virtual_wallets WHERE user_id = ?').get(uid);
-      if (!w) continue;
-      const nb = w.balance + diff;
-      if (nb < 0) throw new HttpError(400,
-        `การแก้ไขผลทำให้เครดิตของ user ${uid} ติดลบ — กรุณาปรับเครดิตก่อนแล้วลองใหม่`, 'NEGATIVE_BALANCE');
-      const upd = d.prepare(`UPDATE virtual_wallets SET balance = ?, version = version + 1, updated_at = datetime('now')
-                             WHERE id = ? AND version = ?`).run(nb, w.id, w.version);
-      if (upd.changes === 0) throw new HttpError(409, 'เกิด race condition กรุณาลองใหม่', 'CONCURRENT_MODIFICATION');
-      const dir = diff > 0 ? 'credit' : 'debit';
-      d.prepare(`INSERT INTO virtual_transactions
-        (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)`)
-        .run(makeReference('TX'), w.id, uid, dir === 'credit' ? 'win_credit' : 'admin_debit',
-          Math.abs(diff), nb, dir, `refetch-${drawId}-u${uid}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`, 'ปรับผลรางวัลหลังแก้ไขผล (DEMO)');
-    }
-    for (const [uid, diff] of userDiff) {
-      if (!diff) continue;
-      const baht = Math.abs(diff) / 100;
-      notify(uid, {
-        type: 'result_update',
-        title: diff > 0 ? `ผลรางวัลปรับใหม่ +฿${baht.toLocaleString('th-TH')}` : `ผลรางวัลปรับใหม่ −฿${baht.toLocaleString('th-TH')}`,
-        body: `ผลรางวัลรอบ ${draw.draw_code} ถูกแก้ไข — เครดิตของคุณ${diff > 0 ? 'เพิ่ม' : 'ลด'} ฿${baht.toLocaleString('th-TH')}`,
-        link: '/my-bets',
-      }, d);
-    }
-    audit({ userId: adminId, action: 'draw.result_update', entityType: 'draw', entityId: String(drawId), detail: { winningNumbers } });
-    return { ok: true };
-  });
-}
-
-async function updateDrawResultPg(adminId, drawId, winningNumbers) {
+export async function updateDrawResult(adminId, drawId, winningNumbers) {
   const draw = await getDraw(drawId);
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
   if (draw.type_code === 'HR') throw new HttpError(403, 'ผลหวยราศีสุ่มโดยระบบ — admin แก้ไขผลไม่ได้');

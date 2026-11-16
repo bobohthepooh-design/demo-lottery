@@ -397,7 +397,9 @@ const drawUpdateSchema = z.object({
 router.patch('/draws/:id', requirePerm('draws.manage'), async (req, res, next) => {
   try {
     const data = drawUpdateSchema.parse(req.body);
-    await lottery.updateDraw(req.user.id, Number(req.params.id), data);
+    await lottery.updateDraw(req.user.id, Number(req.params.id), {
+      drawCode: data.draw_code, drawAt: data.draw_at, closeAt: data.close_at, announce: data.announce,
+    });
     broadcast('draws');
     res.json({ ok: true });
   } catch (e) { next(e); }

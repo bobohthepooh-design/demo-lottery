@@ -1,4 +1,4 @@
-import { getDb, tx, txAsync, isPg } from './index.js';
+import { txAsync } from './index.js';
 import { config } from '../config.js';
 import { hashPassword } from '../lib/password.js';
 import { setSetting } from '../services/settingsService.js';
@@ -42,7 +42,7 @@ const ROLE_PERMS = {
   member: ['lottery.view', 'bet.place', 'bet.view_own', 'wallet.view_own', 'results.view'],
 };
 
-async function seedPg() {
+export async function seed() {
   await txAsync(async (d) => {
     // roles
     const roleIds = {};
@@ -106,78 +106,6 @@ async function seedPg() {
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   await seedRulesV2();
   console.log('[seed] done');
-}
-
-function seedSync() {
-  const db = getDb();
-  tx((d) => {
-    // roles
-    const roleIds = {};
-    for (const r of ROLES) {
-      d.prepare('INSERT OR IGNORE INTO roles (name, description) VALUES (?, ?)').run(r.name, r.description);
-      roleIds[r.name] = d.prepare('SELECT id FROM roles WHERE name = ?').get(r.name).id;
-    }
-    // permissions
-    const permIds = {};
-    for (const p of PERMISSIONS) {
-      d.prepare('INSERT OR IGNORE INTO permissions (code, description) VALUES (?, ?)').run(p.code, p.description);
-      permIds[p.code] = d.prepare('SELECT id FROM permissions WHERE code = ?').get(p.code).id;
-    }
-    // role_permissions
-    for (const [role, codes] of Object.entries(ROLE_PERMS)) {
-      for (const c of codes) {
-        if (c === '*') continue; // super_admin bypass via hasRole/perm '*'
-        const pid = permIds[c];
-        if (pid) d.prepare('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)').run(roleIds[role], pid);
-      }
-    }
-    // grant all permissions to super_admin explicitly
-    for (const p of PERMISSIONS) {
-      d.prepare('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)').run(roleIds.super_admin, permIds[p.code]);
-    }
-
-    // lottery types
-    const types = [
-      { code: 'TH', name_th: 'หวยไทย', name_en: 'Thailand Government Lottery', description: 'ออกวันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 น.' },
-      { code: 'LA', name_th: 'หวยลาว', name_en: 'Laos Lottery', description: 'หวยลาว: จ–ศ 20:00 • ลาวพัฒนา: จ–ศ 20:30 • ลาวพัฒนาเช้า: ทุกวัน 09:00 น.' },
-      { code: 'HN', name_th: 'หวยฮานอย', name_en: 'Hanoi Lottery', description: 'หวยเวียดนาม ออกทุกวัน 4 รอบ: เฉพาะกิจ 16:30 • พิเศษ 17:30 • ปกติ 18:30 • VIP 19:30 น. + ฮานอยทางการ (XSMB จริง) จันทร์/พฤหัสบดี 18:15 น. (เวลาไทย)' },
-      { code: 'HR', name_th: 'หวยราศี', name_en: 'Zodiac Lottery', description: 'ทายดวงราศีแบบหวยไทย — ผลรางวัลเป็นราศี 6 ตัวเรียงลำดับ (รางวัลใหญ่/3 ราศีบน/2 ราศีล่าง/วิ่งราศี) ออกรางวัลทุก 1 ชั่วโมงนาฬิกา ตลอด 24 ชั่วโมง (DEMO)' },
-    ];
-    const typeIds = {};
-    for (const t of types) {
-      d.prepare('INSERT OR IGNORE INTO lottery_types (code, name_th, name_en, description) VALUES (?, ?, ?, ?)')
-        .run(t.code, t.name_th, t.name_en, t.description);
-      typeIds[t.code] = d.prepare('SELECT id FROM lottery_types WHERE code = ?').get(t.code).id;
-    }
-
-    // super admin (password from env or default — CHANGE IN PRODUCTION)
-    const adminPass = process.env.SEED_ADMIN_PASSWORD || 'Admin@Demo123';
-    const existing = d.prepare(`SELECT id FROM users WHERE username = 'admin'`).get();
-    if (!existing) {
-      const r = d.prepare(`INSERT INTO users (username, email, password_hash, display_name) VALUES ('admin', 'admin@demo.local', ?, 'Super Admin')`)
-        .run(hashPassword(adminPass));
-      const uid = Number(r.lastInsertRowid);
-      d.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)').run(uid, roleIds.super_admin);
-      d.prepare('INSERT INTO virtual_wallets (user_id, balance) VALUES (?, 0)').run(uid);
-      console.log(`[seed] super admin created: admin / ${adminPass}  <-- change after first login`);
-    }
-
-    // settings
-    setSetting('site_name', 'Demo Lottery Platform', null);
-    setSetting('initial_credit', config.initialCredit, null);
-    setSetting('maintenance_mode', false, null);
-    setSetting('demo_notice', 'ระบบจำลองเพื่อการศึกษาเท่านั้น ใช้เครดิตเสมือน ไม่มีเงินจริง', null);
-    setSetting('announcement', { enabled: true, text: '🎉 ยินดีต้อนรับสู่ Demo Lottery — หวยไทย • หวยลาว • ฮานอย อัตราจ่ายสูงสุด x1,000 ใช้เครดิตจำลองเพื่อการศึกษา' }, null);
-    setSetting('cashback_percent', 0, null); // % คืนยอดเสียต่อวัน — 0 = ปิด, admin ตั้งในหน้าตั้งค่า
-  });
-  // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
-  seedRulesV2();
-  console.log('[seed] done');
-}
-
-// dual-mode: sqlite sync / pg คืน Promise — caller await ได้ทั้งคู่
-export function seed() {
-  return isPg() ? seedPg() : seedSync();
 }
 
 if (process.argv[1] && process.argv[1].endsWith('seed.js')) {

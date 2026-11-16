@@ -173,7 +173,9 @@ router.post('/otp/request', loginLimiter, async (req, res, next) => {
   try {
     const data = otpRequestSchema.parse(req.body);
     const r = await auth.requestOtp({ ...data, ip: req.ip });
-    res.json({ ok: true, ...r, message: 'ส่งรหัส OTP แล้ว (Demo: รหัสแสดงด้านล่าง ไม่ได้ส่ง SMS จริง)' });
+    res.json({ ok: true, ...r, message: r.devCode
+      ? 'ส่งรหัส OTP แล้ว (Demo: รหัสแสดงด้านล่าง ไม่ได้ส่ง SMS จริง)'
+      : 'ระบบบันทึกรหัส OTP แล้ว — รหัสจะส่งผ่านช่องทางที่ลงทะเบียนไว้' });
   } catch (e) { next(e); }
 });
 

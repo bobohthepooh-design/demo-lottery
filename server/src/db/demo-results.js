@@ -1,4 +1,3 @@
-import { getDb, isPg } from './index.js';
 import { settleDraw } from '../services/lotteryService.js';
 import { ZODIAC_SIGNS } from '../lib/zodiac.js';
 import { q, qGet } from './pg.js';
@@ -31,7 +30,9 @@ function winningFor(typeCode, categoryCode) {
   if (typeCode === 'LA') {
     const main = rnd(6);
     if (categoryCode === 'LAD') {
-      return { main, last2: [rnd(2), rnd(2), rnd(2), rnd(2), rnd(2)] };
+      // กติกาหวยลาวพัฒนาใช้ num4/top3/bottom2 — ต้องตรงกับ resultSchema('LA','LAD')
+      const base = rnd(6);
+      return { main: base, num4: base.slice(0, 4), top3: base.slice(-3), last2: base.slice(-2), bottom2: base.slice(-5, -3) };
     }
     return { main, last4: main.slice(-4), last3: main.slice(-3), last2: main.slice(-2) };
   }
@@ -68,49 +69,16 @@ async function settleOpenDraws(draws, admin) {
   return settled;
 }
 
-function adminIdSync() {
-  const db = getDb();
-  return db.prepare(`SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
-    JOIN roles r ON r.id = ur.role_id WHERE r.name = 'super_admin' LIMIT 1`).get()?.id
-    ?? db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').get()?.id;
-}
-async function adminIdPg() {
+async function adminId() {
   return (await qGet(`SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
     JOIN roles r ON r.id = ur.role_id WHERE r.name = 'super_admin' LIMIT 1`))?.id
     ?? (await qGet('SELECT id FROM users ORDER BY id LIMIT 1'))?.id;
 }
 
-function seedDemoResultsSync() {
-  const admin = adminIdSync();
-  const draws = getDb().prepare(DRAWS_SQL).all();
-  const done = new Set();
-  let settled = 0;
-  for (const d of draws) {
-    const key = `${d.type_code}:${d.category_code || ''}`;
-    if (done.has(key)) continue;
-    try {
-      const w = winningFor(d.type_code, d.category_code);
-      settleDraw(admin, d.id, w);
-      console.log(`[demo-results] settled ${d.draw_code} (${d.type_code}${d.category_code ? '/' + d.category_code : ''}) ->`, JSON.stringify(w));
-      settled++;
-    } catch (e) {
-      console.log(`[demo-results] skip ${d.draw_code}: ${e.message}`);
-    }
-    done.add(key);
-  }
-  console.log(`[demo-results] settled ${settled} draws`);
-  return settled;
-}
-
-async function seedDemoResultsPg() {
-  const admin = await adminIdPg();
+export async function seedDemoResults() {
+  const admin = await adminId();
   const draws = await q(DRAWS_SQL);
   return settleOpenDraws(draws, admin);
-}
-
-// dual-mode: sqlite sync / pg คืน Promise
-export function seedDemoResults() {
-  return isPg() ? seedDemoResultsPg() : seedDemoResultsSync();
 }
 
 if (process.argv[1] && process.argv[1].endsWith('demo-results.js')) {

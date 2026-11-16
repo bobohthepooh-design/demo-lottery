@@ -59,7 +59,8 @@ export default function PlaceBet() {
   const [picks, setPicks] = useState([]);   // pattana5: เลขที่เลือก 1-45
   const [zodiacPicks, setZodiacPicks] = useState([]); // หวยราศี: ราศีที่เลือกเรียงตามลำดับ (สูงสุดตาม digits ของกติกา)
   const [amount, setAmount] = useState('');
-  const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (เงิน ×2)
+  const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (ซื้อโต๊ดเพิ่มอีก 1 รายการ)
+  const numRef = useRef(null); // auto-focus ช่องเลขหลังเพิ่มโพย — แทงต่อได้เร็ว
 
   // เปลี่ยนเนื้อหาโพย → key ใหม่ เพื่อไม่ให้โพยคนละชุดใช้ key เดียวกัน
   useEffect(() => { idemKey.current = null; }, [slip]);
@@ -171,12 +172,14 @@ export default function PlaceBet() {
       : null;
     const mult = annEntry ? (annEntry.mult ?? Math.floor(baseMult / 2)) : baseMult;
     const items = [{ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake, mult, isAnn: !!annEntry }];
-    // โต๊ด — เลือกแพ็กเกจ "เต็ง+โต๊ด" → เพิ่มรายการโต๊ดอีก 1 รายการ (เงินเท่ากัน = เสียรวม ×2)
+    // โต๊ด — ต้องซื้อเพิ่มเป็นรายการแยก (is_tod) จ่ายอัตรา match_config.tod เมื่อเลขครบทุกหลักไม่สนลำดับ
     if (betMode === 'tengtod' && showTodHint) {
       items.push({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th + ' (โต๊ด)', number: num, stakeSatang: stake, mult: todRate, isTod: true });
     }
     setSlip([...slip, ...items]);
-    setNumber(''); setPicks([]); setZodiacPicks([]); setAmount('');
+    setNumber(''); setPicks([]); setZodiacPicks([]);
+    // คงจำนวนเงินไว้ — แทงหลายเลขด้วยเงินเท่ากันได้ต่อเนื่อง + refocus ช่องเลขให้กรอกเลขถัดไปทันที
+    setTimeout(() => numRef.current?.focus(), 50);
   };
 
   // ---- ปุ่มลัดสไตล์ LINE: แค่ช่วยกรอก/เพิ่มเลข ยังต้องกดยืนยันโพยเหมือนเดิม ----
@@ -360,7 +363,7 @@ export default function PlaceBet() {
                   className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition disabled:opacity-40">
                   🔁 กลับเลข
                 </button>
-                {rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
+                {draw.type_code === 'TH' && rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
                   <button type="button" onClick={addRud19}
                     className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition">
                     🎯 รูด 19 ประตู
@@ -371,23 +374,26 @@ export default function PlaceBet() {
             </div>
             <div>
                 <label className="text-sm text-navy-300">หมายเลข ({rule?.digits || '?'} หลัก)</label>
-                <input value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
+                <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                   inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
                   className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl tracking-[0.4em] text-center text-gold-300 font-mono focus:outline-none focus:border-gold-500" />
                 {showTodHint && (
                   <div className="mt-2 space-y-1.5">
-                    <div className="text-[10px] text-sky-400/80">💡 ผลครบทุกหลักแต่สลับลำดับ → จ่ายโต๊ด x{todRate}</div>
+                    <div className="text-[10px] text-sky-400/80">💡 โต๊ด = เลขครบทุกหลักไม่สนลำดับ (รวมตรงเป๊ะ) จ่าย x{todRate}</div>
                     <div className="grid grid-cols-2 gap-1.5">
                       <button type="button" onClick={() => setBetMode('teng')}
-                        className={`text-xs py-2 rounded-lg border font-semibold transition ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
-                        เต็งอย่างเดียว
+                        className={`text-xs py-2 px-2 rounded-lg border font-semibold transition text-center ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
+                        <div>เต็งอย่างเดียว</div>
+                        <div className="text-[9px] font-normal mt-0.5 opacity-80">เฉพาะเลขตรงเป๊ะ • จ่าย x{rule.payout_multiplier}</div>
                       </button>
                       <button type="button" onClick={() => setBetMode('tengtod')}
-                        className={`text-xs py-2 rounded-lg border font-semibold transition ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
-                        เต็ง + โต๊ด ×2
+                        className={`text-xs py-2 px-2 rounded-lg border font-semibold transition text-center ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
+                        <div>เต็ง + โต๊ด</div>
+                        <div className="text-[9px] font-normal mt-0.5 opacity-80">ตรงเป๊ะได้ x{Number(rule.payout_multiplier) + todRate} • สลับลำดับได้ x{todRate}</div>
                       </button>
                     </div>
-                    {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">เงิน ÷2 ต่อประเภท — เสียรวมเป็น ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100)</div>}
+                    {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">ซื้อทั้งเต็งและโต๊ด — เสียเงินรวม ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100) • ผลตรงได้ทั้งคู่ ผลสลับได้แค่โต๊ด</div>}
                   </div>
                 )}
               </div>
@@ -396,8 +402,18 @@ export default function PlaceBet() {
               <div>
                 <label className="text-sm text-navy-300">จำนวนเงิน (บาท)</label>
                 <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                   inputMode="decimal" placeholder="0.00"
                   className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
+                {/* ปุ่มเงินด่วน — แตะครั้งเดียวกรอกยอด ไม่ต้องพิมพ์ (คงไว้ใช้กับเลขถัดๆ ไปได้) */}
+                <div className="grid grid-cols-4 gap-1.5 mt-2">
+                  {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
+                    <button key={v} type="button" onClick={() => setAmount(String(v))}
+                      className={`text-xs py-1.5 rounded-lg border font-bold transition ${Number(amount) === v ? 'border-gold-500 bg-gold-500/20 text-gold-300' : 'border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300'}`}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             {err && <div className="text-red-400 text-sm">{err}</div>}
@@ -411,7 +427,13 @@ export default function PlaceBet() {
       {/* right: bet slip */}
       <div className="lg:col-span-2">
         <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-5 sticky top-24 shadow-xl shadow-gold-500/5">
-          <h2 className={`font-bold mb-3 ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className={`font-bold ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
+            {slip.length > 0 && (
+              <button onClick={() => { if (confirm('ล้างรายการทั้งหมดในโพย?')) setSlip([]); }}
+                className="text-[10px] text-navy-400 hover:text-red-400 transition">ล้างทั้งหมด</button>
+            )}
+          </div>
           {repeat && slip.length > 0 && (
             <div className="mb-3 text-[11px] bg-sky-500/10 border border-sky-500/40 text-sky-300 rounded-lg px-3 py-2 flex items-center justify-between">
               <span>🔁 bettor ซ้ำจากโพย {repeat.ref} — ตรวจสอบแล้วยืนยันได้เลย</span>
