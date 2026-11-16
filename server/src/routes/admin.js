@@ -354,6 +354,58 @@ router.get('/lottery/rules', requirePerm('lottery.manage'), async (req, res) => 
   res.json({ rules: await db().prepare('SELECT * FROM lottery_rules ORDER BY lottery_type_id, bet_type').all() });
 });
 
+// ---------- export/import กติกาเป็น JSON (backup/ย้าย environment) ----------
+router.get('/lottery/rules/export', requirePerm('lottery.manage'), async (req, res) => {
+  const rows = await db().prepare(`
+    SELECT lt.code AS type_code, c.code AS category_code, r.bet_type, r.name_th, r.name_en,
+           r.digits, r.match_config, r.payout_multiplier, r.stake_unit, r.min_amount, r.max_amount, r.is_active
+    FROM lottery_rules r
+    JOIN lottery_types lt ON lt.id = r.lottery_type_id
+    LEFT JOIN lottery_categories c ON c.id = r.category_id
+    WHERE r.bet_type NOT LIKE '%_old_%' AND r.bet_type NOT LIKE '%_retired_%'
+    ORDER BY lt.code, c.code NULLS FIRST, r.bet_type`).all();
+  res.json({ version: 1, exported_at: new Date().toISOString(), rules: rows });
+});
+
+router.post('/lottery/rules/import', requirePerm('lottery.manage'), async (req, res, next) => {
+  try {
+    const list = Array.isArray(req.body?.rules) ? req.body.rules : [];
+    if (!list.length || list.length > 500) return res.status(400).json({ error: 'ไฟล์กติกาไม่ถูกต้อง (ต้องมี rules 1-500 รายการ)' });
+    let created = 0, updated = 0, skipped = 0;
+    const errors = [];
+    for (const r of list) {
+      try {
+        const t = await db().prepare('SELECT id FROM lottery_types WHERE code = ?').get(r.type_code);
+        if (!t) { skipped++; continue; }
+        let catId = null;
+        if (r.category_code) {
+          const c = await db().prepare('SELECT id FROM lottery_categories WHERE lottery_type_id = ? AND code = ?').get(t.id, r.category_code);
+          if (!c) { skipped++; continue; }
+          catId = c.id;
+        }
+        JSON.parse(r.match_config || '{}');
+        const exist = await db().prepare(`SELECT id FROM lottery_rules
+          WHERE lottery_type_id = ? AND bet_type = ? AND COALESCE(category_id,0) = COALESCE(?,0)`)
+          .get(t.id, r.bet_type, catId);
+        const vals = [r.name_th || r.bet_type, r.name_en || null, r.digits ?? 0, r.match_config || '{}',
+          r.payout_multiplier ?? 100, r.stake_unit ?? 100, r.min_amount ?? 100, r.max_amount ?? null, r.is_active ?? 1];
+        if (exist) {
+          await db().prepare(`UPDATE lottery_rules SET name_th=?, name_en=?, digits=?, match_config=?, payout_multiplier=?, stake_unit=?, min_amount=?, max_amount=?, is_active=? WHERE id=?`)
+            .run(...vals, exist.id);
+          updated++;
+        } else {
+          await db().prepare(`INSERT INTO lottery_rules (lottery_type_id, category_id, bet_type, name_th, name_en, digits, match_config, payout_multiplier, stake_unit, min_amount, max_amount, is_active)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(t.id, catId, r.bet_type, ...vals);
+          created++;
+        }
+      } catch (e) { errors.push(`${r.bet_type || '?'}: ${e.message}`); }
+    }
+    audit({ userId: req.user.id, action: 'admin.rules_import', detail: { created, updated, skipped, errors: errors.length }, req });
+    broadcast('settings');
+    res.json({ ok: true, created, updated, skipped, errors: errors.slice(0, 10) });
+  } catch (e) { next(e); }
+});
+
 // ---------- draws ----------
 router.get('/draws', requirePerm('draws.manage'), async (req, res) => {
   // includeInactiveTypes — admin ต้องเห็น/ยกเลิก/ออกผลรอบของประเภทที่ปิดอยู่ด้วย (โพยค้างต้องจัดการได้)

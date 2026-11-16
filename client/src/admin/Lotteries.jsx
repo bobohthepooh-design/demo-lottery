@@ -157,6 +157,32 @@ export default function AdminLotteries() {
     patchCfg({ prizes });
   };
 
+  // export/import กติกาเป็น JSON — backup หรือย้ายไป env อื่น
+  const exportRules = async () => {
+    try {
+      const r = await api('/admin/lottery/rules/export');
+      const blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `lottery-rules-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click(); URL.revokeObjectURL(a.href);
+    } catch (e) { toast(e.message, 'error'); }
+  };
+  const importRules = async (e) => {
+    const f = e.target.files?.[0]; e.target.value = '';
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!(await confirmAction({
+        title: 'ยืนยัน import กติกา',
+        message: `นำเข้ากติกาจำนวน ${data.rules?.length || 0} รายการจากไฟล์ "${f.name}" — กติกาที่ตรงกันจะถูกอัปเดต ไม่ตรงจะสร้างใหม่ ใช่หรือไม่?`,
+      }))) return;
+      const r = await api('/admin/lottery/rules/import', { method: 'POST', body: data });
+      toast(`import สำเร็จ — สร้างใหม่ ${r.created}, อัปเดต ${r.updated}, ข้าม ${r.skipped}${r.errors?.length ? `, ผิดพลาด ${r.errors.length}` : ''}`, r.errors?.length ? 'error' : 'success');
+      load();
+    } catch (e2) { toast(e2.message, 'error'); }
+  };
+
   const saveRule = async () => {
     if (!(await confirmAction({ title: editRule.id ? 'ยืนยันแก้ไขกติกา' : 'ยืนยันเพิ่มกติกา', message: `${editRule.id ? 'บันทึกการแก้ไข' : 'เพิ่ม'}กติกา "${editRule.name_th}" ใช่หรือไม่?` }))) return;
     try {
@@ -311,6 +337,9 @@ export default function AdminLotteries() {
               <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="accent-gold-500" />
               แสดงที่ปิดใช้งาน ({rules.filter(r => !r.is_active).length})
             </label>
+            <button onClick={exportRules} className="text-xs px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300">⤓ Export JSON</button>
+            <label className="text-xs px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300 cursor-pointer">
+              ⤒ Import JSON<input type="file" accept=".json" className="hidden" onChange={importRules} /></label>
             <button onClick={() => setEditRule(emptyRule(types[0]?.id))} className="text-sm text-gold-400 hover:underline">+ เพิ่มกติกา</button>
           </div>
         </div>
