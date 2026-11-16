@@ -84,6 +84,15 @@ const ICONS = {
       )))}
     </>
   ),
+  // แอดมิน — dashboard 4 ช่อง
+  dashboard: (g) => (
+    <>
+      <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.8" fill={g} />
+      <rect x="13" y="3.5" width="7.5" height="7.5" rx="1.8" fill={g} />
+      <rect x="3.5" y="13" width="7.5" height="7.5" rx="1.8" fill={g} />
+      <rect x="13" y="13" width="7.5" height="7.5" rx="1.8" fill="#fff8e0" opacity="0.9" />
+    </>
+  ),
 };
 
 export function CasinoIcon({ name, className = 'w-6 h-6', tone = 'gold' }) {

@@ -105,7 +105,7 @@ export default function Layout() {
               className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
               <Icon name="home" className="w-5 h-5" />{t('home')}
             </NavLink>
-            {visibleGroups.map((g, gi) => (
+            {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
               <Fragment key={g.label}>
                 {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-0.5 shrink-0" />}
                 {g.items.map(n => (
@@ -117,6 +117,15 @@ export default function Layout() {
                 ))}
               </Fragment>
             ))}
+            {isAdmin && (
+              <>
+                <span className="w-px h-5 bg-gold-500/50 mx-1 shrink-0" />
+                <NavLink to="/admin"
+                  className={({ isActive }) => `shrink-0 px-3 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${isActive ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
+                  <Icon name="dashboard" className="w-5 h-5" />{t('admin')}
+                </NavLink>
+              </>
+            )}
           </nav>
 
           <div className="flex items-center gap-3">
