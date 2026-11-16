@@ -159,15 +159,15 @@ export default function Layout() {
               {user && <span className="text-xs font-black font-mono text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `flex items-center gap-2 px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
+              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 text-[15px] tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-200'}`}>
               <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
               <div key={g.label}>
-                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-navy-500 border-t border-navy-800 mt-1">{t(g.label)}</div>
+                <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-navy-400 border-t border-navy-800 mt-1">{t(g.label)}</div>
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) => `flex items-center gap-2 px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
+                    className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 text-[15px] tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-200'}`}>
                     {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
                     {t(n.k)}
                   </NavLink>
@@ -176,7 +176,7 @@ export default function Layout() {
             ))}
             {user && (
               <button onClick={() => { setMenuOpen(false); doLogout(); }}
-                className="w-full text-left px-3 py-2 text-sm tracking-wide text-gold-300 border-t border-gold-500/20 mt-1">
+                className="w-full text-left px-3.5 py-2.5 text-[15px] tracking-wide text-gold-300 border-t border-gold-500/20 mt-1">
                 {t('logout')}
               </button>
             )}
