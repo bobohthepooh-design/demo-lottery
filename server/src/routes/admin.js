@@ -88,9 +88,13 @@ router.get('/overview', requirePerm('dashboard.admin'), async (req, res) => {
 // ---------- members ----------
 router.get('/members', requirePerm('members.manage'), async (req, res) => {
   const q = `%${(req.query.q || '').slice(0, 100)}%`;
-  const rows = await db().prepare(`SELECT * FROM users WHERE username LIKE ? OR email LIKE ? OR display_name LIKE ?
-                             ORDER BY id DESC LIMIT 200`).all(q, q, q);
-  res.json({ members: await Promise.all(rows.map(memberDto)) });
+  const limit = Math.min(parseInt(req.query.limit || '100', 10) || 100, 500);
+  const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+  const where = `WHERE username LIKE ? OR email LIKE ? OR display_name LIKE ?`;
+  const args = [q, q, q];
+  const total = (await db().prepare(`SELECT COUNT(*) c FROM users ${where}`).get(...args)).c;
+  const rows = await db().prepare(`SELECT * FROM users ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...args, limit, offset);
+  res.json({ members: await Promise.all(rows.map(memberDto)), total, limit, offset });
 });
 
 const memberUpdateSchema = z.object({
@@ -531,12 +535,16 @@ router.get('/bets', requirePerm('bets.view_all'), async (req, res) => {
   const args = [];
   if (status) { sql += ' AND bs.status = ?'; args.push(status); }
   if (req.query.userId) { sql += ' AND bs.user_id = ?'; args.push(Number(req.query.userId)); }
-  sql += ' ORDER BY bs.id DESC LIMIT ?'; args.push(limit);
+  const whereSql = sql.slice(sql.indexOf('WHERE'));
+  const countArgs = args.slice();
+  const total = (await db().prepare(`SELECT COUNT(*) c FROM bet_slips bs ${whereSql}`).get(...countArgs)).c;
+  const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+  sql += ' ORDER BY bs.id DESC LIMIT ? OFFSET ?'; args.push(limit, offset);
   const slips = await db().prepare(sql).all(...args);
   const itemsStmt = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th,
                                     COALESCE(bi.payout_multiplier, r.payout_multiplier) AS payout_multiplier
                              FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
-  res.json({ slips: await Promise.all(slips.map(async s => ({ ...s, items: await itemsStmt.all(s.id) }))) });
+  res.json({ slips: await Promise.all(slips.map(async s => ({ ...s, items: await itemsStmt.all(s.id) }))), total, limit, offset });
 });
 
 // ---------- wallet adjust ----------
@@ -556,19 +564,28 @@ router.post('/wallet/adjust', requirePerm('wallet.adjust'), async (req, res, nex
 });
 
 router.get('/wallet/transactions', requirePerm('wallet.adjust'), async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
-  res.json({ transactions: await db().prepare(`SELECT vt.*, u.username FROM virtual_transactions vt JOIN users u ON u.id=vt.user_id ORDER BY vt.id DESC LIMIT ?`).all(limit) });
+  const limit = Math.min(parseInt(req.query.limit || '100', 10) || 100, 500);
+  const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+  const total = (await db().prepare('SELECT COUNT(*) c FROM virtual_transactions').get()).c;
+  const transactions = await db().prepare(`SELECT vt.*, u.username FROM virtual_transactions vt JOIN users u ON u.id=vt.user_id ORDER BY vt.id DESC LIMIT ? OFFSET ?`).all(limit, offset);
+  res.json({ transactions, total, limit, offset });
 });
 
 // ---------- audit / security ----------
 router.get('/audit', requirePerm('audit.view'), async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
-  res.json({ logs: await db().prepare(`SELECT al.*, u.username FROM audit_logs al LEFT JOIN users u ON u.id=al.user_id ORDER BY al.id DESC LIMIT ?`).all(limit) });
+  const limit = Math.min(parseInt(req.query.limit || '100', 10) || 100, 500);
+  const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+  const total = (await db().prepare('SELECT COUNT(*) c FROM audit_logs').get()).c;
+  const logs = await db().prepare(`SELECT al.*, u.username FROM audit_logs al LEFT JOIN users u ON u.id=al.user_id ORDER BY al.id DESC LIMIT ? OFFSET ?`).all(limit, offset);
+  res.json({ logs, total, limit, offset });
 });
 
 router.get('/security-events', requirePerm('security.view'), async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
-  res.json({ events: await db().prepare(`SELECT se.*, u.username FROM security_events se LEFT JOIN users u ON u.id=se.user_id ORDER BY se.id DESC LIMIT ?`).all(limit) });
+  const limit = Math.min(parseInt(req.query.limit || '100', 10) || 100, 500);
+  const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+  const total = (await db().prepare('SELECT COUNT(*) c FROM security_events').get()).c;
+  const events = await db().prepare(`SELECT se.*, u.username FROM security_events se LEFT JOIN users u ON u.id=se.user_id ORDER BY se.id DESC LIMIT ? OFFSET ?`).all(limit, offset);
+  res.json({ events, total, limit, offset });
 });
 
 // ---------- settings ----------
