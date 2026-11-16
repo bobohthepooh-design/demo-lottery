@@ -183,9 +183,14 @@ export async function seedDemoDraws() {
   for (const t of types) {
     t.cats = await q('SELECT id, code FROM lottery_categories WHERE lottery_type_id = $1', [t.id]);
   }
+  // กันซ้ำ 2 ชั้น: draw_code (unique) + (type, category, draw_at) — กันกรณี code ฝังชั่วโมงแล้วเวลาเลื่อน
+  const existing = await q('SELECT draw_code, lottery_type_id, category_id, draw_at FROM lottery_draws');
+  const codes = new Set(existing.map(r => r.draw_code));
+  const slots = new Set(existing.map(r => `${r.lottery_type_id}|${r.category_id ?? ''}|${r.draw_at}`));
   let created = 0;
   for (const p of planDraws(types)) {
-    if (await q('SELECT id FROM lottery_draws WHERE draw_code = $1', [p.drawCode]).then(r => r[0])) continue;
+    const slot = `${p.lotteryTypeId}|${p.categoryId ?? ''}|${p.drawAt}`;
+    if (codes.has(p.drawCode) || slots.has(slot)) continue;
     const status = p.closeAt > nowUtc() ? 'open' : 'scheduled';
     await q(`INSERT INTO lottery_draws (lottery_type_id, category_id, draw_code, draw_at, close_at, status)
               VALUES ($1, $2, $3, $4, $5, $6)`,
