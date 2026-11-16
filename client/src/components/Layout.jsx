@@ -3,8 +3,6 @@ import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
-import ResultsTicker from './ResultsTicker.jsx';
-import WinTicker from './WinTicker.jsx';
 import ResultPopup from './ResultPopup.jsx';
 import ChatWidget from './ChatWidget.jsx';
 import NotificationBell from './NotificationBell.jsx';
@@ -184,8 +182,6 @@ export default function Layout() {
       </header>
 
       <AnnouncementBar />
-      <ResultsTicker />
-      <WinTicker />
       {/* banner บังคับยืนยันอายุ 18+ สำหรับบัญชีที่ยังไม่ได้ยืนยัน (สมัครเก่า/LINE) */}
       {user && !user.ageConfirmed && (
         <div className="bg-amber-500/15 border-b border-amber-500/40">
