@@ -8,6 +8,7 @@ const dict = {
     credit: 'เครดิต', menu: 'เมนู', lottery: 'หวย', walletShort: 'กระเป๋า',
     footer: 'Demo Lottery Platform — เพื่อการศึกษาเท่านั้น • ใช้เครดิตเสมือน ไม่เกี่ยวข้องกับการพนันเงินจริง',
     demoMode: 'DEMO MODE',
+    navBet: 'เล่นหวย', navInfo: 'ผลรางวัล & ข้อมูล', navAccount: 'บัญชีของฉัน', navAdmin: 'ผู้ดูแลระบบ',
   },
 };
 

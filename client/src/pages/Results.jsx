@@ -58,13 +58,23 @@ function summarizeWinning(w) {
 function marketKey(r) { return `${r.type_code}|${r.category_code || ''}`; }
 function marketLabel(r) { return r.category_name_th || r.type_name_th; }
 
+// วันที่ไทย YYYY-MM-DD — ใช้กับ ?date= ของ /lottery/today
+const bkkTodayStr = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+const parseDay = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const fmtDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const thaiShort = s => { const d = parseDay(s); return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }); };
+
 export default function Results() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [expanded, setExpanded] = useState({}); // draw_id -> bool: แสดงผลละเอียด
+  const [date, setDate] = useState(bkkTodayStr);
 
-  const load = () => api('/lottery/today').then(setData).catch(e => setErr(e.message));
-  useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, []);
+  const load = () => api(`/lottery/today?date=${date}`).then(setData).catch(e => setErr(e.message));
+  useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
+
+  const shiftDay = n => setDate(fmtDay(new Date(parseDay(date).getTime() + n * 864e5)));
+  const isToday = date === bkkTodayStr();
 
   // ---- P3: history + stats ----
   const [markets, setMarkets] = useState([]);
@@ -96,69 +106,118 @@ export default function Results() {
   const settled = draws.filter(d => d.status === 'settled');
   const pending = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
 
+  // จัดกลุ่มตามตลาด (ประเภท+หมวด) — หัวกลุ่มแสดงตัวนับ ออกแล้ว X/Y เรียงตามรอบแรกของกลุ่ม
+  const groups = [];
+  {
+    const m = new Map();
+    for (const d of draws) {
+      const k = marketKey(d);
+      if (!m.has(k)) {
+        const g = { key: k, label: marketLabel(d), type_code: d.type_code, items: [] };
+        m.set(k, g); groups.push(g);
+      }
+      m.get(k).items.push(d);
+    }
+    groups.sort((a, b) => String(a.items[0].draw_at).localeCompare(String(b.items[0].draw_at)));
+  }
+
+  const drawRow = (d) => {
+    const ac = typeAccent(d.type_code);
+    const badge = sourceBadge(d.result_source);
+    const sum = resultSummary(d.winning);
+    const compact = compactSummary(d.winning);
+    const open = !!expanded[d.id];
+    return (
+      <div key={d.id} className="px-4 py-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
+          <span className={`text-sm font-bold ${ac.text}`}>{d.category_name_th || d.type_name_th}</span>
+          <span className="text-[11px] text-navy-400">{d.draw_code}</span>
+          {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
+          <span className="ml-auto text-[11px] text-navy-400">ออก {fmtDateTime(d.draw_at)}</span>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+            d.status === 'settled' ? 'bg-emerald-500/20 text-emerald-300'
+            : d.status === 'open' ? 'bg-blue-500/20 text-blue-300'
+            : d.status === 'closed' ? 'bg-amber-500/20 text-amber-300'
+            : 'bg-navy-700 text-navy-300'}`}>
+            {STATUS_TH[d.status] || d.status}
+          </span>
+        </div>
+        {sum && sum.length > 0 && (
+          <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
+            className="mt-1.5 w-full text-left text-xs text-slate-100 bg-navy-900/80 hover:bg-navy-900 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide transition">
+            {compact || sum[0]}
+            {sum.length > 1 && (
+              <span className="block text-[10px] text-navy-400 font-sans mt-0.5">
+                {open ? '▾ ย่อรายละเอียด' : '▸ ดูผลทุกรางวัล'}
+              </span>
+            )}
+          </button>
+        )}
+        {open && sum && (
+          <div className="mt-1.5 text-xs text-slate-100 bg-navy-900/80 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide">
+            {sum.map((p, i) => <div key={i}>{p}</div>)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-black text-white">ผลรางวัลและตารางออกรางวัล</h1>
         <p className="text-sm text-navy-400 mt-1">{data ? thaiDate(data.date) : '…'} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
+        {/* เลือกวัน — เมื่อวาน / วันนี้ / พรุ่งนี้ + date picker */}
+        <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+          <button onClick={() => shiftDay(-1)}
+            className="text-xs bg-navy-800 border border-navy-600 hover:border-gold-500/50 text-navy-200 rounded-lg px-3 py-1.5 transition">
+            ‹ เมื่อวาน · {thaiShort(fmtDay(parseDay(date).getTime() - 864e5))}
+          </button>
+          <button onClick={() => setDate(bkkTodayStr())} disabled={isToday}
+            className={`text-xs rounded-lg px-3 py-1.5 font-bold transition ${isToday ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40' : 'bg-navy-800 border border-navy-600 text-navy-200 hover:border-gold-500/50'}`}>
+            วันนี้
+          </button>
+          <button onClick={() => shiftDay(1)}
+            className="text-xs bg-navy-800 border border-navy-600 hover:border-gold-500/50 text-navy-200 rounded-lg px-3 py-1.5 transition">
+            พรุ่งนี้ · {thaiShort(fmtDay(parseDay(date).getTime() + 864e5))} ›
+          </button>
+          <input type="date" value={date} onChange={e => e.target.value && setDate(e.target.value)}
+            className="text-xs bg-navy-800 border border-navy-600 rounded-lg px-2 py-1.5 text-navy-200 [color-scheme:dark]" />
+        </div>
       </div>
 
       {err && <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl px-4 py-3 text-sm">{err}</div>}
 
-      {/* ตารางวันนี้ — เรียงตามเวลาออก */}
+      {/* ตารางออกรางวัล — จัดกลุ่มตามตลาด พร้อมตัวนับ ออกแล้ว X/Y */}
       <section className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-navy-700 font-bold text-navy-950">📅 ตารางออกรางวัลวันนี้ ({draws.length} รอบ)</div>
-        {!data && <div className="p-4 text-sm text-navy-400">กำลังโหลด…</div>}
-        {data && !draws.length && <div className="p-4 text-sm text-navy-400">วันนี้ยังไม่มีรอบออกรางวัล</div>}
-        <div className="divide-y divide-navy-700/60">
-          {draws.map(d => {
-            const ac = typeAccent(d.type_code);
-            const badge = sourceBadge(d.result_source);
-            const sum = resultSummary(d.winning);
-            const compact = compactSummary(d.winning);
-            const open = !!expanded[d.id];
-            return (
-              <div key={d.id} className="px-4 py-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
-                  <span className={`text-sm font-bold ${ac.text}`}>{d.category_name_th || d.type_name_th}</span>
-                  <span className="text-[11px] text-navy-400">{d.draw_code}</span>
-                  {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
-                  <span className="ml-auto text-[11px] text-navy-400">ออก {fmtDateTime(d.draw_at)}</span>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                    d.status === 'settled' ? 'bg-emerald-500/20 text-emerald-300'
-                    : d.status === 'open' ? 'bg-blue-500/20 text-blue-300'
-                    : d.status === 'closed' ? 'bg-amber-500/20 text-amber-300'
-                    : 'bg-navy-700 text-navy-300'}`}>
-                    {STATUS_TH[d.status] || d.status}
-                  </span>
-                </div>
-                {sum && sum.length > 0 && (
-                  <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
-                    className="mt-1.5 w-full text-left text-xs text-slate-100 bg-navy-900/80 hover:bg-navy-900 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide transition">
-                    {compact || sum[0]}
-                    {sum.length > 1 && (
-                      <span className="block text-[10px] text-navy-400 font-sans mt-0.5">
-                        {open ? '▾ ย่อรายละเอียด' : '▸ ดูผลทุกรางวัล'}
-                      </span>
-                    )}
-                  </button>
-                )}
-                {open && sum && (
-                  <div className="mt-1.5 text-xs text-slate-100 bg-navy-900/80 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide">
-                    {sum.map((p, i) => <div key={i}>{p}</div>)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="px-4 py-3 border-b border-navy-700 font-bold text-navy-950">
+          📅 ตารางออกรางวัล {thaiShort(date)} ({draws.length} รอบ)
         </div>
+        {!data && <div className="p-4 text-sm text-navy-400">กำลังโหลด…</div>}
+        {data && !draws.length && <div className="p-4 text-sm text-navy-400">ไม่มีรอบออกรางวัลในวันนี้</div>}
+        {groups.map(g => {
+          const done = g.items.filter(d => d.status === 'settled').length;
+          const ac = typeAccent(g.type_code);
+          return (
+            <div key={g.key}>
+              <div className="px-4 py-2 bg-navy-900/60 border-y border-navy-700/60 flex items-center gap-2">
+                <FlagIcon code={g.type_code} className="w-4 h-4 text-[8px]" />
+                <span className={`text-xs font-bold ${ac.text}`}>{g.label}</span>
+                <span className="ml-auto text-[10px] text-navy-400 font-mono">ออกแล้ว {done}/{g.items.length}</span>
+              </div>
+              <div className="divide-y divide-navy-700/60">
+                {g.items.map(drawRow)}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       {/* สรุปผลที่ออกแล้ว */}
       {settled.length > 0 && (
         <section>
-          <h2 className="font-bold text-white mb-3">✅ ออกผลแล้ววันนี้ ({settled.length})</h2>
+          <h2 className="font-bold text-white mb-3">✅ ออกผลแล้ว {thaiShort(date)} ({settled.length})</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {settled.map(d => (
               <div key={d.id} className="bg-navy-800/70 border border-emerald-500/30 rounded-xl p-3">
@@ -177,7 +236,7 @@ export default function Results() {
 
       {pending.length > 0 && (
         <section>
-          <h2 className="font-bold text-white mb-3">⏳ รอผล ({pending.length})</h2>
+          <h2 className="font-bold text-white mb-3">⏳ รอผล {thaiShort(date)} ({pending.length})</h2>
           <div className="flex flex-wrap gap-2">
             {pending.map(d => (
               <span key={d.id} className="text-xs bg-navy-800 border border-navy-700 rounded-full px-3 py-1.5 text-navy-200">

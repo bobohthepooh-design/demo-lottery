@@ -11,6 +11,21 @@ import { kindBadge, marketInfo, MODE_BADGE } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 import CheckNumbers from '../components/CheckNumbers.jsx';
 
+// ผลย่อสำหรับการ์ดหน้าแรก — เลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
+const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
+function homeResultText(w) {
+  if (!w) return null;
+  const parts = [];
+  if (w.first) parts.push(`รางวัล1: ${w.first}`);
+  if (w.main || w.num4) parts.push(w.main || w.num4);
+  if (w.zodiac) parts.push(w.zodiac);
+  const top = w.top3 ?? w.last3 ?? w.front3;
+  const bot = w.bottom2 ?? w.last2 ?? w.top2;
+  if (top) parts.push(`บน ${asList(top)}`);
+  if (bot) parts.push(`ล่าง ${asList(bot)}`);
+  return parts.length ? parts.join(' · ') : null;
+}
+
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
 function useNow() {
   const [now, setNow] = useState(() => Date.now());
@@ -65,6 +80,7 @@ export default function Home() {
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [gamePrices, setGamePrices] = useState({ scratch: 5000, hilo: 5000, scratchPrizes: [], hiloMult: null }); // สตางค์/ตัวคูณ — sync จาก server (admin ตั้งได้)
   const [cashbackPct, setCashbackPct] = useState(0); // โปรคืนยอดเสีย %/วัน — 0 = ปิด
+  const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ section ผลรางวัล
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
@@ -81,8 +97,9 @@ export default function Home() {
       });
     }).catch(() => {});
     const loadDraws = () => api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
-    loadDraws();
-    const t = setInterval(loadDraws, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
+    const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
+    loadDraws(); loadToday();
+    const t = setInterval(() => { loadDraws(); loadToday(); }, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
     return () => clearInterval(t);
   }, [user]);
 
@@ -103,6 +120,7 @@ export default function Home() {
         });
       }).catch(() => {});
       api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
+      api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
     };
     window.addEventListener('sys:update', h);
     return () => window.removeEventListener('sys:update', h);
@@ -241,6 +259,61 @@ export default function Home() {
         </div>
       </section>
       )}
+
+      {/* ผลรางวัลวันนี้ — โครงข้อมูลแบบเว็บผลรางวัล: ล่าสุดต่อ ตลาด + รอบถัดไป */}
+      {(() => {
+        const todays = todayDraws.filter(drawVisible);
+        if (!todays.length) return null;
+        // แยก settled/pending ต่อ market — ล่าสุดต่อ ตลาด + รอบถัดไป
+        const mk = new Map();
+        for (const d of todays) {
+          const k = `${d.type_code}|${d.category_code || ''}`;
+          if (!mk.has(k)) mk.set(k, { label: d.category_name_th || d.type_name_th, type_code: d.type_code, settled: [], pending: [] });
+          const g = mk.get(k);
+          if (d.status === 'settled' && d.winning) g.settled.push(d);
+          else if (d.status !== 'cancelled') g.pending.push(d);
+        }
+        const cards = [...mk.values()].map(g => {
+          g.settled.sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)));
+          g.pending.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
+          return g;
+        }).sort((a, b) => String((b.settled[0] || b.pending[0])?.draw_at || '').localeCompare(String((a.settled[0] || a.pending[0])?.draw_at || '')));
+        return (
+          <section>
+            <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
+              <div>
+                <div className="kicker mb-1">Today's Results</div>
+                <h2 className="text-xl font-bold text-white">ผลรางวัลวันนี้</h2>
+                <p className="text-xs text-navy-400 mt-0.5">ล่าสุดของแต่ละตลาด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
+              </div>
+              <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {cards.map(g => {
+                const ac = typeAccent(g.type_code);
+                const last = g.settled[0];
+                const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
+                const txt = last ? homeResultText(last.winning) : null;
+                return (
+                  <Link key={g.label + g.type_code} to="/results"
+                    className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group">
+                    <div className="flex items-center gap-2">
+                      <FlagIcon code={g.type_code} className="w-5 h-5 text-[9px]" />
+                      <span className={`text-sm font-bold ${ac.text} truncate`}>{g.label}</span>
+                      <span className="ml-auto text-[9px] text-navy-500 shrink-0">
+                        {last ? `ออก ${fmtDateTime(last.draw_at).slice(-5)}` : nxt ? `ถัดไป ${fmtDateTime(nxt.draw_at).slice(-5)}` : ''}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 text-xs font-mono tabular-nums text-slate-100 truncate" title={txt || ''}>
+                      {txt || (nxt ? <span className="text-navy-400 font-sans">⏳ รอผล {fmtDateTime(nxt.draw_at)}</span> : '—')}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ตรวจเลข — ใส่เลขเช็คผลรางวัลย้อนหลังได้ทันที ไม่ต้อง login */}
       <CheckNumbers />

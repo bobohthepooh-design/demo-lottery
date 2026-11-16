@@ -12,17 +12,23 @@ import ToastHost from './ToastHost.jsx';
 import { isSoundOn, setSoundOn, initSound } from '../sound.js';
 import { Icon } from './icons.jsx';
 import { CasinoIcon } from './CasinoIcons.jsx';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { t } from '../i18n.js';
 
-const nav = [
-  { to: '/winners', k: 'winners' },
-  { to: '/results', k: 'results' },
-  { to: '/my-bets', k: 'mybets', auth: true, memberOnly: true },
-  { to: '/performance', k: 'perf', auth: true, memberOnly: true },
-  { to: '/wallet', k: 'wallet', auth: true, memberOnly: true },
-  { to: '/profile', k: 'profile', auth: true },
-  { to: '/admin', k: 'admin', auth: true, admin: true },
+// เมนูจัดกลุ่ม: เล่นหวย | ผลรางวัล&ข้อมูล | บัญชีของฉัน | ผู้ดูแลระบบ
+const navGroups = [
+  { label: 'navBet', items: [{ to: '/lotteries', k: 'betMenu', betGate: true }] },
+  { label: 'navInfo', items: [
+    { to: '/results', k: 'results' },
+    { to: '/winners', k: 'winners' },
+  ]},
+  { label: 'navAccount', items: [
+    { to: '/my-bets', k: 'mybets', auth: true, memberOnly: true },
+    { to: '/wallet', k: 'wallet', auth: true, memberOnly: true },
+    { to: '/performance', k: 'perf', auth: true, memberOnly: true },
+    { to: '/profile', k: 'profile', auth: true },
+  ]},
+  { label: 'navAdmin', items: [{ to: '/admin', k: 'admin', auth: true, admin: true }] },
 ];
 
 export default function Layout() {
@@ -59,6 +65,8 @@ export default function Layout() {
 
   // admin ปิดเมนูแทงหวย (blind mode) ได้ — admin เองยังเห็นเมนูปกติเสมอ
   const showBetMenu = bettingMenu || isAdmin;
+  const navVisible = n => (!n.auth || user) && (!n.admin || isAdmin) && (!n.memberOnly || !isAdmin) && (!n.betGate || showBetMenu);
+  const visibleGroups = navGroups.map(g => ({ ...g, items: g.items.filter(navVisible) })).filter(g => g.items.length);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -98,17 +106,16 @@ export default function Layout() {
               className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
               {t('home')}
             </NavLink>
-            {showBetMenu && (
-              <NavLink to="/lotteries"
-                className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-                {t('betMenu')}
-              </NavLink>
-            )}
-            {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
-              <NavLink key={n.to} to={n.to} end={n.end}
-                className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-                {t(n.k)}
-              </NavLink>
+            {visibleGroups.map((g, gi) => (
+              <Fragment key={g.label}>
+                {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-1" />}
+                {g.items.map(n => (
+                  <NavLink key={n.to} to={n.to} end={n.end}
+                    className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+                    {t(n.k)}
+                  </NavLink>
+                ))}
+              </Fragment>
             ))}
           </nav>
 
@@ -155,17 +162,16 @@ export default function Layout() {
               className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
               {t('home')}
             </NavLink>
-            {showBetMenu && (
-              <NavLink to="/lotteries" onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
-                {t('betMenu')}
-              </NavLink>
-            )}
-            {nav.filter(n => !n.auth || user).filter(n => !n.admin || isAdmin).filter(n => !n.memberOnly || !isAdmin).map(n => (
-              <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
-                {t(n.k)}
-              </NavLink>
+            {visibleGroups.map(g => (
+              <div key={g.label}>
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-navy-500 border-t border-navy-800 mt-1">{t(g.label)}</div>
+                {g.items.map(n => (
+                  <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
+                    {t(n.k)}
+                  </NavLink>
+                ))}
+              </div>
             ))}
             {user && (
               <button onClick={() => { setMenuOpen(false); doLogout(); }}

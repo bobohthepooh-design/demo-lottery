@@ -313,9 +313,10 @@ router.get('/check', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ผลรางวัล + ตารางออกรางวัล "วันนี้" (วันไทย) — รวมทุกตลาดในจุดเดียว
+// ผลรางวัล + ตารางออกรางวัลของวันที่ระบุ (วันไทย) — ?date=YYYY-MM-DD (default: วันนี้)
 router.get('/today', async (req, res) => {
-  const bkkToday = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const qd = String(req.query.date || '');
+  const bkkToday = /^\d{4}-\d{2}-\d{2}$/.test(qd) ? qd : new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
   const draws = await getDb().prepare(`
     SELECT d.id, d.draw_code, d.draw_at, d.close_at, d.status,
            lt.code AS type_code, lt.name_th AS type_name_th,
