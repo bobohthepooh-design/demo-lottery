@@ -30,6 +30,13 @@ const ACCENTS = {
     btn: 'from-violet-500/40 to-purple-600/40 text-violet-200',
     btnLive: 'from-violet-500 to-purple-700 text-white',
   },
+  GS: {
+    bar: 'bg-emerald-500', text: 'text-emerald-600', chip: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+    border: 'border-emerald-300', glow: 'hover:border-emerald-400',
+    head: 'from-emerald-200', dot: 'bg-emerald-500',
+    btn: 'from-emerald-200 to-emerald-300 text-emerald-700',
+    btnLive: 'from-emerald-500 to-emerald-600 text-white',
+  },
   SC: {
     bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-gold-500/15 text-gold-300 border-gold-400/50',
     border: 'border-red-400/60', glow: 'hover:border-red-400',

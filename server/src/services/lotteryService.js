@@ -139,7 +139,8 @@ export async function rulesForDraw(drawId) {
 export function resultKindOf(d) {
   if (d.result_mode === 'manual') return 'manual';
   if (['HR', 'SC', 'HL'].includes(d.type_code)) return 'demo';
-  if (d.type_code === 'LA' && d.category_code && d.category_code !== 'LA') return 'demo';
+  // ลาวพัฒนา (LAD) ไม่มีแหล่งผลอัตโนมัติ — admin กรอกเอง; หมวดลาวอื่นมีผลจริงจาก lotterychecks
+  if (d.type_code === 'LA' && d.category_code === 'LAD') return 'manual';
   return 'web';
 }
 
