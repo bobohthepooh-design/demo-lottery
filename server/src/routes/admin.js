@@ -325,6 +325,20 @@ router.get('/lottery/categories', requirePerm('lottery.manage'), async (req, res
   res.json({ categories: await db().prepare(`SELECT c.*, lt.name_th AS type_name_th FROM lottery_categories c JOIN lottery_types lt ON lt.id=c.lottery_type_id ORDER BY c.lottery_type_id, c.id`).all() });
 });
 
+// เปิด/ปิดตลาดระดับหมวด — หมวดที่ปิดจะไม่แสดงใน markets/ไม่รับโพย (กติกาเดิมยังอยู่ ไม่กระทบโพยเก่า)
+router.patch('/lottery/categories/:id', requirePerm('lottery.manage'), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const active = req.body?.is_active ? 1 : 0;
+    const cat = await db().prepare('SELECT id, name_th FROM lottery_categories WHERE id = ?').get(id);
+    if (!cat) return res.status(404).json({ error: 'ไม่พบหมวดหวย' });
+    await db().prepare('UPDATE lottery_categories SET is_active = ? WHERE id = ?').run(active, id);
+    audit({ userId: req.user.id, action: 'admin.category_toggle', entityType: 'lottery_category', entityId: String(id), detail: { is_active: active }, req });
+    broadcast('settings');
+    res.json({ ok: true, is_active: active });
+  } catch (e) { next(e); }
+});
+
 router.get('/lottery/rules', requirePerm('lottery.manage'), async (req, res) => {
   res.json({ rules: await db().prepare('SELECT * FROM lottery_rules ORDER BY lottery_type_id, bet_type').all() });
 });

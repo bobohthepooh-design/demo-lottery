@@ -303,6 +303,26 @@ export default function AdminLotteries() {
                 <div className="px-5 py-2 bg-navy-800/60 text-xs font-semibold text-gold-400/90 flex items-center gap-2 flex-wrap">
                   {g.name}
                   {marketBadge(type.code, g.catCode)}
+                  {g.cid && (() => {
+                    const cat = categories.find(c => c.id === g.cid);
+                    if (!cat) return null;
+                    const on = Number(cat.is_active ?? 1) === 1;
+                    return (
+                      <button onClick={async () => {
+                        if (!(await confirmAction({
+                          title: on ? '⚠️ ยืนยันปิดตลาด' : 'ยืนยันเปิดตลาด',
+                          message: `${on ? 'ปิด' : 'เปิด'}ตลาด "${cat.name_th}" ใช่หรือไม่?${on ? '\nสมาชิกจะไม่เห็นตลาดนี้และแทงไม่ได้ (โพยเก่าไม่กระทบ)' : ''}`,
+                          danger: on,
+                        }))) return;
+                        await api(`/admin/lottery/categories/${cat.id}`, { method: 'PATCH', body: { is_active: on ? 0 : 1 } });
+                        load();
+                      }}
+                        className={`text-[10px] px-2 py-0.5 rounded-full border ${on ? 'border-green-500/50 text-green-300' : 'border-navy-500 text-navy-400'}`}
+                        title="เปิด/ปิดตลาดระดับหมวด — ปิดแล้วสมาชิกแทงไม่ได้">
+                        {on ? '● เปิดตลาด' : '○ ปิดตลาด'}
+                      </button>
+                    );
+                  })()}
                 </div>
                 <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[560px]">

@@ -42,7 +42,8 @@ router.get('/markets', async (req, res) => {
   // เฉพาะหมวดที่มี rules ใช้งานอยู่ — หมวดที่ปิดบริการ (เช่น หวยลาวพัฒนา LAD) ไม่โผล่เป็น market
   const cats = await db.prepare(`SELECT c.id, c.lottery_type_id, c.code, c.name_th
     FROM lottery_categories c
-    WHERE EXISTS (SELECT 1 FROM lottery_rules r WHERE r.category_id = c.id AND r.is_active = 1)
+    WHERE c.is_active = 1
+      AND EXISTS (SELECT 1 FROM lottery_rules r WHERE r.category_id = c.id AND r.is_active = 1)
     ORDER BY c.id`).all();
   const markets = [];
   for (const t of types) {

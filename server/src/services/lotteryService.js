@@ -154,7 +154,7 @@ export async function listDraws({ lotteryTypeId = null, categoryId = undefined, 
              FROM lottery_draws d
              JOIN lottery_types lt ON lt.id = d.lottery_type_id
              LEFT JOIN lottery_categories c ON c.id = d.category_id
-             WHERE ${includeInactiveTypes ? '1=1' : 'lt.is_active = 1'}
+             WHERE ${includeInactiveTypes ? '1=1' : "lt.is_active = 1 AND (d.category_id IS NULL OR c.is_active = 1)"}
                AND d.draw_code NOT LIKE '%-STANDING'`;
   const args = [];
   if (lotteryTypeId) { sql += ' AND d.lottery_type_id = ?'; args.push(lotteryTypeId); }
@@ -294,9 +294,12 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
         }
       }
 
-      const cur = await d.prepare('SELECT status, close_at FROM lottery_draws WHERE id = ?').get(drawId);
+      const cur = await d.prepare(`SELECT d.status, d.close_at, COALESCE(c.is_active, 1) AS cat_active
+        FROM lottery_draws d LEFT JOIN lottery_categories c ON c.id = d.category_id WHERE d.id = ?`).get(drawId);
       if (!cur || cur.status !== 'open' || cur.close_at <= nowSql())
         throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพยแล้ว', 'DRAW_CLOSED');
+      if (Number(cur.cat_active) !== 1)
+        throw new HttpError(400, 'ตลาดหวยนี้ปิดให้บริการแล้ว', 'MARKET_CLOSED');
 
       const cap = Number(await getSetting('exposure_cap_stake', 500000)) || 0;
       if (cap > 0) {

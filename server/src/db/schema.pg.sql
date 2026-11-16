@@ -81,6 +81,7 @@ CREATE TABLE lottery_categories (
   code TEXT NOT NULL,
   name_th TEXT NOT NULL,
   draw_pattern TEXT,
+  is_active BIGINT NOT NULL DEFAULT 1,
   UNIQUE (lottery_type_id, code)
 );
 
