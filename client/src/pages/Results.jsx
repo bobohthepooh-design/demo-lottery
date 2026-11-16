@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
+import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
 import { typeAccent } from '../typeAccent.js';
@@ -74,13 +75,27 @@ const thaiShort = s => { const d = parseDay(s); return d.toLocaleDateString('th-
 const thaiFull = s => { const d = parseDay(s); return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }); };
 
 export default function Results() {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
+  const [wonDraws, setWonDraws] = useState(() => new Set()); // draw_id ที่โพยของฉันมีรายการถูกรางวัล
   const [expanded, setExpanded] = useState({}); // draw_id -> bool: แสดงผลละเอียด
   const [date, setDate] = useState(bkkTodayStr);
 
   const load = () => api(`/lottery/today?date=${date}`).then(setData).catch(e => setErr(e.message));
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
+
+  // ดึงโพยของฉันครั้งเดียว — mark รอบที่มีรายการถูกรางวัล เพื่อไฮไลต์ในตารางผล
+  useEffect(() => {
+    if (!user) { setWonDraws(new Set()); return; }
+    api('/bets/mine?limit=100').then(r => {
+      const s = new Set();
+      for (const slip of r.slips || r.bets || []) {
+        if ((slip.items || []).some(i => i.status === 'won')) s.add(slip.draw_id);
+      }
+      setWonDraws(s);
+    }).catch(() => {});
+  }, [user]);
 
   const shiftDay = n => setDate(fmtDay(new Date(parseDay(date).getTime() + n * 864e5)));
   const isToday = date === bkkTodayStr();
@@ -143,6 +158,9 @@ export default function Results() {
           <span className={`text-sm font-bold ${ac.text}`}>{d.category_name_th || d.type_name_th}</span>
           <span className="text-[11px] text-navy-400">{d.draw_code}</span>
           {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
+          {wonDraws.has(d.id) && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/25 border border-green-400/60 text-green-300 font-bold animate-pulse">🏆 โพยคุณถูก!</span>
+          )}
           <span className="ml-auto text-[11px] text-navy-400">ออก {fmtDateTime(d.draw_at)}</span>
           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
             d.status === 'settled' ? 'bg-emerald-500/20 text-emerald-300'
