@@ -100,8 +100,9 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // SSE connection เป็น long-lived — ไม่นับ rate limit (กัน client ค้าง/โดน 429)
+  // /health ก็ไม่นับ — uptime monitor/healthcheck ยิงบ่อย ไม่ควรกินโควตา user
   // รองรับทั้ง /api/events และ /api/v1/events
-  skip: (req) => /\/events$/.test(req.path) || /\/events$/.test(req.originalUrl),
+  skip: (req) => /\/events$/.test(req.path) || /\/events$/.test(req.originalUrl) || /\/health$/.test(req.path),
   message: { error: 'คำขอมากเกินไป กรุณาลองใหม่ภายหลัง' },
 });
 app.use('/api/', limiter);
