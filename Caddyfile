@@ -4,6 +4,8 @@
 {
 	# client ที่ไม่ส่ง SNI (browser เปิด https://<IP> ตรงๆ) → ใช้ cert ของ LAN_IP
 	default_sni {$LAN_IP}
+	# ไม่บังคับ redirect http→https — ให้ http://<LAN-IP> ใช้ได้ตรงๆ บน LAN (tablet ไม่ต้องผ่าน cert)
+	auto_https disable_redirects
 }
 
 {$DOMAIN} {
@@ -38,5 +40,19 @@ http://{$LAN_IP} {
 	}
 }
 
-# หมายเหตุ: ไม่เปิด https://<LAN-IP> — internal CA ทำให้ tablet/มือถือเจอ cert warning เข้าไม่ได้ง่าย
-# ถ้าต้องการ HTTPS จริงให้ใช้ DOMAIN จริง (Let's Encrypt) แทน
+# LAN testing — https://<LAN-IP> (fallback เมื่อ browser พิมพ์ https หรือบังคับ HTTPS)
+# ใช้ Caddy internal CA → browser จะเตือน cert (บน iPad: Show Details → visit this website)
+{$LAN_IP} {
+	tls internal
+	reverse_proxy app:4000
+
+	header {
+		-Server
+		X-Powered-By
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
