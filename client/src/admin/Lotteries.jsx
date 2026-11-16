@@ -53,7 +53,7 @@ function marketBadge(typeCode, catCode) {
   if (!info) return null;
   const b = MODE_BADGE[info.mode];
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${b.cls}`}
+    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap max-w-full overflow-hidden text-ellipsis inline-block align-middle ${b.cls}`}
       title={`ชนิด: ${info.kind} • แหล่งผล: ${info.src}`}>
       {info.kind} • {b.label}{info.src && info.mode !== 'off' ? ` (${info.src})` : ''}
     </span>
