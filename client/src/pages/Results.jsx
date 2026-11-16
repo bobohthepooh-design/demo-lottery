@@ -118,7 +118,7 @@ export default function Results() {
                   </span>
                 </div>
                 {sum && (
-                  <div className="mt-1.5 text-xs text-navy-200 bg-navy-900/60 rounded-lg px-3 py-2 font-mono">
+                  <div className="mt-1.5 text-xs text-slate-100 bg-navy-900/80 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide">
                     {sum.map((p, i) => <div key={i}>{p}</div>)}
                   </div>
                 )}
@@ -139,8 +139,8 @@ export default function Results() {
                   <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
                   <span className="text-sm font-bold text-navy-950">{d.category_name_th || d.type_name_th}</span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-navy-300 space-y-0.5">
-                  {resultSummary(d.winning)?.map((p, i) => <div key={i} className="font-mono">{p}</div>)}
+                <div className="mt-1.5 text-[11px] text-slate-200 space-y-0.5">
+                  {resultSummary(d.winning)?.map((p, i) => <div key={i} className="font-mono tabular-nums">{p}</div>)}
                 </div>
               </div>
             ))}
@@ -203,7 +203,7 @@ export default function Results() {
                       <div className="font-bold mb-1">เลข 2 ตัวออกบ่อย</div>
                       <div className="flex flex-wrap gap-1">
                         {stats.top2.slice(0, 10).map(t => (
-                          <span key={t.number} className="bg-navy-900 border border-navy-600 rounded px-1.5 py-0.5 font-mono">
+                          <span key={t.number} className="bg-navy-900 border border-navy-600 rounded px-1.5 py-0.5 font-mono tabular-nums">
                             {t.number} <span className="text-gold-400">×{t.count}</span>
                           </span>
                         ))}
@@ -220,7 +220,7 @@ export default function Results() {
                 {hist.draws.map(d => (
                   <div key={d.id} className="flex items-center gap-2 text-[11px] bg-navy-900/60 rounded px-2 py-1">
                     <span className="text-navy-400 w-24 shrink-0">{d.draw_at?.slice(5, 10)}</span>
-                    <span className="font-mono text-navy-100 flex-1 truncate">{summarizeWinning(d.winning)}</span>
+                    <span className="font-mono tabular-nums text-slate-100 flex-1 truncate">{summarizeWinning(d.winning)}</span>
                     {d.result_source && <span className="text-[9px] text-navy-500 shrink-0">{d.result_source}</span>}
                   </div>
                 ))}

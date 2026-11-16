@@ -18,8 +18,8 @@
   --color-gold-100: #fdf3d0;
   --color-gold-200: #f9e3a1;
   --color-gold-300: #ffe08a;
-  --color-gold-400: #edb92c;
-  --color-gold-500: #e2a812;   /* primary gold */
+  --color-gold-400: #f0c419;
+  --color-gold-500: #f5c518;   /* primary gold — accent สดแบบ lotterychecks */
   --color-gold-600: #d9a520;
   --color-gold-700: #b8860b;
 
@@ -32,7 +32,7 @@
   --color-sky2-100: #14293f;
   --color-cream-100: #3a2c14;
 
-  --font-sans: 'Sarabun', 'Nunito', 'Segoe UI', 'Noto Sans Thai', system-ui, sans-serif;
+  --font-sans: 'Noto Sans Thai', 'Sarabun', 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Prompt', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Nunito', 'Sarabun', ui-monospace, monospace;
 
