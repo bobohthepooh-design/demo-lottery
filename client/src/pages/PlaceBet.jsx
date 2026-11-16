@@ -27,19 +27,6 @@ const ZODIAC_EMOJI = {
   'วอก': '🐵', 'ระกา': '🐓', 'จอ': '🐕', 'กุน': '🐷',
 };
 
-// จัดกลุ่มประเภทการแทงเป็น tab ตามรางวัล — รางวัลที่ 1 / เลข 4-3-2 ตัว / เลขวิ่ง / อั้น / พิเศษ
-const SPECIAL_BT = /run|ann_|zodiac|pattana/;
-const RULE_GROUPS = [
-  { key: 'first',   label: '🏆 รางวัลที่ 1', test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) >= 6 },
-  { key: 'four',    label: '4️⃣ เลข 4 ตัว',  test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 4 },
-  { key: 'three',   label: '3️⃣ เลข 3 ตัว',  test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 3 },
-  { key: 'two',     label: '2️⃣ เลข 2 ตัว',  test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 2 },
-  { key: 'run',     label: '🏃 เลขวิ่ง',     test: r => (/run/.test(r.bet_type || '') && !/zodiac|ann_/.test(r.bet_type || '')) || (!SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 1) },
-  { key: 'ann',     label: '🔒 เลขอั้น',     test: r => /ann_/.test(r.bet_type || '') },
-  { key: 'special', label: '✨ พิเศษ',      test: r => /zodiac|pattana/.test(r.bet_type || '') },
-];
-const ruleGroup = (r) => RULE_GROUPS.find(g => g.test(r))?.key || 'special';
-
 // คำอธิบายสั้นๆ ใต้ชื่อประเภท — บอกว่าต้องตรงกับส่วนไหนของผล (แสดงใต้ปุ่มประเภทที่เลือก)
 const RULE_HINT = [
   [/^ann_/, 'ต้องเป็นเลขที่ประกาศอั้นเท่านั้น — อัตราจ่ายครึ่งหนึ่ง'],
@@ -97,7 +84,6 @@ export default function PlaceBet() {
   const [zodiacPicks, setZodiacPicks] = useState([]); // หวยราศี: ราศีที่เลือกเรียงตามลำดับ (สูงสุดตาม digits ของกติกา)
   const [amount, setAmount] = useState('');
   const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (ซื้อโต๊ดเพิ่มอีก 1 รายการ)
-  const [ruleTab, setRuleTab] = useState(''); // tab กลุ่มประเภทการแทง (ว่าง = กลุ่มแรกที่มี)
   const [recent, setRecent] = useState({}); // {digits: [num,...]} เลขที่เพิ่งแทง
   const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem('lotteryFavNums') || '{}'); } catch { return {}; } });
   const numRef = useRef(null); // auto-focus ช่องเลขหลังเพิ่มโพย — แทงต่อได้เร็ว
@@ -161,15 +147,7 @@ export default function PlaceBet() {
   }, [repeat, rules, draw]);
 
   const rule = rules.find(r => String(r.id) === selRule);
-  // กลุ่มประเภทที่มีจริงในรอบนี้ — เรียงตาม RULE_GROUPS
-  const presentGroups = RULE_GROUPS.filter(g => rules.some(r => ruleGroup(r) === g.key));
-  const activeTab = presentGroups.some(g => g.key === ruleTab) ? ruleTab : (presentGroups[0]?.key || '');
-  const tabRules = rules.filter(r => ruleGroup(r) === activeTab);
-  const pickTab = (key) => {
-    setRuleTab(key);
-    const first = rules.find(r => ruleGroup(r) === key);
-    if (first) setSelRule(String(first.id));
-  };
+  // แสดงกติกาทั้งหมดของรอบนี้ — ไม่จัดกลุ่ม tab (ผู้ใช้ต้องการเห็นทุกประเภทพร้อมกัน)
   const isPattana = rule?.bet_type === 'pattana5';
   const isZodiac = rule?.bet_type?.startsWith('zodiac');
   // โต๊ด — อัตราโต๊ดฝังใน match_config ของกติกา (แสดงเป็นข้อความแจ้งเท่านั้น ผู้แทงไม่ต้องใส่เลขโต๊ด)
@@ -354,24 +332,10 @@ export default function PlaceBet() {
         {!closed && (
           <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 space-y-4 shadow-lg shadow-black/20">
             <h2 className="font-bold text-navy-950">{headBar}เลือกประเภทการแทง</h2>
-            {/* tab กลุ่มประเภท — แสดงเฉพาะกลุ่มที่มีจริงในรอบนี้ */}
-            {presentGroups.length > 1 && (
-              <div className="flex flex-wrap gap-1.5">
-                {presentGroups.map(g => {
-                  const n = rules.filter(r => ruleGroup(r) === g.key).length;
-                  return (
-                    <button key={g.key} type="button" onClick={() => pickTab(g.key)}
-                      className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition ${activeTab === g.key ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-900 border-navy-600 text-navy-300 hover:border-navy-400'}`}>
-                      {g.label} <span className="opacity-60">({n})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
             {/* คำอธิบายสั้นๆ ของประเภทที่เลือกอยู่ */}
             {rule && <div className="text-[11px] text-navy-400 -mt-1">💡 {ruleHint(rule)}</div>}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {tabRules.map(r => {
+              {rules.map(r => {
                 const isAnn = r.bet_type?.startsWith('ann_');
                 return (
                 <button key={r.id} onClick={() => setSelRule(String(r.id))}
