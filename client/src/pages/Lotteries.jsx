@@ -15,6 +15,9 @@ export default function Lotteries() {
   const [allDraws, setAllDraws] = useState([]);   // รอบ upcoming ทั้งหมด
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [types, setTypes] = useState([]);         // สำหรับ sidebar ประเภทหวย (desktop)
+  const [rulesByType, setRulesByType] = useState({}); // กติกาต่อ type — ไว้โชว์อัตราจ่ายบนการ์ด
+  const [country, setCountry] = useState('');     // ฟิลเตอร์กลุ่มประเทศ
+  const [openOnly, setOpenOnly] = useState(false); // เฉพาะรอบที่เปิดรับอยู่
   const { isAdmin } = useAuth();
   const [params] = useSearchParams();
   const selType = params.get('type');
@@ -24,7 +27,16 @@ export default function Lotteries() {
     load();
     const t = setInterval(load, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
     api('/lottery/public-config').then(r => setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : [])).catch(() => {});
-    api('/lottery/types').then(r => setTypes(r.types || [])).catch(() => {});
+    api('/lottery/types').then(async r => {
+      const ts = r.types || [];
+      setTypes(ts);
+      // โหลดกติกาของแต่ละประเภทครั้งเดียว — ใช้แสดงอัตราจ่ายสูงสุดบนการ์ดรอบ
+      const map = {};
+      await Promise.all(ts.filter(t => !INSTANT.has(t.code)).map(async t => {
+        try { const rr = await api(`/lottery/types/${t.id}`); map[t.id] = rr.rules || []; } catch {}
+      }));
+      setRulesByType(map);
+    }).catch(() => {});
     return () => clearInterval(t);
   }, []);
 
@@ -43,10 +55,17 @@ export default function Lotteries() {
   const pool = isAdmin ? allDraws : allDraws.filter(d => !hiddenSet.has(d.type_code));
 
   // กรองรอบตามประเภทประเทศที่เลือก (client-side — pool มีทุกประเภทที่มองเห็นอยู่แล้ว)
-  const draws = selType ? pool.filter(d => String(d.lottery_type_id) === String(selType)) : pool;
+  const COUNTRY_OF = { TH: 'ไทย', LA: 'ลาว', HN: 'ฮานอย', GS: 'ออมสิน', HR: 'ราศี' };
+  const countryOf = (code) => COUNTRY_OF[code] || 'อื่นๆ';
+  let draws = selType ? pool.filter(d => String(d.lottery_type_id) === String(selType)) : pool;
+  if (country) draws = draws.filter(d => countryOf(d.type_code) === country);
+  const nowSql0 = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  if (openOnly) draws = draws.filter(d => d.status === 'open' && d.close_at > nowSql0);
   // เกมด่วน (ขูด/ไฮโล/ยี่กี) ไม่มีรอบแทง — ไม่แสดงในเมนูประเภทหวย (เล่นที่หน้าเกมของตัวเอง)
   const INSTANT = new Set(['SC', 'HL', 'KI']);
   const visibleTypes = types.filter(t => (isAdmin || !hiddenSet.has(t.code)) && !INSTANT.has(t.code));
+  // ประเทศที่มีประเภทให้เลือกจริง — ใช้ทำ chips filter
+  const countries = [...new Set(visibleTypes.map(t => countryOf(t.code)))];
 
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const isLive = d => d.status === 'open' && d.close_at > nowSql;
@@ -103,6 +122,14 @@ export default function Lotteries() {
               📣 เลขอั้น: {s}
             </div>
           ) : null; })()}
+          {(() => {
+            // อัตราจ่ายเด่น — สูงสุดของกติกาที่ใช้กับรอบนี้ (category ตรงหรือทั่วไป)
+            const rs = (rulesByType[d.lottery_type_id] || []).filter(r =>
+              r.is_active && (!r.category_id || r.category_id === d.category_id));
+            if (!rs.length) return null;
+            const max = Math.max(...rs.map(r => Number(r.payout_multiplier) || 0));
+            return <div className="mt-1 text-[10px] text-gold-400/90 font-semibold">💰 สูงสุดจ่าย x{max} • {rs.length} แบบ</div>;
+          })()}
           {isHR && (
             <div className="mt-1.5">
               <span className="animate-hr-badge inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-200 border border-violet-400/40">
@@ -140,11 +167,11 @@ export default function Lotteries() {
         <div>🕐 ออกรางวัล: <span className="text-white">{fmtDateTime(d.draw_at)}</span></div>
         <div>⏱️ ปิดรับโพย: <Countdown closeAt={d.close_at} /></div>
         {live && (() => {
-          // เหลือเวลาอีกไม่เกิน 30 นาทีถึงเวลาออกผล → badge เร่งด่วน (เวลา draw_at เป็นเวลาไทย)
-          const t = Date.parse(String(d.draw_at).replace(' ', 'T') + '+07:00');
+          // เหลือเวลาอีกไม่เกิน 30 นาทีถึงเวลาปิดรับ → badge เร่งด่วน (เวลา close_at เป็นเวลาไทย)
+          const t = Date.parse(String(d.close_at).replace(' ', 'T') + '+07:00');
           const mins = Math.round((t - Date.now()) / 60000);
           return Number.isFinite(mins) && mins > 0 && mins <= 30 ? (
-            <div className="text-[11px] font-bold text-orange-300 animate-pulse">🔥 ออกผลในอีก ~{mins} นาที — รีบแทงก่อนปิดรับ!</div>
+            <div className="text-[11px] font-bold text-orange-300 animate-pulse">⏰ ปิดรับในอีก ~{mins} นาที — รีบแทง!</div>
           ) : null;
         })()}
       </div>
@@ -187,6 +214,20 @@ export default function Lotteries() {
       </aside>
 
     <div className="flex-1 min-w-0 space-y-6">
+      {/* ตัวกรองประเทศ + เฉพาะที่เปิดรับ — ใช้ได้ทั้งมือถือ/desktop */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[['', 'ทั้งหมด'], ...countries.map(c => [c, c])].map(([v, label]) => (
+          <button key={v} onClick={() => setCountry(v)}
+            className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition ${country === v ? 'bg-[#22d3ee]/15 text-[#67e8f9] border-[#22d3ee]/50' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
+            {label}
+          </button>
+        ))}
+        <label className="ml-auto text-xs text-navy-300 flex items-center gap-1.5 cursor-pointer">
+          <input type="checkbox" checked={openOnly} onChange={e => setOpenOnly(e.target.checked)} className="accent-green-500" />
+          เฉพาะที่เปิดรับ
+        </label>
+      </div>
+
       {/* รอบที่เปิดรับตอนนี้ — แสดงก่อนเสมอพร้อม badge ONLINE */}
       {liveDraws.length > 0 && (
         <section>
