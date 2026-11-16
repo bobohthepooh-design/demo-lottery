@@ -7,22 +7,27 @@ import { SkeletonGrid } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
 import { GameArt } from '../components/GameArt.jsx';
 import { mergeBanner } from '../bannerConfig.js';
-import { kindBadge, marketInfo, MODE_BADGE } from '../resultSource.js';
+import { kindBadge, marketInfo, MODE_BADGE, sourceBadge } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 
-// ผลย่อสำหรับการ์ดหน้าแรก — เลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
+// รายละเอียดผลรางวัลครบทุก field — แสดงเป็นบรรทัด "ชื่อรางวัล: ค่า" (รองรับ top3 ทั้ง array และ string)
 const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
-function homeResultText(w) {
-  if (!w) return null;
-  const parts = [];
-  if (w.first) parts.push(`รางวัล1: ${w.first}`);
-  if (w.main || w.num4) parts.push(w.main || w.num4);
-  if (w.zodiac) parts.push(w.zodiac);
-  const top = w.top3 ?? w.last3 ?? w.front3;
-  const bot = w.bottom2 ?? w.last2 ?? w.top2;
-  if (top) parts.push(`บน ${asList(top)}`);
-  if (bot) parts.push(`ล่าง ${asList(bot)}`);
-  return parts.length ? parts.join(' · ') : null;
+function resultLines(w) {
+  if (!w) return [];
+  const L = [];
+  const add = (label, v) => { if (v !== undefined && v !== null && v !== '') L.push(`${label}: ${asList(v)}`); };
+  add('รางวัลที่ 1', w.first);
+  add('เลขหลัก', w.main);
+  add('เลข 4 ตัว', w.num4);
+  add('บน 3 ตัว', w.top3);
+  add('หน้า 3', w.front3);
+  add('ท้าย 3', w.last3);
+  add('ล่าง 2 ตัว', w.bottom2);
+  add('ท้าย 2', w.last2);
+  add('บน 2 ตัว', w.top2);
+  add('ราศี', w.zodiac);
+  if (w.seq?.length) L.push(`ลำดับ: ${w.seq.join('-')}`);
+  return L;
 }
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -267,7 +272,7 @@ export default function Home() {
         const mk = new Map();
         for (const d of todays) {
           const k = `${d.type_code}|${d.category_code || ''}`;
-          if (!mk.has(k)) mk.set(k, { label: d.category_name_th || d.type_name_th, type_code: d.type_code, settled: [], pending: [] });
+          if (!mk.has(k)) mk.set(k, { label: d.category_name_th || d.type_name_th, type_code: d.type_code, cat_code: d.category_code, type_name_th: d.type_name_th, settled: [], pending: [] });
           const g = mk.get(k);
           if (d.status === 'settled' && d.winning) g.settled.push(d);
           else if (d.status !== 'cancelled') g.pending.push(d);
@@ -292,19 +297,57 @@ export default function Home() {
                 const ac = typeAccent(g.type_code);
                 const last = g.settled[0];
                 const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
-                const txt = last ? homeResultText(last.winning) : null;
+                const lines = last ? resultLines(last.winning) : [];
+                const srcB = last ? sourceBadge(last.result_source) : null;
+                const mi = marketInfo(g.type_code, g.cat_code);
+                const PEND_TH = { open: 'เปิดรับ', scheduled: 'กำหนดการ', closed: 'รอผล' };
                 return (
                   <Link key={g.label + g.type_code} to="/results"
-                    className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group">
+                    className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-4 transition group flex flex-col">
+                    {/* header: ตลาด + badge ที่มาผล */}
                     <div className="flex items-center gap-2">
-                      <FlagIcon code={g.type_code} className="w-5 h-5 text-[9px]" />
-                      <span className={`text-sm font-bold ${ac.text} truncate`}>{g.label}</span>
-                      <span className="ml-auto text-[9px] text-navy-500 shrink-0">
-                        {last ? `ออก ${fmtDateTime(last.draw_at).slice(-5)}` : nxt ? `ถัดไป ${fmtDateTime(nxt.draw_at).slice(-5)}` : ''}
-                      </span>
+                      <FlagIcon code={g.type_code} className="w-6 h-6 text-[10px]" />
+                      <div className="min-w-0 flex-1">
+                        <div className={`text-sm font-bold ${ac.text} truncate group-hover:text-gold-300 transition`}>{g.label}</div>
+                        <div className="text-[10px] text-navy-500 font-mono truncate">{last?.draw_code || g.type_name_th}</div>
+                      </div>
+                      {last
+                        ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}` : ''}>{srcB.short}</span>)
+                        : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label}</span>)}
                     </div>
-                    <div className="mt-1.5 text-xs font-mono tabular-nums text-slate-100 truncate" title={txt || ''}>
-                      {txt || (nxt ? <span className="text-navy-400 font-sans">⏳ รอผล {fmtDateTime(nxt.draw_at)}</span> : '—')}
+                    {/* body: ผลละเอียดทุก field หรือรอบถัดไป */}
+                    <div className="mt-3 flex-1">
+                      {last ? (
+                        <div className="space-y-0.5">
+                          {lines.map((l, i) => {
+                            const ix = l.indexOf(':');
+                            return (
+                              <div key={i} className="flex gap-2 text-[11px] leading-relaxed">
+                                <span className="text-navy-400 shrink-0 w-16">{l.slice(0, ix)}</span>
+                                <span className="font-mono tabular-nums text-slate-100">{l.slice(ix + 1).trim()}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {g.pending.slice(0, 3).map(d => (
+                            <div key={d.id} className="flex items-center justify-between text-[11px]">
+                              <span className="text-navy-300">{fmtDateTime(d.draw_at)}</span>
+                              <span className="text-navy-500">{PEND_TH[d.status] || d.status}</span>
+                            </div>
+                          ))}
+                          {!g.pending.length && <div className="text-[11px] text-navy-500">ไม่มีรอบวันนี้</div>}
+                        </div>
+                      )}
+                    </div>
+                    {/* footer: เวลาออก + ที่มา + จำนวนงวดวันนี้ */}
+                    <div className="mt-3 pt-2 border-t border-navy-700/60 flex items-center justify-between text-[10px] text-navy-400">
+                      <span>
+                        {last ? `ออก ${fmtDateTime(last.draw_at)}` : nxt ? `ถัดไป ${fmtDateTime(nxt.draw_at)}` : '—'}
+                        {g.settled.length > 1 && <span className="text-navy-500"> • วันนี้ ${g.settled.length} งวด</span>}
+                      </span>
+                      <span className="truncate max-w-[45%]" title={mi?.src || ''}>{mi?.src || ''}</span>
                     </div>
                   </Link>
                 );
