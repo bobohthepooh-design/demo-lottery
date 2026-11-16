@@ -76,6 +76,14 @@ const ICONS = {
       <path d="M11.2 12h9.3M17.5 12v3.2M20 12v2.4" stroke={g} strokeWidth="2.4" strokeLinecap="round" />
     </>
   ),
+  // เมนูเพิ่มเติม — จุด 9 ช่อง (grid)
+  menu: (g) => (
+    <>
+      {[5, 12, 19].map(cx => [6.5, 12, 17.5].map(cy => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.9" fill={g} />
+      )))}
+    </>
+  ),
 };
 
 export function CasinoIcon({ name, className = 'w-6 h-6', tone = 'gold' }) {

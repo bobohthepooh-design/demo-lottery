@@ -5,7 +5,7 @@ const dict = {
     home: 'หน้าแรก', betMenu: 'แทงหวย', winners: 'ผู้ชนะ', results: 'ผลรางวัล', check: 'ตรวจเลข', mybets: 'โพยของฉัน',
     perf: 'ผลงาน', wallet: 'กระเป๋าเครดิต', profile: 'โปรไฟล์', admin: 'ผู้ดูแลระบบ',
     logout: 'ออกจากระบบ', login: 'เข้าสู่ระบบ', register: 'สมัครสมาชิก',
-    credit: 'เครดิต', menu: 'เมนู', lottery: 'หวย', walletShort: 'กระเป๋า',
+    credit: 'เครดิต', menu: 'เมนู', lottery: 'หวย', walletShort: 'กระเป๋า', more: 'เพิ่มเติม', close: 'ปิด',
     footer: 'Demo Lottery Platform — เพื่อการศึกษาเท่านั้น • ใช้เครดิตเสมือน ไม่เกี่ยวข้องกับการพนันเงินจริง',
     demoMode: 'DEMO MODE',
     navBet: 'เล่นหวย', navInfo: 'ผลรางวัล & ข้อมูล', navAccount: 'บัญชีของฉัน', navAdmin: 'ผู้ดูแลระบบ',

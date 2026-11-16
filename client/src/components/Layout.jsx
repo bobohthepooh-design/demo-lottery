@@ -152,22 +152,30 @@ export default function Layout() {
             <button className="xl:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
           </div>
         </div>
-        {menuOpen && (
-          <nav className="xl:hidden suit-pattern border-t border-[#22d3ee]/30 bg-[#0a1526]/95 backdrop-blur-md px-3 py-2 space-y-1">
-            <div className="px-3 pt-1 pb-2 flex items-center justify-between">
+      </header>
+
+      {/* เมนูมือถือ/แท็บเล็ต — overlay เต็มจอ เปิดได้จากปุ่ม ☰ หรือ "เพิ่มเติม" ใน bottom nav */}
+      {menuOpen && (
+        <div className="xl:hidden fixed inset-0 z-50 bg-[#040a14]/97 backdrop-blur-md overflow-y-auto" onClick={() => setMenuOpen(false)}>
+          <div className="suit-pattern min-h-full px-4 py-4 space-y-1" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-3 pt-1 pb-3 sticky top-0 bg-[#040a14]/95 backdrop-blur-md">
               <span className="kicker">{t('menu')}</span>
-              {user && <span className="text-xs font-black font-mono text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
+              <div className="flex items-center gap-3">
+                {user && <span className="text-xs font-black font-mono text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
+                <button onClick={() => setMenuOpen(false)} aria-label={t('close')}
+                  className="w-9 h-9 rounded-full border border-navy-600 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition text-lg leading-none">✕</button>
+              </div>
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 text-[15px] tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-200'}`}>
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
               <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
               <div key={g.label}>
-                <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-navy-400 border-t border-navy-800 mt-1">{t(g.label)}</div>
+                <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 text-[15px] tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-200'}`}>
+                    className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
                     {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
                     {t(n.k)}
                   </NavLink>
@@ -176,13 +184,13 @@ export default function Layout() {
             ))}
             {user && (
               <button onClick={() => { setMenuOpen(false); doLogout(); }}
-                className="w-full text-left px-3.5 py-2.5 text-[15px] tracking-wide text-gold-300 border-t border-gold-500/20 mt-1">
+                className="w-full text-left px-4 py-3.5 text-[16px] tracking-wide text-gold-300 rounded-xl hover:bg-white/5 border-t border-gold-500/20 mt-2">
                 {t('logout')}
               </button>
             )}
-          </nav>
-        )}
-      </header>
+          </div>
+        </div>
+      )}
 
       <AnnouncementBar />
       {/* banner บังคับยืนยันอายุ 18+ สำหรับบัญชีที่ยังไม่ได้ยืนยัน (สมัครเก่า/LINE) */}
@@ -202,8 +210,8 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Bottom navigation — มือถือ/แท็บเล็ต (แสดงเฉพาะจอ < lg) แถบติดขอบล่าง */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
+      {/* Bottom navigation — มือถือ/แท็บเล็ต (< xl) แถบติดขอบล่าง + ปุ่มเพิ่มเติมเปิดเมนูเต็ม */}
+      <nav className="xl:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
           {/* เส้นเรืองทองด้านบน */}
@@ -239,11 +247,18 @@ export default function Layout() {
                 )}
               </NavLink>
             ))}
+            <button onClick={() => setMenuOpen(true)}
+              className="relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] transition-colors text-white/60 hover:text-white">
+              <span className="relative opacity-70">
+                <CasinoIcon name="menu" tone="gray" className="w-6 h-6" />
+              </span>
+              <span className="relative">{t('more')}</span>
+            </button>
           </div>
         </div>
       </nav>
 
-      <footer className="border-t border-navy-800 py-4 pb-20 lg:pb-4 text-center text-xs text-navy-300">
+      <footer className="border-t border-navy-800 py-4 pb-20 xl:pb-4 text-center text-xs text-navy-300">
         {t('footer')}
       </footer>
 
