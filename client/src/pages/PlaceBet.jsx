@@ -60,6 +60,7 @@ export default function PlaceBet() {
   const [zodiacPicks, setZodiacPicks] = useState([]); // หวยราศี: ราศีที่เลือกเรียงตามลำดับ (สูงสุดตาม digits ของกติกา)
   const [amount, setAmount] = useState('');
   const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (ซื้อโต๊ดเพิ่มอีก 1 รายการ)
+  const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem('lotteryFavNums') || '{}'); } catch { return {}; } });
   const numRef = useRef(null); // auto-focus ช่องเลขหลังเพิ่มโพย — แทงต่อได้เร็ว
 
   // เปลี่ยนเนื้อหาโพย → key ใหม่ เพื่อไม่ให้โพยคนละชุดใช้ key เดียวกัน
@@ -130,6 +131,18 @@ export default function PlaceBet() {
   const toggleZodiac = (z) => setZodiacPicks(p =>
     p.includes(z) ? p.filter(x => x !== z) : (p.length < zodiacDigits ? [...p, z] : p));
   const togglePick = (n) => setPicks(p => p.includes(n) ? p.filter(x => x !== n) : (p.length < 5 ? [...p, n] : p));
+
+  // เลขโปรด — จำแยกตามจำนวนหลัก (localStorage ของเครื่องผู้ใช้ ไม่ผูกบัญชี)
+  const favKey = rule && !isZodiac && !isPattana ? rule.digits : 0;
+  const favList = favKey ? (favs[favKey] || []) : [];
+  const saveFav = (num) => {
+    if (!favKey || !new RegExp(`^\\d{${favKey}}$`).test(num)) return;
+    const list = favs[favKey] || [];
+    if (list.includes(num)) return;
+    const next = { ...favs, [favKey]: [num, ...list].slice(0, 12) };
+    setFavs(next); localStorage.setItem('lotteryFavNums', JSON.stringify(next));
+  };
+  const pickFav = (num) => { setNumber(num); setTimeout(() => numRef.current?.focus(), 30); };
 
   const totalSatang = useMemo(() => slip.reduce((s, i) => s + i.stakeSatang, 0), [slip]);
   // ผลรางวัลจำลองแบบไม่รวมทุน = stake × multiplier ของแต่ละรายการ (เงินจริงจ่าย = ยอดนี้ ไม่ได้คืนทุนเพิ่ม)
@@ -378,6 +391,19 @@ export default function PlaceBet() {
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                   inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
                   className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl tracking-[0.4em] text-center text-gold-300 font-mono focus:outline-none focus:border-gold-500" />
+                {favKey > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {favList.map(f => (
+                      <button key={f} type="button" onClick={() => pickFav(f)}
+                        className="text-xs px-2.5 py-1 rounded-lg bg-navy-900 border border-gold-500/40 text-gold-300 font-mono hover:bg-navy-700">{f}</button>
+                    ))}
+                    {favList.length === 0 && <span className="text-[10px] text-navy-500">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
+                    {new RegExp(`^\\d{${favKey}}$`).test(number) && !favList.includes(number) && (
+                      <button type="button" onClick={() => saveFav(number)}
+                        className="text-[10px] px-2 py-1 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300">⭐ บันทึกเลขนี้</button>
+                    )}
+                  </div>
+                )}
                 {showTodHint && (
                   <div className="mt-2 space-y-1.5">
                     <div className="text-[10px] text-sky-400/80">💡 โต๊ด = เลขครบทุกหลักไม่สนลำดับ (รวมตรงเป๊ะ) จ่าย x{todRate}</div>

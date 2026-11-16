@@ -99,6 +99,20 @@ export default function Wallet() {
     finally { setBusy(false); }
   };
 
+  // สรุปยอดเดิมพัน/รางวัล วันนี้และ 7 วัน (คำนวณจากธุรกรรมที่โหลด — สูงสุด 100 รายการล่าสุด)
+  const txTime = (t) => { const d = new Date(String(t.created_at || '').replace(' ', 'T') + 'Z'); return isNaN(d) ? 0 : d.getTime(); };
+  const summarize = (days) => {
+    const since = Date.now() - days * 864e5;
+    let stake = 0, win = 0;
+    for (const t of txs) {
+      if (txTime(t) < since) continue;
+      if (t.type === 'bet_debit') stake += t.amount;
+      else if (t.type === 'win_credit' || t.type === 'bet_refund') win += t.amount;
+    }
+    return { stake, win };
+  };
+  const sumToday = summarize(1), sumWeek = summarize(7);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-gradient-to-br from-[#f7ecc4] via-[#efd78f] to-[#e3c05c] border border-gold-500/40 rounded-2xl p-8 text-center shadow-[0_0_24px_rgba(226,168,18,0.15)]">
@@ -129,6 +143,16 @@ export default function Wallet() {
           </div>
         )}
         <div className="text-xs text-navy-950/70 mt-2 font-semibold">⚠️ เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่ใช่เงินจริงและไม่สามารถแลกเป็นเงินจริงได้</div>
+      </div>
+
+      {/* สรุปยอดเดิมพัน/รางวัล */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[['แทงวันนี้', sumToday.stake, 'text-red-300'], ['รางวัลวันนี้', sumToday.win, 'text-green-300'], ['แทง 7 วัน', sumWeek.stake, 'text-red-300'], ['รางวัล 7 วัน', sumWeek.win, 'text-green-300']].map(([label, v, cls]) => (
+          <div key={label} className="bg-navy-800 border border-navy-700 rounded-xl px-4 py-3 text-center">
+            <div className="text-[11px] text-navy-400">{label}</div>
+            <div className={`text-lg font-bold ${cls}`}>{satang(v)} ฿</div>
+          </div>
+        ))}
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
