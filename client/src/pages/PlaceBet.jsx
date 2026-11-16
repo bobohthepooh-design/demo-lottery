@@ -588,33 +588,53 @@ export default function PlaceBet() {
         </div>
       )}
 
-      {/* confirm modal */}
+      {/* confirm modal — order ticket สไตล์กระดาษ */}
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setConfirming(false)}>
-          <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-navy-950 mb-1">{headBar}ยืนยันโพยหวย</h2>
-            <p className="text-sm text-navy-300 mb-4">{drawLabel(draw)}</p>
-            <div className="space-y-1.5 max-h-56 overflow-y-auto mb-4">
-              {slip.map((i, idx) => (
-                <div key={idx} className="flex justify-between text-sm bg-navy-900 rounded-lg px-3 py-2">
-                  <span><span className="text-navy-400 font-mono text-xs mr-1">{idx + 1}.</span><span className="font-mono text-gold-300 text-base">{i.number}</span> <span className="text-navy-300">{i.name}</span></span>
-                  <span className="text-gold-300">{satang(i.stakeSatang)} บาท</span>
-                </div>
-              ))}
+          <div className="w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-3">
+              <h2 className="text-lg font-bold text-white">{headBar}ยืนยันโพยหวย</h2>
+              <p className="text-sm text-navy-300">{drawLabel(draw)}</p>
             </div>
-            <div className="border-t border-navy-700 pt-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-navy-300">ยอดแทงรวม ({slip.length} รายการ)</span><span className="text-white font-bold text-lg">{satang(totalSatang)} บาท</span></div>
-              <div className="flex justify-between"><span className="text-navy-300">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">{satang(totalPotential)} บาท</span></div>
-              <div className="flex justify-between"><span className="text-navy-300">เครดิตคงเหลือหลังแทง</span><span className="text-gold-300">{satang(balance - totalSatang)} บาท</span></div>
+            <div className="paper-slip rounded-lg px-5 py-5 pt-6 pb-7">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold tracking-widest text-[#8a7a5c] uppercase">ใบโพยแทงหวย</span>
+                <span className="text-[10px] text-[#8a7a5c]">ใบเสร็จรับโพย</span>
+              </div>
+              <div className="paper-dash mb-3" />
+              <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                {slip.map((i, idx) => (
+                  <div key={idx} className="flex justify-between items-baseline text-sm rounded px-2 py-1.5 bg-[#fbf3df]/70">
+                    <span className="min-w-0">
+                      <span className="text-[#8a7a5c] font-mono text-[11px] mr-1.5">{String(idx + 1).padStart(2, '0')}.</span>
+                      <span className="paper-num text-[#8a5a00] text-base">{i.number}</span>
+                      <span className="text-[#6b5636] text-xs ml-2">{i.name}</span>
+                      {i.isAnn && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-600/20 border border-amber-700/50 text-amber-800">อั้น</span>}
+                      {i.isTod && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-sky-700/15 border border-sky-700/40 text-sky-800">โต๊ด</span>}
+                    </span>
+                    <span className="paper-num text-[#2b2118] shrink-0 ml-2">{satang(i.stakeSatang)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="paper-dash my-3" />
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-[#6b5636]">ยอดแทงรวม ({slip.length} รายการ)</span><span className="paper-num text-[#2b2118] text-base">{satang(totalSatang)} บาท</span></div>
+                <div className="flex justify-between"><span className="text-[#6b5636]">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="paper-num text-[#1e7d46]">{satang(totalPotential)} บาท</span></div>
+                <div className="flex justify-between"><span className="text-[#6b5636]">เครดิตคงเหลือหลังแทง</span><span className="paper-num text-[#8a5a00]">{satang(balance - totalSatang)} บาท</span></div>
+              </div>
+              <div className="paper-dash mt-3" />
+              <div className="text-center text-[10px] text-[#8a7a5c] mt-2.5 leading-relaxed">
+                📌 ยกเลิกโพยได้ก่อนเวลาปิดรับ • คืนเครดิตอัตโนมัติหากรอบถูกยกเลิก • เครดิตเสมือนเพื่อการศึกษา
+              </div>
             </div>
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3 mt-4">
               <button onClick={() => setConfirming(false)} disabled={busy}
-                className="flex-1 border border-navy-600 text-navy-200 py-2.5 rounded-lg hover:bg-navy-700 disabled:opacity-40">
-                แก้ไขต่อ
+                className="flex-1 border border-navy-500/60 text-navy-200 py-3 rounded-xl hover:bg-navy-800 disabled:opacity-40 backdrop-blur-sm">
+                ← แก้ไขต่อ
               </button>
               <button onClick={submit} disabled={busy}
-                className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg hover:bg-gold-400 disabled:opacity-40">
-                {busy ? 'กำลังส่ง...' : 'ยืนยันส่งโพย'}
+                className="flex-1 bg-gold-500 text-navy-950 font-bold py-3 rounded-xl hover:bg-gold-400 disabled:opacity-40 shadow-lg shadow-gold-500/20">
+                {busy ? 'กำลังส่ง...' : '✓ ยืนยันส่งโพย'}
               </button>
             </div>
           </div>
