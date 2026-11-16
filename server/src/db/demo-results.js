@@ -16,6 +16,7 @@ const DRAWS_SQL = `
     JOIN lottery_types lt ON lt.id = d.lottery_type_id
     LEFT JOIN lottery_categories c ON c.id = d.category_id
     WHERE d.status = 'open'
+      AND d.draw_at <= to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')
     ORDER BY d.draw_at ASC`;
 
 function winningFor(typeCode, categoryCode) {
