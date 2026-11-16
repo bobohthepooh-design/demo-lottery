@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api, satang, drawLabel, fmtDateTime } from '../api.js';
 import { BET_TYPE_LABELS } from '../lotterySchema.js';
@@ -7,6 +8,7 @@ import { SkeletonSlip } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { useAuth } from '../auth.jsx';
+import { sfx } from '../sound.js';
 
 const STATUS_TH = {
   pending: 'รอผล',
@@ -178,6 +180,8 @@ export default function MyBets() {
   const [open, setOpen] = useState(null);
   const [cancelAsk, setCancelAsk] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [celebrate, setCelebrate] = useState(null); // slip id ที่เพิ่งถูกรางวัล — โชว์ confetti
+  const prevStatus = useRef({}); // id → status ครั้งก่อน — ใช้จับจังหวะที่โพยเปลี่ยนเป็น won
   const { setBalance } = useAuth();
   const navigate = useNavigate();
 
@@ -187,7 +191,16 @@ export default function MyBets() {
     api('/bets/mine?status=pending&limit=100'),
   ]).then(([recent, pending]) => {
     const seen = new Set();
-    setSlips([...pending.slips, ...recent.slips].filter(s => !seen.has(s.id) && seen.add(s.id)));
+    const list = [...pending.slips, ...recent.slips].filter(s => !seen.has(s.id) && seen.add(s.id));
+    setSlips(list);
+    // จับโพยที่เพิ่งเปลี่ยนเป็น won — เล่นเสียง + confetti (รอบแรกที่โหลดไม่ใช่)
+    const newlyWon = list.find(s => s.status === 'won' && prevStatus.current[s.id] && prevStatus.current[s.id] !== 'won');
+    list.forEach(s => { prevStatus.current[s.id] = s.status; });
+    if (newlyWon) {
+      sfx.win();
+      setCelebrate(newlyWon.id);
+      setTimeout(() => setCelebrate(c => (c === newlyWon.id ? null : c)), 5000);
+    }
   }).catch(() => {});
   useEffect(() => { load().finally(() => setLoading(false)); }, []);
   // SSE — ผลรางวัลออก/โพยเปลี่ยนสถานะ → อัปเดตทันที
@@ -345,6 +358,27 @@ export default function MyBets() {
           to="/lotteries" cta="ไปเลือกหวยเลย" />
       )}
       {loading && <div className="space-y-3">{[0,1,2].map(i => <SkeletonSlip key={i} />)}</div>}
+
+      {/* confetti ฉลองตอนโพยเปลี่ยนเป็นถูกรางวัล — แสดง 5 วิแล้วหาย */}
+      {celebrate && createPortal(
+        <div className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden">
+          {Array.from({ length: 36 }).map((_, i) => (
+            <span key={i} className="confetti-piece"
+              style={{
+                left: `${(i * 29 + 7) % 100}%`,
+                background: ['#d4af37', '#22c55e', '#f472b6', '#60a5fa', '#fbbf24', '#a78bfa'][i % 6],
+                animationDuration: `${2 + (i % 5) * 0.4}s`,
+                animationDelay: `${(i % 9) * 0.15}s`,
+                borderRadius: i % 3 === 0 ? '50%' : '2px',
+              }} />
+          ))}
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 text-center">
+            <div className="text-5xl animate-win">🎉</div>
+            <div className="text-xl font-bold text-gold-300 mt-2 drop-shadow-lg">โพยของคุณถูกรางวัล!</div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

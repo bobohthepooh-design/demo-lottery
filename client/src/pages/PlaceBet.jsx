@@ -237,6 +237,7 @@ export default function PlaceBet() {
     }
     setSlip([...slip, ...items]);
     setNumber(''); setPicks([]); setZodiacPicks([]);
+    sfx.chip(); // เสียงเหรียญตอนเพิ่มโพย
     // จำเลขที่เพิ่งแทงไว้ — แสดงเป็น chips กดซ้ำได้ (localStorage แยกตามจำนวนหลัก)
     if (!isZodiac && !isPattana && /^\d+$/.test(num)) {
       try {
@@ -566,7 +567,7 @@ export default function PlaceBet() {
           )}
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {slip.map((i, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm">
+              <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm animate-slip-in">
                 <div>
                   <span className="text-white font-mono text-lg">{i.number}</span>
                   <span className="text-navy-300 ml-2">{i.name}</span>

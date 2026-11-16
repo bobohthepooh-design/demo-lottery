@@ -226,6 +226,13 @@ main h2 { letter-spacing: 0.005em; }
 }
 .animate-float { animation: float-slow 5s ease-in-out infinite; }
 
+/* รายการโพยไหลเข้าตอนเพิ่มเลข */
+@keyframes slip-in {
+  0% { transform: translateX(-12px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+.animate-slip-in { animation: slip-in 0.25s ease-out both; }
+
 /* confetti ฉลองถูกรางวัล — โทนพาสเทล */
 @keyframes confetti-fall {
   0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
