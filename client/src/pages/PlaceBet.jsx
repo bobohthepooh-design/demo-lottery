@@ -37,6 +37,30 @@ const RULE_GROUPS = [
 ];
 const ruleGroup = (r) => RULE_GROUPS.find(g => g.test(r))?.key || 'top';
 
+// คำอธิบายสั้นๆ ใต้ชื่อประเภท — บอกว่าต้องตรงกับส่วนไหนของผล (แสดงใต้ปุ่มประเภทที่เลือก)
+const RULE_HINT = [
+  [/^ann_/, 'ต้องเป็นเลขที่ประกาศอั้นเท่านั้น — อัตราจ่ายครึ่งหนึ่ง'],
+  [/run_top/, 'ถูกถ้าเลขอยู่ใน 3 ตัวบน (ไม่ต้องตรงตำแหน่ง)'],
+  [/run_bottom/, 'ถูกถ้าเลขอยู่ใน 2 ตัวล่าง (ไม่ต้องตรงตำแหน่ง)'],
+  [/front3tod|3tod|top2tod|bottom2tod/, 'โต๊ด = ถูกแม้สลับลำดับเลข (ไม่รวมเต็ง)'],
+  [/^first/, 'รางวัลที่ 1 — เลข 6 ตัวตรงเป๊ะ'],
+  [/^num4|^last4/, 'เลขท้าย 4 ตัวตรงเป๊ะ'],
+  [/^front3|^top3/, '3 ตัวบน — ตรงกับ 3 ตัวท้ายของผล'],
+  [/^last3/, 'เลขท้าย 3 ตัวตรงเป๊ะ'],
+  [/^top2|^bottom2|^last2/, '2 ตัว — ตรงกับ 2 ตัวท้ายของผล'],
+  [/zodiac3top/, 'เลือก 3 ราศีให้ตรงกับ 3 ตัวท้าย (④⑤⑥) เรียงลำดับ'],
+  [/zodiac2bottom/, 'เลือก 2 ราศีให้ตรงกับ 2 ตัวท้าย (⑤⑥) เรียงลำดับ'],
+  [/zodiac_run/, 'เลือกราศีที่โผล่ในผล 6 ตัว ไม่ว่าตำแหน่งไหนก็ได้'],
+  [/^zodiac/, 'เลือกราศีที่ออกตัวแรกของผล 6 ตัว'],
+  [/pattana/, 'เลือก 5 เลข 1-45 — ถูกตามลำดับที่ออก'],
+];
+const ruleHint = (r) => {
+  if (!r) return '';
+  const bt = r.bet_type || '';
+  const hit = RULE_HINT.find(([re]) => re.test(bt));
+  return hit ? hit[1] : `${r.digits || '?'} หลัก • จ่ายตรงตามกติกา`;
+};
+
 // คำอธิบายแต่ละประเภทแทงราศี — บอกชัดว่าต้องตรงกับตำแหน่งไหนของผล 6 ราศี
 const ZODIAC_HINT = {
   zodiac: 'เลือกปีนักษัตรที่คาดว่าจะออก “ตัวแรก” ของผล 6 ตัว (ตำแหน่ง ①)',
@@ -71,6 +95,7 @@ export default function PlaceBet() {
   const [amount, setAmount] = useState('');
   const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (ซื้อโต๊ดเพิ่มอีก 1 รายการ)
   const [ruleTab, setRuleTab] = useState(''); // tab กลุ่มประเภทการแทง (ว่าง = กลุ่มแรกที่มี)
+  const [recent, setRecent] = useState({}); // {digits: [num,...]} เลขที่เพิ่งแทง
   const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem('lotteryFavNums') || '{}'); } catch { return {}; } });
   const numRef = useRef(null); // auto-focus ช่องเลขหลังเพิ่มโพย — แทงต่อได้เร็ว
 
@@ -155,6 +180,7 @@ export default function PlaceBet() {
   // เลขโปรด — จำแยกตามจำนวนหลัก (localStorage ของเครื่องผู้ใช้ ไม่ผูกบัญชี)
   const favKey = rule && !isZodiac && !isPattana ? rule.digits : 0;
   const favList = favKey ? (favs[favKey] || []) : [];
+  const recentList = favKey ? (recent[favKey] || JSON.parse(localStorage.getItem('lotteryRecent_' + favKey) || '[]')) : [];
   const saveFav = (num) => {
     if (!favKey || !new RegExp(`^\\d{${favKey}}$`).test(num)) return;
     const list = favs[favKey] || [];
@@ -211,6 +237,16 @@ export default function PlaceBet() {
     }
     setSlip([...slip, ...items]);
     setNumber(''); setPicks([]); setZodiacPicks([]);
+    // จำเลขที่เพิ่งแทงไว้ — แสดงเป็น chips กดซ้ำได้ (localStorage แยกตามจำนวนหลัก)
+    if (!isZodiac && !isPattana && /^\d+$/.test(num)) {
+      try {
+        const key = 'lotteryRecent_' + rule.digits;
+        const list = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x !== num);
+        list.unshift(num);
+        localStorage.setItem(key, JSON.stringify(list.slice(0, 10)));
+        setRecent(prev => ({ ...prev, [rule.digits]: list.slice(0, 10) }));
+      } catch {}
+    }
     // คงจำนวนเงินไว้ — แทงหลายเลขด้วยเงินเท่ากันได้ต่อเนื่อง + refocus ช่องเลขให้กรอกเลขถัดไปทันที
     setTimeout(() => numRef.current?.focus(), 50);
   };
@@ -328,6 +364,8 @@ export default function PlaceBet() {
                 })}
               </div>
             )}
+            {/* คำอธิบายสั้นๆ ของประเภทที่เลือกอยู่ */}
+            {rule && <div className="text-[11px] text-navy-400 -mt-1">💡 {ruleHint(rule)}</div>}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {tabRules.map(r => {
                 const isAnn = r.bet_type?.startsWith('ann_');
@@ -431,11 +469,21 @@ export default function PlaceBet() {
                       <button key={f} type="button" onClick={() => pickFav(f)}
                         className="text-xs px-2.5 py-1 rounded-lg bg-navy-900 border border-gold-500/40 text-gold-300 font-mono hover:bg-navy-700">{f}</button>
                     ))}
-                    {favList.length === 0 && <span className="text-[10px] text-navy-500">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
+                    {favList.length === 0 && recentList.length === 0 && <span className="text-[10px] text-navy-500">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
                     {new RegExp(`^\\d{${favKey}}$`).test(number) && !favList.includes(number) && (
                       <button type="button" onClick={() => saveFav(number)}
                         className="text-[10px] px-2 py-1 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300">⭐ บันทึกเลขนี้</button>
                     )}
+                  </div>
+                )}
+                {/* เลขที่เพิ่งแทง — กดเพื่อใส่เลขเดิมได้เลย */}
+                {favKey > 0 && recentList.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] text-navy-500">เพิ่งแทง:</span>
+                    {recentList.map(f => (
+                      <button key={f} type="button" onClick={() => pickFav(f)}
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-navy-900/60 border border-navy-700 text-navy-300 font-mono hover:border-cyan-500/50 hover:text-cyan-300">{f}</button>
+                    ))}
                   </div>
                 )}
                 {/* NumPad — กดเลขบนหน้าจอ เหมาะกับมือถือ (desktop พิมพ์เองได้เหมือนเดิม) */}
