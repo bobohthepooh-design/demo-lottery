@@ -175,15 +175,21 @@ async function fetchLCAll(slug) {
   const d = j?.data?.[0];
   if (!d || d.status !== 'complete') throw new Error(`LC ${slug}: no result`);
   const prizes = {};
-  for (const p of d.prizes || []) prizes[p.slug] = String(p.numbers?.[0] ?? '').replace(/\D/g, '');
+  // เก็บทุกเลขรางวัล — บางตลาด (เช่น GSB) อันดับ 3/4/5 มีหลายเลข
+  for (const p of d.prizes || []) {
+    prizes[p.slug] = (p.numbers || []).map(n => String(n).replace(/\D/g, '')).filter(Boolean);
+  }
   return { date: String(d.drawDate).slice(0, 10), prizes };
 }
 
 const lcNum = (x, slug, len) => {
   const v = x.prizes[slug];
-  if (!v) throw new Error(`LC missing prize ${slug}`);
-  return v.padStart(len, '0').slice(-len);
+  const first = Array.isArray(v) ? v[0] : v;
+  if (!first) throw new Error(`LC missing prize ${slug}`);
+  return String(first).padStart(len, '0').slice(-len);
 };
+// ทุกเลขของรางวัล (pad เป็น len หลัก)
+const lcAll = (x, slug, len) => (x.prizes[slug] || []).map(v => String(v).padStart(len, '0').slice(-len));
 
 function winningFor(kind, x) {
   if (kind === 'lao5') {
@@ -196,8 +202,7 @@ function winningFor(kind, x) {
     };
   }
   if (kind === 'lao6') {
-    const s6 = x.prizes['special-prize'];
-    if (!s6) throw new Error('LC missing prize special-prize');
+    const s6 = lcNum(x, 'special-prize', 6);
     const s5 = s6.slice(-5);
     return {
       last4: s6.slice(-4), num4: s6.slice(-4), last5: s5, db5: s5,
@@ -206,11 +211,11 @@ function winningFor(kind, x) {
     };
   }
   if (kind === 'gsb') {
-    // สลากออมสินพิเศษ — อันดับ 1-5 (7 หลัก) + เลขท้าย 4/3 ตัว
+    // สลากออมสินพิเศษ — อันดับ 1-5 (7 หลัก, อ.3=5 เลข อ.4=10 เลข อ.5=15 เลข) + เลขท้าย 4/3 ตัว
     return {
-      p1: lcNum(x, 'first-prize', 7), p2: lcNum(x, 'second-prize', 7),
-      p3: lcNum(x, 'third-prize', 7), p4: lcNum(x, 'fourth-prize', 7),
-      p5: lcNum(x, 'fifth-prize', 7),
+      p1: lcAll(x, 'first-prize', 7), p2: lcAll(x, 'second-prize', 7),
+      p3: lcAll(x, 'third-prize', 7), p4: lcAll(x, 'fourth-prize', 7),
+      p5: lcAll(x, 'fifth-prize', 7),
       last4: lcNum(x, 'last-four-digit', 4),
       last3: lcNum(x, 'last-three-digit', 3),
     };

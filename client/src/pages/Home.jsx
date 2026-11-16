@@ -15,7 +15,10 @@ const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
 function compactResult(w) {
   if (!w) return null;
   const parts = [];
-  if (w.first) parts.push(`รางวัล1 ${w.first}`);
+  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  if (w.p1) { parts.push(`อ.1 ${firstOf(w.p1)}`); if (w.p2) parts.push(`อ.2 ${firstOf(w.p2)}`); }
+  else if (w.first) parts.push(`รางวัล1 ${w.first}`);
+  if (w.last4) parts.push(`ท้าย4 ${w.last4}`);
   if (w.main || w.num4) parts.push(w.main || w.num4);
   if (w.zodiac) parts.push(w.zodiac);
   const top = w.top3 ?? w.last3 ?? w.front3;

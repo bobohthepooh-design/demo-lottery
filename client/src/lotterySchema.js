@@ -57,9 +57,24 @@ const HR = {
   ],
 };
 
+// สลากออมสิน (GS) — อันดับ 1-5 (7 หลัก) + เลขท้าย 4/3 ตัว
+// อ.3 มี 5 เลข, อ.4 มี 10 เลข, อ.5 มี 15 เลข (เก็บเป็น array)
+const GS = {
+  hero: 'p1',
+  fields: [
+    { key: 'p1',     label: 'รางวัลอันดับ 1',  short: 'อ.1',  digits: 7, prizes: 1, hero: true },
+    { key: 'p2',     label: 'รางวัลอันดับ 2',  short: 'อ.2',  digits: 7, prizes: 1 },
+    { key: 'p3',     label: 'รางวัลอันดับ 3',  short: 'อ.3',  digits: 7, prizes: 5 },
+    { key: 'p4',     label: 'รางวัลอันดับ 4',  short: 'อ.4',  digits: 7, prizes: 10 },
+    { key: 'p5',     label: 'รางวัลอันดับ 5',  short: 'อ.5',  digits: 7, prizes: 15 },
+    { key: 'last4',  label: 'เลขท้าย 4 ตัว',   short: 'ท้าย4', digits: 4, prizes: 1 },
+    { key: 'last3',  label: 'เลขท้าย 3 ตัว',   short: 'ท้าย3', digits: 3, prizes: 1 },
+  ],
+};
+
 // เฉพาะหมวด LA ที่เป็นหวยลาวพัฒนาใช้ schema ต่างจากหวยลาวทั่วไป
 const BY_CATEGORY = { 'LA:LAD': LAD, 'LA:LADAM': LAD };
-const BY_TYPE = { TH, LA, HN, HR };
+const BY_TYPE = { TH, LA, HN, HR, GS };
 
 export function resultSchema(typeCode, categoryCode) {
   return BY_CATEGORY[`${typeCode}:${categoryCode}`] || BY_TYPE[typeCode] || null;

@@ -16,7 +16,12 @@ const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
 function resultSummary(w) {
   if (!w) return null;
   const parts = [];
-  if (w.first) parts.push(`รางวัลที่ 1: ${w.first}`);
+  const pushArr = (label, v) => { if (v) parts.push(`${label}: ${asList(v)}`); };
+  pushArr('รางวัลที่ 1', w.first ?? w.p1);
+  if (w.p2) parts.push(`อ.2: ${asList(w.p2)}`);
+  if (w.p3) parts.push(`อ.3: ${asList(w.p3)}`);
+  if (w.p4) parts.push(`อ.4: ${asList(w.p4)}`);
+  if (w.p5) parts.push(`อ.5: ${asList(w.p5)}`);
   if (w.main) parts.push(`เลขหลัก: ${w.main}`);
   if (w.num4) parts.push(`4 ตัว: ${w.num4}`);
   if (w.top3) parts.push(`บน 3: ${asList(w.top3)}`);
@@ -34,7 +39,10 @@ function compactSummary(w) {
   if (!w) return null;
   const parts = [];
   const push = (v) => { if (v !== undefined && v !== null && v !== '') parts.push(asList(v)); };
-  if (w.first) parts.push(`รางวัล1: ${w.first}`);
+  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  if (w.first || w.p1) parts.push(`รางวัล1: ${firstOf(w.first ?? w.p1)}`);
+  if (w.p2) parts.push(`อ.2 ${firstOf(w.p2)}`);
+  if (w.last4) parts.push(`ท้าย4 ${w.last4}`);
   if (w.main || w.num4) parts.push(w.main || w.num4);
   if (w.zodiac) parts.push(w.zodiac);
   push(w.top3 ?? w.last3 ?? w.front3);
@@ -45,7 +53,7 @@ function compactSummary(w) {
 function summarizeWinning(w) {
   if (!w) return '—';
   const parts = [];
-  if (w.first) parts.push(w.first);
+  if (w.first || w.p1) parts.push(Array.isArray(w.p1) ? w.p1[0] : (w.first ?? w.p1));
   if (w.main) parts.push(w.main);
   if (w.num4) parts.push(w.num4);
   if (w.top3) parts.push(asList(w.top3));
