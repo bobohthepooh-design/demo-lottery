@@ -133,6 +133,11 @@ function buildRules(d) {
 
     // ===== สลากออมสิน (GS) — ผล: อันดับ 1-5 (7 หลัก) + เลขท้าย 4/3 ตัว — ออกวันที่ 1&16 =====
     if (GS) {
+      push(GS, null, 'rank1',     'รางวัลอันดับ 1 (7 หลัก)', 7, 'p1',      'exact', 1000);
+      push(GS, null, 'rank2',     'รางวัลอันดับ 2 (7 หลัก)', 7, 'p2',      'exact', 600);
+      push(GS, null, 'rank3',     'รางวัลอันดับ 3 (7 หลัก)', 7, 'p3',      'exact', 400);
+      push(GS, null, 'rank4',     'รางวัลอันดับ 4 (7 หลัก)', 7, 'p4',      'exact', 300);
+      push(GS, null, 'rank5',     'รางวัลอันดับ 5 (7 หลัก)', 7, 'p5',      'exact', 200);
       push(GS, null, 'last4',     'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 1000);
       push(GS, null, 'last3',     'เลขท้าย 3 ตัว',   3, 'last3',   'exact', 500,  100, 100, 1000000, 60);
       push(GS, null, 'run_top',   'เลขวิ่งบน',       1, 'last3',   'digit_contains', 3.5);
