@@ -27,15 +27,18 @@ const ZODIAC_EMOJI = {
   'วอก': '🐵', 'ระกา': '🐓', 'จอ': '🐕', 'กุน': '🐷',
 };
 
-// จัดกลุ่มประเภทการแทงเป็น tab — บน/ล่าง/วิ่ง/อั้น/พิเศษ ให้เลือกเร็วไม่ต้องอ่านทุกปุ่ม
+// จัดกลุ่มประเภทการแทงเป็น tab ตามรางวัล — รางวัลที่ 1 / เลข 4-3-2 ตัว / เลขวิ่ง / อั้น / พิเศษ
+const SPECIAL_BT = /run|ann_|zodiac|pattana/;
 const RULE_GROUPS = [
-  { key: 'top',    label: '🔢 เลขบน',   test: r => /top|front|first|num4/.test(r.bet_type || '') && !/bottom|last|run|ann|tod/.test(r.bet_type || '') },
-  { key: 'bottom', label: '🔢 เลขล่าง', test: r => /bottom|last|tod/.test(r.bet_type || '') },
-  { key: 'run',    label: '🏃 วิ่ง',     test: r => /run/.test(r.bet_type || '') },
-  { key: 'ann',    label: '🔒 เลขอั้น',  test: r => /ann_/.test(r.bet_type || '') },
-  { key: 'special',label: '✨ พิเศษ',   test: r => /zodiac|pattana|gsb|hn_|lao/.test(r.bet_type || '') || r.bet_type === 'p1' || /^p[1-5]$/.test(r.bet_type || '') },
+  { key: 'first',   label: '🏆 รางวัลที่ 1', test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) >= 6 },
+  { key: 'four',    label: '4️⃣ เลข 4 ตัว',  test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 4 },
+  { key: 'three',   label: '3️⃣ เลข 3 ตัว',  test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 3 },
+  { key: 'two',     label: '2️⃣ เลข 2 ตัว',  test: r => !SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 2 },
+  { key: 'run',     label: '🏃 เลขวิ่ง',     test: r => (/run/.test(r.bet_type || '') && !/zodiac|ann_/.test(r.bet_type || '')) || (!SPECIAL_BT.test(r.bet_type || '') && Number(r.digits) === 1) },
+  { key: 'ann',     label: '🔒 เลขอั้น',     test: r => /ann_/.test(r.bet_type || '') },
+  { key: 'special', label: '✨ พิเศษ',      test: r => /zodiac|pattana/.test(r.bet_type || '') },
 ];
-const ruleGroup = (r) => RULE_GROUPS.find(g => g.test(r))?.key || 'top';
+const ruleGroup = (r) => RULE_GROUPS.find(g => g.test(r))?.key || 'special';
 
 // คำอธิบายสั้นๆ ใต้ชื่อประเภท — บอกว่าต้องตรงกับส่วนไหนของผล (แสดงใต้ปุ่มประเภทที่เลือก)
 const RULE_HINT = [
