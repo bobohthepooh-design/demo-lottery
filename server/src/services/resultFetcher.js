@@ -209,23 +209,32 @@ export async function fetchHanoiResult() {
   };
 }
 
+// หวยลาว — laodl.com หยุดอัปเดต (ค้าง 13/11) → ใช้ lotterychecks.com แทน
+// เลือก lao-union (หวยลาวสามัคคี ออก 20:30 น. ทุกวัน — ใกล้เวลาออกรอบลาวของเรา 20:00 น. ที่สุด)
+const LA_SOURCE = 'lao-union';
 export async function fetchLaoResult() {
-  const r = await fetchResilient('https://laodl.com/api/website/laolot/WinPrizeHistory?type=1',
-    { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
-  if (!r.ok) throw new Error(`LA HTTP ${r.status}`);
+  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${LA_SOURCE}&limit=1`,
+    { signal: AbortSignal.timeout(20000) });
+  if (!r.ok) throw new Error(`LC-LA HTTP ${r.status}`);
   const j = await r.json();
-  const row = (j?.resultData || []).find(x => x.winNumber && x.roundStatus === 0);
-  if (!row) throw new Error('LA: no result yet');
-  const w = String(row.winNumber).replace(/\D/g, '');
-  if (w.length < 4) throw new Error('LA: bad winNumber');
+  const d = j?.data?.[0];
+  if (!d || d.status !== 'complete') throw new Error(`LC ${LA_SOURCE}: no result`);
+  const prize = (slug) => d.prizes?.find(p => p.slug === slug)?.numbers?.[0] || null;
+  const special = String(prize('special-prize') || '').replace(/\D/g, '');
+  const top3 = String(prize('three-digit-top') || '').padStart(3, '0').slice(-3);
+  const bottom2 = String(prize('two-digit-bottom') || '').padStart(2, '0').slice(-2);
+  if (special.length < 4 || !/^\d{3}$/.test(top3) || !/^\d{2}$/.test(bottom2))
+    throw new Error(`LC ${LA_SOURCE}: incomplete prizes`);
+  const s5 = special.padStart(5, '0').slice(-5);
   return {
-    date: String(row.roundDate).slice(0, 10),
+    date: String(d.drawDate).slice(0, 10),
     winning: {
-      main: w,
-      last4: w.slice(-4),
-      last3: w.slice(-3),
-      last2: w.slice(-2),
-      bottom2: w.length >= 5 ? w.slice(-5, -3) : w.slice(-2),
+      last4: s5.slice(-4),
+      num4: s5.slice(0, 4),
+      top3,
+      last3: top3,
+      last2: top3.slice(-2),   // เลข 2 ตัวบน = 2 ตัวท้ายของเลข 3 ตัวบน
+      bottom2,                // เลข 2 ตัวล่าง = รางวัลแยก (ไม่ใช่ท้ายของ special)
     },
   };
 }
@@ -278,7 +287,7 @@ async function autoSettleResultsInner() {
   let thai = null, hanoi = null, lao = null;
   if (need.TH) thai = await tryFetch('TH', 'GLO (glo.or.th)', fetchThaiResult);
   if (need.HN) hanoi = await tryFetch('HN', 'XSMB (GitHub)', fetchHanoiResult);
-  if (need.LA) lao = await tryFetch('LA', 'laodl.com', fetchLaoResult);
+  if (need.LA) lao = await tryFetch('LA', 'lotterychecks(lao-union)', fetchLaoResult);
 
   for (const d of draws) {
     if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
@@ -287,7 +296,7 @@ async function autoSettleResultsInner() {
       if (thai && thai.date === drawLocalDate(d)) { src = thai; srcLabel = 'TH(GLO)'; }
       else { out.skipped.push(`${d.draw_code}: รอผล GLO จริง (ล่าสุด ${thai?.date || 'ไม่มีข้อมูล'})`); continue; }
     }
-    else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(laodl)'; }
+    else if (d.type_code === 'LA' && d.cat_code === 'LA') { src = lao; srcLabel = 'LA(lotterychecks)'; }
     else if (d.type_code === 'LA') {
       out.skipped.push(`${d.draw_code}: ลาวพัฒนาไม่มีแหล่งผลอัตโนมัติ — admin กรอกผลจริง`); continue;
     }
