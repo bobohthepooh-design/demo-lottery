@@ -10,24 +10,19 @@ import { mergeBanner } from '../bannerConfig.js';
 import { kindBadge, marketInfo, MODE_BADGE, sourceBadge } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 
-// รายละเอียดผลรางวัลครบทุก field — แสดงเป็นบรรทัด "ชื่อรางวัล: ค่า" (รองรับ top3 ทั้ง array และ string)
+// ผลย่อกระชับสำหรับการ์ดหน้าแรก — เฉพาะเลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
 const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
-function resultLines(w) {
-  if (!w) return [];
-  const L = [];
-  const add = (label, v) => { if (v !== undefined && v !== null && v !== '') L.push(`${label}: ${asList(v)}`); };
-  add('รางวัลที่ 1', w.first);
-  add('เลขหลัก', w.main);
-  add('เลข 4 ตัว', w.num4);
-  add('บน 3 ตัว', w.top3);
-  add('หน้า 3', w.front3);
-  add('ท้าย 3', w.last3);
-  add('ล่าง 2 ตัว', w.bottom2);
-  add('ท้าย 2', w.last2);
-  add('บน 2 ตัว', w.top2);
-  add('ราศี', w.zodiac);
-  if (w.seq?.length) L.push(`ลำดับ: ${w.seq.join('-')}`);
-  return L;
+function compactResult(w) {
+  if (!w) return null;
+  const parts = [];
+  if (w.first) parts.push(`รางวัล1 ${w.first}`);
+  if (w.main || w.num4) parts.push(w.main || w.num4);
+  if (w.zodiac) parts.push(w.zodiac);
+  const top = w.top3 ?? w.last3 ?? w.front3;
+  const bot = w.bottom2 ?? w.last2 ?? w.top2;
+  if (top) parts.push(`บน ${asList(top)}`);
+  if (bot) parts.push(`ล่าง ${asList(bot)}`);
+  return parts.length ? parts.join(' · ') : null;
 }
 
 // นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
@@ -297,13 +292,12 @@ export default function Home() {
                 const ac = typeAccent(g.type_code);
                 const last = g.settled[0];
                 const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
-                const lines = last ? resultLines(last.winning) : [];
+                const txt = last ? compactResult(last.winning) : null;
                 const srcB = last ? sourceBadge(last.result_source) : null;
                 const mi = marketInfo(g.type_code, g.cat_code);
-                const PEND_TH = { open: 'เปิดรับ', scheduled: 'กำหนดการ', closed: 'รอผล' };
                 return (
                   <Link key={g.label + g.type_code} to="/results"
-                    className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-4 transition group flex flex-col">
+                    className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group flex flex-col">
                     {/* header: ตลาด + badge ที่มาผล */}
                     <div className="flex items-center gap-2">
                       <FlagIcon code={g.type_code} className="w-6 h-6 text-[10px]" />
@@ -315,29 +309,13 @@ export default function Home() {
                         ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}` : ''}>{srcB.short}</span>)
                         : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label}</span>)}
                     </div>
-                    {/* body: ผลละเอียดทุก field หรือรอบถัดไป */}
-                    <div className="mt-3 flex-1">
+                    {/* body: ผลย่อบรรทัดเดียว หรือรอบถัดไป */}
+                    <div className="mt-2 flex-1 min-h-[1.25rem]">
                       {last ? (
-                        <div className="space-y-0.5">
-                          {lines.map((l, i) => {
-                            const ix = l.indexOf(':');
-                            return (
-                              <div key={i} className="flex gap-2 text-[11px] leading-relaxed">
-                                <span className="text-navy-400 shrink-0 w-16">{l.slice(0, ix)}</span>
-                                <span className="font-mono tabular-nums text-slate-100">{l.slice(ix + 1).trim()}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <div className="text-xs font-mono tabular-nums text-slate-100 truncate" title={txt}>{txt}</div>
                       ) : (
-                        <div className="space-y-1">
-                          {g.pending.slice(0, 3).map(d => (
-                            <div key={d.id} className="flex items-center justify-between text-[11px]">
-                              <span className="text-navy-300">{fmtDateTime(d.draw_at)}</span>
-                              <span className="text-navy-500">{PEND_TH[d.status] || d.status}</span>
-                            </div>
-                          ))}
-                          {!g.pending.length && <div className="text-[11px] text-navy-500">ไม่มีรอบวันนี้</div>}
+                        <div className="text-[11px] text-navy-400 truncate">
+                          {nxt ? `⏳ ถัดไป ${fmtDateTime(nxt.draw_at)}` : 'ไม่มีรอบวันนี้'}
                         </div>
                       )}
                     </div>
