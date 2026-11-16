@@ -114,18 +114,18 @@ export default function Layout() {
             <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base">DEMO LOTTERY</div>
           </Link>
 
-          {/* ≥1024px: nav อยู่แถวเดียวกับ logo • 640-1023px (tablet): wrap ลงแถวล่างเต็มความกว้าง */}
-          <nav className="hidden sm:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 max-md:order-3 max-md:basis-full max-md:justify-start max-md:pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* ≥1024px: nav แถวเดียวกับ logo • 640-1023px (tablet): แถบ tab เต็มความกว้างแถวล่าง */}
+          <nav className="hidden sm:flex items-center gap-1 overflow-x-auto min-w-0 flex-1 justify-center px-1 max-md:order-3 max-md:basis-full max-md:justify-start max-md:mx-3 max-md:mt-1 max-md:mb-1.5 max-md:rounded-xl max-md:border max-md:border-navy-700/60 max-md:bg-navy-900/50 max-md:px-2 max-md:py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end
-              className={({ isActive }) => `shrink-0 px-2.5 max-md:px-2 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+              className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-[#22d3ee]/10 text-[#67e8f9] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.3)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
               <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
             </NavLink>
             {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
               <Fragment key={g.label}>
-                {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-0.5 shrink-0" />}
+                {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-1 shrink-0 max-md:hidden" />}
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end}
-                    className={({ isActive }) => `shrink-0 px-2.5 max-md:px-2 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+                    className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-[#22d3ee]/10 text-[#67e8f9] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.3)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                     {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
                     {t(n.k)}
                   </NavLink>
@@ -161,7 +161,7 @@ export default function Layout() {
                 )}
               </div>
             )}
-            <div className="hidden sm:block text-right leading-tight" title="วันที่และเวลาปัจจุบัน">
+            <div className="hidden md:block text-right leading-tight" title="วันที่และเวลาปัจจุบัน">
               <div className="text-[10px] text-navy-300">{dateStr}</div>
               <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
             </div>
