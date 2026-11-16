@@ -38,19 +38,5 @@ http://{$LAN_IP} {
 	}
 }
 
-# LAN testing — https://<LAN-IP> (fallback ถ้า browser บังคับ HTTPS เช่น Safari)
-# ใช้ Caddy internal CA → browser จะเตือน cert (กด Advanced → Proceed ได้)
-{$LAN_IP} {
-	tls internal
-	reverse_proxy app:4000
-
-	header {
-		-Server
-		X-Powered-By
-	}
-
-	log {
-		output stdout
-		format console
-	}
-}
+# หมายเหตุ: ไม่เปิด https://<LAN-IP> — internal CA ทำให้ tablet/มือถือเจอ cert warning เข้าไม่ได้ง่าย
+# ถ้าต้องการ HTTPS จริงให้ใช้ DOMAIN จริง (Let's Encrypt) แทน
