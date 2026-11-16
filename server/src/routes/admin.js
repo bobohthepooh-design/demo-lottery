@@ -12,6 +12,8 @@ import * as promo from '../services/promoService.js';
 import * as fetcher from '../services/resultFetcher.js';
 import { broadcast } from '../services/events.js';
 import { config } from '../config.js';
+import { seedDemoDraws, drawSchedulePreview } from '../db/demo-data.js';
+import { notify } from '../services/notifyService.js';
 
 const router = Router();
 router.use(requireAuth, requireMfaVerified, requirePerm('dashboard.admin'));
@@ -696,6 +698,105 @@ router.get('/reports/summary', requirePerm('reports.view'), async (req, res) => 
                              FROM ranked x WHERE x.rn = 1
                              ORDER BY x.draw_at DESC`).all(),
   });
+});
+
+// ---------- system health ----------
+// ภาพรวมสุขภาพระบบ: ผลล่าสุดแต่ละแหล่ง, รอบค้างออกผล, สถานะเปิดรับ
+router.get('/health', requirePerm('dashboard.admin'), async (req, res) => {
+  const d = db();
+  // ผลล่าสุดของแต่ละแหล่งผล (source) + รอบที่ใช้
+  const sources = await d.prepare(`SELECT lr.source, MAX(lr.published_at) AS last_at, COUNT(*) AS total
+    FROM lottery_results lr GROUP BY lr.source ORDER BY last_at DESC`).all();
+  const lastDraws = await d.prepare(`SELECT DISTINCT ON (lr.source)
+      lr.source, d.draw_code, d.draw_at, lt.name_th AS type_name_th, c.name_th AS cat_name_th
+    FROM lottery_results lr
+    JOIN lottery_draws d ON d.id = lr.draw_id
+    JOIN lottery_types lt ON lt.id = d.lottery_type_id
+    LEFT JOIN lottery_categories c ON c.id = d.category_id
+    ORDER BY lr.source, lr.published_at DESC`).all();
+  const bySource = Object.fromEntries(lastDraws.map(r => [r.source, r]));
+  // รอบที่เลยเวลาออกรางวัลแล้วแต่ยังไม่มีผล (ยกเว้นเกมด่วน)
+  const overdue = await d.prepare(`SELECT d.id, d.draw_code, d.draw_at, d.status,
+      lt.code AS type_code, lt.name_th AS type_name_th, c.name_th AS cat_name_th
+    FROM lottery_draws d
+    JOIN lottery_types lt ON lt.id = d.lottery_type_id
+    LEFT JOIN lottery_categories c ON c.id = d.category_id
+    WHERE d.status IN ('open','scheduled','closed') AND d.draw_at <= datetime('now')
+      AND lt.code NOT IN ('SC','HL','KI')
+      AND d.id NOT IN (SELECT draw_id FROM lottery_results)
+    ORDER BY d.draw_at LIMIT 50`).all();
+  const counts = {
+    open: (await d.prepare(`SELECT COUNT(*) c FROM lottery_draws WHERE status='open'`).get()).c,
+    scheduled: (await d.prepare(`SELECT COUNT(*) c FROM lottery_draws WHERE status='scheduled'`).get()).c,
+    settledToday: (await d.prepare(`SELECT COUNT(*) c FROM lottery_results
+      WHERE published_at >= date('now')`).get()).c,
+    pendingBets: (await d.prepare(`SELECT COUNT(*) c FROM bet_items WHERE status='pending'`).get()).c,
+  };
+  res.json({
+    sources: sources.map(s => ({ ...s, last: bySource[s.source] || null })),
+    overdue, counts,
+  });
+});
+
+// ---------- draw schedule ----------
+// ตารางออกรางวัลล่วงหน้าตามตารางเวลาที่กำหนด (read-only — ยังไม่สร้างรอบใน db)
+router.get('/draws/schedule', requirePerm('draws.manage'), async (req, res) => {
+  res.json({ schedule: await drawSchedulePreview() });
+});
+
+// เติมรอบหวยล่วงหน้าทันที (ปกติระบบทำอัตโนมัติทุก 1 นาที — ปุ่มนี้สำหรับบังคับทันที)
+router.post('/draws/seed', requirePerm('draws.manage'), async (req, res) => {
+  const created = await seedDemoDraws();
+  audit({ userId: req.user.id, action: 'draws.seed', detail: { created }, req });
+  res.json({ ok: true, created });
+});
+
+// ---------- broadcast notification ----------
+const broadcastSchema = z.object({
+  title: z.string().min(1).max(200),
+  body: z.string().max(500).optional().default(''),
+  link: z.string().max(200).optional().default(''),
+});
+router.post('/broadcast', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const { title, body, link } = broadcastSchema.parse(req.body);
+    const users = await db().prepare(`SELECT id FROM users WHERE status = 'active'`).all();
+    for (const u of users) notify(u.id, { type: 'system', title, body: body || null, link: link || null });
+    audit({ userId: req.user.id, action: 'notify.broadcast', detail: { title, recipients: users.length }, req });
+    res.json({ ok: true, sent: users.length });
+  } catch (e) { next(e); }
+});
+
+// ---------- bulk wallet adjust ----------
+const bulkAdjustSchema = z.object({
+  userIds: z.array(z.number().int().positive()).min(1).max(200).optional(),
+  all: z.boolean().optional(),
+  amount: z.number().int().positive(),          // สตางค์
+  direction: z.enum(['credit', 'debit']),
+  reason: z.string().min(3).max(500),
+});
+router.post('/wallet/bulk-adjust', requirePerm('wallet.adjust'), async (req, res, next) => {
+  try {
+    const { userIds, all, amount, direction, reason } = bulkAdjustSchema.parse(req.body);
+    let targets = userIds || [];
+    if (all) {
+      targets = (await db().prepare(`SELECT id FROM users WHERE status = 'active'`).all()).map(u => u.id);
+      if (targets.length > 200) return res.status(400).json({ error: 'สมาชิกเกิน 200 คน — เลือกเป็นกลุ่มย่อยแทน' });
+    }
+    if (!targets.length) return res.status(400).json({ error: 'ไม่ได้เลือกสมาชิก' });
+    const baseKey = `bulk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const results = [];
+    for (const uid of targets) {
+      try {
+        const r = await wallet.adminAdjust({ adminId: req.user.id, targetUserId: uid, amount, direction, reason, idempotencyKey: `${baseKey}-${uid}` });
+        results.push({ userId: uid, ok: true, balance: r.balance });
+      } catch (e) {
+        results.push({ userId: uid, ok: false, error: e.message });
+      }
+    }
+    audit({ userId: req.user.id, action: 'wallet.bulk_adjust', detail: { direction, amount, reason, total: targets.length, ok: results.filter(r => r.ok).length }, req });
+    res.json({ ok: true, results, succeeded: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length });
+  } catch (e) { next(e); }
 });
 
 export default router;

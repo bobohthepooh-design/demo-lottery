@@ -22,13 +22,29 @@ export default function AdminDraws() {
   const [form, setForm] = useState({ lottery_type_id: '', category_id: '', draw_code: '', draw_at: '', close_at: '' });
   const [showForm, setShowForm] = useState(false);
   const [editDraw, setEditDraw] = useState(null);
+  const [schedule, setSchedule] = useState(null);
+  const [seedMsg, setSeedMsg] = useState('');
+  const [seedBusy, setSeedBusy] = useState(false);
 
+  const loadSchedule = () => api('/admin/draws/schedule').then(r => setSchedule(r.schedule || [])).catch(() => {});
   const load = () => {
     api('/admin/draws').then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
     api('/admin/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/admin/lottery/categories').then(r => setCats(r.categories)).catch(() => {});
+    loadSchedule();
   };
   useEffect(load, []);
+
+  // บังคับเติมรอบหวยล่วงหน้าทันที (ระบบทำอัตโนมัติทุก 1 นาทีอยู่แล้ว)
+  const runSeed = async () => {
+    setSeedBusy(true); setSeedMsg('');
+    try {
+      const r = await api('/admin/draws/seed', { method: 'POST', body: {} });
+      setSeedMsg(`สร้างรอบใหม่ ${r.created} รอบ`);
+      load();
+    } catch (e) { setSeedMsg('ERROR: ' + e.message); }
+    finally { setSeedBusy(false); }
+  };
 
   const create = async (e) => {
     e.preventDefault();
@@ -116,6 +132,48 @@ export default function AdminDraws() {
           <button className="bg-gold-500 text-navy-950 font-bold py-2 rounded-lg sm:col-span-2">สร้างรอบ</button>
         </form>
       )}
+
+      {/* ตารางออกรางวัลตามตารางเวลาที่กำหนด — read-only preview + ปุ่มเติมรอบล่วงหน้า */}
+      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <div>
+            <h2 className="font-bold text-white text-sm">ตารางออกรางวัล (5 รอบถัดไปต่อตลาด)</h2>
+            <p className="text-[11px] text-navy-400">ระบบสร้างรอบอัตโนมัติทุก 1 นาที — กดปุ่มเพื่อบังคับเติมทันที</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {seedMsg && <span className={`text-xs ${seedMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{seedMsg}</span>}
+            <button onClick={runSeed} disabled={seedBusy}
+              className="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-500 disabled:opacity-40">
+              {seedBusy ? 'กำลังสร้าง…' : '⚡ เติมรอบล่วงหน้า'}
+            </button>
+          </div>
+        </div>
+        {schedule && (() => {
+          // จัดกลุ่มตามตลาด — แสดงเวลาปิดรับ/ออกรางวัลของแต่ละรอบ
+          const groups = {};
+          for (const s of schedule) {
+            const k = `${s.type_code}:${s.category_code || ''}`;
+            (groups[k] = groups[k] || { label: `${s.type_name_th}${s.category_name_th ? ' — ' + s.category_name_th : ''}`, type_code: s.type_code, items: [] }).items.push(s);
+          }
+          return (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {Object.values(groups).map(g => (
+                <div key={g.label} className="bg-navy-900/60 border border-navy-700/60 rounded-lg p-3">
+                  <div className="text-xs font-bold text-white mb-1.5 truncate">{g.label}</div>
+                  <div className="space-y-1">
+                    {g.items.slice(0, 5).map(s => (
+                      <div key={s.drawCode} className="flex justify-between text-[11px] text-navy-300">
+                        <span className="font-mono">{s.drawCode}</span>
+                        <span>ออก {fmtDateTime(s.drawAt)} • ปิด {fmtDateTime(s.closeAt)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">

@@ -156,6 +156,27 @@ function planDraws(types) {
 
 const nowUtc = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 
+// แผนตารางออกรางวัลล่วงหน้า (ยังไม่ insert) — สำหรับหน้า admin ดูตารางเวลา
+export async function drawSchedulePreview() {
+  const types = (await q('SELECT id, code, name_th FROM lottery_types WHERE is_active = 1'))
+    .map(t => ({ ...t, cats: [] }));
+  for (const t of types) {
+    t.cats = await q('SELECT id, code, name_th FROM lottery_categories WHERE lottery_type_id = $1', [t.id]);
+  }
+  const typeById = Object.fromEntries(types.map(t => [t.id, t]));
+  const catById = {};
+  for (const t of types) for (const c of t.cats) catById[c.id] = c;
+  return planDraws(types).map(p => {
+    const t = typeById[p.lotteryTypeId];
+    const c = p.categoryId ? catById[p.categoryId] : null;
+    return {
+      ...p,
+      type_code: t?.code, type_name_th: t?.name_th,
+      category_code: c?.code || null, category_name_th: c?.name_th || null,
+    };
+  }).sort((a, b) => a.drawAt.localeCompare(b.drawAt));
+}
+
 export async function seedDemoDraws() {
   const types = (await q('SELECT id, code FROM lottery_types WHERE is_active = 1'))
     .map(t => ({ ...t, cats: [] }));

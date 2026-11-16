@@ -23,6 +23,7 @@ const groups = [
       { to: '/admin/bets', label: 'ตรวจโพย', icon: 'bets' },
       { to: '/admin/my-bets', label: 'โพยของฉัน', icon: 'bets' },
       { to: '/admin/chat', label: 'แชทสมาชิก', icon: 'chat' },
+      { to: '/admin/broadcast', label: 'แจ้งเตือนสมาชิก', icon: 'volume' },
     ],
   },
   {

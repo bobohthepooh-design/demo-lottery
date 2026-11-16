@@ -32,6 +32,7 @@ import AdminSecurity from './admin/Security.jsx';
 import AdminSettings from './admin/Settings.jsx';
 import AdminBanner from './admin/Banner.jsx';
 import AdminChat from './admin/Chat.jsx';
+import AdminBroadcast from './admin/Broadcast.jsx';
 
 function Protected({ children, admin = false }) {
   const { user, loading, isAdmin } = useAuth();
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="settings" element={<AdminSettings />} />
             <Route path="banner" element={<AdminBanner />} />
             <Route path="chat" element={<AdminChat />} />
+            <Route path="broadcast" element={<AdminBroadcast />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

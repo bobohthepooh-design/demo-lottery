@@ -28,9 +28,11 @@ function StatCard({ icon, label, value, sub, tone = 'gold' }) {
 
 export default function AdminOverview() {
   const [d, setD] = useState(null);
+  const [health, setHealth] = useState(null);
   const [err, setErr] = useState('');
   useEffect(() => {
     api('/admin/overview').then(setD).catch(e => setErr(e.message));
+    api('/admin/health').then(setHealth).catch(() => {});
   }, []);
   if (err) return <div className="text-red-400">เกิดข้อผิดพลาด: {err}</div>;
   if (!d) return <div className="text-navy-300">กำลังโหลด...</div>;
@@ -85,6 +87,55 @@ export default function AdminOverview() {
             <div className="font-bold text-gold-300">มี {d.overdueDraws} รอบที่เลยเวลาออกรางวัลแล้วยังไม่ออกผล</div>
             <div className="text-xs text-navy-300">ไปที่ "ประเภทหวย/กติกา → ออกผลรางวัล" เพื่อตรวจผลอัตโนมัติหรือกรอกผลเอง</div>
           </div>
+        </div>
+      )}
+
+      {/* สุขภาพระบบ — ผลล่าสุดแต่ละแหล่ง + รอบค้างออกผล */}
+      {health && (
+        <div className="bg-navy-800 border border-navy-700 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-white">สุขภาพระบบ</h2>
+            <span className="text-[11px] text-navy-400">
+              รอบเปิด {health.counts?.open ?? 0} • กำหนดการ {health.counts?.scheduled ?? 0} • ออกผลวันนี้ {health.counts?.settledToday ?? 0} • โพยรอผล {health.counts?.pendingBets ?? 0}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
+              <thead className="text-navy-400 text-xs">
+                <tr><th className="text-left py-1.5 pr-4">แหล่งผล</th><th className="text-left py-1.5 pr-4">ผลล่าสุด</th><th className="text-left py-1.5 pr-4">รอบ</th><th className="text-left py-1.5 pr-4">ตลาด</th><th className="text-right py-1.5">รวม</th></tr>
+              </thead>
+              <tbody className="divide-y divide-navy-700/60">
+                {health.sources.map(s => {
+                  const stale = s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3;
+                  return (
+                    <tr key={s.source}>
+                      <td className="py-2 pr-4 font-mono text-xs text-navy-200">{s.source}</td>
+                      <td className={`py-2 pr-4 text-xs ${stale ? 'text-amber-300' : 'text-green-300'}`}>
+                        {s.last_at ? fmtDateTime(s.last_at) : '—'}{stale ? ' ⚠️' : ''}
+                      </td>
+                      <td className="py-2 pr-4 text-xs text-navy-300">{s.last?.draw_code || '—'}</td>
+                      <td className="py-2 pr-4 text-xs text-navy-300">{s.last ? `${s.last.type_name_th}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}</td>
+                      <td className="py-2 text-right text-xs text-navy-300">{s.total}</td>
+                    </tr>
+                  );
+                })}
+                {!health.sources.length && <tr><td colSpan={5} className="py-3 text-navy-400 text-xs">ยังไม่มีผลรางวัลในระบบ</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          {health.overdue?.length > 0 && (
+            <div className="mt-3 border-t border-navy-700/60 pt-3">
+              <div className="text-xs font-bold text-red-300 mb-1.5">⚠️ รอบค้างออกผล ({health.overdue.length})</div>
+              <div className="flex flex-wrap gap-1.5">
+                {health.overdue.slice(0, 20).map(d => (
+                  <span key={d.id} className="text-[11px] bg-red-500/10 border border-red-500/30 text-red-300 rounded px-2 py-1">
+                    {d.type_name_th}{d.cat_name_th ? ` — ${d.cat_name_th}` : ''} • {fmtDateTime(d.draw_at)}
+                  </span>
+                ))}
+                {health.overdue.length > 20 && <span className="text-[11px] text-navy-400">+อีก {health.overdue.length - 20} รอบ</span>}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
