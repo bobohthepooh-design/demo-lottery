@@ -55,9 +55,31 @@ function FlagHR() {
     </svg>
   );
 }
-const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN, HR: FlagHR };
+function FlagGS() {
+  // สลากออมสิน (GSB) — ตึกธนาคารทองบนพื้นเขียวมรกต
+  return (
+    <svg viewBox="0 0 30 20" className="w-full h-full" aria-label="GS">
+      <defs>
+        <linearGradient id="gs-flag-g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#065f46" />
+          <stop offset="1" stopColor="#022c22" />
+        </linearGradient>
+      </defs>
+      <rect width="30" height="20" fill="url(#gs-flag-g)" />
+      {/* หลังคา */}
+      <path d="M3 8 L15 3 L27 8 Z" fill="#f5c518" />
+      <rect x="3" y="8" width="24" height="1.6" fill="#d4a017" />
+      {/* เสา 4 ต้น */}
+      {[6, 11, 16, 21].map(x => <rect key={x} x={x - 0.8} y="9.6" width="1.6" height="7" fill="#f5c518" />)}
+      {/* ฐานตึก */}
+      <rect x="3" y="16.6" width="24" height="1.8" fill="#f5c518" />
+      <rect x="5" y="18.4" width="20" height="1.6" fill="#d4a017" />
+    </svg>
+  );
+}
+const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN, HR: FlagHR, GS: FlagGS };
 
-const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲', GS: '🏦' };
+const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲' };
 export function FlagIcon({ code, className = '' }) {
   const F = FLAGS[code];
   if (!F) return <span className={className}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
