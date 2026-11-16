@@ -106,95 +106,108 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 bg-gradient-to-r from-[#040a14] via-[#0a1526] to-[#040a14] backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/30">
         <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
-        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between min-h-16 py-2 gap-y-1">
-          <Link to="/" className="flex items-center gap-2.5">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
               <img src="/icon.svg" alt="โลโก้" className="w-8 h-8" />
             </div>
-            <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base">DEMO LOTTERY</div>
+            <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base hidden min-[420px]:block">DEMO LOTTERY</div>
           </Link>
 
-          {/* เมนูหลัก — pill bar กระจก: ≥1024px อยู่แถวเดียวกับ logo • 640-1023px (tablet) เป็นแถบเต็มแถวล่าง */}
-          <nav className="hidden sm:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur px-1.5 py-1 max-md:order-3 max-md:basis-full max-md:mx-3 max-md:mt-1 max-md:mb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <NavLink to="/" end
-              className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
-              <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
-            </NavLink>
-            {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
-              <Fragment key={g.label}>
-                {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-md:hidden" />}
-                {g.items.map(n => (
-                  <NavLink key={n.to} to={n.to} end={n.end}
-                    className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
-                    {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
-                    {t(n.k)}
-                  </NavLink>
-                ))}
-              </Fragment>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            {isAdmin && (
-              <div className="relative hidden sm:block" onClick={e => e.stopPropagation()}>
-                <button onClick={() => setAdminMenuOpen(v => !v)}
-                  className={`px-3 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
-                  <Icon name="dashboard" className="w-5 h-5" />{t('admin')}
-                  <svg viewBox="0 0 24 24" className={`w-3.5 h-3.5 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                {adminMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border border-gold-500/30 bg-[#0a1526]/98 backdrop-blur-md shadow-2xl shadow-black/60 py-1.5 z-50">
-                    <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-gold-400/80 border-b border-navy-700/60 mb-1">Admin Panel</div>
-                    {adminNavGroups.map(g => (
-                      <div key={g.label}>
-                        <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-400">{g.label}</div>
-                        {g.items.map(i => (
-                          <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
-                            className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
-                            {i.icon && <Icon name={i.icon} className="w-5 h-5 shrink-0" />}
-                            {i.label}
-                          </NavLink>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {/* เมนูหลัก — glass pill bar เดียวจบ: ลิงก์เลื่อนในตัว + เวลา/กระดิ่ง/เครดิต/ปุ่มทั้งหมดปักขวาสุด
+              ≥640px (tablet/desktop): แถวเดียวกับ logo • tablet = แถบเต็มแถวล่างของ header */}
+          <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-md:order-3 max-md:basis-full max-md:mx-3 max-md:mt-1 max-md:mb-1.5">
+            <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <NavLink to="/" end
+                className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
+              </NavLink>
+              {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
+                <Fragment key={g.label}>
+                  {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-md:hidden" />}
+                  {g.items.map(n => (
+                    <NavLink key={n.to} to={n.to} end={n.end}
+                      className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                      {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
+                      {t(n.k)}
+                    </NavLink>
+                  ))}
+                </Fragment>
+              ))}
+            </nav>
+            {/* controls — ปักขวาสุดของ pill bar เสมอ ไม่เลื่อนตามลิงก์ */}
+            <div className="flex items-center gap-1 shrink-0 pl-2 ml-1 border-l border-navy-700/60">
+              {isAdmin && (
+                <div className="relative" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => setAdminMenuOpen(v => !v)}
+                    className={`px-2.5 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
+                    <Icon name="dashboard" className="w-4.5 h-4.5" />{t('admin')}
+                    <svg viewBox="0 0 24 24" className={`w-3 h-3 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  {adminMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border border-gold-500/30 bg-[#0a1526]/98 backdrop-blur-md shadow-2xl shadow-black/60 py-1.5 z-50">
+                      <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-gold-400/80 border-b border-navy-700/60 mb-1">Admin Panel</div>
+                      {adminNavGroups.map(g => (
+                        <div key={g.label}>
+                          <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-400">{g.label}</div>
+                          {g.items.map(i => (
+                            <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
+                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
+                              {i.icon && <Icon name={i.icon} className="w-5 h-5 shrink-0" />}
+                              {i.label}
+                            </NavLink>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 rounded-lg border border-navy-600/80 bg-navy-900/60 px-2 py-1" title="วันที่และเวลาปัจจุบัน">
+                <Icon name="clock" className="w-3.5 h-3.5 text-gold-400/80 shrink-0" />
+                <div className="leading-tight text-right">
+                  <div className="text-[9px] text-navy-300">{dateStr}</div>
+                  <div className="text-[11px] font-mono font-bold text-gold-300">{timeStr}</div>
+                </div>
               </div>
-            )}
-            <div className="hidden md:flex items-center gap-2 rounded-lg border border-navy-600/80 bg-navy-900/60 px-2.5 py-1.5" title="วันที่และเวลาปัจจุบัน">
-              <Icon name="clock" className="w-4 h-4 text-gold-400/80 shrink-0" />
-              <div className="leading-tight text-right">
-                <div className="text-[10px] text-navy-300">{dateStr}</div>
-                <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
-              </div>
+              {user ? (
+                <>
+                  <NotificationBell />
+                  <Link to="/wallet" className="flex items-center gap-1.5 rounded-full border border-gold-400/60 bg-gradient-to-r from-gold-500/25 to-gold-500/5 px-2.5 py-1 hover:border-gold-300 transition">
+                    <Icon name="wallet" className="w-3.5 h-3.5 text-black" />
+                    <span className="text-[10px] font-black text-black tracking-wider">{t('credit')}</span>
+                    <span className="text-sm font-black text-black font-mono">{satang(balance)}</span>
+                  </Link>
+                  <button onClick={doLogout} title="ออกจากระบบ"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-red-300 hover:border-red-500/50 transition">
+                    <Icon name="logout" className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <div className="flex gap-1.5">
+                  <Link to="/login" className="text-[13px] tracking-wide px-3 py-1.5 rounded-md border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition">{t('login')}</Link>
+                  <Link to="/register" className="text-[13px] tracking-wide px-3 py-1.5 rounded-md bg-gradient-to-b from-gold-400 to-gold-600 text-navy-950 font-bold hover:brightness-110 transition">{t('register')}</Link>
+                </div>
+              )}
+              <button
+                onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
+                title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
+                <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4" />
+              </button>
             </div>
-            {user ? (
-              <>
-                <NotificationBell />
-                <Link to="/wallet" className="hidden sm:flex items-center gap-2 rounded-full border border-gold-400/60 bg-gradient-to-r from-gold-500/25 to-gold-500/5 px-3.5 py-1.5 hover:shadow-[0_0_18px_rgba(34,211,238,0.35)] hover:border-gold-300 transition">
-                  <Icon name="wallet" className="w-4 h-4 text-black" />
-                  <span className="text-[11px] font-black text-black tracking-wider">{t('credit')}</span>
-                  <span className="text-base font-black text-black font-mono">{satang(balance)} บาท</span>
-                </Link>
-                <button onClick={doLogout} title="ออกจากระบบ"
-                  className="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-red-300 hover:border-red-500/50 transition">
-                  <Icon name="logout" className="w-4.5 h-4.5" />
-                </button>
-              </>
-            ) : (
-              <div className="flex gap-2">
-                <Link to="/login" className="text-[13px] tracking-wide px-3.5 py-1.5 rounded-md border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition">{t('login')}</Link>
-                <Link to="/register" className="text-[13px] tracking-wide px-3.5 py-1.5 rounded-md bg-gradient-to-b from-gold-400 to-gold-600 text-navy-950 font-bold hover:brightness-110 transition">{t('register')}</Link>
-              </div>
-            )}
-            <div className="sm:hidden text-xs font-mono font-bold text-gold-300">{timeStr}</div>
+          </div>
+
+          {/* มือถือ (<640px) — เวลา + เสียง + hamburger (เมนูอยู่ใน bottom nav + overlay) */}
+          <div className="flex items-center gap-2 sm:hidden">
+            <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
             <button
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
               title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
               className="flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
               <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4.5 h-4.5" />
             </button>
-            <button className="sm:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
+            <button className="text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
           </div>
         </div>
       </header>
