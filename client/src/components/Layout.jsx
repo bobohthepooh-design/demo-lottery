@@ -161,20 +161,24 @@ export default function Layout() {
                 )}
               </div>
             )}
-            <div className="hidden md:block text-right leading-tight" title="วันที่และเวลาปัจจุบัน">
-              <div className="text-[10px] text-navy-300">{dateStr}</div>
-              <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
+            <div className="hidden md:flex items-center gap-2 rounded-lg border border-navy-600/80 bg-navy-900/60 px-2.5 py-1.5" title="วันที่และเวลาปัจจุบัน">
+              <Icon name="clock" className="w-4 h-4 text-gold-400/80 shrink-0" />
+              <div className="leading-tight text-right">
+                <div className="text-[10px] text-navy-300">{dateStr}</div>
+                <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
+              </div>
             </div>
             {user ? (
               <>
                 <NotificationBell />
                 <Link to="/wallet" className="hidden sm:flex items-center gap-2 rounded-full border border-gold-400/60 bg-gradient-to-r from-gold-500/25 to-gold-500/5 px-3.5 py-1.5 hover:shadow-[0_0_18px_rgba(34,211,238,0.35)] hover:border-gold-300 transition">
-                  <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                  <Icon name="wallet" className="w-4 h-4 text-black" />
                   <span className="text-[11px] font-black text-black tracking-wider">{t('credit')}</span>
                   <span className="text-base font-black text-black font-mono">{satang(balance)} บาท</span>
                 </Link>
-                <button onClick={doLogout} className="hidden sm:block text-[13px] tracking-wide text-navy-300 hover:text-gold-200 border border-navy-700 rounded-md px-3 py-1.5 transition">
-                  {t('logout')}
+                <button onClick={doLogout} title="ออกจากระบบ"
+                  className="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-red-300 hover:border-red-500/50 transition">
+                  <Icon name="logout" className="w-4.5 h-4.5" />
                 </button>
               </>
             ) : (
@@ -187,8 +191,8 @@ export default function Layout() {
             <button
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
               title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
-              className="text-sm px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition inline-flex items-center">
-              <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4" />
+              className="flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
+              <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4.5 h-4.5" />
             </button>
             <button className="sm:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
           </div>

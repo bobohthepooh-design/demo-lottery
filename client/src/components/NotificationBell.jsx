@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import { Icon } from './icons.jsx';
 
 const TYPE_ICON = { win: '🏆', credit: '💰', deposit: '💳', withdraw: '🏧', refund: '↩️', system: '🔔' };
 
@@ -48,8 +49,8 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={ref}>
       <button onClick={() => setOpen(!open)} title="การแจ้งเตือน"
-        className="relative text-navy-200 hover:text-gold-300 px-2 py-1.5 transition">
-        🔔
+        className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
+        <Icon name="bell" className="w-4.5 h-4.5" />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
             {unread > 99 ? '99+' : unread}

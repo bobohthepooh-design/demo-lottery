@@ -133,6 +133,24 @@ const PATHS = {
       <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M6 9.5a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13.5 6 9.5" />
+      <path d="M10 18.5a2 2 0 0 0 4 0" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M14 4.5h3.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H14" />
+      <path d="m10 8-4 4 4 4M6 12h9.5" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
 };
 
 export function Icon({ name, className = 'w-4 h-4' }) {
