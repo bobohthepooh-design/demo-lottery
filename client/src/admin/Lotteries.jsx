@@ -340,8 +340,10 @@ export default function AdminLotteries() {
                             {r.is_active ? 'ใช้งาน' : 'ปิด'}
                           </button>
                         </td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="px-3 py-2.5 text-right whitespace-nowrap">
                           <button onClick={() => setEditRule({ ...r })} className="text-gold-400 text-xs hover:underline">แก้ไข</button>
+                          <button onClick={() => setEditRule({ ...r, id: null, bet_type: `${r.bet_type}_copy`, name_th: `${r.name_th} (สำเนา)` })}
+                            className="text-sky-400 text-xs hover:underline ml-2" title="คัดลอกกติกานี้เป็นกติกาใหม่ (เปลี่ยน bet_type ก่อนบันทึก)">⧉ คัดลอก</button>
                         </td>
                       </tr>
                     ))}
