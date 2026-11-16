@@ -114,18 +114,18 @@ export default function Layout() {
             <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base">DEMO LOTTERY</div>
           </Link>
 
-          {/* ≥1024px: nav แถวเดียวกับ logo • 640-1023px (tablet): แถบ tab เต็มความกว้างแถวล่าง */}
-          <nav className="hidden sm:flex items-center gap-1 overflow-x-auto min-w-0 flex-1 justify-center px-1 max-md:order-3 max-md:basis-full max-md:justify-start max-md:mx-3 max-md:mt-1 max-md:mb-1.5 max-md:rounded-xl max-md:border max-md:border-navy-700/60 max-md:bg-navy-900/50 max-md:px-2 max-md:py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* เมนูหลัก — pill bar กระจก: ≥1024px อยู่แถวเดียวกับ logo • 640-1023px (tablet) เป็นแถบเต็มแถวล่าง */}
+          <nav className="hidden sm:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur px-1.5 py-1 max-md:order-3 max-md:basis-full max-md:mx-3 max-md:mt-1 max-md:mb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end
-              className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-[#22d3ee]/10 text-[#67e8f9] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.3)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+              className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
               <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
             </NavLink>
             {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
               <Fragment key={g.label}>
-                {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-1 shrink-0 max-md:hidden" />}
+                {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-md:hidden" />}
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end}
-                    className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-[#22d3ee]/10 text-[#67e8f9] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.3)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                    className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                     {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
                     {t(n.k)}
                   </NavLink>
