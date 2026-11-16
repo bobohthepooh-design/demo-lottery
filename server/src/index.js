@@ -64,12 +64,10 @@ if (config.env !== 'test') {
   const cleanup = async () => {
     try {
       const d = getDb();
-      const s = await d.prepare(`DELETE FROM user_sessions
-        WHERE expires_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '1 day'
-           OR revoked_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '7 days'`).run();
-      const o = await d.prepare(`DELETE FROM otp_codes
-        WHERE expires_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '1 day'
-           OR (used = 1 AND created_at < to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') - interval '1 day')`).run();
+      const cutoff1 = `to_char((now() AT TIME ZONE 'UTC') - interval '1 day','YYYY-MM-DD HH24:MI:SS')`;
+      const cutoff7 = `to_char((now() AT TIME ZONE 'UTC') - interval '7 days','YYYY-MM-DD HH24:MI:SS')`;
+      const s = await d.prepare(`DELETE FROM user_sessions WHERE expires_at < ${cutoff1} OR revoked_at < ${cutoff7}`).run();
+      const o = await d.prepare(`DELETE FROM otp_codes WHERE expires_at < ${cutoff1} OR (used = 1 AND created_at < ${cutoff1})`).run();
       if (s.changes || o.changes) console.log(`[cleanup] sessions -${s.changes}, otp -${o.changes}`);
     } catch (e) { console.error('[cleanup] failed:', e.message); }
   };

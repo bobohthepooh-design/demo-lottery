@@ -225,4 +225,29 @@ router.get('/check', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ผลรางวัล + ตารางออกรางวัล "วันนี้" (วันไทย) — รวมทุกตลาดในจุดเดียว
+router.get('/today', async (req, res) => {
+  const bkkToday = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const draws = await getDb().prepare(`
+    SELECT d.id, d.draw_code, d.draw_at, d.close_at, d.status,
+           lt.code AS type_code, lt.name_th AS type_name_th,
+           c.code AS category_code, c.name_th AS category_name_th,
+           lr.winning_numbers, lr.source AS result_source, lr.published_at
+    FROM lottery_draws d
+    JOIN lottery_types lt ON lt.id = d.lottery_type_id
+    LEFT JOIN lottery_categories c ON c.id = d.category_id
+    LEFT JOIN lottery_results lr ON lr.draw_id = d.id
+    WHERE lt.is_active = 1 AND d.draw_code NOT LIKE '%-STANDING'
+      AND to_char((d.draw_at::timestamp + interval '7 hours'), 'YYYY-MM-DD') = $1
+    ORDER BY d.draw_at`).all(bkkToday);
+  res.json({
+    date: bkkToday,
+    draws: draws.map(d => {
+      let winning = null;
+      try { winning = d.winning_numbers ? JSON.parse(d.winning_numbers) : null; } catch {}
+      return { ...d, winning_numbers: undefined, winning, result_kind: d.result_source ? 'real' : null };
+    }),
+  });
+});
+
 export default router;

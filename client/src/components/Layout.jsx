@@ -17,6 +17,7 @@ import { t } from '../i18n.js';
 
 const nav = [
   { to: '/winners', k: 'winners' },
+  { to: '/results', k: 'results' },
   { to: '/my-bets', k: 'mybets', auth: true, memberOnly: true },
   { to: '/performance', k: 'perf', auth: true, memberOnly: true },
   { to: '/wallet', k: 'wallet', auth: true, memberOnly: true },
