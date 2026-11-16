@@ -53,7 +53,6 @@ export async function fetchThaiResult() {
       front3: vals(g.last3f),
       top3: vals(g.last3b),
       bottom2: vals(g.last2)[0] || null,
-      near1: vals(g.near1),
     },
   };
 }
@@ -108,7 +107,6 @@ export function generateThaiResult(drawCode) {
       front3: [n3(), n3()],
       top3: [n3(), n3()],
       bottom2: pad(rnd(rng, 0, 99), 2),
-      near1: [pad(rnd(rng, 0, 9), 1)],
     },
   };
 }
