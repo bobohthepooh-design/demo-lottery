@@ -40,11 +40,11 @@ export default function AdminMembers() {
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
-            <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="text-left px-4 py-3">18+/RG</th><th className="px-4 py-3"></th></tr>
+            <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="text-left px-4 py-3">18+/RG</th><th className="px-4 py-3 sticky right-0 bg-navy-900 z-10"></th></tr>
           </thead>
           <tbody className="divide-y divide-navy-700">
             {members.map(m => (
-              <tr key={m.id} className="hover:bg-navy-700/40">
+              <tr key={m.id} className="group hover:bg-navy-700/40">
                 <td className="px-4 py-3 text-navy-300">{m.id}</td>
                 <td className="px-4 py-3"><div className="text-white font-semibold">{m.username}</div><div className="text-xs text-navy-300">{m.displayName}</div></td>
                 <td className="px-4 py-3 text-navy-300">{m.email}</td>
@@ -59,7 +59,7 @@ export default function AdminMembers() {
                       : <span className="text-navy-400">—</span>}
                   {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-4 py-3 whitespace-nowrap sticky right-0 bg-navy-800 group-hover:bg-navy-700/40 z-10">
                   <button onClick={() => setEdit({ ...m })} className="text-gold-400 text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
                 </td>
