@@ -6,6 +6,7 @@ import { sourceBadge } from '../resultSource.js';
 import { typeAccent } from '../typeAccent.js';
 import { toast } from '../components/toast.js';
 import { satang } from '../api.js';
+import EmptyState from '../components/EmptyState.jsx';
 
 const STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับแทง', closed: 'ปิดรับแล้ว รอผล',
@@ -64,6 +65,22 @@ function summarizeWinning(w) {
   if (w.bottom2) parts.push('ล่าง:' + w.bottom2);
   if (w.zodiac) parts.push(w.zodiac);
   return parts.join(' · ') || JSON.stringify(w).slice(0, 60);
+}
+
+// เลขเด่นสำหรับ hero display — รางวัลใหญ่/เลขหลัก แสดงตัวใหญ่กลาง
+function heroNumbers(w) {
+  if (!w) return [];
+  const out = [];
+  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  const first = firstOf(w.first ?? w.p1);
+  if (first) out.push({ label: 'รางวัลที่ 1', num: first });
+  const main = w.main || w.num4;
+  if (main) out.push({ label: w.num4 && !w.main ? 'เลข 4 ตัว' : 'เลขหลัก', num: main });
+  const top = asList(w.top3 ?? w.last3 ?? w.front3);
+  if (top) out.push({ label: 'เลขบน 3 ตัว', num: top });
+  const bot = w.bottom2 ?? w.last2 ?? w.top2;
+  if (bot) out.push({ label: 'เลขล่าง 2 ตัว', num: asList(bot) });
+  return out.slice(0, 4);
 }
 
 function marketKey(r) { return `${r.type_code}|${r.category_code || ''}`; }
@@ -182,7 +199,25 @@ export default function Results() {
             {STATUS_TH[d.status] || d.status}
           </span>
         </div>
-        {sum && sum.length > 0 && (
+        {d.status === 'settled' && d.winning && heroNumbers(d.winning).length > 0 && (
+          <div className="announce-hero rounded-xl mt-2 px-4 py-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {heroNumbers(d.winning).map(h => (
+                <div key={h.label} className="text-center">
+                  <div className="text-[10px] text-navy-400 font-semibold tracking-wide">{h.label}</div>
+                  <div className="announce-num text-xl sm:text-2xl leading-tight mt-0.5">{h.num}</div>
+                </div>
+              ))}
+            </div>
+            {sum && sum.length > 0 && (
+              <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
+                className="mt-2 w-full text-left text-[11px] text-navy-300 hover:text-white transition">
+                {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
+              </button>
+            )}
+          </div>
+        )}
+        {!(d.status === 'settled' && d.winning && heroNumbers(d.winning).length > 0) && sum && sum.length > 0 && (
           <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
             className="mt-1.5 w-full text-left text-xs text-slate-100 bg-navy-900/80 hover:bg-navy-900 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide transition">
             {compact || sum[0]}
@@ -234,7 +269,12 @@ export default function Results() {
           📅 ตารางออกรางวัล {thaiShort(date)} ({draws.length} รอบ)
         </div>
         {!data && <div className="p-4 text-sm text-navy-400">กำลังโหลด…</div>}
-        {data && !draws.length && <div className="p-4 text-sm text-navy-400">ไม่มีรอบออกรางวัลในวันนี้</div>}
+        {data && !draws.length && (
+          <div className="p-4">
+            <EmptyState emoji="📅" title="ไม่มีรอบออกรางวัลในวันนี้"
+              hint="ลองเลือกวันอื่น หรือรอระบบสร้างรอบใหม่" />
+          </div>
+        )}
         {groups.map(g => {
           const done = g.items.filter(d => d.status === 'settled').length;
           const ac = typeAccent(g.type_code);

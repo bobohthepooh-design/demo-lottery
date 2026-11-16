@@ -112,11 +112,18 @@ function ShareButtons({ s }) {
   );
 }
 
-function ItemRow({ i }) {
+function ItemRow({ i, paper = false }) {
   const emoji = ITEM_EMOJI[i.status] || '⏳';
   const anim = i.status === 'won' ? 'animate-win' : i.status === 'lost' ? 'animate-lose' : '';
+  // โหมดกระดาษ (paper) — พื้นครีม ตัวหนังสือน้ำตาลเข้ม อ่านเหมือนโพยจริง
+  const rowCls = paper
+    ? `flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-[#ecd9a8] border border-[#b89b62]' : 'bg-[#fbf3df]/70'}`
+    : `flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-green-500/10 border border-green-500/30' : 'bg-navy-900'}`;
+  const numCls = paper ? 'text-[#8a5a00]' : 'text-gold-300';
+  const ruleCls = paper ? 'text-[#6b5636]' : 'text-navy-300';
+  const dimCls = paper ? 'text-[#8a7a5c]' : 'text-navy-400';
   return (
-    <div className={`flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-green-500/10 border border-green-500/30' : 'bg-navy-900'}`}>
+    <div className={rowCls}>
       <div className="flex items-center gap-2 min-w-0">
         <span className={`text-lg ${anim}`}>{emoji}</span>
         <div className="min-w-0">
@@ -126,39 +133,39 @@ function ItemRow({ i }) {
               return (
                 <>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-gold-300 font-bold text-sm">{inst.head}</span>
-                    <span className="text-navy-300 text-xs truncate">{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
+                    <span className={`font-bold text-sm ${paper ? 'text-[#8a5a00]' : 'text-gold-300'}`}>{inst.head}</span>
+                    <span className={`text-xs truncate ${ruleCls}`}>{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
                   </div>
-                  {inst.sub && <div className="text-[11px] text-sky-300/90">{inst.sub}</div>}
+                  {inst.sub && <div className={`text-[11px] ${paper ? 'text-[#2b6cb0]' : 'text-sky-300/90'}`}>{inst.sub}</div>}
                 </>
               );
             }
             return (
               <div className="flex items-center gap-2">
-                <code className="text-gold-300 font-mono text-base">{i.number}</code>
-                <span className="text-navy-300 text-xs truncate">{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
-                {i.is_ann && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">เลขอั้น</span>}
-                {i.is_tod ? <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300 shrink-0">โต๊ด</span> : null}
+                <code className={`font-mono text-base ${numCls}`}>{i.number}</code>
+                <span className={`text-xs truncate ${ruleCls}`}>{i.rule_name_th || BET_TYPE_LABELS[i.bet_type] || i.bet_type}</span>
+                {i.is_ann && <span className={`text-[9px] font-bold px-1 py-0.5 rounded shrink-0 ${paper ? 'bg-amber-600/20 border border-amber-700/50 text-amber-800' : 'bg-amber-500/20 border border-amber-500/50 text-amber-300'}`}>เลขอั้น</span>}
+                {i.is_tod ? <span className={`text-[9px] font-bold px-1 py-0.5 rounded shrink-0 ${paper ? 'bg-sky-700/15 border border-sky-700/40 text-sky-800' : 'bg-sky-500/20 border border-sky-500/50 text-sky-300'}`}>โต๊ด</span> : null}
               </div>
             );
           })()}
-          <div className="text-[11px] text-navy-400">เดิมพัน {satang(i.amount)} บาท</div>
+          <div className={`text-[11px] ${dimCls}`}>เดิมพัน {satang(i.amount)} บาท</div>
         </div>
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
-          <div className={`font-bold text-green-400 ${anim}`}>
+          <div className={`font-bold ${anim} ${paper ? 'text-[#1e7d46]' : 'text-green-400'}`}>
             <span className="text-base">💰</span> +{satang(i.payout)} บาท
           </div>
         )}
-        {i.status === 'lost' && <div className={`text-red-400/90 text-xs ${anim}`}>เสีย {satang(i.amount)} บาท</div>}
+        {i.status === 'lost' && <div className={`text-xs ${anim} ${paper ? 'text-[#8a4b2a]' : 'text-red-400/90'}`}>เสีย {satang(i.amount)} บาท</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
-            <div className="text-blue-300">รอผล</div>
-            <div className="text-gold-300/80">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
+            <div className={paper ? 'text-[#2b6cb0]' : 'text-blue-300'}>รอผล</div>
+            <div className={paper ? 'text-[#8a5a00]/80' : 'text-gold-300/80'}>ถ้าถูก ได้ {satang(potential(i))} บาท</div>
           </div>
         )}
-        {i.status === 'cancelled' && <div className="text-navy-400 text-xs">ยกเลิก</div>}
+        {i.status === 'cancelled' && <div className={`text-xs ${dimCls}`}>ยกเลิก</div>}
       </div>
     </div>
   );
@@ -382,20 +389,45 @@ export default function MyBets() {
               </div>
             </div>
             {open === s.id && (
-              <div className="border-t border-navy-700 px-5 py-3 space-y-2">
-                {s.items.map(i => <ItemRow key={i.id} i={i} />)}
-                {s.total_payout > 0 && (
-                  <div className="text-right space-y-0.5 pt-1">
-                    <div className="text-green-400 font-bold animate-coin">
-                      🎉 รวมเงินรางวัล {satang(s.total_payout)} บาท
-                    </div>
-                    <div className={`text-xs font-semibold ${net >= 0 ? 'text-gold-300' : 'text-navy-400'}`}>
-                      {net >= 0 ? `กำไรสุทธิ ${satang(net)} บาท` : `ขาดทุนสุทธิ ${satang(-net)} บาท`}
-                    </div>
+              <div className="border-t border-navy-700 px-5 py-4 space-y-3">
+                {/* โพยสไตล์กระดาษ — เลข monospace + เส้นประ + stamp ผลรางวัลเอียง */}
+                <div className="paper-slip rounded-lg px-4 py-4 pt-5 pb-6 mx-auto max-w-xl">
+                  {s.status === 'won' && <div className="paper-stamp win">ถูกรางวัล</div>}
+                  {s.status === 'lost' && <div className="paper-stamp" style={{ borderColor: '#8a7a5c', color: '#8a7a5c' }}>ไม่ถูก</div>}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold tracking-widest text-[#8a7a5c] uppercase">โพยแทงหวย</span>
+                    <span className="paper-num text-sm text-[#8a5a00]">{s.slip_ref}</span>
                   </div>
-                )}
+                  <div className="paper-dash mb-2" />
+                  <div className="space-y-1.5">
+                    {s.items.map(i => <ItemRow key={i.id} i={i} paper />)}
+                  </div>
+                  <div className="paper-dash my-2" />
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#6b5636] font-semibold">ยอดรวมเดิมพัน</span>
+                    <span className="paper-num text-[#2b2118]">{satang(s.total_stake)} บาท</span>
+                  </div>
+                  {s.total_payout > 0 && (
+                    <>
+                      <div className="flex items-center justify-between text-sm mt-1">
+                        <span className="text-[#1e7d46] font-bold">เงินรางวัลรวม</span>
+                        <span className="paper-num text-[#1e7d46]">{satang(s.total_payout)} บาท</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs mt-1">
+                        <span className="text-[#6b5636]">กำไร/ขาดทุนสุทธิ</span>
+                        <span className={`font-bold ${net >= 0 ? 'text-[#1e7d46]' : 'text-[#8a4b2a]'}`}>
+                          {net >= 0 ? `+${satang(net)}` : `-${satang(-net)}`} บาท
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="paper-dash mt-2" />
+                  <div className="text-center text-[10px] text-[#8a7a5c] mt-2 tracking-wide">
+                    {drawLabel(s) || s.draw_code} • แทงเมื่อ {fmtDateTime(s.created_at)} • เครดิตเสมือนเพื่อการศึกษา
+                  </div>
+                </div>
                 {s.total_payout >= SHARE_THRESHOLD && (
-                  <div className="pt-1 border-t border-navy-700/60">
+                  <div className="pt-1">
                     <ShareButtons s={s} />
                   </div>
                 )}

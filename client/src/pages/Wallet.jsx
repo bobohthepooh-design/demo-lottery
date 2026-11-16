@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
+import EmptyState from '../components/EmptyState.jsx';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -177,7 +178,7 @@ export default function Wallet() {
               </div>
             </div>
           ))}
-          {!loading && !txs.length && <div className="px-4 py-8 text-center"><span className="text-3xl">📭</span><div className="text-navy-300 mt-1">ยังไม่มีธุรกรรม — เติมเครดิตเพื่อเริ่มใช้งาน</div></div>}
+          {!loading && !txs.length && <div className="p-4"><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน — ฝาก/ถอนเป็นเครดิตเสมือน" /></div>}
           {loading && <div className="p-4 space-y-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-14 w-full" />)}</div>}
         </div>
         {/* Desktop: ตารางเต็ม */}
@@ -199,7 +200,7 @@ export default function Wallet() {
                   <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
                 </tr>
               ))}
-              {!loading && !txs.length && <tr><td colSpan="6" className="px-4 py-8 text-center"><span className="text-3xl">📭</span><div className="text-navy-300 mt-1">ยังไม่มีธุรกรรม — เติมเครดิตเพื่อเริ่มใช้งาน</div></td></tr>}
+              {!loading && !txs.length && <tr><td colSpan="6" className="p-4"><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน" /></td></tr>}
               {loading && <tr><td colSpan="6" className="px-4 py-4"><div className="space-y-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-8 w-full" />)}</div></td></tr>}
             </tbody>
           </table>

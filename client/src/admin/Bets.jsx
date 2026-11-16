@@ -6,9 +6,9 @@ const STATUS_TH = {
   partial: 'ถูกรางวัลบางส่วน', cancelled: 'ยกเลิก', refunded: 'คืนเงิน',
 };
 const STATUS_EMOJI = {
-  pending: '⏳', won: '😢', lost: '🤑', partial: '😐', cancelled: '🚫', refunded: '💸',
+  pending: '⏳', won: '🎉', lost: '🤑', partial: '😐', cancelled: '🚫', refunded: '💸',
 };
-const ITEM_EMOJI = { won: '😢', lost: '😄', pending: '⏳', cancelled: '🚫' };
+const ITEM_EMOJI = { won: '🎉', lost: '😄', pending: '⏳', cancelled: '🚫' };
 
 const SLIP_STYLE = {
   won: 'border-gold-500/40',
@@ -26,7 +26,7 @@ function ItemRow({ i }) {
   const emoji = ITEM_EMOJI[i.status] || '⏳';
   const anim = i.status === 'lost' ? 'animate-win' : i.status === 'won' ? 'animate-lose' : '';
   return (
-    <div className={`flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-red-500/10 border border-red-500/30' : 'bg-navy-900'}`}>
+    <div className={`flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-gold-500/10 border border-gold-500/30' : 'bg-navy-900'}`}>
       <div className="flex items-center gap-2 min-w-0">
         <span className={`text-lg ${anim}`}>{emoji}</span>
         <div className="min-w-0">
@@ -39,7 +39,7 @@ function ItemRow({ i }) {
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
-          <div className={`font-bold text-red-400 ${anim}`}>จ่าย {satang(i.payout)} บาท</div>
+          <div className={`font-bold text-gold-300 ${anim}`}>จ่าย {satang(i.payout)} บาท</div>
         )}
         {i.status === 'lost' && <div className={`text-green-400 text-xs font-medium ${anim}`}>ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร 😄</div>}
         {i.status === 'pending' && (

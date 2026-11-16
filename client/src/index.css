@@ -32,6 +32,40 @@
   --color-sky2-100: #14293f;
   --color-cream-100: #3a2c14;
 
+  /* ===== Semantic tokens — ใช้แทนสี hardcode ทั่วทั้งแอป =====
+     win = ถูกรางวัล (เขียว/ทอง), lose = ไม่ถูก (เทา), pending = รอผล (ฟ้า),
+     danger = อันตราย/แพ้หนัก, info = ข้อมูล, success = สำเร็จ */
+  --color-win-300: #6ee7b7;
+  --color-win-400: #34d399;
+  --color-win-500: #10b981;
+  --color-win-600: #059669;
+  --color-lose-300: #94a3b8;
+  --color-lose-400: #64748b;
+  --color-pending-300: #7dd3fc;
+  --color-pending-400: #38bdf8;
+  --color-pending-500: #0ea5e9;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-info-300: #c4b5fd;
+  --color-info-400: #a78bfa;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+
+  /* ===== Radius & elevation tokens ===== */
+  --radius-card: 1.25rem;
+  --radius-pill: 9999px;
+  --shadow-card: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(226, 168, 18, 0.05);
+  --shadow-card-hover: 0 10px 28px rgba(226, 168, 18, 0.18);
+  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.6);
+
+  /* ===== Motion tokens ===== */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 350ms;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
   --font-sans: 'Noto Sans Thai', 'Sarabun', 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Prompt', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Nunito', 'Sarabun', ui-monospace, monospace;
@@ -835,3 +869,73 @@ main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !importa
 /* เว้นที่ว่างท้ายหน้าไม่ให้แถบไปทับเนื้อหา (มือถือมี bottom nav 64px + แถบ ~60px) */
 .instant-page{padding-bottom:9.5rem}
 @media (min-width:1024px){.instant-page{padding-bottom:6rem}}
+
+/* ================= Phase A: Accessibility — focus ring ชัดทุก interactive element ================= */
+:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
+
+/* ================= Phase B: Paper bet-slip — โพยสไตล์กระดาษ =================
+   ใช้กับ expanded slip detail: พื้นครีม + เส้นประ + เลข monospace + stamp เอียง */
+.paper-slip {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(120, 90, 40, 0.05) 27px 28px),
+    linear-gradient(180deg, #fdf6e3 0%, #f7ecd4 100%);
+  color: #2b2118;
+  border: 1px solid #d8c49a;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), inset 0 0 60px rgba(180, 140, 60, 0.08);
+  position: relative;
+}
+.paper-slip::before, .paper-slip::after {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 10px;
+  background-image: radial-gradient(circle at 8px 0, transparent 7px, #f7ecd4 7.5px);
+  background-size: 16px 10px; background-repeat: repeat-x;
+}
+.paper-slip::before { top: -6px; transform: scaleY(-1); }
+.paper-slip::after { bottom: -6px; }
+.paper-dash { border-top: 2px dashed #b89b62; }
+.paper-num { font-family: var(--font-mono); font-weight: 800; letter-spacing: 0.12em; }
+.paper-stamp {
+  position: absolute; top: 14px; right: 14px;
+  border: 3px solid #c0392b; color: #c0392b;
+  font-family: var(--font-display); font-weight: 800;
+  padding: 4px 12px; border-radius: 6px;
+  transform: rotate(-12deg);
+  opacity: 0.85;
+  font-size: 15px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(192, 57, 43, 0.3);
+}
+.paper-stamp.win { border-color: #1e7d46; color: #1e7d46; }
+
+/* ================= Phase B: ผลรางวัลแบบประกาศ — เลขเด่นกลางจอ ================= */
+.announce-hero {
+  background:
+    radial-gradient(120% 140% at 50% -20%, rgba(245, 197, 24, 0.14), transparent 55%),
+    linear-gradient(180deg, #0f1e33 0%, #0a1526 100%);
+  border: 1px solid rgba(245, 197, 24, 0.25);
+}
+.announce-num {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  background: linear-gradient(180deg, #fff7d6 0%, #f5c518 55%, #d9a520 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(245, 197, 24, 0.35));
+}
+
+/* ================= Phase C: utility classes จาก semantic tokens ================= */
+/* ใช้เมื่อไม่อยากพิมพ์ tailwind color เดิม — bg-win-500, text-pending-300 ฯลฯ มีใน theme แล้ว
+   classes เหล่านี้เพิ่มเงื่อนไขพิเศษที่ tailwind ทำไม่ได้ */
+.card-lift { transition: transform var(--duration-base) ease, box-shadow var(--duration-base) ease, border-color var(--duration-base) ease; }
+.card-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+
+/* focus ring สำหรับ element ที่เป็น div role=button */
+[role="button"]:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
