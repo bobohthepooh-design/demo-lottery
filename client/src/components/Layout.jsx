@@ -106,7 +106,7 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 bg-gradient-to-r from-[#040a14] via-[#0a1526] to-[#040a14] backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/30">
         <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between min-h-16 py-2 gap-y-1">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
               <img src="/icon.svg" alt="โลโก้" className="w-8 h-8" />
@@ -114,18 +114,19 @@ export default function Layout() {
             <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base">DEMO LOTTERY</div>
           </Link>
 
-          <nav className="hidden sm:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* ≥1024px: nav อยู่แถวเดียวกับ logo • 640-1023px (tablet): wrap ลงแถวล่างเต็มความกว้าง */}
+          <nav className="hidden sm:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 max-md:order-3 max-md:basis-full max-md:justify-start max-md:pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end
-              className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-              <Icon name="home" className="w-5 h-5" />{t('home')}
+              className={({ isActive }) => `shrink-0 px-2.5 max-md:px-2 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+              <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
             </NavLink>
             {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
               <Fragment key={g.label}>
                 {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-0.5 shrink-0" />}
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end}
-                    className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-                    {n.icon && <Icon name={n.icon} className="w-5 h-5" />}
+                    className={({ isActive }) => `shrink-0 px-2.5 max-md:px-2 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+                    {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
                     {t(n.k)}
                   </NavLink>
                 ))}
