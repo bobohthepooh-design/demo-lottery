@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime, satang } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonGrid } from '../components/Skeleton.jsx';
@@ -80,7 +80,6 @@ export default function Home() {
   const [gamePrices, setGamePrices] = useState({ scratch: 5000, hilo: 5000, scratchPrizes: [], hiloMult: null }); // สตางค์/ตัวคูณ — sync จาก server (admin ตั้งได้)
   const [cashbackPct, setCashbackPct] = useState(0); // โปรคืนยอดเสีย %/วัน — 0 = ปิด
   const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ section ผลรางวัล
-  const [latestWinners, setLatestWinners] = useState([]); // ผู้ชนะล่าสุด — แสดงใน section ผลรางวัลวันนี้
 
   useEffect(() => {
     api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
@@ -98,9 +97,8 @@ export default function Home() {
     }).catch(() => {});
     const loadDraws = () => api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
     const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-    const loadWinners = () => api('/lottery/winners?limit=6').then(r => setLatestWinners(r.winners || [])).catch(() => {});
-    loadDraws(); loadToday(); loadWinners();
-    const t = setInterval(() => { loadDraws(); loadToday(); loadWinners(); }, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
+    loadDraws(); loadToday();
+    const t = setInterval(() => { loadDraws(); loadToday(); }, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
     return () => clearInterval(t);
   }, [user]);
 
@@ -122,7 +120,6 @@ export default function Home() {
       }).catch(() => {});
       api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
       api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-      api('/lottery/winners?limit=6').then(r => setLatestWinners(r.winners || [])).catch(() => {});
     };
     window.addEventListener('sys:update', h);
     return () => window.removeEventListener('sys:update', h);
@@ -313,21 +310,6 @@ export default function Home() {
                 );
               })}
             </div>
-            {/* ผู้ชนะล่าสุด — ย้ายมาจาก ticker เดิม แสดงเป็นแถวเล็กๆ ไม่วิ่ง */}
-            {latestWinners.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-gold-500/25 bg-black/30 px-4 py-2.5">
-                <span className="text-[11px] font-bold text-gold-300 shrink-0">🏆 ผู้ชนะล่าสุด</span>
-                {latestWinners.slice(0, 6).map((w, i) => (
-                  <span key={i} className="text-[11px] text-navy-200 whitespace-nowrap">
-                    <b className="text-gold-300">{w.player}</b>
-                    <span className="text-navy-400"> ถูกรางวัล </span>
-                    <span className="font-mono font-bold text-green-300">{satang(w.payout)} ฿</span>
-                    <span className="text-navy-500"> · {w.typeName}</span>
-                  </span>
-                ))}
-                <Link to="/winners" className="ml-auto text-[11px] text-gold-400 hover:text-gold-300 font-semibold shrink-0">ดูทั้งหมด →</Link>
-              </div>
-            )}
           </section>
         );
       })()}
