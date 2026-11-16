@@ -18,6 +18,7 @@ const navGroups = [
   { label: 'navBet', items: [{ to: '/lotteries', k: 'betMenu', betGate: true }] },
   { label: 'navInfo', items: [
     { to: '/results', k: 'results' },
+    { to: '/check', k: 'check' },
     { to: '/winners', k: 'winners' },
   ]},
   { label: 'navAccount', items: [

@@ -9,7 +9,6 @@ import { GameArt } from '../components/GameArt.jsx';
 import { mergeBanner } from '../bannerConfig.js';
 import { kindBadge, marketInfo, MODE_BADGE } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
-import CheckNumbers from '../components/CheckNumbers.jsx';
 
 // ผลย่อสำหรับการ์ดหน้าแรก — เลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
 const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
@@ -333,8 +332,7 @@ export default function Home() {
         );
       })()}
 
-      {/* ตรวจเลข — ใส่เลขเช็คผลรางวัลย้อนหลังได้ทันที ไม่ต้อง login */}
-      <CheckNumbers />
+      {/* ตรวจเลข ย้ายไปเป็นหน้า /check ในเมนูหลักแล้ว */}
 
       {/* เกมด่วน — สล็อต/ไฮโล แสดงก่อนเสมอ เล่นได้ทันทีไม่ต้องรอผลออกรางวัล */}
       {topRowTypes.length > 0 && (

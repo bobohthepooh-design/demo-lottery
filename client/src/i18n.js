@@ -2,7 +2,7 @@
 // (เคยรองรับ Lao — ถูกถอดออกตามคำสั่งผู้ใช้)
 const dict = {
   th: {
-    home: 'หน้าแรก', betMenu: 'แทงหวย', winners: 'ผู้ชนะ', results: 'ผลรางวัล', mybets: 'โพยของฉัน',
+    home: 'หน้าแรก', betMenu: 'แทงหวย', winners: 'ผู้ชนะ', results: 'ผลรางวัล', check: 'ตรวจเลข', mybets: 'โพยของฉัน',
     perf: 'ผลงาน', wallet: 'กระเป๋าเครดิต', profile: 'โปรไฟล์', admin: 'ผู้ดูแลระบบ',
     logout: 'ออกจากระบบ', login: 'เข้าสู่ระบบ', register: 'สมัครสมาชิก',
     credit: 'เครดิต', menu: 'เมนู', lottery: 'หวย', walletShort: 'กระเป๋า',

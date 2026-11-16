@@ -11,6 +11,7 @@ import Lotteries from './pages/Lotteries.jsx';
 import PlaceBet from './pages/PlaceBet.jsx';
 import Winners from './pages/Winners.jsx';
 import Results from './pages/Results.jsx';
+import Check from './pages/Check.jsx';
 import EmbedResults from './pages/EmbedResults.jsx';
 import Wallet from './pages/Wallet.jsx';
 import MyBets from './pages/MyBets.jsx';
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/my-bets" element={<Protected><MyBets /></Protected>} />
           <Route path="/winners" element={<Winners />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/check" element={<Check />} />
           <Route path="/scratch" element={<Protected><Scratch /></Protected>} />
           <Route path="/hilo" element={<Protected><Hilo /></Protected>} />
           <Route path="/kiwi" element={<Protected><Kiwi /></Protected>} />
