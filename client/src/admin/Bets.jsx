@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, satang, drawLabel, fmtDateTime } from '../api.js';
 
 const STATUS_TH = {
@@ -19,6 +19,7 @@ const SLIP_STYLE = {
   refunded: 'border-navy-700 opacity-60',
 };
 
+const PAGE = 50;
 const potential = (i) => Math.floor(i.amount * Number(i.payout_multiplier || 0));
 
 function ItemRow({ i }) {
@@ -72,30 +73,64 @@ function exportCsv(rows, filename) {
 
 export default function AdminBets() {
   const [slips, setSlips] = useState([]);
+  const [total, setTotal] = useState(0);
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
+  const [qApplied, setQApplied] = useState(''); // ค้นหาตอนกด Enter/ปุ่ม — ไม่ refetch ทุก keystroke
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState('');
-  const [shownCount, setShownCount] = useState(50); // แสดง 50 ก่อน ที่เหลือกด "แสดงเพิ่มเติม"
+  const [loadingMore, setLoadingMore] = useState(false);
+  const debounceRef = useRef(null);
 
-  const load = () => api(`/admin/bets?limit=200${status ? `&status=${status}` : ''}`)
-    .then(r => { setSlips(Array.isArray(r?.slips) ? r.slips : []); setErr(''); })
-    .catch(e => { setSlips([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); });
-  useEffect(() => { load(); }, [status]);
-  useEffect(() => { setShownCount(50); }, [status, q]); // เปลี่ยน filter/ค้นหา → กลับมาแสดง 50 แรก
+  const buildQs = (offset) => {
+    const p = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
+    if (status) p.set('status', status);
+    if (qApplied) p.set('q', qApplied);
+    return p.toString();
+  };
 
-  const filtered = (Array.isArray(slips) ? slips : []).filter(s => {
-    if (!q.trim()) return true;
-    const t = q.trim().toLowerCase();
-    return [s.slip_ref, s.username, s.draw_code, s.type_name_th, s.category_name_th]
-      .filter(Boolean).some(v => String(v).toLowerCase().includes(t));
-  });
+  const load = (offset = 0, append = false) => api(`/admin/bets?${buildQs(offset)}`)
+    .then(r => {
+      const list = Array.isArray(r?.slips) ? r.slips : [];
+      setTotal(Number(r?.total) || 0);
+      setSlips(prev => append ? [...prev, ...list] : list);
+      setErr('');
+      return list.length;
+    })
+    .catch(e => { if (!append) setSlips([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); return 0; });
+
+  // filter เปลี่ยน → โหลดหน้าแรกใหม่
+  useEffect(() => { load(0, false); }, [status, qApplied]);
+
+  // ค้นหาแบบ debounce 400ms
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setQApplied(q.trim()), 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [q]);
+
+  const hasMore = slips.length < total;
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try { await load(slips.length, true); } finally { setLoadingMore(false); }
+  };
+
+  // export CSV — ดึงทุกรายการที่ตรง filter (cap 2000) ไม่ใช่แค่หน้าที่โหลดอยู่
+  const exportAll = async () => {
+    const p = new URLSearchParams({ limit: '2000', offset: '0' });
+    if (status) p.set('status', status);
+    if (qApplied) p.set('q', qApplied);
+    try {
+      const r = await api(`/admin/bets?${p}`);
+      exportCsv(Array.isArray(r?.slips) ? r.slips : [], `bets-${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch (e) { setErr(e?.message || 'export ไม่สำเร็จ'); }
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">ตรวจสอบโพย (Bet Monitoring)</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="ค้นหา username / เลขโพย / รอบหวย..."
             className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-64" />
@@ -103,16 +138,17 @@ export default function AdminBets() {
             <option value="">ทุกสถานะ</option>
             {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <button onClick={() => exportCsv(filtered, `bets-${new Date().toISOString().slice(0, 10)}.csv`)}
+          <button onClick={exportAll}
             className="bg-navy-900 border border-navy-600 hover:border-gold-500/50 text-navy-200 hover:text-gold-300 text-sm px-3 py-2 rounded-lg transition"
-            title="ดาวน์โหลดโพยที่กรองอยู่เป็น CSV">
+            title="ดาวน์โหลดโพยทั้งหมดที่ตรงเงื่อนไขเป็น CSV">
             ⬇ CSV
           </button>
         </div>
       </div>
       {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>}
+      <div className="text-xs text-navy-400">ทั้งหมด {total.toLocaleString()} โพย — แสดง {slips.length.toLocaleString()} รายการ</div>
       <div className="space-y-2">
-        {filtered.slice(0, shownCount).map(s => {
+        {slips.map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
           const settled = ['won', 'lost', 'partial'].includes(s.status);
           return (
@@ -146,13 +182,13 @@ export default function AdminBets() {
             </div>
           );
         })}
-        {filtered.length > shownCount && (
-          <button onClick={() => setShownCount(c => c + 50)}
-            className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition">
-            แสดงเพิ่มเติมอีก {Math.min(50, filtered.length - shownCount)} รายการ (เหลือ {filtered.length - shownCount})
+        {hasMore && (
+          <button onClick={loadMore} disabled={loadingMore}
+            className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition disabled:opacity-50">
+            {loadingMore ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${PAGE} รายการ (เหลือ ${(total - slips.length).toLocaleString()})`}
           </button>
         )}
-        {!filtered.length && <div className="text-center text-navy-400 py-10">{slips.length ? 'ไม่พบโพยที่ตรงกับคำค้น' : 'ไม่มีโพย'}</div>}
+        {!slips.length && <div className="text-center text-navy-400 py-10">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
       </div>
     </div>
   );

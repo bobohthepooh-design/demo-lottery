@@ -174,42 +174,101 @@ const FILTERS = [
   { k: 'refunded', label: 'คืนเงิน' },
 ];
 
+const PAGE = 50;
+
 export default function MyBets() {
-  const [slips, setSlips] = useState([]);
+  const [slips, setSlips] = useState([]);        // โพยของ filter ปัจจุบันที่โหลดมาแล้ว (ทุกหน้าที่กดเพิ่มเติม)
+  const [pendingList, setPendingList] = useState([]); // โพยรอผลทั้งหมด — แยก fetch เสมอ กันโพยค้างเก่าหลุด
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(null);
   const [cancelAsk, setCancelAsk] = useState(null);
   const [filter, setFilter] = useState('all');
-  const [shownCount, setShownCount] = useState(50); // แสดง 50 ก่อน ที่เหลือกด "แสดงเพิ่มเติม"
+  const filterRef = useRef('all');
   const [celebrate, setCelebrate] = useState(null); // slip id ที่เพิ่งถูกรางวัล — โชว์ confetti
   const prevStatus = useRef({}); // id → status ครั้งก่อน — ใช้จับจังหวะที่โพยเปลี่ยนเป็น won
   const { setBalance } = useAuth();
   const navigate = useNavigate();
 
-  // ดึงโพยล่าสุด 100 + โพย pending แยกเสมอ — กันโพยค้างเก่าหลุดจากหน้าต่าง limit
-  const load = () => Promise.all([
-    api('/bets/mine?limit=100'),
-    api('/bets/mine?status=pending&limit=100'),
-  ]).then(([recent, pending]) => {
-    const seen = new Set();
-    const list = [...pending.slips, ...recent.slips].filter(s => !seen.has(s.id) && seen.add(s.id));
-    setSlips(list);
-    // จับโพยที่เพิ่งเปลี่ยนเป็น won — เล่นเสียง + confetti (รอบแรกที่โหลดไม่ใช่)
-    const newlyWon = list.find(s => s.status === 'won' && prevStatus.current[s.id] && prevStatus.current[s.id] !== 'won');
-    list.forEach(s => { prevStatus.current[s.id] = s.status; });
-    if (newlyWon) {
-      sfx.win();
-      setCelebrate(newlyWon.id);
-      setTimeout(() => setCelebrate(c => (c === newlyWon.id ? null : c)), 5000);
+  // โหลดโพย 1 หน้า (50 รายการ) ตาม filter — 'all' ใช้ endpoint รวม, status อื่นใช้ status=...
+  const fetchPage = (f, offset) => {
+    const qs = f === 'all' ? `limit=${PAGE}&offset=${offset}` : `status=${f}&limit=${PAGE}&offset=${offset}`;
+    return api(`/bets/mine?${qs}`).then(r => (Array.isArray(r?.slips) ? r.slips : []));
+  };
+
+  // โหลดโพย pending ทั้งหมด (cap 500 — pending ต่อ user มีจำกัดอยู่แล้ว)
+  const fetchPending = () => api('/bets/mine?status=pending&limit=500')
+    .then(r => (Array.isArray(r?.slips) ? r.slips : []));
+
+  // โหลด filter ปัจจุบันหน้าแรก — ใช้ทั้ง mount และเปลี่ยน filter
+  const load = () => {
+    const f = filterRef.current;
+    if (f === 'pending') {
+      return fetchPending().then(list => { setPendingList(list); setSlips(list); setHasMore(false); });
     }
-  }).catch(() => {});
-  useEffect(() => { load().finally(() => setLoading(false)); }, []);
+    return Promise.all([fetchPending(), fetchPage(f, 0)]).then(([pending, page]) => {
+      setPendingList(pending);
+      setSlips(page);
+      setHasMore(page.length === PAGE);
+    });
+  };
+
+  // โหลดหน้าเพิ่มเติม (append) — ไม่แทนที่ของเดิม
+  const loadMore = async () => {
+    const f = filterRef.current;
+    if (f === 'pending' || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await fetchPage(f, slips.length);
+      setSlips(prev => {
+        const seen = new Set(prev.map(s => s.id));
+        return [...prev, ...page.filter(s => !seen.has(s.id))];
+      });
+      setHasMore(page.length === PAGE);
+    } catch {} finally { setLoadingMore(false); }
+  };
+
+  // refresh หลัง SSE — ดึง pending ใหม่ + refetch หน้าที่โหลดอยู่ทั้งหมด (รักษาจำนวนหน้าที่ user เลื่อนไปถึง)
+  const refreshLoaded = () => {
+    const f = filterRef.current;
+    if (f === 'pending') {
+      fetchPending().then(list => { setPendingList(list); setSlips(list); }).catch(() => {});
+      return;
+    }
+    fetchPending().then(setPendingList).catch(() => {});
+    const pages = Math.max(1, Math.ceil(slips.length / PAGE));
+    Promise.all(Array.from({ length: pages }, (_, i) => fetchPage(f, i * PAGE).catch(() => [])))
+      .then(chunks => {
+        const seen = new Set();
+        const merged = [];
+        for (const c of chunks) for (const s of c) if (!seen.has(s.id)) { seen.add(s.id); merged.push(s); }
+        setSlips(merged);
+        setHasMore(chunks[pages - 1]?.length === PAGE);
+        // จับโพยที่เพิ่งเปลี่ยนเป็น won — เล่นเสียง + confetti (รอบแรกที่โหลดไม่ใช่)
+        const newlyWon = merged.find(s => s.status === 'won' && prevStatus.current[s.id] && prevStatus.current[s.id] !== 'won');
+        merged.forEach(s => { prevStatus.current[s.id] = s.status; });
+        if (newlyWon) {
+          sfx.win();
+          setCelebrate(newlyWon.id);
+          setTimeout(() => setCelebrate(c => (c === newlyWon.id ? null : c)), 5000);
+        }
+      }).catch(() => {});
+  };
+
+  useEffect(() => {
+    filterRef.current = filter;
+    setLoading(true);
+    load().catch(() => {}).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
   // SSE — ผลรางวัลออก/โพยเปลี่ยนสถานะ → อัปเดตทันที
   useEffect(() => {
-    const h = () => load();
+    const h = () => refreshLoaded();
     window.addEventListener('sys:update', h);
     return () => window.removeEventListener('sys:update', h);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, slips.length]);
 
   // ยกเลิกได้เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่ — โพยเกมด่วน (STANDING) ยกเลิกได้ตราบใดที่ยังไม่ตัดสิน
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -236,22 +295,26 @@ export default function MyBets() {
       const r = await api(`/bets/${s.id}/cancel`, { method: 'POST' });
       if (typeof r.balance === 'number') setBalance(r.balance);
       toast(`ยกเลิกโพย ${r.slipRef} แล้ว — คืนเครดิต ${satang(r.refunded)} บาท`, 'success');
-      await load();
+      refreshLoaded();
     } catch (e) { toast(e.message, 'error'); }
   };
 
+  // รวมข้อมูลตาม filter: 'all' = pending ทั้งหมด + หน้าที่โหลดของทั้งหมด (กันซ้ำ),
+  // 'pending' = pendingList, status อื่น = slips ที่ server filter มาแล้ว
+  const merged = filter === 'all'
+    ? [...pendingList, ...slips].filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i)
+    : filter === 'pending' ? pendingList : slips;
   // filter ตามสถานะ + โพยรอผลขึ้นบนสุดเสมอ (ภายในกลุ่มเรียงใหม่→เก่า)
-  const visibleSlips = slips
-    .filter(s => filter === 'all' || s.status === filter)
+  const visibleSlips = merged
+    .filter(s => filter === 'all' || filter === 'pending' || s.status === filter)
     .sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.id - a.id);
-  const pagedSlips = visibleSlips.slice(0, shownCount);
-  useEffect(() => { setShownCount(50); }, [filter]); // เปลี่ยน filter → กลับมาแสดง 50 แรก
+  const pagedSlips = visibleSlips;
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">ประวัติโพยของฉัน</h1>
-        {slips.length > 0 && (
+        {visibleSlips.length > 0 && (
           <a href="/api/bets/export" download
             className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition inline-flex items-center gap-1">
             ⬇️ Export CSV
@@ -268,8 +331,8 @@ export default function MyBets() {
               ? 'bg-gold-500/20 border-gold-500/60 text-gold-300'
               : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
             {f.label}
-            {f.k !== 'all' && slips.some(s => s.status === f.k) && (
-              <span className="ml-1 text-[10px] opacity-70">({slips.filter(s => s.status === f.k).length})</span>
+            {f.k === 'pending' && pendingList.length > 0 && (
+              <span className="ml-1 text-[10px] opacity-70">({pendingList.length})</span>
             )}
           </button>
         ))}
@@ -353,16 +416,16 @@ export default function MyBets() {
           </div>
         );
       })}
-      {visibleSlips.length > shownCount && (
-        <button onClick={() => setShownCount(c => c + 50)}
-          className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition">
-          แสดงเพิ่มเติมอีก {Math.min(50, visibleSlips.length - shownCount)} รายการ (เหลือ {visibleSlips.length - shownCount})
+      {hasMore && filter !== 'pending' && (
+        <button onClick={loadMore} disabled={loadingMore}
+          className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition disabled:opacity-50">
+          {loadingMore ? 'กำลังโหลด...' : 'แสดงเพิ่มเติมอีก 50 รายการ'}
         </button>
       )}
-      {!loading && slips.length > 0 && !visibleSlips.length && (
+      {!loading && !loadingMore && (slips.length > 0 || pendingList.length > 0) && !visibleSlips.length && (
         <div className="text-center text-navy-400 py-10 text-sm">ไม่มีโพยในสถานะนี้</div>
       )}
-      {!loading && !slips.length && (
+      {!loading && !slips.length && !pendingList.length && (
         <EmptyState emoji="🎟️" title="ยังไม่มีโพยที่ส่ง" hint="เลือกประเภทหวยและใส่เลขเพื่อเริ่มแทงครั้งแรก"
           to="/lotteries" cta="ไปเลือกหวยเลย" />
       )}

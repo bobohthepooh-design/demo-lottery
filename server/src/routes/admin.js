@@ -643,6 +643,12 @@ router.get('/bets', requirePerm('bets.view_all'), async (req, res) => {
   const args = [];
   if (status) { sql += ' AND bs.status = ?'; args.push(status); }
   if (req.query.userId) { sql += ' AND bs.user_id = ?'; args.push(Number(req.query.userId)); }
+  const q = String(req.query.q || '').trim().slice(0, 100);
+  if (q) {
+    sql += ` AND (bs.slip_ref ILIKE ? OR u.username ILIKE ? OR d.draw_code ILIKE ?)`;
+    const like = `%${q}%`;
+    args.push(like, like, like);
+  }
   const whereSql = sql.slice(sql.indexOf('WHERE'));
   const countArgs = args.slice();
   const total = (await db().prepare(`SELECT COUNT(*) c FROM bet_slips bs ${whereSql}`).get(...countArgs)).c;
