@@ -144,14 +144,9 @@ export function resultKindOf(d) {
   return 'web';
 }
 
-export async function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false, includeInactiveTypes = false, limit = 200 } = {}) {
-  await qRun(`UPDATE lottery_draws SET status = 'closed',
-      updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')
-              WHERE status = 'open' AND close_at <= $1`, [nowSql()]);
-  let sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th, lt.result_mode AS result_mode,
-                    lt.is_active AS type_active,
-                    c.code AS category_code, c.name_th AS category_name_th
-             FROM lottery_draws d
+// สร้าง WHERE clause กลางสำหรับ listDraws/countDraws — กันเงื่อนไขคลาดเคลื่อน
+function drawsWhere({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false, includeInactiveTypes = false } = {}) {
+  let sql = `FROM lottery_draws d
              JOIN lottery_types lt ON lt.id = d.lottery_type_id
              LEFT JOIN lottery_categories c ON c.id = d.category_id
              WHERE ${includeInactiveTypes ? '1=1' : "lt.is_active = 1 AND (d.category_id IS NULL OR c.is_active = 1)"}
@@ -167,7 +162,25 @@ export async function listDraws({ lotteryTypeId = null, categoryId = undefined, 
       (d.status IN ('scheduled','open') AND d.close_at > '${nowSql()}')
       OR (d.status = 'closed' AND d.draw_at >= to_char((now() AT TIME ZONE 'UTC') - interval '2 days','YYYY-MM-DD HH24:MI:SS'))
     )`;
-  sql += ` ORDER BY d.draw_at DESC LIMIT ${Math.min(Math.max(parseInt(limit, 10) || 200, 1), 500)}`;
+  return { sql, args };
+}
+
+export async function countDraws(opts = {}) {
+  const { sql, args } = drawsWhere(opts);
+  return (await qGet(`SELECT COUNT(*)::int AS c ${sql}`, args))?.c || 0;
+}
+
+export async function listDraws({ limit = 200, offset = 0, ...opts } = {}) {
+  await qRun(`UPDATE lottery_draws SET status = 'closed',
+      updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')
+              WHERE status = 'open' AND close_at <= $1`, [nowSql()]);
+  const { sql: whereSql, args } = drawsWhere(opts);
+  const lim = Math.min(Math.max(parseInt(limit, 10) || 200, 1), 500);
+  const off = Math.max(parseInt(offset, 10) || 0, 0);
+  const sql = `SELECT d.*, lt.code AS type_code, lt.name_th AS type_name_th, lt.result_mode AS result_mode,
+                    lt.is_active AS type_active,
+                    c.code AS category_code, c.name_th AS category_name_th
+             ${whereSql} ORDER BY d.draw_at DESC, d.id DESC LIMIT ${lim} OFFSET ${off}`;
   // q() translate() แปลง ? → $n ให้อัตโนมัติ
   return (await q(sql, args)).map(d => ({ ...d, result_kind: resultKindOf(d) }));
 }

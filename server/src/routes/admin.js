@@ -409,13 +409,19 @@ router.post('/lottery/rules/import', requirePerm('lottery.manage'), async (req, 
 // ---------- draws ----------
 router.get('/draws', requirePerm('draws.manage'), async (req, res) => {
   // includeInactiveTypes — admin ต้องเห็น/ยกเลิก/ออกผลรอบของประเภทที่ปิดอยู่ด้วย (โพยค้างต้องจัดการได้)
-  res.json({ draws: await lottery.listDraws({
+  const opts = {
     lotteryTypeId: req.query.type ? Number(req.query.type) : null,
     categoryId: req.query.category !== undefined ? (req.query.category === 'null' ? null : Number(req.query.category)) : undefined,
     status: req.query.status || null,
     limit: req.query.limit ? Number(req.query.limit) : 50,
+    offset: req.query.offset ? Number(req.query.offset) : 0,
     includeInactiveTypes: true,
-  }) });
+  };
+  const [draws, total] = await Promise.all([
+    lottery.listDraws(opts),
+    lottery.countDraws(opts),
+  ]);
+  res.json({ draws, total, limit: opts.limit, offset: opts.offset });
 });
 
 // สถานะการอัปเดตผลรางวัลล่าสุดของทุกประเภท/หมวด — ล่าสุดต่อ type+category
@@ -655,10 +661,21 @@ router.get('/bets', requirePerm('bets.view_all'), async (req, res) => {
   const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
   sql += ' ORDER BY bs.id DESC LIMIT ? OFFSET ?'; args.push(limit, offset);
   const slips = await db().prepare(sql).all(...args);
-  const itemsStmt = db().prepare(`SELECT bi.*, r.name_th AS bet_name_th,
-                                    COALESCE(bi.payout_multiplier, r.payout_multiplier) AS payout_multiplier
-                             FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id WHERE bi.slip_id=?`);
-  res.json({ slips: await Promise.all(slips.map(async s => ({ ...s, items: await itemsStmt.all(s.id) }))), total, limit, offset });
+  // batch items ทีเดียวแทน N+1 — GROUP BY slip_id ฝั่ง JS
+  const slipIds = slips.map(s => s.id);
+  const itemsBySlip = new Map();
+  if (slipIds.length) {
+    const qs = slipIds.map(() => '?').join(',');
+    const allItems = await db().prepare(`SELECT bi.*, r.name_th AS bet_name_th,
+        COALESCE(bi.payout_multiplier, r.payout_multiplier) AS payout_multiplier
+      FROM bet_items bi JOIN lottery_rules r ON r.id=bi.rule_id
+      WHERE bi.slip_id IN (${qs}) ORDER BY bi.id`).all(...slipIds);
+    for (const it of allItems) {
+      if (!itemsBySlip.has(it.slip_id)) itemsBySlip.set(it.slip_id, []);
+      itemsBySlip.get(it.slip_id).push(it);
+    }
+  }
+  res.json({ slips: slips.map(s => ({ ...s, items: itemsBySlip.get(s.id) || [] })), total, limit, offset });
 });
 
 // ---------- wallet adjust ----------

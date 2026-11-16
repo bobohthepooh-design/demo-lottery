@@ -270,7 +270,8 @@ router.get('/line/callback', async (req, res) => {
     // 3) หา/สร้างบัญชี (email จำลองจาก LINE userId — ไม่เก็บรหัสผ่านจริง)
     const db = getDb();
     const email = `line_${profile.userId}@line.local`;
-    let user = await db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
+    let user = await db.prepare('SELECT id, username, status FROM users WHERE email = ?').get(email);
+    if (user && user.status !== 'active') return fail('บัญชีนี้ถูกระงับการใช้งาน');
     if (!user) {
       let username;
       do { username = `line${randomBytes(4).toString('hex')}`; }

@@ -17,6 +17,8 @@ const utcToLocalInput = (s) => {
 
 export default function AdminDraws() {
   const [draws, setDraws] = useState([]);
+  const [drawsTotal, setDrawsTotal] = useState(0);
+  const [loadingMoreDraws, setLoadingMoreDraws] = useState(false);
   const [types, setTypes] = useState([]);
   const [cats, setCats] = useState([]);
   const [form, setForm] = useState({ lottery_type_id: '', category_id: '', draw_code: '', draw_at: '', close_at: '' });
@@ -28,12 +30,32 @@ export default function AdminDraws() {
   const [filter, setFilter] = useState({ status: '', type: '', category: '' });
 
   const loadSchedule = () => api('/admin/draws/schedule').then(r => setSchedule(r.schedule || [])).catch(() => {});
-  const loadDraws = () => {
-    const qs = new URLSearchParams({ limit: '50' });
+  const DRAW_PAGE = 50;
+  const drawsQs = (offset) => {
+    const qs = new URLSearchParams({ limit: String(DRAW_PAGE), offset: String(offset) });
     if (filter.status) qs.set('status', filter.status);
     if (filter.type) qs.set('type', filter.type);
     if (filter.category) qs.set('category', filter.category);
-    api(`/admin/draws?${qs}`).then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
+    return qs.toString();
+  };
+  const loadDraws = () => {
+    api(`/admin/draws?${drawsQs(0)}`).then(r => {
+      setDraws(Array.isArray(r?.draws) ? r.draws : []);
+      setDrawsTotal(Number(r?.total) || 0);
+    }).catch(e => toast(e.message, 'error'));
+  };
+  const loadMoreDraws = async () => {
+    setLoadingMoreDraws(true);
+    try {
+      const r = await api(`/admin/draws?${drawsQs(draws.length)}`);
+      const list = Array.isArray(r?.draws) ? r.draws : [];
+      setDrawsTotal(Number(r?.total) || drawsTotal);
+      setDraws(prev => {
+        const seen = new Set(prev.map(d => d.id));
+        return [...prev, ...list.filter(d => !seen.has(d.id))];
+      });
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoadingMoreDraws(false); }
   };
   const load = () => {
     loadDraws();
@@ -207,7 +229,7 @@ export default function AdminDraws() {
             <option key={c.id} value={c.id}>{c.name_th}</option>
           ))}
         </select>
-        <span className="text-xs text-navy-400">แสดง {draws.length} รอบล่าสุด</span>
+        <span className="text-xs text-navy-400">ทั้งหมด {drawsTotal.toLocaleString()} รอบ — แสดง {draws.length.toLocaleString()} รอบ</span>
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
@@ -243,6 +265,12 @@ export default function AdminDraws() {
           </tbody>
         </table>
       </div>
+      {draws.length < drawsTotal && (
+        <button onClick={loadMoreDraws} disabled={loadingMoreDraws}
+          className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition disabled:opacity-50">
+          {loadingMoreDraws ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${DRAW_PAGE} รอบ (เหลือ ${(drawsTotal - draws.length).toLocaleString()})`}
+        </button>
+      )}
 
       {editDraw && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEditDraw(null)}>

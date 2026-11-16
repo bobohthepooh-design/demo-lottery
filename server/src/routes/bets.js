@@ -36,7 +36,9 @@ router.get('/mine', async (req, res) => {
   const offset = parseInt(req.query.offset || '0', 10);
   const status = ['pending', 'won', 'lost', 'partial', 'cancelled', 'refunded'].includes(req.query.status)
     ? req.query.status : null;
-  res.json({ slips: await svc.listMyBets(req.user.id, { limit, offset, status }) });
+  const totalRow = await qGet(`SELECT COUNT(*)::int AS c FROM bet_slips WHERE user_id = $1${status ? ' AND status = $2' : ''}`,
+    status ? [req.user.id, status] : [req.user.id]);
+  res.json({ slips: await svc.listMyBets(req.user.id, { limit, offset, status }), total: totalRow?.c || 0 });
 });
 
 router.get('/stats', async (req, res) => {

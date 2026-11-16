@@ -82,7 +82,14 @@ app.disable('x-powered-by');
 app.set('trust proxy', config.trustProxy);
 
 app.use(helmet({
-  contentSecurityPolicy: config.isProd ? undefined : false,
+  contentSecurityPolicy: config.isProd ? {
+    useDefaults: true,
+    directives: {
+      // เอา upgrade-insecure-requests ออก — server เสิร์ฟ http://<LAN-IP> ด้วย
+      // ถ้าบังคับ upgrade → fetch('/api/...') ถูก upgrade เป็น https ที่ cert ไม่ valid → API ล่มทั้งระบบบน LAN
+      upgradeInsecureRequests: null,
+    },
+  } : false,
   crossOriginEmbedderPolicy: false,
 }));
 app.use(express.json({ limit: '256kb' }));
