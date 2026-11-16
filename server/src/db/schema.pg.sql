@@ -320,6 +320,14 @@ CREATE INDEX idx_slips_draw ON bet_slips(draw_id, status);
 
 CREATE INDEX idx_slips_user ON bet_slips(user_id, created_at);
 
+CREATE INDEX idx_slips_user_id_desc ON bet_slips(user_id, id DESC);
+CREATE INDEX idx_slips_user_status ON bet_slips(user_id, status, created_at DESC);
+CREATE INDEX idx_slips_status_created ON bet_slips(status, created_at DESC);
+CREATE INDEX idx_items_draw_status ON bet_items(draw_id, status);
+CREATE INDEX idx_notif_user_unread ON notifications(user_id) WHERE read_at IS NULL;
+CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_draws_type_open_at ON lottery_draws(lottery_type_id, status, draw_at) WHERE status IN ('open','scheduled','closed');
+
 CREATE UNIQUE INDEX idx_users_phone ON users(phone) WHERE phone IS NOT NULL;
 
 CREATE INDEX idx_users_status ON users(status);
