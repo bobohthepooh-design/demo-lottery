@@ -6,7 +6,7 @@ import { Icon } from '../components/icons.jsx';
 import { toast } from '../components/toast.js';
 import { useEffect, useRef, useState } from 'react';
 
-const groups = [
+export const adminGroups = [
   {
     label: 'ภาพรวม',
     items: [
@@ -63,7 +63,7 @@ export default function AdminLayout() {
   }, []);
 
   const isSuper = (user?.roles || []).includes('super_admin');
-  const visibleGroups = groups
+  const visibleGroups = adminGroups
     .map(g => ({ ...g, items: g.items.filter(i => !i.superOnly || isSuper) }))
     .filter(g => g.items.length > 0);
   return (

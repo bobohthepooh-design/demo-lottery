@@ -10,6 +10,7 @@ import ToastHost from './ToastHost.jsx';
 import { isSoundOn, setSoundOn, initSound } from '../sound.js';
 import { Icon } from './icons.jsx';
 import { CasinoIcon } from './CasinoIcons.jsx';
+import { adminGroups } from '../admin/AdminLayout.jsx';
 import { Fragment, useEffect, useState } from 'react';
 import { t } from '../i18n.js';
 
@@ -33,6 +34,7 @@ const navGroups = [
 export default function Layout() {
   const { user, balance, logout, isAdmin, mfaRequired, refresh } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [bettingMenu, setBettingMenu] = useState(true);
   const [now, setNow] = useState(() => new Date());
   const [soundOn, setSoundOnState] = useState(isSoundOn());
@@ -66,6 +68,21 @@ export default function Layout() {
   const showBetMenu = bettingMenu || isAdmin;
   const navVisible = n => (!n.auth || user) && (!n.admin || isAdmin) && (!n.memberOnly || !isAdmin) && (!n.betGate || showBetMenu);
   const visibleGroups = navGroups.map(g => ({ ...g, items: g.items.filter(navVisible) })).filter(g => g.items.length);
+
+  // เมนู admin แยกเป็นกลุ่มย่อย (ใช้ groups เดียวกับ AdminLayout — filter super_admin ตาม role)
+  const isSuper = (user?.roles || []).includes('super_admin');
+  const adminNavGroups = adminGroups
+    .map(g => ({ ...g, items: g.items.filter(i => !i.superOnly || isSuper) }))
+    .filter(g => g.items.length > 0);
+
+  // ปิด dropdown admin เมื่อคลิกข้างนอก / เปลี่ยนหน้า
+  useEffect(() => {
+    if (!adminMenuOpen) return;
+    const close = () => setAdminMenuOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [adminMenuOpen]);
+  useEffect(() => { setAdminMenuOpen(false); }, [location.pathname]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -118,13 +135,30 @@ export default function Layout() {
               </Fragment>
             ))}
             {isAdmin && (
-              <>
-                <span className="w-px h-5 bg-gold-500/50 mx-1 shrink-0" />
-                <NavLink to="/admin"
-                  className={({ isActive }) => `shrink-0 px-3 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${isActive ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
+              <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setAdminMenuOpen(v => !v)}
+                  className={`px-3 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
                   <Icon name="dashboard" className="w-5 h-5" />{t('admin')}
-                </NavLink>
-              </>
+                  <svg viewBox="0 0 24 24" className={`w-3.5 h-3.5 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                {adminMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border border-gold-500/30 bg-[#0a1526]/98 backdrop-blur-md shadow-2xl shadow-black/60 py-1.5 z-50">
+                    <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-gold-400/80 border-b border-navy-700/60 mb-1">Admin Panel</div>
+                    {adminNavGroups.map(g => (
+                      <div key={g.label}>
+                        <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-400">{g.label}</div>
+                        {g.items.map(i => (
+                          <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
+                            className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
+                            {i.icon && <Icon name={i.icon} className="w-5 h-5 shrink-0" />}
+                            {i.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </nav>
 
@@ -180,16 +214,34 @@ export default function Layout() {
               <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
-              <div key={g.label}>
-                <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
-                {g.items.map(n => (
-                  <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
-                    {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
-                    {t(n.k)}
-                  </NavLink>
-                ))}
-              </div>
+              g.label === 'navAdmin' ? (
+                <div key={g.label}>
+                  <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-gold-400">{t(g.label)}</div>
+                  {adminNavGroups.map(ag => (
+                    <div key={ag.label}>
+                      <div className="px-4 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-500">{ag.label}</div>
+                      {ag.items.map(i => (
+                        <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setMenuOpen(false)}
+                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-[15px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-200 hover:bg-white/5'}`}>
+                          {i.icon && <Icon name={i.icon} className="w-6 h-6" />}
+                          {i.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div key={g.label}>
+                  <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
+                  {g.items.map(n => (
+                    <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+                      {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
+                      {t(n.k)}
+                    </NavLink>
+                  ))}
+                </div>
+              )
             ))}
             {user && (
               <button onClick={() => { setMenuOpen(false); doLogout(); }}
