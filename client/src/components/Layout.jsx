@@ -103,7 +103,7 @@ export default function Layout() {
           <nav className="hidden lg:flex items-center gap-1">
             <NavLink to="/" end
               className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-              <Icon name="home" className="w-4.5 h-4.5" />{t('home')}
+              <Icon name="home" className="w-6 h-6" />{t('home')}
             </NavLink>
             {visibleGroups.map((g, gi) => (
               <Fragment key={g.label}>
@@ -111,7 +111,7 @@ export default function Layout() {
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end}
                     className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-                    {n.icon && <Icon name={n.icon} className="w-4.5 h-4.5" />}
+                    {n.icon && <Icon name={n.icon} className="w-6 h-6" />}
                     {t(n.k)}
                   </NavLink>
                 ))}
@@ -160,7 +160,7 @@ export default function Layout() {
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `flex items-center gap-2 px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
-              <Icon name="home" className="w-5 h-5" />{t('home')}
+              <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
               <div key={g.label}>
@@ -168,7 +168,7 @@ export default function Layout() {
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
                     className={({ isActive }) => `flex items-center gap-2 px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
-                    {n.icon && <Icon name={n.icon} className="w-5 h-5" />}
+                    {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
                     {t(n.k)}
                   </NavLink>
                 ))}
