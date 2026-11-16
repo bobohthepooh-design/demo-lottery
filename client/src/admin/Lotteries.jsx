@@ -47,6 +47,16 @@ const DICE_BET_LABEL = { single: 'สัตว์เดี่ยว', pair: 'ส
 const STRUCTURED_CFG_TYPES = ['scratch', 'kiwi', 'kiwi_vip', 'kiwi_dice'];
 const parseCfg = (s) => { try { return JSON.parse(s || '{}') || {}; } catch { return {}; } };
 
+// แหล่งผล (source) ที่ใช้ได้จริงต่อประเภทหวย — ตรงกับ winning_numbers ที่ resultFetcher สร้าง
+const CFG_SOURCES = {
+  TH:  ['first', 'front3', 'top3', 'bottom2'],
+  LA:  ['last4', 'last3', 'last2', 'bottom2', 'num4', 'top3'],
+  HN:  ['num4', 'top3', 'top2', 'bottom2'],
+  GS:  ['p1', 'p2', 'p3', 'p4', 'p5', 'last4', 'last3'],
+  HR:  ['zodiac', 'seq'],
+};
+const CFG_MODES = ['exact', 'tail', 'head', 'sorted', 'digit_contains', 'seq_tail', 'contains', 'set5'];
+
 // badge สถานะตลาด — ข้อมูลอยู่ใน resultSource.js (MARKET_INFO/MODE_BADGE)
 function marketBadge(typeCode, catCode) {
   const info = marketInfo(typeCode, catCode);
@@ -75,6 +85,7 @@ export default function AdminLotteries() {
   const [rules, setRules] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showInactive, setShowInactive] = useState(false);
+  const [ruleQuery, setRuleQuery] = useState('');
   const [editRule, setEditRule] = useState(null);
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [typeForm, setTypeForm] = useState({ code: '', name_th: '', name_en: '', description: '' });
@@ -152,7 +163,16 @@ export default function AdminLotteries() {
 
   const typeName = (id) => types.find(t => t.id === id)?.name_th || `#${id}`;
   const catName = (id) => categories.find(c => c.id === id)?.name_th || '';
-  const visibleRules = showInactive ? rules : rules.filter(r => r.is_active);
+  const typeOf = (id) => types.find(t => t.id === id);
+  const visibleRules = (showInactive ? rules : rules.filter(r => r.is_active))
+    .filter(r => {
+      const q = ruleQuery.trim().toLowerCase();
+      if (!q) return true;
+      const t = typeOf(r.lottery_type_id);
+      const c = categories.find(x => x.id === r.category_id);
+      return [r.bet_type, r.name_th, t?.name_th, t?.code, c?.name_th, c?.code]
+        .filter(Boolean).some(v => String(v).toLowerCase().includes(q));
+    });
 
   // จัดกลุ่ม: ประเภทหวย → หมวด → กติกา
   const sections = types.map(t => {
@@ -260,7 +280,9 @@ export default function AdminLotteries() {
       <div className="space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-bold text-white text-lg">กติกาการแทงรายประเทศ/หมวด</h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <input value={ruleQuery} onChange={e => setRuleQuery(e.target.value)} placeholder="🔍 ค้นหากติกา (ชื่อ/ประเภท/หมวด)"
+              className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-1.5 text-sm w-64 text-white placeholder:text-navy-500" />
             <label className="text-xs text-navy-300 flex items-center gap-1.5">
               <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="accent-gold-500" />
               แสดงที่ปิดใช้งาน ({rules.filter(r => !r.is_active).length})
@@ -370,6 +392,33 @@ export default function AdminLotteries() {
                   <input value={editRule.match_config} onChange={e => setEditRule({...editRule, match_config: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" />
                   <div className="text-[10px] text-navy-500 mt-1">เกมด่วน: ราคาอยู่ที่ "ขั้นต่ำ/สูงสุด" ด้านล่าง, อัตราจ่ายอยู่ที่ "อัตราจ่าย" — match_config เป็น option เสริมเท่านั้น</div></div>
               )}
+              {/* กติกาหวย (ไม่ใช่เกมด่วน): แก้ source/mode/tod แบบมีโครงสร้าง — กัน JSON พิมพ์ผิด */}
+              {editRule.id && !INSTANT_BET_TYPES.includes(editRule.bet_type) && (() => {
+                const c = parseCfg(editRule.match_config);
+                const tCode = typeOf(editRule.lottery_type_id)?.code;
+                const srcs = CFG_SOURCES[tCode] || Object.keys(SOURCE_TH);
+                return (
+                <div className="sm:col-span-2 rounded-lg border border-navy-700 bg-navy-900/50 p-3">
+                  <div className="text-xs font-semibold text-gold-300 mb-2">🎯 เงื่อนไขการตรวจผล (match_config)</div>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    <div><label className="text-navy-400 text-[10px]">แหล่งผล (source)</label>
+                      <select value={c.source || ''} onChange={e => patchCfg({ source: e.target.value })}
+                        className="w-full bg-navy-900 border border-navy-600 rounded px-2 py-1.5 text-xs mt-0.5">
+                        {srcs.map(s => <option key={s} value={s}>{SOURCE_TH[s] || s} ({s})</option>)}
+                      </select></div>
+                    <div><label className="text-navy-400 text-[10px]">โหมดตรวจ (mode)</label>
+                      <select value={c.mode || 'exact'} onChange={e => patchCfg({ mode: e.target.value })}
+                        className="w-full bg-navy-900 border border-navy-600 rounded px-2 py-1.5 text-xs mt-0.5">
+                        {CFG_MODES.map(m => <option key={m} value={m}>{MODE_TH[m] || m} ({m})</option>)}
+                      </select></div>
+                    <div><label className="text-navy-400 text-[10px]">อัตราโต๊ด (เว้นว่าง = ไม่รับโต๊ด)</label>
+                      <input type="number" step="0.5" min="0" value={c.tod ?? ''} placeholder="—"
+                        onChange={e => { const v = e.target.value; const nc = { ...c }; if (v === '') delete nc.tod; else nc.tod = +v; setEditRule({ ...editRule, match_config: JSON.stringify(nc) }); }}
+                        className="w-full bg-navy-900 border border-navy-600 rounded px-2 py-1.5 text-xs mt-0.5" /></div>
+                  </div>
+                  <div className="text-[10px] text-navy-500 mt-1.5">แก้แล้วมีผลกับโพยใหม่ทันที — โพยเก่ายังอ้างกติกาเดิม (ไม่ย้อนหลัง)</div>
+                </div>);
+              })()}
               <div><label className="text-navy-300 text-xs">ชื่อไทย (แสดงให้สมาชิก)</label>
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               {editRule.bet_type === 'scratch' ? (
