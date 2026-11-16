@@ -19,7 +19,7 @@ const betSchema = z.object({
     number: z.string().min(1).max(20),
     amount: z.number().int().positive(),
     tod: z.boolean().optional(),
-  })).min(1).max(50),
+  })).min(1).max(200),
   idempotencyKey: z.string().max(64).optional(),
 });
 

@@ -209,7 +209,7 @@ export function validateBetNumber(rule, number) {
 
 export async function placeBet(userId, { drawId, items, idempotencyKey }) {
   if (!Array.isArray(items) || items.length === 0) throw new HttpError(400, 'กรุณาเลือกอย่างน้อย 1 รายการ');
-  if (items.length > 50) throw new HttpError(400, 'สูงสุด 50 รายการต่อโพย');
+  if (items.length > 200) throw new HttpError(400, 'สูงสุด 200 รายการต่อโพย');
   if (idempotencyKey != null && (typeof idempotencyKey !== 'string' || idempotencyKey.length > 64))
     throw new HttpError(400, 'idempotencyKey ไม่ถูกต้อง');
 

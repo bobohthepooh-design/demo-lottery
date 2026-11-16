@@ -117,7 +117,7 @@ export const openApiSpec = {
         tags: ['bets'], summary: 'แทงหวย (เขียนครั้งเดียว + idempotency)', security: [bearerOrSession],
         requestBody: { required: true, content: { 'application/json': { schema: {
           type: 'object', required: ['drawId', 'items'],
-          properties: { drawId: { type: 'integer' }, items: { type: 'array', items: BetItem, maxItems: 50 }, idempotencyKey: { type: 'string', maxLength: 64 } },
+          properties: { drawId: { type: 'integer' }, items: { type: 'array', items: BetItem, maxItems: 200 }, idempotencyKey: { type: 'string', maxLength: 64 } },
         } } } },
         responses: {
           201: ok({ type: 'object', properties: { slipRef: { type: 'string' }, slipId: { type: 'integer' }, totalStake: Money, balance: Money, duplicate: { type: 'boolean' } } }),
