@@ -76,11 +76,13 @@ export default function AdminBets() {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState('');
+  const [shownCount, setShownCount] = useState(50); // แสดง 50 ก่อน ที่เหลือกด "แสดงเพิ่มเติม"
 
   const load = () => api(`/admin/bets?limit=200${status ? `&status=${status}` : ''}`)
     .then(r => { setSlips(Array.isArray(r?.slips) ? r.slips : []); setErr(''); })
     .catch(e => { setSlips([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); });
   useEffect(() => { load(); }, [status]);
+  useEffect(() => { setShownCount(50); }, [status, q]); // เปลี่ยน filter/ค้นหา → กลับมาแสดง 50 แรก
 
   const filtered = (Array.isArray(slips) ? slips : []).filter(s => {
     if (!q.trim()) return true;
@@ -110,7 +112,7 @@ export default function AdminBets() {
       </div>
       {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>}
       <div className="space-y-2">
-        {filtered.map(s => {
+        {filtered.slice(0, shownCount).map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
           const settled = ['won', 'lost', 'partial'].includes(s.status);
           return (
@@ -144,6 +146,12 @@ export default function AdminBets() {
             </div>
           );
         })}
+        {filtered.length > shownCount && (
+          <button onClick={() => setShownCount(c => c + 50)}
+            className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition">
+            แสดงเพิ่มเติมอีก {Math.min(50, filtered.length - shownCount)} รายการ (เหลือ {filtered.length - shownCount})
+          </button>
+        )}
         {!filtered.length && <div className="text-center text-navy-400 py-10">{slips.length ? 'ไม่พบโพยที่ตรงกับคำค้น' : 'ไม่มีโพย'}</div>}
       </div>
     </div>

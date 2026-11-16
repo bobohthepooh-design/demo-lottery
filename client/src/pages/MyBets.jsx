@@ -180,6 +180,7 @@ export default function MyBets() {
   const [open, setOpen] = useState(null);
   const [cancelAsk, setCancelAsk] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [shownCount, setShownCount] = useState(50); // แสดง 50 ก่อน ที่เหลือกด "แสดงเพิ่มเติม"
   const [celebrate, setCelebrate] = useState(null); // slip id ที่เพิ่งถูกรางวัล — โชว์ confetti
   const prevStatus = useRef({}); // id → status ครั้งก่อน — ใช้จับจังหวะที่โพยเปลี่ยนเป็น won
   const { setBalance } = useAuth();
@@ -243,6 +244,8 @@ export default function MyBets() {
   const visibleSlips = slips
     .filter(s => filter === 'all' || s.status === filter)
     .sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.id - a.id);
+  const pagedSlips = visibleSlips.slice(0, shownCount);
+  useEffect(() => { setShownCount(50); }, [filter]); // เปลี่ยน filter → กลับมาแสดง 50 แรก
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
@@ -271,7 +274,7 @@ export default function MyBets() {
           </button>
         ))}
       </div>
-      {visibleSlips.map(s => {
+      {pagedSlips.map(s => {
         const won = s.items?.some(i => i.status === 'won') || s.status === 'won';
         const lost = !won && s.items?.every(i => i.status === 'lost');
         const cardAnim = s.status === 'won' ? 'animate-win' : lost && s.status === 'lost' ? 'animate-lose' : '';
@@ -350,6 +353,12 @@ export default function MyBets() {
           </div>
         );
       })}
+      {visibleSlips.length > shownCount && (
+        <button onClick={() => setShownCount(c => c + 50)}
+          className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition">
+          แสดงเพิ่มเติมอีก {Math.min(50, visibleSlips.length - shownCount)} รายการ (เหลือ {visibleSlips.length - shownCount})
+        </button>
+      )}
       {!loading && slips.length > 0 && !visibleSlips.length && (
         <div className="text-center text-navy-400 py-10 text-sm">ไม่มีโพยในสถานะนี้</div>
       )}
