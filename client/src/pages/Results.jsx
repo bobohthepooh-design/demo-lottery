@@ -9,6 +9,9 @@ const STATUS_TH = {
   settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก',
 };
 
+// ผลจากแหล่งต่างกันเก็บ top3 เป็น array (ไทย) หรือ string (ลาว/ฮานอย) — normalize ก่อนแสดง
+const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
+
 // สรุปผลสั้นๆ ต่อประเภท — แสดง field หลักที่มี
 function resultSummary(w) {
   if (!w) return null;
@@ -16,9 +19,9 @@ function resultSummary(w) {
   if (w.first) parts.push(`รางวัลที่ 1: ${w.first}`);
   if (w.main) parts.push(`เลขหลัก: ${w.main}`);
   if (w.num4) parts.push(`4 ตัว: ${w.num4}`);
-  if (w.top3?.length) parts.push(`บน 3: ${w.top3.join(' ')}`);
-  if (w.front3?.length) parts.push(`หน้า 3: ${w.front3.join(' ')}`);
-  if (w.last3?.length || w.last3) parts.push(`ท้าย 3: ${Array.isArray(w.last3) ? w.last3.join(' ') : w.last3}`);
+  if (w.top3) parts.push(`บน 3: ${asList(w.top3)}`);
+  if (w.front3) parts.push(`หน้า 3: ${asList(w.front3)}`);
+  if (w.last3) parts.push(`ท้าย 3: ${asList(w.last3)}`);
   if (w.bottom2) parts.push(`ล่าง 2: ${w.bottom2}`);
   else if (w.last2) parts.push(`ท้าย 2: ${w.last2}`);
   if (w.zodiac) parts.push(`ราศี: ${w.zodiac}`);
@@ -32,8 +35,8 @@ function summarizeWinning(w) {
   if (w.first) parts.push(w.first);
   if (w.main) parts.push(w.main);
   if (w.num4) parts.push(w.num4);
-  if (w.top3?.length) parts.push(w.top3.join(' '));
-  if (w.last3?.length) parts.push('ท้าย3:' + w.last3.join(' '));
+  if (w.top3) parts.push(asList(w.top3));
+  if (w.last3) parts.push('ท้าย3:' + asList(w.last3));
   if (w.bottom2) parts.push('ล่าง:' + w.bottom2);
   if (w.zodiac) parts.push(w.zodiac);
   return parts.join(' · ') || JSON.stringify(w).slice(0, 60);
