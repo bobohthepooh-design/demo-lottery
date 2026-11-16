@@ -72,6 +72,12 @@ function thaiDisplay(dateStr) {
   return `งวดวันที่ ${d} ${MONTH_TH[mo - 1]} ${y + 543}`;
 }
 
+// draw_at เป็น UTC — แปลงเป็นวันที่เวลาไทย ( Asia/Bangkok )
+function bkkDate(sql) {
+  const d = new Date(String(sql).replace(' ', 'T') + 'Z');
+  return isNaN(d) ? String(sql).slice(0, 10) : d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
+}
+
 // GET /api/public/results?lottery=<slug|TYPE[.CAT]>&limit=30
 // รูปแบบ response อ้างอิง lotterychecks.com — ใช้ embed/เชื่อมต่อภายนอกได้
 router.get('/results', async (req, res, next) => {
@@ -96,8 +102,8 @@ router.get('/results', async (req, res, next) => {
         lottery: m.slug,
         lotteryName: r.cat_name_th || r.type_name_th,
         drawCode: r.draw_code,
-        drawDate: String(r.draw_at).slice(0, 10),
-        displayName: thaiDisplay(String(r.draw_at).slice(0, 10)),
+        drawDate: bkkDate(r.draw_at),
+        displayName: thaiDisplay(bkkDate(r.draw_at)),
         status: 'complete',
         publishedAt: r.published_at || null,
         source: r.result_source || null,

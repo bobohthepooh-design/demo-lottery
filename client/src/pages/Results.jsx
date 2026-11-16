@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime, thaiDate } from '../api.js';
+import { api, fmtDateTime } from '../api.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
 import { typeAccent } from '../typeAccent.js';
@@ -63,6 +63,7 @@ const bkkTodayStr = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(
 const parseDay = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const fmtDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const thaiShort = s => { const d = parseDay(s); return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }); };
+const thaiFull = s => { const d = parseDay(s); return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }); };
 
 export default function Results() {
   const [data, setData] = useState(null);
@@ -167,7 +168,7 @@ export default function Results() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-black text-white">ผลรางวัลและตารางออกรางวัล</h1>
-        <p className="text-sm text-navy-400 mt-1">{data ? thaiDate(data.date) : '…'} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
+        <p className="text-sm text-navy-400 mt-1">{thaiFull(date)} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
         {/* เลือกวัน — เมื่อวาน / วันนี้ / พรุ่งนี้ + date picker */}
         <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
           <button onClick={() => shiftDay(-1)}

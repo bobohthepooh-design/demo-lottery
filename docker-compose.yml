@@ -7,6 +7,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
+      # ตารางออกรางวัลทั้งหมดเป็นเวลาไทย — ต้องให้ server parse local time เป็น Asia/Bangkok
+      # ไม่งั้น toUtcSql()/seeder จะเก็บเวลาเพี้ยนไป 7 ชม.
+      TZ: "Asia/Bangkok"
       # อยู่หลัง Caddy reverse proxy — ให้ rate-limit เห็น IP จริง
       TRUST_PROXY: "true"
       # PostgreSQL primary — hostname `postgres` resolve ใน docker network

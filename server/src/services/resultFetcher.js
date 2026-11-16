@@ -269,8 +269,10 @@ export async function fetchHanoiResult() {
 }
 
 // ---------- matching & settle ----------
+// draw_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' — แปลงเป็นวันที่เวลาไทยสำหรับเทียบกับวันที่ผลจริง
 function drawLocalDate(draw) {
-  return String(draw.draw_at).slice(0, 10);
+  const d = new Date(String(draw.draw_at).replace(' ', 'T') + 'Z');
+  return isNaN(d) ? String(draw.draw_at).slice(0, 10) : d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
 }
 
 const PENDING_DRAWS_SQL = `SELECT d.*, lt.code AS type_code, lt.result_mode AS result_mode, c.code AS cat_code
