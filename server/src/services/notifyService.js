@@ -13,6 +13,8 @@ export function notify(userId, { type, title, body = null, link = null }, d = nu
         [userId, type, String(title).slice(0, 200), body ? String(body).slice(0, 500) : null, link || null]);
   Promise.resolve(p).catch(e => console.error('[notify] pg insert failed:', e.message));
   sendToUser(userId, { title, body, link }).catch(() => {});
+  // ดัน SSE ให้ bell/หน้าอื่น refresh ทันที (ไม่ต้องรอ poll 60 วิ)
+  import('./events.js').then(m => m.broadcast('notify', { userId })).catch(() => {});
 }
 
 export function listForUser(userId, limit = 30) {
