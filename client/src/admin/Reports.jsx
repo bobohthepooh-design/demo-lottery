@@ -176,6 +176,43 @@ export default function AdminReports() {
           </tbody>
         </table></div>
       </div>
+
+      {/* กำไรต่อรอบ — settled 30 วันล่าสุด */}
+      {d.profitByDraw?.length > 0 && (
+        <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
+          <h2 className="font-bold text-white mb-1">กำไรต่อรอบ (30 วันล่าสุด)</h2>
+          <p className="text-xs text-navy-400 mb-3">vip = ยอดแทง − เงินรางวัล · ติดลบ = ระบบขาดทุนรอบนั้น</p>
+          <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
+            <thead><tr className="border-b border-navy-700">
+              <Th>รอบ</Th><Th>ตลาด</Th><Th>เวลาออกรางวัล</Th><Th center>สถานะ</Th><Th right>รายการ</Th><Th right>ยอดแทง</Th><Th right>จ่ายรางวัล</Th><Th right>Vip</Th>
+            </tr></thead>
+            <tbody className="divide-y divide-navy-700/60">
+              {d.profitByDraw.map(x => {
+                const net = x.stake - x.payout;
+                const settled = ['settled', 'cancelled'].includes(x.status);
+                return (
+                  <tr key={x.draw_code}>
+                    <td className="py-2 font-mono text-gold-300 text-xs">{x.draw_code}</td>
+                    <td className="text-white text-xs">{x.type_name_th}{x.cat_name_th ? ` — ${x.cat_name_th}` : ''}</td>
+                    <td className="text-navy-300 text-xs">{fmtDateTime(x.draw_at)}</td>
+                    <td className="text-center">
+                      <span className={`text-xs px-2 py-0.5 rounded ${DRAW_STATUS_CLS[x.status] || 'bg-navy-700 text-navy-300'}`}>
+                        {DRAW_STATUS_TH[x.status] || x.status}
+                      </span>
+                    </td>
+                    <td className="text-right text-navy-300">{x.items}</td>
+                    <td className="text-right text-gold-300">{satang(x.stake)} บาท</td>
+                    <td className="text-right text-green-400">{satang(x.payout)} บาท</td>
+                    <td className={`text-right font-semibold ${settled ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-navy-500'}`}>
+                      {settled ? `${net >= 0 ? '+' : ''}${satang(net)} บาท` : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table></div>
+        </div>
+      )}
     </div>
   );
 }

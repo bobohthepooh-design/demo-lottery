@@ -246,29 +246,39 @@ router.get('/stats', async (req, res, next) => {
       LIMIT $3`).all(typeCode, catCode, limit);
     const digitFreq = {};
     const combo = {}; // key: length-prefixed number e.g. '2:06' '3:782' '6:645654'
+    const lastSeen = {}; // 'len:num' → index งวดล่าสุดที่ออก (0 = งวดล่าสุด)
     let used = 0;
-    for (const r of rows) {
+    rows.forEach((r, idx) => {
       let w = null;
       try { w = r.winning_numbers ? JSON.parse(r.winning_numbers) : null; } catch {}
-      if (!w) continue;
+      if (!w) return;
       used++;
       for (const n of collectNumbers(w)) {
         for (const ch of n) digitFreq[ch] = (digitFreq[ch] || 0) + 1;
         if (/^\d{2,6}$/.test(n)) {
           const k = `${n.length}:${n}`;
           combo[k] = (combo[k] || 0) + 1;
+          if (lastSeen[k] === undefined) lastSeen[k] = idx;
         }
       }
-    }
+    });
     const top = (len) => Object.entries(combo)
       .filter(([k]) => k.startsWith(`${len}:`))
-      .map(([k, c]) => ({ number: k.slice(len.length + 1), count: c }))
+      .map(([k, c]) => ({ number: k.slice(len.length + 1), count: c, last_seen: lastSeen[k] ?? null }))
       .sort((a, b) => b.count - a.count || a.number.localeCompare(b.number))
       .slice(0, 12);
+    // เลขค้าง — top combos ที่หายไปนานสุด (last_seen ใหญ่ = ออกนานแล้ว)
+    const overdue = Object.entries(combo)
+      .map(([k, c]) => ({ k, c, seen: lastSeen[k] ?? 999 }))
+      .filter(x => x.c >= 2 && x.seen >= 5)
+      .sort((a, b) => b.seen - a.seen || b.c - a.c)
+      .slice(0, 10)
+      .map(x => ({ key: x.k, count: x.c, draws_ago: x.seen }));
     res.json({
       draws_used: used,
       digit_freq: Object.fromEntries('0123456789'.split('').map(d => [d, digitFreq[d] || 0])),
       top2: top('2'), top3: top('3'), top4: top('4'), top6: top('6'),
+      overdue,
     });
   } catch (e) { next(e); }
 });

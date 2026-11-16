@@ -184,6 +184,9 @@ export default function AdminDraws() {
         })()}
       </div>
 
+      {/* ตั้งเลขอั้นหลายรอบพร้อมกัน — เลขอั้นไม่มี API ฟรี ต้องกรอกเองครั้งเดียวครอบคลุมทุก rond ที่ยังไม่ปิด */}
+      <BulkAnnounce types={types} cats={cats} onDone={loadDraws} />
+
       {/* ตัวกรองรอบหวย — สถานะ / ประเภท / หมวด */}
       <div className="flex items-center gap-2 flex-wrap">
         <select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})}
@@ -282,6 +285,69 @@ export default function AdminDraws() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ตั้งเลขอั้นครั้งเดียวครอบคลุมทุกรอบที่ยังไม่ปิดของตลาดนั้น (open/scheduled)
+function BulkAnnounce({ types, cats, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ type_id: '', category_id: '', top: '', bottom: '' });
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const parseSide = (s) => s.trim() ? s.split(',').map(x => x.trim()).filter(Boolean) : undefined;
+  const submit = async () => {
+    if (!f.type_id) { setMsg('เลือกประเภทก่อน'); return; }
+    const announce = {};
+    const t = parseSide(f.top), b = parseSide(f.bottom);
+    if (t) announce.top = t;
+    if (b) announce.bottom = b;
+    if (!Object.keys(announce).length) { setMsg('กรอกเลขอั้นอย่างน้อย 1 ฝั่ง'); return; }
+    if (!(await confirmAction({ title: 'ยืนยันตั้งเลขอั้น', message: `ใช้เลขอั้นนี้กับทุกรอบที่ยังไม่ปิดของตลาดที่เลือก ใช่หรือไม่?` }))) return;
+    setBusy(true); setMsg('');
+    try {
+      const r = await api('/admin/draws/announce-bulk', { method: 'POST', body: {
+        type_id: Number(f.type_id),
+        category_id: f.category_id === '' ? null : Number(f.category_id),
+        announce,
+      }});
+      setMsg(`ตั้งเลขอั้นให้ ${r.updated} รอบแล้ว`);
+      toast(`ตั้งเลขอั้น ${r.updated} รอบ`, 'success');
+      onDone?.();
+    } catch (e) { setMsg('ERROR: ' + e.message); }
+    finally { setBusy(false); }
+  };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} className="text-xs bg-amber-500/15 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-lg hover:bg-amber-500/25">
+      ⚠ ตั้งเลขอั้นหลายรอบ
+    </button>
+  );
+  return (
+    <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-bold text-amber-300">ตั้งเลขอั้นครอบคลุมหลายรอบ</div>
+        <button onClick={() => setOpen(false)} className="text-navy-400 hover:text-white text-xs">✕</button>
+      </div>
+      <p className="text-[11px] text-navy-400">ใช้กับทุกรอบ status=open/scheduled ที่ยังไม่ถึงเวลาออกรางวัลของตลาดที่เลือก — ใช้เมื่อต้องการประกาศเลขอั้นชุดเดียวกันหลายงวด</p>
+      <div className="grid sm:grid-cols-4 gap-2">
+        <select value={f.type_id} onChange={e => setF({...f, type_id: e.target.value, category_id: ''})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs">
+          <option value="">ประเภทหวย *</option>
+          {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
+        </select>
+        <select value={f.category_id} onChange={e => setF({...f, category_id: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs">
+          <option value="">ทุกหมวด</option>
+          <option value="null">ไม่มีหมวด</option>
+          {cats.filter(c => !f.type_id || String(c.lottery_type_id) === String(f.type_id)).map(c => <option key={c.id} value={c.id}>{c.name_th}</option>)}
+        </select>
+        <input placeholder="เลขบน เช่น 123,456:400" value={f.top} onChange={e => setF({...f, top: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs font-mono" />
+        <input placeholder="เลขล่าง เช่น 45,67" value={f.bottom} onChange={e => setF({...f, bottom: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs font-mono" />
+      </div>
+      <div className="flex items-center gap-2">
+        <button onClick={submit} disabled={busy} className="bg-amber-500 text-navy-950 text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-40">
+          {busy ? 'กำลังตั้ง…' : 'ยืนยันตั้งเลขอั้น'}
+        </button>
+        {msg && <span className={`text-xs ${msg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{msg}</span>}
+      </div>
     </div>
   );
 }

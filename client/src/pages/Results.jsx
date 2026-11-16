@@ -361,6 +361,22 @@ export default function Results() {
                       </div>
                     </div>
                   )}
+                  {stats.overdue?.length > 0 && (
+                    <div className="text-[11px] text-navy-300 mt-3">
+                      <div className="font-bold mb-1 text-amber-300">เลขค้าง (ออกนานแล้ว)</div>
+                      <div className="flex flex-wrap gap-1">
+                        {stats.overdue.map(o => {
+                          const num = o.key.slice(o.key.indexOf(':') + 1);
+                          return (
+                            <span key={o.key} className="bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 font-mono tabular-nums text-amber-200"
+                              title={`เคยออก ${o.count} ครั้ง • ห่างออก ${o.draws_ago} งวด`}>
+                              {num} <span className="text-amber-400/80">-{o.draws_ago}งวด</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

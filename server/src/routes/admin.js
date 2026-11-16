@@ -494,6 +494,29 @@ router.patch('/draws/:id', requirePerm('draws.manage'), async (req, res, next) =
   } catch (e) { next(e); }
 });
 
+// ตั้งเลขอั้นครั้งเดียวครอบคลุมหลายรอบ (status=open/scheduled, ยังไม่ปิด) — source ฟรีไม่มีเลขอั้น ต้องกรอกเอง
+router.post('/draws/announce-bulk', requirePerm('draws.manage'), async (req, res, next) => {
+  try {
+    const { type_id, category_id, announce } = req.body || {};
+    if (!type_id || !announce || typeof announce !== 'object')
+      throw new HttpError(400, 'ต้องระบุ type_id และ announce {top,bottom}');
+    const annJson = JSON.stringify(announce);
+    // ใช้ annEntries validation เดียวกับ updateDraw — ป้องกัน format ผิด
+    const top = announce.top, bottom = announce.bottom;
+    const sideOk = (s) => s == null || typeof s === 'string' || (Array.isArray(s) && s.length <= 20);
+    if (!sideOk(top) || !sideOk(bottom)) throw new HttpError(400, 'รูปแบบ announce ไม่ถูกต้อง');
+    const catCond = category_id === null || category_id === undefined ? 'd.category_id IS NULL' : 'd.category_id = ?';
+    const catArgs = category_id === null || category_id === undefined ? [] : [Number(category_id)];
+    const r = await db().prepare(
+      `UPDATE lottery_draws SET announce = ?, updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')
+       WHERE lottery_type_id = ? AND ${catCond} AND status IN ('scheduled','open') AND draw_at > to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')`
+    ).run(annJson, Number(type_id), ...catArgs);
+    audit({ userId: req.user.id, action: 'admin.announce_bulk', entityType: 'lottery_draw', detail: { type_id, category_id, announce, count: r.changes }, req });
+    broadcast('draws');
+    res.json({ ok: true, updated: r.changes });
+  } catch (e) { next(e); }
+});
+
 const statusSchema = z.object({ status: z.enum(['scheduled', 'open', 'closed', 'cancelled']) });
 router.patch('/draws/:id/status', requirePerm('draws.manage'), async (req, res, next) => {
   try {
@@ -780,6 +803,21 @@ router.get('/reports/summary', requirePerm('reports.view'), async (req, res) => 
                                     (SELECT COALESCE(SUM(bi.payout),0) FROM bet_items bi WHERE bi.draw_id=x.id AND bi.status='won') payout
                              FROM ranked x WHERE x.rn = 1
                              ORDER BY x.draw_at DESC`).all(),
+    // กำไรต่อรอบ — settled 30 วันล่าสุด เรียงตามเวลาออกรางวัล
+    profitByDraw: await d.prepare(`SELECT d.draw_code, d.draw_at, d.status,
+                             lt.name_th AS type_name_th, c.name_th AS cat_name_th,
+                             COUNT(bi.id) items,
+                             COALESCE(SUM(bi.amount),0) stake,
+                             COALESCE(SUM(CASE WHEN bi.status='won' THEN bi.payout ELSE 0 END),0) payout
+                           FROM lottery_draws d
+                           JOIN lottery_types lt ON lt.id = d.lottery_type_id
+                           LEFT JOIN lottery_categories c ON c.id = d.category_id
+                           LEFT JOIN bet_items bi ON bi.draw_id = d.id AND bi.status != 'cancelled'
+                           WHERE d.draw_code NOT LIKE '%-STANDING'
+                             AND d.draw_at >= to_char((now() AT TIME ZONE 'UTC') - interval '30 days','YYYY-MM-DD HH24:MI:SS')
+                           GROUP BY d.id, d.draw_code, d.draw_at, d.status, lt.name_th, c.name_th
+                           HAVING COUNT(bi.id) > 0
+                           ORDER BY d.draw_at DESC LIMIT 50`).all(),
   });
 });
 
@@ -845,6 +883,9 @@ router.post('/broadcast', requirePerm('members.manage'), async (req, res, next) 
     const { title, body, link } = broadcastSchema.parse(req.body);
     const users = await db().prepare(`SELECT id FROM users WHERE status = 'active'`).all();
     for (const u of users) notify(u.id, { type: 'system', title, body: body || null, link: link || null });
+    // ส่งต่อไป Telegram channel ถ้าตั้งค่าไว้ (fire-and-forget)
+    const { sendTelegram } = await import('../services/telegramService.js');
+    sendTelegram(`📣 <b>${title}</b>\n${body || ''}`).catch(() => {});
     audit({ userId: req.user.id, action: 'notify.broadcast', detail: { title, recipients: users.length }, req });
     res.json({ ok: true, sent: users.length });
   } catch (e) { next(e); }

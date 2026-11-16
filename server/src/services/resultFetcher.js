@@ -368,7 +368,13 @@ async function autoSettleResultsInner() {
       out.errors.push(`${d.draw_code}: ${e.message}`);
     }
   }
-  if (out.settled.length) broadcast('results');
+  if (out.settled.length) {
+    broadcast('results');
+    // แจ้งผลรอบที่เพิ่งออกไป Telegram channel (ถ้าตั้งค่าไว้)
+    import('./telegramService.js').then(m => m.sendTelegram(
+      `🎉 ผลออกแล้ว ${out.settled.length} รอบ\n${out.settled.slice(0, 10).join('\n')}${out.settled.length > 10 ? `\n…อีก ${out.settled.length - 10} รอบ` : ''}`
+    )).catch(() => {});
+  }
   return out;
 }
 
