@@ -4,6 +4,8 @@ import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
 import { typeAccent } from '../typeAccent.js';
+import { toast } from '../components/toast.js';
+import { satang } from '../api.js';
 
 const STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับแทง', closed: 'ปิดรับแล้ว รอผล',
@@ -107,6 +109,7 @@ export default function Results() {
   const [stats, setStats] = useState(null);
   const [statLimit, setStatLimit] = useState(60);
   const [statErr, setStatErr] = useState('');
+  const [winners, setWinners] = useState([]); // ผู้ชนะล่าสุด — กรองตามวันที่ฝั่ง client
 
   useEffect(() => {
     api('/lottery/results').then(j => {
@@ -125,6 +128,15 @@ export default function Results() {
     api(`/lottery/stats?${q}`).then(setStats).catch(() => {});
   };
   useEffect(() => { if (sel) loadStats(); }, [sel, statLimit]);
+
+  // ผู้ชนะล่าสุด — ดึงครั้งเดียว แล้วกรองตามวันที่ไทยที่เลือก (draw_at เก็บเป็น UTC → +7 ชม.)
+  useEffect(() => {
+    api('/lottery/winners?limit=50').then(r => setWinners(r.winners || [])).catch(() => {});
+  }, []);
+  const dayWinners = winners.filter(w => {
+    const t = new Date(String(w.drawAt || '').replace(' ', 'T') + 'Z');
+    return !isNaN(t) && fmtDay(new Date(t.getTime() + 7 * 3600e3)) === date;
+  }).slice(0, 8);
 
   const draws = data?.draws || [];
   const settled = draws.filter(d => d.status === 'settled');
@@ -232,6 +244,13 @@ export default function Results() {
                 <FlagIcon code={g.type_code} className="w-4 h-4 text-[8px]" />
                 <span className={`text-xs font-bold ${ac.text}`}>{g.label}</span>
                 <span className="ml-auto text-[10px] text-navy-400 font-mono">ออกแล้ว {done}/{g.items.length}</span>
+                {done > 0 && (
+                  <button onClick={() => {
+                    const txt = `${g.label} ${thaiShort(date)}\n` + g.items.filter(d => d.status === 'settled')
+                      .map(d => `• ${d.draw_code}: ${compactSummary(d.winning) || '—'}`).join('\n');
+                    navigator.clipboard?.writeText(txt).then(() => toast('คัดลอกผลรางวัลแล้ว', 'success')).catch(() => toast('คัดลอกไม่สำเร็จ', 'error'));
+                  }} className="text-[10px] px-2 py-0.5 rounded border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300" title="คัดลอกผลกลุ่มนี้">📋 คัดลอก</button>
+                )}
               </div>
               <div className="divide-y divide-navy-700/60">
                 {g.items.map(drawRow)}
@@ -255,6 +274,25 @@ export default function Results() {
                 <div className="mt-1.5 text-[11px] text-slate-200 space-y-0.5">
                   {resultSummary(d.winning)?.map((p, i) => <div key={i} className="font-mono tabular-nums">{p}</div>)}
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ผู้ชนะของวันที่เลือก */}
+      {dayWinners.length > 0 && (
+        <section className="bg-navy-800/70 border border-gold-500/30 rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-navy-700 font-bold text-gold-300">🏆 ผู้ชนะ {thaiShort(date)} ({dayWinners.length})</div>
+          <div className="divide-y divide-navy-700/60">
+            {dayWinners.map((w, i) => (
+              <div key={i} className="px-4 py-2.5 flex items-center gap-3 text-sm">
+                <span className="text-gold-400 font-bold w-6">#{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-semibold truncate">{w.player} <span className="text-navy-400 font-normal text-xs">• {w.typeName}</span></div>
+                  <div className="text-[11px] text-navy-400">เลข {w.number} • {w.ruleName}{w.isTod ? ' (โต๊ด)' : ''} • {w.drawCode}</div>
+                </div>
+                <div className="text-green-400 font-bold whitespace-nowrap">{satang(w.payout)} ฿</div>
               </div>
             ))}
           </div>
