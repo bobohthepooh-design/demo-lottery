@@ -134,8 +134,11 @@ export default function Layout() {
                 ))}
               </Fragment>
             ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
             {isAdmin && (
-              <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="relative hidden xl:block" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setAdminMenuOpen(v => !v)}
                   className={`px-3 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
                   <Icon name="dashboard" className="w-5 h-5" />{t('admin')}
@@ -160,9 +163,6 @@ export default function Layout() {
                 )}
               </div>
             )}
-          </nav>
-
-          <div className="flex items-center gap-3">
             <div className="hidden sm:block text-right leading-tight" title="วันที่และเวลาปัจจุบัน">
               <div className="text-[10px] text-navy-300">{dateStr}</div>
               <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
