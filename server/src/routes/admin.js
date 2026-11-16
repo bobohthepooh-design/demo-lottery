@@ -409,7 +409,13 @@ router.post('/lottery/rules/import', requirePerm('lottery.manage'), async (req, 
 // ---------- draws ----------
 router.get('/draws', requirePerm('draws.manage'), async (req, res) => {
   // includeInactiveTypes — admin ต้องเห็น/ยกเลิก/ออกผลรอบของประเภทที่ปิดอยู่ด้วย (โพยค้างต้องจัดการได้)
-  res.json({ draws: await lottery.listDraws({ lotteryTypeId: req.query.type ? Number(req.query.type) : null, includeInactiveTypes: true }) });
+  res.json({ draws: await lottery.listDraws({
+    lotteryTypeId: req.query.type ? Number(req.query.type) : null,
+    categoryId: req.query.category !== undefined ? (req.query.category === 'null' ? null : Number(req.query.category)) : undefined,
+    status: req.query.status || null,
+    limit: req.query.limit ? Number(req.query.limit) : 50,
+    includeInactiveTypes: true,
+  }) });
 });
 
 // สถานะการอัปเดตผลรางวัลล่าสุดของทุกประเภท/หมวด — ล่าสุดต่อ type+category

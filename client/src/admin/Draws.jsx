@@ -25,15 +25,24 @@ export default function AdminDraws() {
   const [schedule, setSchedule] = useState(null);
   const [seedMsg, setSeedMsg] = useState('');
   const [seedBusy, setSeedBusy] = useState(false);
+  const [filter, setFilter] = useState({ status: '', type: '', category: '' });
 
   const loadSchedule = () => api('/admin/draws/schedule').then(r => setSchedule(r.schedule || [])).catch(() => {});
+  const loadDraws = () => {
+    const qs = new URLSearchParams({ limit: '50' });
+    if (filter.status) qs.set('status', filter.status);
+    if (filter.type) qs.set('type', filter.type);
+    if (filter.category) qs.set('category', filter.category);
+    api(`/admin/draws?${qs}`).then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
+  };
   const load = () => {
-    api('/admin/draws').then(r => setDraws(r.draws)).catch(e => toast(e.message, 'error'));
+    loadDraws();
     api('/admin/lottery/types').then(r => setTypes(r.types)).catch(() => {});
     api('/admin/lottery/categories').then(r => setCats(r.categories)).catch(() => {});
     loadSchedule();
   };
-  useEffect(load, []);
+  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadDraws(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // บังคับเติมรอบหวยล่วงหน้าทันที (ระบบทำอัตโนมัติทุก 1 นาทีอยู่แล้ว)
   const runSeed = async () => {
@@ -173,6 +182,29 @@ export default function AdminDraws() {
             </div>
           );
         })()}
+      </div>
+
+      {/* ตัวกรองรอบหวย — สถานะ / ประเภท / หมวด */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})}
+          className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+          <option value="">ทุกสถานะ</option>
+          {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value, category: ''})}
+          className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+          <option value="">ทุกประเภท</option>
+          {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
+        </select>
+        <select value={filter.category} onChange={e => setFilter({...filter, category: e.target.value})}
+          className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+          <option value="">ทุกหมวด</option>
+          <option value="null">ไม่มีหมวด</option>
+          {cats.filter(c => !filter.type || String(c.lottery_type_id) === String(filter.type)).map(c => (
+            <option key={c.id} value={c.id}>{c.name_th}</option>
+          ))}
+        </select>
+        <span className="text-xs text-navy-400">แสดง {draws.length} รอบล่าสุด</span>
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">

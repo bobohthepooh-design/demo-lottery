@@ -44,7 +44,7 @@ export default function AdminAudit() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
-  useEffect(() => { api('/admin/audit?limit=300').then(r => setLogs(r.logs)).catch(e => toast(e.message, 'error')); }, []);
+  useEffect(() => { api('/admin/audit?limit=50').then(r => setLogs(r.logs)).catch(e => toast(e.message, 'error')); }, []);
 
   const actionKeys = [...new Set(logs.map(l => l.action))].sort();
   const filtered = logs.filter(l => {

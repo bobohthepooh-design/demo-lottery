@@ -144,7 +144,7 @@ export function resultKindOf(d) {
   return 'web';
 }
 
-export async function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false, includeInactiveTypes = false } = {}) {
+export async function listDraws({ lotteryTypeId = null, categoryId = undefined, status = null, upcoming = false, includeInactiveTypes = false, limit = 200 } = {}) {
   await qRun(`UPDATE lottery_draws SET status = 'closed',
       updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')
               WHERE status = 'open' AND close_at <= $1`, [nowSql()]);
@@ -167,7 +167,7 @@ export async function listDraws({ lotteryTypeId = null, categoryId = undefined, 
       (d.status IN ('scheduled','open') AND d.close_at > '${nowSql()}')
       OR (d.status = 'closed' AND d.draw_at >= to_char((now() AT TIME ZONE 'UTC') - interval '2 days','YYYY-MM-DD HH24:MI:SS'))
     )`;
-  sql += ' ORDER BY d.draw_at DESC LIMIT 200';
+  sql += ` ORDER BY d.draw_at DESC LIMIT ${Math.min(Math.max(parseInt(limit, 10) || 200, 1), 500)}`;
   // q() translate() แปลง ? → $n ให้อัตโนมัติ
   return (await q(sql, args)).map(d => ({ ...d, result_kind: resultKindOf(d) }));
 }

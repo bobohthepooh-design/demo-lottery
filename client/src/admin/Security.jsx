@@ -14,7 +14,7 @@ const EVENT_TH = {
 
 export default function AdminSecurity() {
   const [events, setEvents] = useState([]);
-  useEffect(() => { api('/admin/security-events?limit=300').then(r => setEvents(r.events)).catch(e => toast(e.message, 'error')); }, []);
+  useEffect(() => { api('/admin/security-events?limit=50').then(r => setEvents(r.events)).catch(e => toast(e.message, 'error')); }, []);
 
   return (
     <div className="space-y-4">
