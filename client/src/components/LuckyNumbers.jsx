@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { api, fmtDate } from '../api.js';
 import { FlagIcon } from './ResultLine.jsx';
 
+const COLLAPSED_COUNT = 4; // แสดงตลาดเด่น 4 อันก่อน ที่เหลือกดขยาย — กันหน้าแรกยาวเกิน
+
 // การ์ดเลขเด็ด/เลขดัง — สถิติความถี่จากผลรางวัลจริง (lotterychecks.com)
 // แสดงเป็น "เลขที่ออกบ่อย" ไม่ใช่การันตี — มีข้อความเตือนเสมอ
 export default function LuckyNumbers() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     api('/lottery/lucky').then(setData).catch(e => setErr(e.message));
@@ -38,7 +41,7 @@ export default function LuckyNumbers() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {data.markets.map(m => (
+        {(expanded ? data.markets : data.markets.slice(0, COLLAPSED_COUNT)).map(m => (
           <div key={m.key} className="bg-navy-800/70 border border-navy-700/60 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <FlagIcon code={m.key} className="w-7 h-5 text-[9px]" />
@@ -66,6 +69,13 @@ export default function LuckyNumbers() {
           </div>
         ))}
       </div>
+
+      {data.markets.length > COLLAPSED_COUNT && (
+        <button onClick={() => setExpanded(v => !v)}
+          className="mt-3 w-full py-2.5 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition">
+          {expanded ? '▾ ย่อรายการ' : `▸ แสดงตลาดทั้งหมดอีก ${data.markets.length - COLLAPSED_COUNT} ตลาด`}
+        </button>
+      )}
 
       <p className="text-[10px] text-navy-500 mt-3 text-center">
         ⚠️ เลขเด่นเป็นสถิติจากผลรางวัลย้อนหลัง ไม่ใช่การันตีผล — ใช้เพื่อการศึกษาเท่านั้น

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { api, satang, drawLabel, fmtDateTime } from '../api.js';
+import { api, satang, drawLabel, fmtDateTime, thaiDate } from '../api.js';
+import { getTz } from '../time.js';
 import { BET_TYPE_LABELS } from '../lotterySchema.js';
 import { toast } from '../components/toast.js';
 import { SkeletonSlip } from '../components/Skeleton.jsx';
@@ -183,6 +184,17 @@ const FILTERS = [
 
 const PAGE = 50;
 
+// กลุ่มโพยตามวันที่ออกรางวัล — key 'YYYY-MM-DD' ตาม timezone ที่ผู้ใช้เลือก
+function slipDay(s) {
+  const raw = s.draw_at || s.created_at;
+  const d = raw ? new Date(String(raw).replace(' ', 'T') + 'Z') : null;
+  if (!d || isNaN(d)) return { key: 'unknown', label: 'ไม่ระบุวันที่' };
+  const fmt = (x) => { try { return new Intl.DateTimeFormat('en-CA', { timeZone: getTz() }).format(x); } catch { return x.toISOString().slice(0, 10); } };
+  const key = fmt(d);
+  const label = key === fmt(new Date()) ? 'วันนี้' : key === fmt(new Date(Date.now() - 864e5)) ? 'เมื่อวาน' : thaiDate(raw);
+  return { key, label };
+}
+
 export default function MyBets() {
   const [slips, setSlips] = useState([]);        // โพยของ filter ปัจจุบันที่โหลดมาแล้ว (ทุกหน้าที่กดเพิ่มเติม)
   const [pendingList, setPendingList] = useState([]); // โพยรอผลทั้งหมด — แยก fetch เสมอ กันโพยค้างเก่าหลุด
@@ -193,6 +205,10 @@ export default function MyBets() {
   const [cancelAsk, setCancelAsk] = useState(null);
   const [filter, setFilter] = useState('all');
   const filterRef = useRef('all');
+  const [collapsed, setCollapsed] = useState(() => new Set()); // key กลุ่มวันที่ที่ย่ออยู่
+  const toggleGroup = (k) => setCollapsed(prev => {
+    const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n;
+  });
   const [celebrate, setCelebrate] = useState(null); // slip id ที่เพิ่งถูกรางวัล — โชว์ confetti
   const prevStatus = useRef({}); // id → status ครั้งก่อน — ใช้จับจังหวะที่โพยเปลี่ยนเป็น won
   const { setBalance } = useAuth();
@@ -321,6 +337,17 @@ export default function MyBets() {
     .sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.id - a.id);
   const pagedSlips = visibleSlips;
 
+  // จัดกลุ่มโพยตามวันที่ออกรางวัล — คงลำดับ pending ขึ้นก่อนตาม sort เดิม
+  const groups = [];
+  {
+    const m = new Map();
+    for (const s of pagedSlips) {
+      const { key, label } = slipDay(s);
+      if (!m.has(key)) { const g = { key, label, slips: [], stake: 0 }; m.set(key, g); groups.push(g); }
+      const g = m.get(key); g.slips.push(s); g.stake += s.total_stake || 0;
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -348,7 +375,24 @@ export default function MyBets() {
           </button>
         ))}
       </div>
-      {pagedSlips.map(s => {
+      {groups.map(g => {
+        const isCol = collapsed.has(g.key);
+        return (
+        <div key={g.key}>
+          <button type="button" onClick={() => toggleGroup(g.key)}
+            className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-navy-800/80 border border-navy-700 hover:border-gold-500/40 transition text-left">
+            <span className="flex items-center gap-2 text-sm font-bold text-white min-w-0">
+              <span className={`text-navy-400 transition-transform shrink-0 ${isCol ? '' : 'rotate-90'}`}>▸</span>
+              <span className="truncate">{g.label}</span>
+              <span className="text-[11px] font-normal text-navy-400 shrink-0">{g.slips.length} โพย • {satang(g.stake)} บาท</span>
+            </span>
+            {g.slips.some(s => s.status === 'won') && (
+              <span className="text-[10px] font-bold text-green-300 shrink-0">🏆 มีถูกรางวัล</span>
+            )}
+          </button>
+          {!isCol && (
+          <div className="space-y-3 mt-3">
+          {g.slips.map(s => {
         const won = s.items?.some(i => i.status === 'won') || s.status === 'won';
         const lost = !won && s.items?.every(i => i.status === 'lost');
         const cardAnim = s.status === 'won' ? 'animate-win' : lost && s.status === 'lost' ? 'animate-lose' : '';
@@ -450,6 +494,11 @@ export default function MyBets() {
               </div>
             )}
           </div>
+        );
+          })}
+          </div>
+          )}
+        </div>
         );
       })}
       {hasMore && filter !== 'pending' && (

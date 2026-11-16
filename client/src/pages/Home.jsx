@@ -134,6 +134,8 @@ export default function Home() {
   const drawVisible = d => isAdmin || !hiddenSet.has(d.type_code);
   const visTypes = types.filter(typeVisible);
   const visDraws = draws.filter(drawVisible);
+  // ประเภทหวยทั่วไป (ไม่รวมเกมด่วน/ราศีที่อยู่แถวบน) — แสดง 6 ใบแรก ที่เหลือไปที่ /lotteries
+  const marketTypes = visTypes.filter(t => !['SC', 'HL', 'HR', 'KI', 'CF'].includes(t.code));
 
   // รอบเปิดรับที่ใกล้ปิดสุดของแต่ละประเทศ/หมวด
   const openByCategory = [];
@@ -291,7 +293,7 @@ export default function Home() {
               <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {cards.map(g => {
+              {cards.slice(0, 6).map(g => {
                 const ac = typeAccent(g.type_code);
                 const last = g.settled[0];
                 const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
@@ -334,6 +336,11 @@ export default function Home() {
                 );
               })}
             </div>
+            {cards.length > 6 && (
+              <Link to="/results" className="mt-3 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
+                + อีก {cards.length - 6} ตลาด — ดูผลรางวัลทั้งหมด →
+              </Link>
+            )}
           </section>
         );
       })()}
@@ -399,7 +406,7 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* exclude เกมบนแถวแรก (SC/HL/HR) — แสดงใน section เกมด่วนด้านบนแล้ว */}
-          {visTypes.filter(t => !['SC', 'HL', 'HR', 'KI', 'CF'].includes(t.code)).map((t, i) => {
+          {marketTypes.slice(0, 6).map((t, i) => {
             const typeDraws = openByCategory.filter(d => d.type_code === t.code);
             const ac = typeAccent(t.code);
             const openN = typeDraws.filter(d => d.status === 'open').length;
@@ -474,6 +481,11 @@ export default function Home() {
           })}
           {!types.length && <SkeletonGrid count={3} />}
         </div>
+        {marketTypes.length > 6 && (
+          <Link to="/lotteries" className="mt-4 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
+            + อีก {marketTypes.length - 6} ประเภท — ดูประเภทหวยทั้งหมด →
+          </Link>
+        )}
       </section>
 
       {/* เลขเด็ด/เลขดัง — สถิติจากผลจริงภายนอก */}

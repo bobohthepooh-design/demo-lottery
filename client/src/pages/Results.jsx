@@ -100,6 +100,7 @@ export default function Results() {
   const [wonDraws, setWonDraws] = useState(() => new Set()); // draw_id ที่โพยของฉันมีรายการถูกรางวัล
   const [expanded, setExpanded] = useState({}); // draw_id -> bool: แสดงผลละเอียด
   const [date, setDate] = useState(bkkTodayStr);
+  const [typeFilter, setTypeFilter] = useState(''); // '' = ทุกประเภท
 
   const load = () => api(`/lottery/today?date=${date}`).then(setData).catch(e => setErr(e.message));
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
@@ -158,6 +159,9 @@ export default function Results() {
   const draws = data?.draws || [];
   const settled = draws.filter(d => d.status === 'settled');
   const pending = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
+  // เมื่อเลือก tab ประเภท — section ออกผลแล้ว/รอผล กรองตามด้วย
+  const settledF = typeFilter ? settled.filter(d => d.type_code === typeFilter) : settled;
+  const pendingF = typeFilter ? pending.filter(d => d.type_code === typeFilter) : pending;
 
   // จัดกลุ่มตามตลาด (ประเภท+หมวด) — หัวกลุ่มแสดงตัวนับ ออกแล้ว X/Y เรียงตามรอบแรกของกลุ่ม
   const groups = [];
@@ -173,6 +177,18 @@ export default function Results() {
     }
     groups.sort((a, b) => String(a.items[0].draw_at).localeCompare(String(b.items[0].draw_at)));
   }
+
+  // tab กรองตามประเภทหวย — นับจำนวนรอบต่อประเภท
+  const typeTabs = [];
+  {
+    const m = new Map();
+    for (const d of draws) {
+      if (!m.has(d.type_code)) m.set(d.type_code, { code: d.type_code, label: d.category_name_th || d.type_name_th, n: 0 });
+      m.get(d.type_code).n += 1;
+    }
+    typeTabs.push(...m.values());
+  }
+  const visibleGroups = typeFilter ? groups.filter(g => g.type_code === typeFilter) : groups;
 
   const drawRow = (d) => {
     const ac = typeAccent(d.type_code);
@@ -263,6 +279,23 @@ export default function Results() {
 
       {err && <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl px-4 py-3 text-sm">{err}</div>}
 
+      {/* tab กรองตามประเภทหวย — แสดงเฉพาะเมื่อมีมากกว่า 1 ประเภทในวันนี้ */}
+      {typeTabs.length > 1 && (
+        <div className="flex gap-1.5 flex-wrap justify-center">
+          <button onClick={() => setTypeFilter('')}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${!typeFilter ? 'bg-gold-500/20 border-gold-500/60 text-gold-300' : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
+            ทั้งหมด ({draws.length})
+          </button>
+          {typeTabs.map(t => (
+            <button key={t.code} onClick={() => setTypeFilter(typeFilter === t.code ? '' : t.code)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition inline-flex items-center gap-1.5 ${typeFilter === t.code ? 'bg-gold-500/20 border-gold-500/60 text-gold-300' : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
+              <FlagIcon code={t.code} className="w-4 h-3 text-[7px]" />
+              {t.label} ({t.n})
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ตารางออกรางวัล — จัดกลุ่มตามตลาด พร้อมตัวนับ ออกแล้ว X/Y */}
       <section className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-navy-700 font-bold text-navy-950">
@@ -275,7 +308,10 @@ export default function Results() {
               hint="ลองเลือกวันอื่น หรือรอระบบสร้างรอบใหม่" />
           </div>
         )}
-        {groups.map(g => {
+        {data && !visibleGroups.length && draws.length > 0 && (
+          <div className="p-4 text-sm text-navy-400 text-center">ไม่มีรอบของประเภทที่เลือก</div>
+        )}
+        {visibleGroups.map(g => {
           const done = g.items.filter(d => d.status === 'settled').length;
           const ac = typeAccent(g.type_code);
           return (
@@ -301,11 +337,11 @@ export default function Results() {
       </section>
 
       {/* สรุปผลที่ออกแล้ว */}
-      {settled.length > 0 && (
+      {settledF.length > 0 && (
         <section>
-          <h2 className="font-bold text-white mb-3">✅ ออกผลแล้ว {thaiShort(date)} ({settled.length})</h2>
+          <h2 className="font-bold text-white mb-3">✅ ออกผลแล้ว {thaiShort(date)} ({settledF.length})</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {settled.map(d => (
+            {settledF.map(d => (
               <div key={d.id} className="bg-navy-800/70 border border-emerald-500/30 rounded-xl p-3">
                 <div className="flex items-center gap-2">
                   <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
@@ -339,11 +375,11 @@ export default function Results() {
         </section>
       )}
 
-      {pending.length > 0 && (
+      {pendingF.length > 0 && (
         <section>
-          <h2 className="font-bold text-white mb-3">⏳ รอผล {thaiShort(date)} ({pending.length})</h2>
+          <h2 className="font-bold text-white mb-3">⏳ รอผล {thaiShort(date)} ({pendingF.length})</h2>
           <div className="flex flex-wrap gap-2">
-            {pending.map(d => (
+            {pendingF.map(d => (
               <span key={d.id} className="text-xs bg-navy-800 border border-navy-700 rounded-full px-3 py-1.5 text-navy-200">
                 {d.category_name_th || d.type_name_th} · {fmtDateTime(d.draw_at)}
               </span>
