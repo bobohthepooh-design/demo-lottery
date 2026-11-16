@@ -100,18 +100,18 @@ export default function Layout() {
             </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end
-              className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-              <Icon name="home" className="w-6 h-6" />{t('home')}
+              className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+              <Icon name="home" className="w-5 h-5" />{t('home')}
             </NavLink>
             {visibleGroups.map((g, gi) => (
               <Fragment key={g.label}>
-                {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-1" />}
+                {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-0.5 shrink-0" />}
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end}
-                    className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-                    {n.icon && <Icon name={n.icon} className="w-6 h-6" />}
+                    className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+                    {n.icon && <Icon name={n.icon} className="w-5 h-5" />}
                     {t(n.k)}
                   </NavLink>
                 ))}
