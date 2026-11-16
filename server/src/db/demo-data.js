@@ -161,7 +161,7 @@ export async function drawSchedulePreview() {
   const types = (await q('SELECT id, code, name_th FROM lottery_types WHERE is_active = 1'))
     .map(t => ({ ...t, cats: [] }));
   for (const t of types) {
-    t.cats = await q('SELECT id, code, name_th FROM lottery_categories WHERE lottery_type_id = $1', [t.id]);
+    t.cats = await q('SELECT id, code, name_th FROM lottery_categories WHERE lottery_type_id = $1 AND is_active = 1', [t.id]);
   }
   const typeById = Object.fromEntries(types.map(t => [t.id, t]));
   const catById = {};
@@ -181,7 +181,7 @@ export async function seedDemoDraws() {
   const types = (await q('SELECT id, code FROM lottery_types WHERE is_active = 1'))
     .map(t => ({ ...t, cats: [] }));
   for (const t of types) {
-    t.cats = await q('SELECT id, code FROM lottery_categories WHERE lottery_type_id = $1', [t.id]);
+    t.cats = await q('SELECT id, code FROM lottery_categories WHERE lottery_type_id = $1 AND is_active = 1', [t.id]);
   }
   // กันซ้ำ 2 ชั้น: draw_code (unique) + (type, category, draw_at) — กันกรณี code ฝังชั่วโมงแล้วเวลาเลื่อน
   const existing = await q('SELECT draw_code, lottery_type_id, category_id, draw_at FROM lottery_draws');
