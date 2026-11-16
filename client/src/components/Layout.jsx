@@ -100,7 +100,7 @@ export default function Layout() {
             </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav className="hidden xl:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-center px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end
               className={({ isActive }) => `shrink-0 px-2.5 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
               <Icon name="home" className="w-5 h-5" />{t('home')}
@@ -149,11 +149,11 @@ export default function Layout() {
               className="text-sm px-2.5 py-1.5 rounded-lg border border-navy-600 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition inline-flex items-center">
               <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4" />
             </button>
-            <button className="lg:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
+            <button className="xl:hidden text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
           </div>
         </div>
         {menuOpen && (
-          <nav className="lg:hidden suit-pattern border-t border-[#22d3ee]/30 bg-[#0a1526]/95 backdrop-blur-md px-3 py-2 space-y-1">
+          <nav className="xl:hidden suit-pattern border-t border-[#22d3ee]/30 bg-[#0a1526]/95 backdrop-blur-md px-3 py-2 space-y-1">
             <div className="px-3 pt-1 pb-2 flex items-center justify-between">
               <span className="kicker">{t('menu')}</span>
               {user && <span className="text-xs font-black font-mono text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
@@ -198,7 +198,7 @@ export default function Layout() {
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 lg:pb-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 xl:pb-6">
         <Outlet />
       </main>
 
