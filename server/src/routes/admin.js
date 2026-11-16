@@ -325,6 +325,17 @@ router.get('/lottery/categories', requirePerm('lottery.manage'), async (req, res
   res.json({ categories: await db().prepare(`SELECT c.*, lt.name_th AS type_name_th FROM lottery_categories c JOIN lottery_types lt ON lt.id=c.lottery_type_id ORDER BY c.lottery_type_id, c.id`).all() });
 });
 
+// ผลล่าสุดของแต่ละตลาด (type+category) — ไว้ preview ข้างกติกาในหน้าจัดการ
+router.get('/lottery/last-results', requirePerm('lottery.manage'), async (req, res) => {
+  const rows = await db().prepare(`
+    SELECT DISTINCT ON (d.lottery_type_id, COALESCE(d.category_id, 0))
+      d.lottery_type_id, d.category_id, d.draw_code, d.draw_at, r.winning_numbers
+    FROM lottery_results r JOIN lottery_draws d ON d.id = r.draw_id
+    WHERE r.winning_numbers IS NOT NULL
+    ORDER BY d.lottery_type_id, COALESCE(d.category_id, 0), d.draw_at DESC`).all();
+  res.json({ results: rows });
+});
+
 // เปิด/ปิดตลาดระดับหมวด — หมวดที่ปิดจะไม่แสดงใน markets/ไม่รับโพย (กติกาเดิมยังอยู่ ไม่กระทบโพยเก่า)
 router.patch('/lottery/categories/:id', requirePerm('lottery.manage'), async (req, res, next) => {
   try {

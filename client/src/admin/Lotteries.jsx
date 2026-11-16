@@ -86,6 +86,7 @@ export default function AdminLotteries() {
   const [categories, setCategories] = useState([]);
   const [showInactive, setShowInactive] = useState(false);
   const [ruleQuery, setRuleQuery] = useState('');
+  const [lastResults, setLastResults] = useState({});
   const [editRule, setEditRule] = useState(null);
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [typeForm, setTypeForm] = useState({ code: '', name_th: '', name_en: '', description: '' });
@@ -97,6 +98,11 @@ export default function AdminLotteries() {
     api('/admin/lottery/types').then(r => setTypes(r.types)).catch(e => toast(e.message, 'error'));
     api('/admin/lottery/rules').then(r => setRules(r.rules)).catch(() => {});
     api('/admin/lottery/categories').then(r => setCategories(r.categories)).catch(() => {});
+    api('/admin/lottery/last-results').then(r => {
+      const m = {};
+      for (const x of r.results || []) m[`${x.lottery_type_id}:${x.category_id ?? 0}`] = x;
+      setLastResults(m);
+    }).catch(() => {});
   };
   useEffect(load, []);
 
@@ -187,6 +193,24 @@ export default function AdminLotteries() {
     }));
     return { type: t, groups };
   }).filter(Boolean);
+
+  // ผลล่าสุดของตลาด — แสดงสั้นๆ ข้างหัวกลุ่มหมวด (ช่วยเช็คว่า source ในกติกาตรงผลจริงไหม)
+  const lastResultText = (type, catId) => {
+    const row = lastResults[`${type.id}:${catId || 0}`];
+    if (!row) return null;
+    let w; try { w = JSON.parse(row.winning_numbers); } catch { return null; }
+    if (!w || typeof w !== 'object') return null;
+    const s = resultSchema(type.code, catId ? categories.find(c => c.id === catId)?.code : null);
+    const fields = s?.fields || [];
+    const parts = fields.map(f => {
+      const v = w[f.key];
+      if (v == null || v === '') return null;
+      const disp = Array.isArray(v) ? v.slice(0, 3).map(String).join(' ') + (v.length > 3 ? ` +${v.length - 3}` : '') : String(v);
+      return `${f.label} ${disp}`;
+    }).filter(Boolean).slice(0, 5);
+    if (!parts.length) parts.push(...Object.entries(w).filter(([, v]) => ['string', 'number'].includes(typeof v)).slice(0, 4).map(([k, v]) => `${k}:${v}`));
+    return parts.length ? `${row.draw_code} • ${parts.join(' · ')}` : null;
+  };
 
   // ฟิลด์ผลรางวัลที่ admin ต้องกรอกเอง สำหรับประเภทที่ตั้งเป็น "กรอกเอง" (แยกตามหมวดหวย)
   const manualFields = (t) => {
@@ -303,6 +327,9 @@ export default function AdminLotteries() {
                 <div className="px-5 py-2 bg-navy-800/60 text-xs font-semibold text-gold-400/90 flex items-center gap-2 flex-wrap">
                   {g.name}
                   {marketBadge(type.code, g.catCode)}
+                  {(() => { const lr = lastResultText(type, g.cid); return lr ? (
+                    <span className="text-[10px] font-normal text-navy-400 truncate max-w-full" title={`ผลล่าสุด: ${lr}`}>📰 {lr}</span>
+                  ) : null; })()}
                   {g.cid && (() => {
                     const cat = categories.find(c => c.id === g.cid);
                     if (!cat) return null;
