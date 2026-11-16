@@ -15,19 +15,19 @@ import { t } from '../i18n.js';
 
 // เมนูจัดกลุ่ม: เล่นหวย | ผลรางวัล&ข้อมูล | บัญชีของฉัน | ผู้ดูแลระบบ
 const navGroups = [
-  { label: 'navBet', items: [{ to: '/lotteries', k: 'betMenu', betGate: true }] },
+  { label: 'navBet', items: [{ to: '/lotteries', k: 'betMenu', icon: 'lotteries', betGate: true }] },
   { label: 'navInfo', items: [
-    { to: '/results', k: 'results' },
-    { to: '/check', k: 'check' },
-    { to: '/winners', k: 'winners' },
+    { to: '/results', k: 'results', icon: 'trophy' },
+    { to: '/check', k: 'check', icon: 'search' },
+    { to: '/winners', k: 'winners', icon: 'trophy' },
   ]},
   { label: 'navAccount', items: [
-    { to: '/my-bets', k: 'mybets', auth: true, memberOnly: true },
-    { to: '/wallet', k: 'wallet', auth: true, memberOnly: true },
-    { to: '/performance', k: 'perf', auth: true, memberOnly: true },
-    { to: '/profile', k: 'profile', auth: true },
+    { to: '/my-bets', k: 'mybets', icon: 'ticket', auth: true, memberOnly: true },
+    { to: '/wallet', k: 'wallet', icon: 'wallet', auth: true, memberOnly: true },
+    { to: '/performance', k: 'perf', icon: 'chart', auth: true, memberOnly: true },
+    { to: '/profile', k: 'profile', icon: 'user', auth: true },
   ]},
-  { label: 'navAdmin', items: [{ to: '/admin', k: 'admin', auth: true, admin: true }] },
+  { label: 'navAdmin', items: [{ to: '/admin', k: 'admin', icon: 'dashboard', auth: true, admin: true }] },
 ];
 
 export default function Layout() {
@@ -102,15 +102,16 @@ export default function Layout() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <NavLink to="/" end
-              className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
-              {t('home')}
+              className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+              <Icon name="home" className="w-3.5 h-3.5" />{t('home')}
             </NavLink>
             {visibleGroups.map((g, gi) => (
               <Fragment key={g.label}>
                 {gi > 0 && <span className="w-px h-5 bg-navy-700/80 mx-1" />}
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end}
-                    className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+                    className={({ isActive }) => `px-3 py-2 text-[13px] tracking-wide transition border-b-2 inline-flex items-center gap-1.5 ${isActive ? 'border-[#22d3ee] text-[#67e8f9] font-semibold' : 'border-transparent text-navy-300 hover:text-[#67e8f9]'}`}>
+                    {n.icon && <Icon name={n.icon} className="w-3.5 h-3.5" />}
                     {t(n.k)}
                   </NavLink>
                 ))}
@@ -158,15 +159,16 @@ export default function Layout() {
               {user && <span className="text-xs font-black font-mono text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
-              {t('home')}
+              className={({ isActive }) => `flex items-center gap-2 px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
+              <Icon name="home" className="w-4 h-4" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
               <div key={g.label}>
                 <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-navy-500 border-t border-navy-800 mt-1">{t(g.label)}</div>
                 {g.items.map(n => (
                   <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) => `block px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
+                    className={({ isActive }) => `flex items-center gap-2 px-3 py-2 text-sm tracking-wide ${isActive ? 'text-[#67e8f9] font-semibold border-l-2 border-[#22d3ee]' : 'text-navy-300'}`}>
+                    {n.icon && <Icon name={n.icon} className="w-4 h-4" />}
                     {t(n.k)}
                   </NavLink>
                 ))}
