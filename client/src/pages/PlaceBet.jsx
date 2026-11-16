@@ -27,6 +27,16 @@ const ZODIAC_EMOJI = {
   'วอก': '🐵', 'ระกา': '🐓', 'จอ': '🐕', 'กุน': '🐷',
 };
 
+// จัดกลุ่มประเภทการแทงเป็น tab — บน/ล่าง/วิ่ง/อั้น/พิเศษ ให้เลือกเร็วไม่ต้องอ่านทุกปุ่ม
+const RULE_GROUPS = [
+  { key: 'top',    label: '🔢 เลขบน',   test: r => /top|front|first|num4/.test(r.bet_type || '') && !/bottom|last|run|ann|tod/.test(r.bet_type || '') },
+  { key: 'bottom', label: '🔢 เลขล่าง', test: r => /bottom|last|tod/.test(r.bet_type || '') },
+  { key: 'run',    label: '🏃 วิ่ง',     test: r => /run/.test(r.bet_type || '') },
+  { key: 'ann',    label: '🔒 เลขอั้น',  test: r => /ann_/.test(r.bet_type || '') },
+  { key: 'special',label: '✨ พิเศษ',   test: r => /zodiac|pattana|gsb|hn_|lao/.test(r.bet_type || '') || r.bet_type === 'p1' || /^p[1-5]$/.test(r.bet_type || '') },
+];
+const ruleGroup = (r) => RULE_GROUPS.find(g => g.test(r))?.key || 'top';
+
 // คำอธิบายแต่ละประเภทแทงราศี — บอกชัดว่าต้องตรงกับตำแหน่งไหนของผล 6 ราศี
 const ZODIAC_HINT = {
   zodiac: 'เลือกปีนักษัตรที่คาดว่าจะออก “ตัวแรก” ของผล 6 ตัว (ตำแหน่ง ①)',
@@ -60,6 +70,7 @@ export default function PlaceBet() {
   const [zodiacPicks, setZodiacPicks] = useState([]); // หวยราศี: ราศีที่เลือกเรียงตามลำดับ (สูงสุดตาม digits ของกติกา)
   const [amount, setAmount] = useState('');
   const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (ซื้อโต๊ดเพิ่มอีก 1 รายการ)
+  const [ruleTab, setRuleTab] = useState(''); // tab กลุ่มประเภทการแทง (ว่าง = กลุ่มแรกที่มี)
   const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem('lotteryFavNums') || '{}'); } catch { return {}; } });
   const numRef = useRef(null); // auto-focus ช่องเลขหลังเพิ่มโพย — แทงต่อได้เร็ว
 
@@ -122,6 +133,15 @@ export default function PlaceBet() {
   }, [repeat, rules, draw]);
 
   const rule = rules.find(r => String(r.id) === selRule);
+  // กลุ่มประเภทที่มีจริงในรอบนี้ — เรียงตาม RULE_GROUPS
+  const presentGroups = RULE_GROUPS.filter(g => rules.some(r => ruleGroup(r) === g.key));
+  const activeTab = presentGroups.some(g => g.key === ruleTab) ? ruleTab : (presentGroups[0]?.key || '');
+  const tabRules = rules.filter(r => ruleGroup(r) === activeTab);
+  const pickTab = (key) => {
+    setRuleTab(key);
+    const first = rules.find(r => ruleGroup(r) === key);
+    if (first) setSelRule(String(first.id));
+  };
   const isPattana = rule?.bet_type === 'pattana5';
   const isZodiac = rule?.bet_type?.startsWith('zodiac');
   // โต๊ด — อัตราโต๊ดฝังใน match_config ของกติกา (แสดงเป็นข้อความแจ้งเท่านั้น ผู้แทงไม่ต้องใส่เลขโต๊ด)
@@ -294,8 +314,22 @@ export default function PlaceBet() {
         {!closed && (
           <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 space-y-4 shadow-lg shadow-black/20">
             <h2 className="font-bold text-navy-950">{headBar}เลือกประเภทการแทง</h2>
+            {/* tab กลุ่มประเภท — แสดงเฉพาะกลุ่มที่มีจริงในรอบนี้ */}
+            {presentGroups.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                {presentGroups.map(g => {
+                  const n = rules.filter(r => ruleGroup(r) === g.key).length;
+                  return (
+                    <button key={g.key} type="button" onClick={() => pickTab(g.key)}
+                      className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition ${activeTab === g.key ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-900 border-navy-600 text-navy-300 hover:border-navy-400'}`}>
+                      {g.label} <span className="opacity-60">({n})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {rules.map(r => {
+              {tabRules.map(r => {
                 const isAnn = r.bet_type?.startsWith('ann_');
                 return (
                 <button key={r.id} onClick={() => setSelRule(String(r.id))}
@@ -402,6 +436,21 @@ export default function PlaceBet() {
                       <button type="button" onClick={() => saveFav(number)}
                         className="text-[10px] px-2 py-1 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300">⭐ บันทึกเลขนี้</button>
                     )}
+                  </div>
+                )}
+                {/* NumPad — กดเลขบนหน้าจอ เหมาะกับมือถือ (desktop พิมพ์เองได้เหมือนเดิม) */}
+                {favKey > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-1.5 select-none">
+                    {[1,2,3,4,5,6,7,8,9].map(d => (
+                      <button key={d} type="button" onClick={() => setNumber(n => (n + d).slice(0, favKey))}
+                        className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-gold-300 font-mono text-lg font-bold hover:border-gold-500/50 active:bg-navy-700 transition">{d}</button>
+                    ))}
+                    <button type="button" onClick={() => setNumber('')}
+                      className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-navy-300 text-xs font-bold hover:border-red-400/50 active:bg-navy-700 transition">ล้าง</button>
+                    <button type="button" onClick={() => setNumber(n => (n + '0').slice(0, favKey))}
+                      className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-gold-300 font-mono text-lg font-bold hover:border-gold-500/50 active:bg-navy-700 transition">0</button>
+                    <button type="button" onClick={() => setNumber(n => n.slice(0, -1))}
+                      className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-red-300 text-lg font-bold hover:border-red-400/50 active:bg-navy-700 transition">⌫</button>
                   </div>
                 )}
                 {showTodHint && (
