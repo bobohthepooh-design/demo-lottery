@@ -42,7 +42,7 @@ export default function AdminReports() {
   const winRate = t.items?.c ? Math.round((t.items.w / t.items.c) * 1000) / 10 : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-bold text-white">รายงาน (Reports)</h1>
 
       {/* KPI รวมทั้งระบบ */}

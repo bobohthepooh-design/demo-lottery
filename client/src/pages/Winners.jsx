@@ -19,7 +19,7 @@ export default function Winners() {
   const bigWin = (w) => w.payout >= 1000000; // 10,000 บาท+ highlight
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-white">🏆 ผู้ชนะล่าสุด</h1>
         <p className="text-xs text-navy-400 mt-1">เครดิตเสมือนเพื่อการศึกษา — ยิ่งโชคดี ยิ่งได้จริง (ในโลกเสมือน) 😉</p>

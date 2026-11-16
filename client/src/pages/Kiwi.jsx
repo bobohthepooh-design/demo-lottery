@@ -420,7 +420,7 @@ export default function Kiwi() {
       : Object.entries(g.tiers).map(([h, m]) => `ถูก ${h} = ×${m}`).join(' • ')) : '';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 instant-page">
+    <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-gold-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 text-center">
         <div className="hr-shine absolute top-0 inset-x-0 h-1.5" />

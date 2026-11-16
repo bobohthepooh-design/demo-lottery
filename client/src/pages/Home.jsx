@@ -177,7 +177,7 @@ export default function Home() {
   const b = mergeBanner(banner);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Welcome + DEMO badge — member เท่านั้น */}
       {user && (
         <div className="flex items-center gap-3 bg-navy-800/80 border border-navy-700 rounded-2xl px-4 py-3">

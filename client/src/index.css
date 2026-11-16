@@ -66,6 +66,12 @@
   --duration-slow: 350ms;
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* ===== Spacing rhythm — section=24px (space-y-6/gap-6), block=16px (space-y-4),
+     tight=8px (space-y-2) — ใช้ scale ของ Tailwind เป็นหลัก ตัวแปรนี้สำหรับกรณีต้องการ var() ===== */
+  --rhythm-section: 1.5rem;
+  --rhythm-block: 1rem;
+  --rhythm-tight: 0.5rem;
+
   --font-sans: 'Noto Sans Thai', 'Sarabun', 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Prompt', 'Sarabun', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Nunito', 'Sarabun', ui-monospace, monospace;

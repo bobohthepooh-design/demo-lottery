@@ -83,7 +83,7 @@ export default function AdminWallet() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-bold text-white">จัดการเครดิตเสมือน (Virtual Wallet)</h1>
       <form onSubmit={submit} className="bg-navy-800 border border-navy-700 rounded-xl p-5 grid sm:grid-cols-2 gap-3">
         <select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">

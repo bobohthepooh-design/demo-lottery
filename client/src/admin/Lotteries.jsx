@@ -259,7 +259,7 @@ export default function AdminLotteries() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex gap-1 border-b border-navy-700">
         {[{ id: 'rules', label: 'ประเภทหวย & กติกา' }, { id: 'settle', label: 'ออกผลรางวัล' }].map(tb => (
           <button key={tb.id} onClick={() => setTab(tb.id)}

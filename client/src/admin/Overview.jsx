@@ -42,7 +42,7 @@ export default function AdminOverview() {
   const maxDaily = Math.max(1, ...daily.map(x => Math.max(x.inn, x.out)));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard ภาพรวม</h1>
