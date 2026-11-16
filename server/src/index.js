@@ -27,6 +27,7 @@ import * as scratchService from './services/scratchService.js';
 import * as hiloService from './services/hiloService.js';
 import * as kiwiService from './services/kiwiService.js';
 import kiwiRoutes from './routes/kiwi.js';
+import publicRoutes from './routes/public.js';
 import { logger } from './lib/logger.js';
 import { openApiSpec } from './lib/openapi.js';
 
@@ -133,6 +134,7 @@ const apiRouters = [
   ['/chat', chatMemberRoutes],
   ['/admin/chat', chatAdminRoutes],
   ['/admin', adminRoutes],
+  ['/public', publicRoutes],
 ];
 for (const [prefix, router] of apiRouters) {
   app.use(`/api${prefix}`, router);

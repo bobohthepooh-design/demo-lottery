@@ -11,6 +11,7 @@ import Lotteries from './pages/Lotteries.jsx';
 import PlaceBet from './pages/PlaceBet.jsx';
 import Winners from './pages/Winners.jsx';
 import Results from './pages/Results.jsx';
+import EmbedResults from './pages/EmbedResults.jsx';
 import Wallet from './pages/Wallet.jsx';
 import MyBets from './pages/MyBets.jsx';
 import Scratch from './pages/Scratch.jsx';
@@ -98,6 +99,8 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+        {/* embed widget — ไม่มี Layout สำหรับใช้ใน iframe */}
+        <Route path="/embed/results" element={<EmbedResults />} />
       </Routes>
     </AuthProvider>
     </ErrorBoundary>

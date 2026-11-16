@@ -191,7 +191,7 @@ function winningFor(kind, x) {
     const top3 = lcNum(x, 'three-digit-top', 3);
     const bottom2 = lcNum(x, 'two-digit-bottom', 2);
     return {
-      last4: s5.slice(-4), num4: s5.slice(0, 4),
+      last4: s5.slice(-4), num4: s5.slice(0, 4), db5: s5,
       top3, last3: top3, last2: top3.slice(-2), bottom2,
     };
   }
