@@ -163,9 +163,10 @@ const LC_MARKET_MAP = {
   HNP:   { slug: 'hanoi-special',            kind: 'hn' },
   HNV:   { slug: 'hanoi-vip',                kind: 'hn' },
   HNM:   { slug: 'hanoi-morning',            kind: 'hn' },
+  GS:    { slug: 'gsb-lottery',              kind: 'gsb' },
 };
 
-// ดึงผลดิบจาก lotterychecks — คืน {date, special, top3, bottom2}
+// ดึงผลดิบจาก lotterychecks — คืน {date, prizes:{slug:digits}}
 async function fetchLCAll(slug) {
   const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${slug}&limit=1`,
     { signal: AbortSignal.timeout(20000) });
@@ -173,34 +174,55 @@ async function fetchLCAll(slug) {
   const j = await r.json();
   const d = j?.data?.[0];
   if (!d || d.status !== 'complete') throw new Error(`LC ${slug}: no result`);
-  const prize = (s) => d.prizes?.find(p => p.slug === s)?.numbers?.[0] || null;
-  const special = String(prize('special-prize') || '').replace(/\D/g, '');
-  const top3 = String(prize('three-digit-top') || '').padStart(3, '0').slice(-3);
-  const bottom2 = String(prize('two-digit-bottom') || '').padStart(2, '0').slice(-2);
-  if (special.length < 4 || !/^\d{3}$/.test(top3) || !/^\d{2}$/.test(bottom2))
-    throw new Error(`LC ${slug}: incomplete prizes`);
-  return { date: String(d.drawDate).slice(0, 10), special, top3, bottom2 };
+  const prizes = {};
+  for (const p of d.prizes || []) prizes[p.slug] = String(p.numbers?.[0] ?? '').replace(/\D/g, '');
+  return { date: String(d.drawDate).slice(0, 10), prizes };
 }
+
+const lcNum = (x, slug, len) => {
+  const v = x.prizes[slug];
+  if (!v) throw new Error(`LC missing prize ${slug}`);
+  return v.padStart(len, '0').slice(-len);
+};
 
 function winningFor(kind, x) {
   if (kind === 'lao5') {
-    const s5 = x.special.padStart(5, '0').slice(-5);
+    const s5 = lcNum(x, 'special-prize', 5);
+    const top3 = lcNum(x, 'three-digit-top', 3);
+    const bottom2 = lcNum(x, 'two-digit-bottom', 2);
     return {
       last4: s5.slice(-4), num4: s5.slice(0, 4),
-      top3: x.top3, last3: x.top3, last2: x.top3.slice(-2), bottom2: x.bottom2,
+      top3, last3: top3, last2: top3.slice(-2), bottom2,
     };
   }
   if (kind === 'lao6') {
-    const s6 = x.special;
+    const s6 = x.prizes['special-prize'];
+    if (!s6) throw new Error('LC missing prize special-prize');
     const s5 = s6.slice(-5);
     return {
       last4: s6.slice(-4), num4: s6.slice(-4), last5: s5, db5: s5,
-      top3: x.top3, last3: x.top3, last2: x.bottom2, bottom2: x.bottom2,
+      top3: lcNum(x, 'three-digit-top', 3), last3: lcNum(x, 'three-digit-top', 3),
+      last2: lcNum(x, 'two-digit-bottom', 2), bottom2: lcNum(x, 'two-digit-bottom', 2),
+    };
+  }
+  if (kind === 'gsb') {
+    // สลากออมสินพิเศษ — อันดับ 1-5 (7 หลัก) + เลขท้าย 4/3 ตัว
+    return {
+      p1: lcNum(x, 'first-prize', 7), p2: lcNum(x, 'second-prize', 7),
+      p3: lcNum(x, 'third-prize', 7), p4: lcNum(x, 'fourth-prize', 7),
+      p5: lcNum(x, 'fifth-prize', 7),
+      last4: lcNum(x, 'last-four-digit', 4),
+      last3: lcNum(x, 'last-three-digit', 3),
     };
   }
   // hn
-  const s5 = x.special.padStart(5, '0').slice(-5);
-  return { num4: s5.slice(0, 4), top3: x.top3, bottom2: x.bottom2, db5: s5 };
+  const s5 = lcNum(x, 'special-prize', 5);
+  return {
+    num4: s5.slice(0, 4),
+    top3: lcNum(x, 'three-digit-top', 3),
+    bottom2: lcNum(x, 'two-digit-bottom', 2),
+    db5: s5,
+  };
 }
 
 // ผลตลาดย่อย (ลาวทุกหมวดยกเว้นพัฒนาบน XSMB ไม่มี, ฮานอยหมวดยกเว้น HNN/HNST)
@@ -309,8 +331,9 @@ async function autoSettleResultsInner() {
       if (hanoi && hanoi.date === drawLocalDate(d)) { src = hanoi; srcLabel = 'HN(XSMB)'; }
       else { out.skipped.push(`${d.draw_code}: รอผล XSMB จริง (ล่าสุด ${hanoi?.date || 'ไม่มีข้อมูล'})`); continue; }
     }
-    else if (d.type_code === 'LA' || d.type_code === 'HN') {
-      const m = LC_MARKET_MAP[d.cat_code];
+    else if (d.type_code === 'LA' || d.type_code === 'HN' || d.type_code === 'GS') {
+      // หมวดย่อย (LA/HN) ใช้ cat_code; 市場ระดับ type (GS ไม่มี category) fallback เป็น type_code
+      const m = LC_MARKET_MAP[d.cat_code] || LC_MARKET_MAP[d.type_code];
       if (!m) { out.skipped.push(`${d.draw_code}: no source`); continue; }
       let raw = lcCache.get(m.slug);
       if (raw === undefined) {
@@ -350,6 +373,7 @@ export async function fetchResultForDraw(drawId) {
   if (draw.type_code === 'TH') src = await fetchThaiResult();
   else if (draw.type_code === 'HN') src = await hanoiResultFor(draw);
   else if (draw.type_code === 'LA') src = await marketResultFor(draw.category_code || draw.cat_code);
+  else if (draw.type_code === 'GS') src = await marketResultFor('GS');
   else if (draw.type_code === 'HR') return { date: drawLocalDate(draw), winning: generateZodiacResult(draw.draw_code) };
   else throw new HttpError(400, 'ไม่ทราบแหล่งผลสำหรับหวยประเภทนี้ — กรุณากรอกผลเอง');
   if (src.date && drawLocalDate(draw) !== src.date) {

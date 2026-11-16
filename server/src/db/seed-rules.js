@@ -63,7 +63,7 @@ function buildRules(d) {
     await d.prepare(`UPDATE lottery_categories SET draw_pattern='mon-fri' WHERE code='LA' AND lottery_type_id=?`).run(LA_ID);
     await d.prepare(`UPDATE lottery_categories SET name_th='หวยลาวพัฒนา', draw_pattern='mon-fri 20:30' WHERE code='LAD' AND lottery_type_id=?`).run(LA_ID);
 
-    const TH = await tid('TH'), HN = await tid('HN'), HR = await tid('HR');
+    const TH = await tid('TH'), HN = await tid('HN'), HR = await tid('HR'), GS = await tid('GS');
 
     // ---------- ปิดกติกาเดิมที่ยัง active — เปลี่ยนชื่อให้ unique ต่อ row (กันชน idx_rules_uniq) ----------
     // CAST(id AS TEXT) ใช้ได้ทั้ง SQLite และ PostgreSQL (|| text+int ใช้ไม่ได้ใน PG)
@@ -130,6 +130,14 @@ function buildRules(d) {
       push(HN, catId, 'run_bottom','เลขวิ่งล่าง',   1, 'bottom2',  'digit_contains', 4.2);
     };
     [HNN, HNS, HNP, HNV, HNST, HNM].forEach(c => c && hnRules(c));
+
+    // ===== สลากออมสิน (GS) — ผล: อันดับ 1-5 (7 หลัก) + เลขท้าย 4/3 ตัว — ออกวันที่ 1&16 =====
+    if (GS) {
+      push(GS, null, 'last4',     'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 1000);
+      push(GS, null, 'last3',     'เลขท้าย 3 ตัว',   3, 'last3',   'exact', 400,  100, 100, 1000000, 60);
+      push(GS, null, 'run_top',   'เลขวิ่งบน',       1, 'last3',   'digit_contains', 3.5);
+      push(GS, null, 'run_bottom','เลขวิ่งล่าง',     1, 'last3',   'digit_contains', 4.2);
+    }
 
     // ===== เลขอั้น — ไม่ใช่ประเภทแทงแยก: ผู้แทงใช้กติกาปกติ ถ้าเลขตรงเลขอั้นที่ admin
     // ประกาศรายรอบ → จ่ายตามอัตราเลขอั้น (ann_<side>_pay) หรือครึ่งหนึ่งของอัตรากติกานั้น

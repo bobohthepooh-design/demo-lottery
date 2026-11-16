@@ -59,6 +59,7 @@ const isHoliday = (d) => TH_HOLIDAYS.has(ymdKey(d));
 // ตารางเวลาตามประเภท/หมวด — kind: monthly(วันที่ของเดือน) | weekly(วันในสัปดาห์) | daily | hourly
 function scheduleFor(typeCode, catCode) {
   if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
+  if (typeCode === 'GS') return { kind: 'monthly', days: [1, 16], hour: 16, closeHour: 15, skipHoliday: false }; // government's Savings Bank Bond (ออก 1&16, ประกาศบ่าย)
   if (typeCode === 'LA') {
     if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 30, closeHour: 19, closeMinute: 30, skipHoliday: true }; // ค่ำ จ–ศ
     if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0, skipHoliday: true }; // เช้า ทุกวัน

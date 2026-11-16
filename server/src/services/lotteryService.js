@@ -24,6 +24,12 @@ const WINNING_FIELD_SPECS = {
   last2:   { re: /^\d{2}$/, desc: 'เลขท้าย 2 ตัว', many: true },
   ann_top:    { re: /^\d{1,3}$/, desc: 'เลขอั้นบน', many: true },
   ann_bottom: { re: /^\d{1,3}$/, desc: 'เลขอั้นล่าง', many: true },
+  // area's Savings Bank Bond (GSB) — อันดับ 1-5 เป็นเลข 7 หลัก
+  p1: { re: /^\d{7}$/, desc: 'อันดับที่ 1 — 7 หลัก' },
+  p2: { re: /^\d{7}$/, desc: 'อันดับที่ 2 — 7 หลัก' },
+  p3: { re: /^\d{7}$/, desc: 'อันดับที่ 3 — 7 หลัก' },
+  p4: { re: /^\d{7}$/, desc: 'อันดับที่ 4 — 7 หลัก' },
+  p5: { re: /^\d{7}$/, desc: 'อันดับที่ 5 — 7 หลัก' },
 };
 const WINNING_SPECIAL_KEYS = ['ann_top_pay', 'ann_bottom_pay', 'zodiac', 'seq', 'numbers'];
 

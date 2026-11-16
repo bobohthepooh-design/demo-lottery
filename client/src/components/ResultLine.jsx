@@ -57,7 +57,7 @@ function FlagHR() {
 }
 const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN, HR: FlagHR };
 
-const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲' };
+const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲', GS: '🏦' };
 export function FlagIcon({ code, className = '' }) {
   const F = FLAGS[code];
   if (!F) return <span className={className}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
