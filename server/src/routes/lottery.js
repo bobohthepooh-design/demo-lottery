@@ -184,6 +184,94 @@ router.get('/results', async (req, res) => {
   res.json({ results: rows.map(r => ({ ...r, fairness: fetcher.fairnessForSource(r.source, r.draw_code) })) });
 });
 
+// ประวัติผลย้อนหลังของตลาด (type_code + category_code) — settled draws ล่าสุด
+router.get('/history', async (req, res, next) => {
+  try {
+    const typeCode = String(req.query.type_code || '').trim();
+    const catCode = req.query.category_code ? String(req.query.category_code).trim() : null;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 30, 1), 100);
+    if (!typeCode) throw new HttpError(400, 'ต้องระบุ type_code');
+    const rows = await getDb().prepare(`
+      SELECT d.id, d.draw_code, d.draw_at, d.status,
+             lt.code AS type_code, lt.name_th AS type_name_th,
+             c.code AS category_code, c.name_th AS category_name_th,
+             lr.winning_numbers, lr.source AS result_source, lr.published_at
+      FROM lottery_draws d
+      JOIN lottery_types lt ON lt.id = d.lottery_type_id
+      LEFT JOIN lottery_categories c ON c.id = d.category_id
+      JOIN lottery_results lr ON lr.draw_id = d.id
+      WHERE lt.code = $1
+        AND (($2::text IS NULL AND c.code IS NULL) OR c.code = $2)
+      ORDER BY d.draw_at DESC
+      LIMIT $3`).all(typeCode, catCode, limit);
+    res.json({
+      draws: rows.map(d => {
+        let winning = null;
+        try { winning = d.winning_numbers ? JSON.parse(d.winning_numbers) : null; } catch {}
+        return { ...d, winning_numbers: undefined, winning };
+      }),
+    });
+  } catch (e) { next(e); }
+});
+
+// สถิติความถี่เลขย้อนหลัง — นับจากผลจริง N งวดล่าสุดของตลาด
+function collectNumbers(winning) {
+  const nums = [];
+  const walk = v => {
+    if (v == null) return;
+    if (Array.isArray(v)) return v.forEach(walk);
+    if (typeof v === 'string' && /^\d+$/.test(v)) nums.push(v);
+    else if (typeof v === 'object') Object.values(v).forEach(walk);
+  };
+  walk(winning);
+  return nums;
+}
+
+router.get('/stats', async (req, res, next) => {
+  try {
+    const typeCode = String(req.query.type_code || '').trim();
+    const catCode = req.query.category_code ? String(req.query.category_code).trim() : null;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 60, 5), 200);
+    if (!typeCode) throw new HttpError(400, 'ต้องระบุ type_code');
+    const rows = await getDb().prepare(`
+      SELECT lr.winning_numbers
+      FROM lottery_draws d
+      JOIN lottery_types lt ON lt.id = d.lottery_type_id
+      LEFT JOIN lottery_categories c ON c.id = d.category_id
+      JOIN lottery_results lr ON lr.draw_id = d.id
+      WHERE lt.code = $1
+        AND (($2::text IS NULL AND c.code IS NULL) OR c.code = $2)
+      ORDER BY d.draw_at DESC
+      LIMIT $3`).all(typeCode, catCode, limit);
+    const digitFreq = {};
+    const combo = {}; // key: length-prefixed number e.g. '2:06' '3:782' '6:645654'
+    let used = 0;
+    for (const r of rows) {
+      let w = null;
+      try { w = r.winning_numbers ? JSON.parse(r.winning_numbers) : null; } catch {}
+      if (!w) continue;
+      used++;
+      for (const n of collectNumbers(w)) {
+        for (const ch of n) digitFreq[ch] = (digitFreq[ch] || 0) + 1;
+        if (/^\d{2,6}$/.test(n)) {
+          const k = `${n.length}:${n}`;
+          combo[k] = (combo[k] || 0) + 1;
+        }
+      }
+    }
+    const top = (len) => Object.entries(combo)
+      .filter(([k]) => k.startsWith(`${len}:`))
+      .map(([k, c]) => ({ number: k.slice(len.length + 1), count: c }))
+      .sort((a, b) => b.count - a.count || a.number.localeCompare(b.number))
+      .slice(0, 12);
+    res.json({
+      draws_used: used,
+      digit_freq: Object.fromEntries('0123456789'.split('').map(d => [d, digitFreq[d] || 0])),
+      top2: top('2'), top3: top('3'), top4: top('4'), top6: top('6'),
+    });
+  } catch (e) { next(e); }
+});
+
 // ตรวจเลข — ใส่เลข + เลือกรอบที่ออกผลแล้ว → บอกว่าถูกรางวัลอะไรบ้าง (public, ไม่ต้อง login)
 router.get('/check', async (req, res, next) => {
   try {
