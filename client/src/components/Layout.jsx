@@ -213,7 +213,9 @@ export default function Layout() {
       {/* Bottom navigation — มือถือ/แท็บเล็ต (< xl) แถบติดขอบล่าง + ปุ่มเพิ่มเติมเปิดเมนูเต็ม */}
       <nav className="xl:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+        {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
+        <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
+          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-[#22d3ee]/40 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
           {/* เส้นเรืองทองด้านบน */}
           <div className="absolute top-0 inset-x-8 h-px"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent)' }} />
