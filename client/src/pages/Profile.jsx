@@ -6,6 +6,7 @@ import { toast } from '../components/toast.js';
 
 import { getTz, setTz } from '../time.js';
 import { pushSupported, subscribePush, unsubscribePush, pushSubscriptionCount } from '../push.js';
+import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
 
 // Responsible gambling — ตั้งวงเงินเดิมพันรายวัน/เดือน + self-exclusion (แก้กลับไม่ได้)
 function RGCard({ user, onDone }) {
@@ -38,39 +39,30 @@ function RGCard({ user, onDone }) {
   };
 
   return (
-    <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
-      <h2 className="text-lg font-bold text-white mb-1">เล่นอย่างรับผิดชอบ</h2>
-      <p className="text-xs text-navy-400 mb-4">ตั้งวงเงินเดิมพันสูงสุดต่อวัน/เดือน และ/หรือระงับการแทงชั่วคราว — เพื่อป้องกันการเล่นเกินตัว</p>
+    <Card>
+      <CardHeader title="เล่นอย่างรับผิดชอบ" sub="ตั้งวงเงินเดิมพันสูงสุดต่อวัน/เดือน และ/หรือระงับการแทงชั่วคราว — เพื่อป้องกันการเล่นเกินตัว" />
+      <CardBody>
       {excluded && (
         <div className="mb-4 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2 text-sm text-red-300 font-semibold">
           ⛔ บัญชีถูกระงับการแทง{user.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${user.selfExcludedUntil}`}
         </div>
       )}
       <div className="grid sm:grid-cols-2 gap-3 mb-4">
-        <div>
-          <label className="text-xs text-navy-300">วงเงินสูงสุด/วัน (บาท — เว้นว่าง = ไม่จำกัด)</label>
-          <input type="number" min="0" value={daily} onChange={e => setDaily(e.target.value)} placeholder="เช่น 500"
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
-        </div>
-        <div>
-          <label className="text-xs text-navy-300">วงเงินสูงสุด/เดือน (บาท)</label>
-          <input type="number" min="0" value={monthly} onChange={e => setMonthly(e.target.value)} placeholder="เช่น 5000"
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
-        </div>
+        <Input label="วงเงินสูงสุด/วัน (บาท — เว้นว่าง = ไม่จำกัด)" type="number" min="0" value={daily} onChange={e => setDaily(e.target.value)} placeholder="เช่น 500" inputClassName="py-2" />
+        <Input label="วงเงินสูงสุด/เดือน (บาท)" type="number" min="0" value={monthly} onChange={e => setMonthly(e.target.value)} placeholder="เช่น 5000" inputClassName="py-2" />
       </div>
-      <button onClick={saveLimits} className="bg-gold-500 text-navy-950 font-bold px-5 py-2 rounded-lg text-sm mb-5">บันทึกวงเงิน</button>
+      <Button onClick={saveLimits} size="sm" className="mb-5">บันทึกวงเงิน</Button>
       <div>
         <div className="text-xs text-navy-300 mb-2">ระงับการแทง (self-exclusion — ยกเลิกเองไม่ได้):</div>
         <div className="flex flex-wrap gap-2">
           {[1, 7, 30].map(d => (
-            <button key={d} onClick={() => exclude(d)} disabled={excluded}
-              className="border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm hover:bg-red-500/10 disabled:opacity-40">{d} วัน</button>
+            <Button key={d} variant="danger" size="sm" onClick={() => exclude(d)} disabled={excluded}>{d} วัน</Button>
           ))}
-          <button onClick={() => exclude(36500)} disabled={excluded || user?.selfExcludedUntil === 'permanent'}
-            className="border border-red-500 text-red-300 font-bold px-4 py-2 rounded-lg text-sm hover:bg-red-500/10 disabled:opacity-40">ถาวร</button>
+          <Button variant="danger" size="sm" onClick={() => exclude(36500)} disabled={excluded || user?.selfExcludedUntil === 'permanent'}>ถาวร</Button>
         </div>
       </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -121,27 +113,24 @@ function PrefsCard() {
   };
 
   return (
-    <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
-      <h2 className="text-lg font-bold text-white mb-1">การตั้งค่าบัญชี</h2>
-      <p className="text-xs text-navy-400 mb-4">เขตเวลา • การแจ้งเตือน</p>
+    <Card>
+      <CardHeader title="การตั้งค่าบัญชี" sub="เขตเวลา • การแจ้งเตือน" />
+      <CardBody>
       <div className="grid sm:grid-cols-2 gap-3">
+        <Select label="เขตเวลา / Timezone" value={tz} onChange={e => changeTz(e.target.value)} inputClassName="py-2 text-sm">
+          {TZ_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </Select>
         <div>
-          <label className="text-xs text-navy-300">เขตเวลา / Timezone</label>
-          <select value={tz} onChange={e => changeTz(e.target.value)}
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 text-sm">
-            {TZ_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-navy-300">การแจ้งเตือน Push</label>
-          <button onClick={togglePush} disabled={pushBusy || !pushSupported()}
-            className={`w-full mt-1 font-bold px-3 py-2 rounded-lg text-sm transition disabled:opacity-50 ${pushOn ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-navy-700 hover:bg-navy-600 text-gold-300 border border-gold-500/40'}`}>
-            {pushBusy ? '...' : pushOn ? '🔔 เปิดอยู่ — แตะเพื่อปิด' : '🔕 เปิดแจ้งเตือน'}
-          </button>
+          <label className="text-xs font-semibold text-navy-300 mb-1.5 block">การแจ้งเตือน Push</label>
+          <Button onClick={togglePush} disabled={pushBusy || !pushSupported()}
+            variant={pushOn ? 'accent' : 'ghost'} className="w-full">
+            {pushBusy ? '...' : pushOn ? 'เปิดอยู่ — แตะเพื่อปิด' : 'เปิดแจ้งเตือน'}
+          </Button>
           {!pushSupported() && <div className="text-[10px] text-navy-500 mt-1">เบราว์เซอร์นี้ไม่รองรับ push</div>}
         </div>
       </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -176,30 +165,31 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
-        <h1 className="text-xl font-bold text-gold-400 mb-4">โปรไฟล์สมาชิก</h1>
+      <Card>
+        <CardHeader title="โปรไฟล์สมาชิก" />
+        <CardBody>
         <dl className="grid sm:grid-cols-2 gap-3 text-sm">
           <div><dt className="text-navy-300">ชื่อผู้ใช้</dt><dd className="text-white font-semibold">{user?.username}</dd></div>
           <div><dt className="text-navy-300">ชื่อที่แสดง</dt><dd className="text-white">{user?.displayName}</dd></div>
           <div><dt className="text-navy-300">อีเมล</dt><dd className="text-white">{user?.email}</dd></div>
           <div><dt className="text-navy-300">บทบาท</dt><dd className="text-white">{(user?.roles || []).join(', ') || 'member'}</dd></div>
         </dl>
-      </div>
+        </CardBody>
+      </Card>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-4">เปลี่ยนรหัสผ่าน</h2>
+      <Card>
+        <CardHeader title="เปลี่ยนรหัสผ่าน" />
+        <CardBody>
         <form onSubmit={changePw} className="space-y-3">
-          <input type="password" required placeholder="รหัสผ่านเดิม" value={pw.oldPassword} onChange={e => setPw({...pw, oldPassword: e.target.value})}
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gold-500" />
-          <input type="password" required minLength={8} placeholder="รหัสผ่านใหม่ (8+ ตัว)" value={pw.newPassword} onChange={e => setPw({...pw, newPassword: e.target.value})}
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gold-500" />
-          <input type="password" required placeholder="ยืนยันรหัสผ่านใหม่" value={pw.confirm} onChange={e => setPw({...pw, confirm: e.target.value})}
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gold-500" />
-          {err && <div className="text-red-400 text-sm">{err}</div>}
-          {msg && <div className="text-green-400 text-sm">{msg}</div>}
-          <button disabled={busy} className="bg-gold-500 text-navy-950 font-bold px-6 py-2.5 rounded-lg hover:bg-gold-400 disabled:opacity-50">เปลี่ยนรหัสผ่าน</button>
+          <Input type="password" required placeholder="รหัสผ่านเดิม" value={pw.oldPassword} onChange={e => setPw({...pw, oldPassword: e.target.value})} inputClassName="py-2.5" />
+          <Input type="password" required minLength={8} placeholder="รหัสผ่านใหม่ (8+ ตัว)" value={pw.newPassword} onChange={e => setPw({...pw, newPassword: e.target.value})} inputClassName="py-2.5" />
+          <Input type="password" required placeholder="ยืนยันรหัสผ่านใหม่" value={pw.confirm} onChange={e => setPw({...pw, confirm: e.target.value})} inputClassName="py-2.5" />
+          {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
+          {msg && <div className="text-green-400 text-sm" role="status">{msg}</div>}
+          <Button disabled={busy}>{busy ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}</Button>
         </form>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* การตั้งค่าบัญชี — timezone/push */}
       <PrefsCard />
@@ -208,13 +198,14 @@ export default function Profile() {
       <RGCard user={user} onDone={refresh} />
 
       {isAdmin && (
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-2">การยืนยันตัวตน 2 ชั้น (MFA/TOTP) — สำหรับบัญชี Admin</h2>
+      <Card>
+        <CardHeader title="การยืนยันตัวตน 2 ชั้น (MFA/TOTP)" sub="สำหรับบัญชี Admin" />
+        <CardBody>
         <p className="text-sm text-navy-300 mb-4">{user?.mfaEnabled ? 'เปิดใช้งานแล้ว — ปลอดภัยยิ่งขึ้น' : 'ยังไม่ได้เปิดใช้งาน (แนะนำสำหรับบัญชี Admin)'}</p>
         {!mfa ? (
-          <button onClick={setupMfa} className="border border-gold-500/50 text-gold-300 px-5 py-2 rounded-lg hover:bg-navy-700">
+          <Button variant="ghost" onClick={setupMfa}>
             {user?.mfaEnabled ? 'สร้าง Secret ใหม่' : 'ตั้งค่า MFA'}
-          </button>
+          </Button>
         ) : (
           <div className="space-y-3">
             <div className="bg-navy-900 rounded-lg p-4 text-sm">
@@ -223,13 +214,14 @@ export default function Profile() {
               <div className="text-navy-300 mt-2 text-xs break-all">{mfa.uri}</div>
             </div>
             <div className="flex gap-2">
-              <input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
-                placeholder="รหัส 6 หลัก" className="bg-navy-900 border border-navy-600 rounded-lg px-4 py-2.5 w-40 text-center tracking-widest" />
-              <button onClick={enableMfa} className="bg-gold-500 text-navy-950 font-bold px-5 py-2.5 rounded-lg">เปิดใช้งาน</button>
+              <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
+                placeholder="รหัส 6 หลัก" className="flex-1" inputClassName="text-center tracking-widest py-2.5" aria-label="รหัส MFA" />
+              <Button onClick={enableMfa}>เปิดใช้งาน</Button>
             </div>
           </div>
         )}
-      </div>
+        </CardBody>
+      </Card>
       )}
     </div>
   );

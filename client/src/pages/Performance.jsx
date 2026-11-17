@@ -5,15 +5,10 @@ import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonCard, SkeletonTable } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { typeAccent } from '../typeAccent.js';
+import { Card, CardHeader, StatCard } from '../components/ui/index.js';
 
 function Kpi({ label, value, sub, tone = 'text-white' }) {
-  return (
-    <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-      <div className="text-xs text-navy-300">{label}</div>
-      <div className={`text-xl font-bold mt-1 ${tone}`}>{value}</div>
-      {sub && <div className="text-[11px] text-navy-400 mt-0.5">{sub}</div>}
-    </div>
-  );
+  return <StatCard label={label} value={value} sub={sub} accent={tone} />;
 }
 
 export default function Performance() {
@@ -75,8 +70,8 @@ export default function Performance() {
       )}
 
       {/* สถิติรายประเภทหวย */}
-      <section className="bg-navy-800 border border-navy-700 rounded-xl overflow-hidden">
-        <h2 className="px-4 py-3 text-sm font-bold text-white border-b border-navy-700">สถิติตามประเภทหวย</h2>
+      <Card className="overflow-hidden">
+        <CardHeader title="สถิติตามประเภทหวย" className="px-4 py-3" />
         {byType.length ? (
           <div className="divide-y divide-navy-700/60">
             {byType.map(t => {
@@ -105,7 +100,7 @@ export default function Performance() {
             hint="เริ่มแทงหวยเพื่อดูสถิติและผลการเล่นของคุณที่นี่"
             to="/lotteries" cta="ไปแทงหวยเลย" />
         )}
-      </section>
+      </Card>
 
       <p className="text-[11px] text-navy-500 text-center">
         * นับเฉพาะโพยที่ไม่ถูกยกเลิก/คืนเงิน • เป็นเครดิตจำลองเพื่อการศึกษา ไม่ใช่เงินจริง
