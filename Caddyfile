@@ -26,7 +26,7 @@
 	}
 }
 
-# LAN testing — http://<LAN-IP> (เช่น http://192.168.31.252)
+# LAN testing — http://<LAN-IP> (เช่น http://192.168.1.41)
 # HTTP ธรรมดาเพื่อให้ login/cookie ใช้ได้บนเครื่องในวง LAN โดยไม่ต้องจัดการ cert
 http://{$LAN_IP} {
 	reverse_proxy app:4000 {
