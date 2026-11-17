@@ -181,7 +181,7 @@ export default function Layout() {
                     <span className="text-[10px] font-black text-black tracking-wider">{t('credit')}</span>
                     <span className="text-sm font-black text-black font-mono">{satang(balance)}</span>
                   </Link>
-                  <button onClick={doLogout} title="ออกจากระบบ"
+                  <button onClick={doLogout} title="ออกจากระบบ" aria-label="ออกจากระบบ"
                     className="flex items-center justify-center w-8 h-8 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-red-300 hover:border-red-500/50 transition">
                     <Icon name="logout" className="w-4 h-4" />
                   </button>
@@ -195,6 +195,7 @@ export default function Layout() {
               <button
                 onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
                 title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
+                aria-label={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
                 className="flex items-center justify-center w-8 h-8 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
                 <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4" />
               </button>
@@ -207,6 +208,7 @@ export default function Layout() {
             <button
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
               title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
+              aria-label={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
               className="flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
               <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4.5 h-4.5" />
             </button>
