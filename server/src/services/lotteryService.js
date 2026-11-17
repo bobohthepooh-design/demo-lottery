@@ -237,7 +237,9 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
   if (!(await isDrawOpen(draw))) throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพย', 'DRAW_CLOSED');
 
-  const rg = await qGet('SELECT self_excluded_until, daily_limit_satang, monthly_limit_satang FROM users WHERE id = $1', [userId]);
+  const rg = await qGet('SELECT age_confirmed, self_excluded_until, daily_limit_satang, monthly_limit_satang FROM users WHERE id = $1', [userId]);
+  if (rg && !rg.age_confirmed)
+    throw new HttpError(403, 'ต้องยืนยันว่าอายุ 18 ปีขึ้นไปก่อนเดิมพันหรือเล่นเกม', 'AGE_CONFIRMATION_REQUIRED');
   if (rg?.self_excluded_until) {
     const until = rg.self_excluded_until;
     if (until === 'permanent' || until > nowSql())

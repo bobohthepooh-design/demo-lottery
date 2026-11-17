@@ -4,7 +4,7 @@
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express.js (ESM) + `node:sqlite` (SQLite ในตัว Node — ไม่ต้องติดตั้ง DB แยก)
+- **Backend:** Node.js + Express.js (ESM) + PostgreSQL 16 (production DB — ดู docker-compose.yml)
 - **Frontend:** React 18 + Vite + Tailwind CSS 4 + React Router 7
 - **Auth:** Session cookie (HttpOnly) + scrypt password hashing + TOTP MFA สำหรับ Admin
 - **Security:** helmet, rate-limit, CSRF double-submit (HMAC), RBAC, zod validation, audit log
@@ -102,7 +102,7 @@ copy backup.db server\data\demo-lottery.db
 - [x] Rate limit: global + login limiter + account lockout (5 ครั้ง → ล็อก 15 นาที)
 - [x] Security headers: helmet
 - [x] Input validation: zod ทุก endpoint
-- [x] SQL injection: parameterized queries ทั้งหมด (node:sqlite prepared statements)
+- [x] SQL injection: parameterized queries ทั้งหมด (PostgreSQL $n placeholders ผ่าน pg pool)
 - [x] XSS: React escaping + JSON API
 - [x] Wallet: DB transaction + optimistic lock (version) + idempotency_key unique + balance>=0 CHECK
 - [x] Audit log + security_events ทุก action สำคัญ

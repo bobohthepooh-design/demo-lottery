@@ -43,9 +43,12 @@ export const config = {
     : ((process.env.NODE_ENV || 'development') === 'production' ? false : 1),
   // OTP_DEV_ECHO: ส่งรหัส OTP กลับใน API response (demo only — ห้ามเปิดบน internet
   // เพราะใครก็ login เป็นเบอร์ไหนก็ได้) default: เปิดเฉพาะ dev
-  otpDevEcho: process.env.OTP_DEV_ECHO !== undefined
-    ? process.env.OTP_DEV_ECHO === 'true'
-    : (process.env.NODE_ENV || 'development') !== 'production',
+  // บังคับปิดใน production เสมอ — แม้ env จะตั้ง true ไว้ (กัน OTP รั่วบน public internet)
+  otpDevEcho: (process.env.NODE_ENV || 'development') === 'production'
+    ? false
+    : (process.env.OTP_DEV_ECHO !== undefined
+      ? process.env.OTP_DEV_ECHO === 'true'
+      : true),
 };
 
 if (config.isProd && config.sessionSecret === 'dev-insecure-secret-change-me') {

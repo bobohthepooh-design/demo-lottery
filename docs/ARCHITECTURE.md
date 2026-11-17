@@ -9,8 +9,8 @@
 | Runtime | Node.js 26 LTS | ติดตั้งแล้ว, npm มาตรฐาน |
 | Backend | Express.js (ESM) | middleware ecosystem, RBAC ชัดเจน |
 | Frontend | React 18 + Vite + Tailwind CSS | SPA responsive, build เร็ว |
-| Database | SQLite + better-sqlite3 | zero-service, ACID transaction, FK/index ครบ |
-| Auth | express-session + scrypt (Node crypto) | password hashing มาตรฐาน, ไม่ต้อง native build |
+| Database | PostgreSQL 16 | ACID transaction, FK/index ครบ, concurrent-safe |
+| Auth | DB session cookie + scrypt (Node crypto) | password hashing มาตรฐาน, session revoke ได้ |
 | MFA (Admin) | TOTP (RFC 6238, Node crypto) | ไม่พึ่ง paid service |
 | Security | helmet, express-rate-limit, csrf-csrf, zod | OWASP Top 10 coverage |
 | Test | Vitest + Supertest | unit + API integration |
@@ -42,10 +42,10 @@
 │  │  DB config) │ │  idempotency) │ │  session, RBAC)       │ │
 │  └────────────┘ └──────────────┘ └───────────────────────┘ │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ better-sqlite3 (synchronous, tx-safe)
+                           │ pg pool (async, txAsync wrapper)
 ┌──────────────────────────▼──────────────────────────────────┐
-│                    SQLite Database                           │
-│  data/demo-lottery.db  (+ -wal, -shm)   Backup = file copy   │
+│                  PostgreSQL Database                            │
+│  lottery DB — Backup = pg_dump (scripts/backup-pg.sh)          │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,7 +97,7 @@ match_pattern (e.g. `last2`, `first3`, `sorted3`, `contains`), payout_multiplier
 |---|---|
 | A01 Broken Access Control | RBAC middleware per-route, IDOR check (resource.user_id == session.user_id), least privilege |
 | A02 Crypto Failures | scrypt password hash (N=16384,r=8,p=1), TLS-ready, secrets via .env |
-| A03 Injection | parameterized queries (better-sqlite3 prepared statements), zod validation, output encoding (React default) |
+| A03 Injection | parameterized queries ($n placeholders), zod validation, output encoding (React default) |
 | A04 Insecure Design | atomic wallet txns, idempotency keys, draw deadline enforcement |
 | A05 Security Misconfig | helmet headers, env-based config, no stack traces to client |
 | A06 Vulnerable Components | dependency audit (`npm audit`), pinned versions |
@@ -112,5 +112,5 @@ match_pattern (e.g. `last2`, `first3`, `sorted3`, `contains`), payout_multiplier
 
 - Local dev: `npm run dev` (server :4000, client :5173 proxy)
 - Prod-like: `npm run build` + `node server` serves dist
-- Backup: copy `data/*.db` (SQLite online backup API)
+- Backup: `scripts/backup-pg.sh` (pg_dump custom format) + restore ด้วย `scripts/restore-pg.sh` — ดู DEPLOY.md
 - Env: `.env` (SESSION_SECRET, INITIAL_CREDIT, PORT) — never committed

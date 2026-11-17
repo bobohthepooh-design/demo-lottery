@@ -22,34 +22,42 @@ docker compose logs -f app
 ```bash
 git pull
 docker compose up -d --build
-# DB ไม่หาย — อยู่ใน volume lottery-data
+# DB อยู่ใน postgres volume — ไม่หาย
 ```
 
 ## Backup (cron บน host)
 
+DB คือ PostgreSQL (service `postgres` ใน compose, bind `127.0.0.1:5432`)
+ใช้ `scripts/backup-daily.sh` — source `.env` แล้วรัน `pg_dump` ออกมาเก็บที่ `./backups/` (ลบอัตโนมัติ >14 วัน)
+
 ```cron
-# ทุกวัน 03:00 — สำรอง DB ออกมาที่ ./backups บน host
-0 3 * * * cd /path/to/demo-lottery && docker compose exec -T app sh /app/scripts/backup-db.sh
+# ทุกวัน 03:00 — pg_dump ออกมาที่ ./backups บน host
+0 3 * * * /path/to/demo-lottery/scripts/backup-daily.sh >> /path/to/demo-lottery/backups/backup.log 2>&1
 ```
 
-mount `./backups` เพิ่มใน compose ถ้าต้องการเก็บนอก volume:
-```yaml
-volumes:
-  - ./backups:/backups
-```
+Windows: ใช้ Task Scheduler ชี้ไปที่ `scripts/backup-daily.sh` (ผ่าน Git Bash/WSL) หรือ `scripts/backup-pg.sh` ตรงๆ
+อย่า commit `backups/` — เพิ่มใน .gitignore แล้ว
 
 ## Restore
 
 ```bash
-# หยุด app ก่อน
-docker compose stop app
-# copy backup เข้าไปใน container volume หรือ mount path
-docker compose run --rm -v lottery-data:/app/server/data app sh -c "cp /backups/lottery-XXX.db /app/server/data/demo-lottery.db"
-docker compose start app
+# restore PostgreSQL จาก dump (⚠️ overwrite ข้อมูลทั้งหมดใน DB เป้าหมาย)
+set -a; . ./.env; set +a          # โหลด DATABASE_URL/POSTGRES_PASSWORD
+./scripts/restore-pg.sh backups/lottery-XXXX.dump
+docker compose restart app        # ไม่จำเป็นต้อง stop app แต่แนะนำตอน activate
 ```
+
+ทดสอบความสมบูรณ์ของ dump โดยไม่ restore: `pg_restore -l backups/lottery-XXXX.dump | head`
 
 ## หมายเหตุ
 
-- SQLite เหมาะกับผู้ใช้ระดับหลักร้อย — ถ้าจะ scale หลักพัน+ ค่อย migrate เป็น PostgreSQL (งานชิ้นใหญ่ ทำเป็น phase แยก)
-- อย่า expose port 4000 ออก host — เข้าได้ทาง Caddy (HTTPS) เท่านั้น
+- DB คือ PostgreSQL (service `postgres` ใน compose) — migrate เสร็จแล้ว, SQLite legacy ไม่ใช้
+- อย่า expose port 5432 ออก host (bind `127.0.0.1` ไว้แล้ว) และ port 4000 (ให้เข้าผ่าน Caddy เท่านั้น)
 - `SESSION_SECRET` เปลี่ยน = logout ทุกคน — เก็บไว้ดีๆ
+- `OTP_DEV_ECHO` ถูกบังคับปิดใน production เสมอ (config.js) — OTP ไม่มี SMS จริง ห้ามเปิด public
+- Admin คนแรก: `admin` / `Admin@Demo123` — เปลี่ยนรหัสผ่านและตั้ง TOTP ทันทีหลัง deploy
+- Responsible gambling: สมาชิกต้องยืนยันอายุ 18+ ก่อนเดิมพัน/เล่นเกม (ทุก route สร้างโพยถูก gate แล้ว)
+- ผลรางวัล: ไทย=GLO ทางการ, ฮานอย=XSMB/lotterychecks (แหล่งภายนอกไม่เป็นทางการ), ลาว=admin กรอกเอง — demo/gen ถูก label `source='demo'` หรือ `(gen)` ชัดเจน
+- Lottery draws ทุกตลาดฮานอยไม่ออกรางวัลวันอาทิตย์ — ระบบสร้างรอบเฉพาะ จ.–ส.
+- ถ้าต้องการ scale หลาย instance: ย้าย scheduler (auto-settle/cashback) ไป advisory lock + session store ไป Redis (ยังเป็น single-instance design)
+- ติดตั้ง backup cron จริง: `crontab -e` แล้ววางบรรทัดในหัวข้อ Backup ด้านบน

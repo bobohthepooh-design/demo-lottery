@@ -68,7 +68,8 @@ export function scheduleFor(typeCode, catCode) {
     return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true }; // หวยลาวหลัก จ–ศ
   }
   if (typeCode === 'HN') {
-    if (catCode === 'HNM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true }; // ฮานอยเช้า ออก 08:30 ทุกวัน
+    // หวยฮานอยทุกตลาดไม่ออกรางวัลวันอาทิตย์ (XSMB/lotterychecks ไม่มีข้อมูล) → จ.–ส.
+    if (catCode === 'HNM') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true }; // ฮานอยเช้า ออก 08:30 จ.–ส.
     // ฮานอยทางการ (Xổ số kiến thiết Thủ đô): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15–18:30 (เวลาไทย)
     if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true };
     // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
@@ -76,7 +77,8 @@ export function scheduleFor(typeCode, catCode) {
     // HNN ใช้ผล XSMB จริง — ออกรางวัลเฉพาะ จันทร์–เสาร์ (ไม่มีวันอาทิตย์) จึงห้ามสร้างรอบวันอาทิตย์
     if (catCode === 'HNN') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
     // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
-    return { kind: 'daily', hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
+    // หวยฮานอยไม่ออกรางวัลวันอาทิตย์ → จ.–ส. เท่านั้น
+    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
   }
   if (typeCode === 'HR') return { kind: 'hourly', closeBeforeMin: 30, skipHoliday: false }; // หวยราศี — ทายราศี ทุกชั่วโมง
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true };

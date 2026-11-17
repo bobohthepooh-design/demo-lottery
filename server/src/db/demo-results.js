@@ -1,11 +1,13 @@
 import { settleDraw } from '../services/lotteryService.js';
 import { ZODIAC_SIGNS } from '../lib/zodiac.js';
-import { q, qGet } from './pg.js';
+import { q } from './pg.js';
 
 /**
  * สร้างผลรางวัลตัวอย่างให้รอบที่เปิดรับอยู่ — รอบละ 1 ใบต่อประเทศ/หมวด
  * ใช้สำหรับ Demo เพื่อให้เห็นผลครบทุกประเทศบนหน้าแรก
  * Idempotent: ข้ามรอบที่ settle แล้ว (settleDraw จะ throw อยู่แล้ว — catch ไว้)
+ * ผลถูกบันทึกด้วย source='demo' (adminId=null + label) ไม่ใช่ 'manual' —
+ * เพื่อให้ provenance แยกผลจำลองออกจากผลที่ admin กรอกจริง
  */
 
 const rnd = (n) => String(Math.floor(Math.random() * 10 ** n)).padStart(n, '0');
@@ -50,7 +52,7 @@ function winningFor(typeCode, categoryCode) {
   return { main: rnd(6) };
 }
 
-async function settleOpenDraws(draws, admin) {
+async function settleOpenDraws(draws) {
   const done = new Set();
   let settled = 0;
   for (const d of draws) {
@@ -58,7 +60,9 @@ async function settleOpenDraws(draws, admin) {
     if (done.has(key)) continue;
     try {
       const w = winningFor(d.type_code, d.category_code);
-      await settleDraw(admin, d.id, w);
+      // adminId=null + sourceLabel='demo' → lottery_results.source='demo'
+      // (ไม่ใช้ admin id เพราะผลนี้เป็น generated ไม่ใช่ admin กรอก — กัน label 'manual' เท็จ)
+      await settleDraw(null, d.id, w, 'demo');
       console.log(`[demo-results] settled ${d.draw_code} (${d.type_code}${d.category_code ? '/' + d.category_code : ''}) ->`, JSON.stringify(w));
       settled++;
     } catch (e) {
@@ -70,16 +74,9 @@ async function settleOpenDraws(draws, admin) {
   return settled;
 }
 
-async function adminId() {
-  return (await qGet(`SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
-    JOIN roles r ON r.id = ur.role_id WHERE r.name = 'super_admin' LIMIT 1`))?.id
-    ?? (await qGet('SELECT id FROM users ORDER BY id LIMIT 1'))?.id;
-}
-
 export async function seedDemoResults() {
-  const admin = await adminId();
   const draws = await q(DRAWS_SQL);
-  return settleOpenDraws(draws, admin);
+  return settleOpenDraws(draws);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('demo-results.js')) {

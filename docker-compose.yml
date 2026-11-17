@@ -16,7 +16,7 @@ services:
       # (env_file มี DATABASE_URL=127.0.0.1 สำหรับรันนอก docker — ตัวนี้ override)
       DATABASE_URL: postgres://lottery:${POSTGRES_PASSWORD}@postgres:5432/lottery
     volumes:
-      # SQLite database — เก็บไว้เป็น backup/rollback (ไม่ใช้เมื่อ DATABASE_URL ถูกตั้ง)
+      # app volume (ไฟล์ประกอบ — DB หลักอยู่ใน postgres service; SQLite legacy ไม่ใช้แล้ว)
       - lottery-data:/app/server/data
     expose:
       - "4000"          # ไม่เปิดออก host — ให้เข้าผ่าน Caddy เท่านั้น

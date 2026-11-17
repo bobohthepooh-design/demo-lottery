@@ -141,6 +141,9 @@ export function fairnessForSource(source, drawCode) {
   const kind = GEN_KIND[source];
   if (kind) return { method: 'deterministic', kind, seed: `${kind}:${drawCode}` };
   if (source === 'manual') return { method: 'manual' };
+  // ผลบนรอบ DEMO หรือ source 'demo'/'auto' (legacy backfill) = ผลจำลองภายใน ไม่ใช่ผลภายนอก
+  if (source === 'demo' || source === 'auto' || /DEMO/i.test(String(drawCode || '')))
+    return { method: 'demo', source: source || null };
   return { method: 'external', source: source || null };
 }
 export function generateByKind(kind, drawCode) {

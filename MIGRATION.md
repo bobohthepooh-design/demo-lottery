@@ -1,5 +1,9 @@
 # PostgreSQL Migration Plan
 
+> **สถานะปัจจุบัน (audit): การ migrate เสร็จสมบูรณ์แล้ว** — runtime ใช้ PostgreSQL เท่านั้น
+> (config.databaseUrl บังคับ, docker-compose inject DATABASE_URL) เอกสารด้านล่างเป็นบันทึก
+> ขั้นตอน migration ย้อนหลัง เก็บไว้เป็น historical record — อย่าใช้เป็นคู่มือปัจจุบัน
+
 > สถานะ: **Step 1 เสร็จ** (2026-11-15) — adapter + schema พร้อม, ยังไม่ได้ port call sites
 > compose มี service `postgres` (profile) ทำงานแล้ว: `docker compose --profile postgres up -d`
 > ทดสอบแล้ว: schema apply ผ่าน (27 tables/25 indexes), pg.js translate+query ใช้ได้จริง
