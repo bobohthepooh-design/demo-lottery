@@ -7,7 +7,7 @@ import { config } from '../config.js';
 import { getBalance, getWallet, listTransactions } from '../services/walletService.js';
 import { getDb, txAsync } from '../db/index.js';
 import { getSetting } from '../services/settingsService.js';
-import { randomToken } from '../lib/password.js';
+import { randomToken, hashPassword } from '../lib/password.js';
 import { audit, HttpError } from '../lib/audit.js';
 
 const router = Router();

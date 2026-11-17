@@ -125,6 +125,7 @@ client/src/
   admin/               # admin pages
   api.js auth.jsx      # API client + auth context
 scripts/smoke.mjs      # manual smoke test
+scripts/e2e-smoke.mjs  # E2E smoke บน server จริง (register→bet→PDPA→delete) — auto-pick LAN_IP จาก .env
 server/test/api.test.js # vitest integration tests
 docs/ARCHITECTURE.md docs/DATABASE.md
 ```
