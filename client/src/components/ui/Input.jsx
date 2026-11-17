@@ -15,12 +15,12 @@ export const Input = forwardRef(function Input({ label, hint, error, className =
   );
 });
 
-export function Select({ label, hint, error, className = '', id, children, ...rest }) {
+export function Select({ label, hint, error, className = '', inputClassName = '', id, children, ...rest }) {
   const inputId = id || rest.name;
   return (
     <div className={className}>
       {label && <label htmlFor={inputId} className="block text-xs font-semibold text-navy-300 mb-1.5">{label}</label>}
-      <select id={inputId} className={`${baseCls} ${error ? 'border-red-500/60' : ''}`} {...rest}>{children}</select>
+      <select id={inputId} className={`${baseCls} ${error ? 'border-red-500/60' : ''} ${inputClassName}`} {...rest}>{children}</select>
       {error ? <div className="text-red-400 text-xs mt-1.5" role="alert">{error}</div>
         : hint && <div className="text-navy-400 text-xs mt-1.5">{hint}</div>}
     </div>

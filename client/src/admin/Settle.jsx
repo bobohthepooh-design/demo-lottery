@@ -5,6 +5,7 @@ import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
+import { Button, Card, Select } from '../components/ui/index.js';
 
 // 12 ปีนักษัตรไทย — ต้องตรงกับ server/src/lib/zodiac.js
 const ZODIAC = ['ชวด', 'ฉลู', 'ขาล', 'เถาะ', 'มะโรง', 'มะเส็ง', 'มะเมีย', 'มะแม', 'วอก', 'ระกา', 'จอ', 'กุน'];
@@ -228,11 +229,10 @@ export default function AdminSettle() {
       <div className="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 text-sm rounded-lg p-3">
         ระบบจะ settle โพยทั้งหมดของรอบนั้นอัตโนมัติและจ่ายเครดิตรางวัลตามกติกา — ช่องกรอกผลอ้างอิงตามโครงสร้างรางวัลจริงของประเทศนั้น ๆ
       </div>
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex flex-wrap items-center gap-3">
-        <button onClick={runAutoSettle} disabled={autoBusy}
-          className="bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-500 disabled:opacity-40 text-sm">
+      <Card className="p-4 flex flex-wrap items-center gap-3">
+        <Button variant="success" onClick={runAutoSettle} disabled={autoBusy}>
           {autoBusy ? 'กำลังตรวจสอบ...' : '⚡ ตรวจผลอัตโนมัติทั้งหมดตอนนี้'}
-        </button>
+        </Button>
         <span className="text-xs text-navy-400">ออกผลทุกประเภทที่ตั้งเป็น "อัตโนมัติ" และถึงเวลาแล้วทันที — ไม่ต้องรอรอบเช็ค 15 นาที</span>
         {autoSources.length > 0 && (
           <div className="w-full flex flex-wrap items-center gap-2 mt-1">
@@ -247,14 +247,14 @@ export default function AdminSettle() {
           </div>
         )}
         {autoMsg && <div className={`w-full text-xs mt-1 ${autoMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{autoMsg}</div>}
-      </div>
+      </Card>
 
       {/* สถานะการอัปเดตผลรางวัล — ล่าสุดของทุกประเภท/หมวด */}
       {statusRows.length > 0 && (
-        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+        <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-white text-sm">สถานะการอัปเดตผลรางวัล</h2>
-            <button onClick={load} className="text-xs text-gold-400 hover:underline">รีเฟรช</button>
+            <Button variant="ghost" size="sm" onClick={load}>รีเฟรช</Button>
           </div>
           <div className="space-y-1.5">
             {statusRows.map(r => (
@@ -276,13 +276,12 @@ export default function AdminSettle() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">
+      <Card className="p-5 space-y-4">
         <div>
           <label className="text-sm text-navy-300">เลือกรอบหวย</label>
-          <select value={sel || ''} onChange={e => setSel(e.target.value ? Number(e.target.value) : null)}
-            className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 mt-1">
+          <Select value={sel || ''} onChange={e => setSel(e.target.value ? Number(e.target.value) : null)} className="mt-1">
             <option value="">— เลือกรอบ —</option>
             {latestUnsettled.length > 0 && (
               <optgroup label={`รอบล่าสุด (${latestUnsettled.length})`}>
@@ -299,7 +298,7 @@ export default function AdminSettle() {
                 {upcomingUnsettled.map(d => <option key={d.id} value={d.id}>{optLabel(d)}</option>)}
               </optgroup>
             )}
-          </select>
+          </Select>
           {!unsettled.length && (
             <p className="text-xs text-navy-400 mt-1">ไม่มีรอบที่รอออกผล — ทุกรอบออกผลครบแล้ว</p>
           )}
@@ -363,24 +362,24 @@ export default function AdminSettle() {
             )}
             <div className="flex gap-2">
               {selDraw?.result_mode !== 'manual' && (
-                <button onClick={fetchAuto} className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-500">
+                <Button variant="success" className="flex-1 !py-3" onClick={fetchAuto}>
                   ดึงผลอัตโนมัติ
-                </button>
+                </Button>
               )}
-              <button onClick={() => settle()} className="flex-1 bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400">
+              <Button className="flex-1 !py-3" onClick={() => settle()}>
                 ยืนยันออกผลและ settle โพยทั้งหมด
-              </button>
+              </Button>
             </div>
           </>
         )}
         {sel && !schema && <div className="text-navy-400 text-sm">ไม่พบโครงสร้างผลรางวัลสำหรับประเภทนี้</div>}
-      </div>
+      </Card>
 
       {/* แก้ไขผลย้อนหลัง — ระบบคิดเครดิต/เดบิตส่วนต่างใหม่ทั้งโพย */}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-5 space-y-4">
+      <Card className="p-5 space-y-4">
         <h2 className="text-lg font-bold text-white">แก้ไขผลย้อนหลัง (หลังออกผลแล้ว)</h2>
         <p className="text-xs text-navy-400">แก้ตัวเลขผลแล้วระบบจะคำนวณส่วนต่างเครดิต/เดบิตของโพยทั้งหมดในรอบนั้นใหม่โดยอัตโนมัติ</p>
-        <select value={editSel || ''}
+        <Select value={editSel || ''}
           onChange={e => {
             const id = e.target.value ? Number(e.target.value) : null;
             setEditSel(id); setEditMsg(''); setEditFields({});
@@ -393,7 +392,7 @@ export default function AdminSettle() {
           className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
           <option value="">— เลือกรอบที่ออกผลแล้ว —</option>
           {settled.map(d => <option key={d.id} value={d.id}>{d.draw_code} ({d.type_name_th}{d.category_name_th ? ' — ' + d.category_name_th : ''}) — {d.result_mode === 'manual' ? 'กรอกเอง' : 'อัตโนมัติ'}</option>)}
-        </select>
+        </Select>
         {editDraw && (() => {
           const s = resultSchema(editDraw.type_code, editDraw.category_code);
           if (!s) return <div className="text-navy-400 text-sm">ไม่พบโครงสร้างผลรางวัลสำหรับประเภทนี้</div>;
@@ -445,14 +444,14 @@ export default function AdminSettle() {
                 ))}
               </div>
               {editMsg && <div className={`text-sm ${editMsg.includes('สำเร็จ') ? 'text-green-400' : 'text-red-400'}`}>{editMsg}</div>}
-              <button onClick={save} className="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-500">
+              <Button variant="danger" className="w-full !py-3" onClick={save}>
                 บันทึกผลแก้ไข
-              </button>
+              </Button>
             </>
           );
         })()}
 
-      </div>
+      </Card>
     </div>
   );
 }

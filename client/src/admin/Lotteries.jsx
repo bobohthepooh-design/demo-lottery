@@ -7,6 +7,7 @@ import { marketInfo, MODE_BADGE } from '../resultSource.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import AdminSettle from './Settle.jsx';
 import { toast } from '../components/toast.js';
+import { Button, Card, Input, Select, Modal } from '../components/ui/index.js';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
@@ -271,22 +272,24 @@ export default function AdminLotteries() {
       {tab === 'settle' ? <AdminSettle /> : (<>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">ประเภทหวย & กติกา</h1>
-        <button onClick={() => setShowTypeForm(!showTypeForm)} className="bg-gold-500 text-navy-950 font-bold px-4 py-2 rounded-lg text-sm">+ เพิ่มประเภทหวย</button>
+        <Button size="sm" onClick={() => setShowTypeForm(!showTypeForm)}>+ เพิ่มประเภทหวย</Button>
       </div>
 
       {showTypeForm && (
-        <form onSubmit={createType} className="bg-navy-800 border border-navy-700 rounded-xl p-5 grid sm:grid-cols-2 gap-3">
-          <input required placeholder="code (เช่น TH)" value={typeForm.code} onChange={e => setTypeForm({...typeForm, code: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2" />
-          <input required placeholder="ชื่อภาษาไทย" value={typeForm.name_th} onChange={e => setTypeForm({...typeForm, name_th: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2" />
-          <input placeholder="ชื่อภาษาอังกฤษ" value={typeForm.name_en} onChange={e => setTypeForm({...typeForm, name_en: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2" />
-          <input placeholder="คำอธิบาย" value={typeForm.description} onChange={e => setTypeForm({...typeForm, description: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2" />
-          <button className="bg-gold-500 text-navy-950 font-bold py-2 rounded-lg sm:col-span-2">บันทึก</button>
+        <Card className="p-5">
+        <form onSubmit={createType} className="grid sm:grid-cols-2 gap-3">
+          <Input required placeholder="code (เช่น TH)" value={typeForm.code} onChange={e => setTypeForm({...typeForm, code: e.target.value})} />
+          <Input required placeholder="ชื่อภาษาไทย" value={typeForm.name_th} onChange={e => setTypeForm({...typeForm, name_th: e.target.value})} />
+          <Input placeholder="ชื่อภาษาอังกฤษ" value={typeForm.name_en} onChange={e => setTypeForm({...typeForm, name_en: e.target.value})} />
+          <Input placeholder="คำอธิบาย" value={typeForm.description} onChange={e => setTypeForm({...typeForm, description: e.target.value})} />
+          <Button type="submit" className="sm:col-span-2">บันทึก</Button>
         </form>
+        </Card>
       )}
 
       <div className="grid md:grid-cols-3 gap-4">
         {types.map(t => (
-          <div key={t.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+          <Card key={t.id} className="p-4">
             <div className="flex items-center justify-between">
               <div className="font-bold text-white">{t.name_th} <span className="text-xs text-navy-400">({t.code})</span></div>
               <button onClick={() => toggleType(t)} className={`text-xs px-2 py-1 rounded ${t.is_active ? 'bg-green-500/20 text-green-300' : 'bg-navy-700 text-navy-400'}`}>
@@ -325,7 +328,7 @@ export default function AdminLotteries() {
                 return `${rs.length} กติกา (${Object.entries(byCat).map(([k, v]) => `${k} ${v}`).join(' • ')})`;
               })()}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -442,10 +445,8 @@ export default function AdminLotteries() {
         {!sections.length && <div className="text-navy-400 text-sm">ไม่มีกติกาที่ใช้งาน — กด "แสดงที่ปิดใช้งาน" เพื่อดูของเก่า</div>}
       </div>
 
-      {editRule && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEditRule(null)}>
-          <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-4">{editRule.id ? 'แก้ไข' : 'เพิ่ม'}กติกา</h2>
+      <Modal open={!!editRule} onClose={() => setEditRule(null)} wide title={`${editRule?.id ? 'แก้ไข' : 'เพิ่ม'}กติกา`}>
+        {editRule && (<>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <div><label className="text-navy-300 text-xs">ประเภทหวย</label>
                 <select value={editRule.lottery_type_id} disabled={!!editRule.id} onChange={e => setEditRule({...editRule, lottery_type_id: +e.target.value, category_id: null})}
@@ -587,12 +588,11 @@ export default function AdminLotteries() {
               </div>
             </div>
             <div className="flex gap-2 mt-5">
-              <button onClick={saveRule} className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">บันทึก</button>
-              <button onClick={() => setEditRule(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
+              <Button onClick={saveRule} className="flex-1">บันทึก</Button>
+              <Button variant="secondary" onClick={() => setEditRule(null)}>ยกเลิก</Button>
             </div>
-          </div>
-        </div>
-      )}
+        </>)}
+      </Modal>
       </>)}
     </div>
   );

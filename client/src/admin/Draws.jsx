@@ -3,6 +3,7 @@ import { api, fmtDateTime, satang } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { annSummary, annToInput, parseAnnInput } from '../ann.js';
+import { Button, Card, CardHeader, CardBody, Input, Select, Modal, Badge } from '../components/ui/index.js';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -140,32 +141,32 @@ export default function AdminDraws() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">จัดการรอบหวย</h1>
-        <button onClick={() => setShowForm(!showForm)} className="bg-gold-500 text-navy-950 font-bold px-4 py-2 rounded-lg text-sm">+ สร้างรอบใหม่</button>
+        <Button size="sm" onClick={() => setShowForm(!showForm)}>+ สร้างรอบใหม่</Button>
       </div>
 
       {showForm && (
-        <form onSubmit={create} className="bg-navy-800 border border-navy-700 rounded-xl p-5 grid sm:grid-cols-2 gap-3">
-          <select required value={form.lottery_type_id} onChange={e => setForm({...form, lottery_type_id: e.target.value, category_id: ''})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2">
+        <Card className="p-5">
+        <form onSubmit={create} className="grid sm:grid-cols-2 gap-3">
+          <Select required value={form.lottery_type_id} onChange={e => setForm({...form, lottery_type_id: e.target.value, category_id: ''})} className="sm:col-span-2">
             <option value="">— เลือกประเภทหวย —</option>
             {types.filter(t => t.is_active && !['SC', 'HL', 'KI'].includes(t.code)).map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
-          </select>
-          <select value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2">
+          </Select>
+          <Select value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}>
             <option value="">— ไม่ระบุหมวด —</option>
             {cats.filter(c => String(c.lottery_type_id) === String(form.lottery_type_id)).map(c => (
               <option key={c.id} value={c.id}>{c.name_th}</option>
             ))}
-          </select>
-          <input required placeholder="รหัสรอบ (เช่น TH-2026-1101)" value={form.draw_code} onChange={e => setForm({...form, draw_code: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2" />
-          <div><label className="text-xs text-navy-300">เวลาออกรางวัล</label>
-            <input required type="datetime-local" value={form.draw_at} onChange={e => setForm({...form, draw_at: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-          <div><label className="text-xs text-navy-300">เวลาปิดรับโพย</label>
-            <input required type="datetime-local" value={form.close_at} onChange={e => setForm({...form, close_at: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
-          <button className="bg-gold-500 text-navy-950 font-bold py-2 rounded-lg sm:col-span-2">สร้างรอบ</button>
+          </Select>
+          <Input required placeholder="รหัสรอบ (เช่น TH-2026-1101)" value={form.draw_code} onChange={e => setForm({...form, draw_code: e.target.value})} />
+          <Input label="เวลาออกรางวัล" required type="datetime-local" value={form.draw_at} onChange={e => setForm({...form, draw_at: e.target.value})} />
+          <Input label="เวลาปิดรับโพย" required type="datetime-local" value={form.close_at} onChange={e => setForm({...form, close_at: e.target.value})} />
+          <Button type="submit" className="sm:col-span-2">สร้างรอบ</Button>
         </form>
+        </Card>
       )}
 
       {/* ตารางออกรางวัลตามตารางเวลาที่กำหนด — read-only preview + ปุ่มเติมรอบล่วงหน้า */}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+      <Card className="p-4">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
           <div>
             <h2 className="font-bold text-white text-sm">ตารางออกรางวัล (5 รอบถัดไปต่อตลาด)</h2>
@@ -173,10 +174,9 @@ export default function AdminDraws() {
           </div>
           <div className="flex items-center gap-2">
             {seedMsg && <span className={`text-xs ${seedMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{seedMsg}</span>}
-            <button onClick={runSeed} disabled={seedBusy}
-              className="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-500 disabled:opacity-40">
+            <Button size="sm" variant="secondary" onClick={runSeed} disabled={seedBusy}>
               {seedBusy ? 'กำลังสร้าง…' : '⚡ เติมรอบล่วงหน้า'}
-            </button>
+            </Button>
           </div>
         </div>
         {schedule && (() => {
@@ -204,31 +204,28 @@ export default function AdminDraws() {
             </div>
           );
         })()}
-      </div>
+      </Card>
 
       {/* ตั้งเลขอั้นหลายรอบพร้อมกัน — เลขอั้นไม่มี API ฟรี ต้องกรอกเองครั้งเดียวครอบคลุมทุก rond ที่ยังไม่ปิด */}
       <BulkAnnounce types={types} cats={cats} onDone={loadDraws} />
 
       {/* ตัวกรองรอบหวย — สถานะ / ประเภท / หมวด */}
       <div className="flex items-center gap-2 flex-wrap">
-        <select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})}
-          className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+        <Select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})}>
           <option value="">ทุกสถานะ</option>
           {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value, category: ''})}
-          className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+        </Select>
+        <Select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value, category: ''})}>
           <option value="">ทุกประเภท</option>
           {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
-        </select>
-        <select value={filter.category} onChange={e => setFilter({...filter, category: e.target.value})}
-          className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+        </Select>
+        <Select value={filter.category} onChange={e => setFilter({...filter, category: e.target.value})}>
           <option value="">ทุกหมวด</option>
           <option value="null">ไม่มีหมวด</option>
           {cats.filter(c => !filter.type || String(c.lottery_type_id) === String(filter.type)).map(c => (
             <option key={c.id} value={c.id}>{c.name_th}</option>
           ))}
-        </select>
+        </Select>
         <span className="text-xs text-navy-400">ทั้งหมด {drawsTotal.toLocaleString()} รอบ — แสดง {draws.length.toLocaleString()} รอบ</span>
       </div>
 
@@ -266,52 +263,35 @@ export default function AdminDraws() {
         </table>
       </div>
       {draws.length < drawsTotal && (
-        <button onClick={loadMoreDraws} disabled={loadingMoreDraws}
-          className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition disabled:opacity-50">
+        <Button onClick={loadMoreDraws} disabled={loadingMoreDraws} variant="secondary"
+          className="w-full py-3">
           {loadingMoreDraws ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${DRAW_PAGE} รอบ (เหลือ ${(drawsTotal - draws.length).toLocaleString()})`}
-        </button>
+        </Button>
       )}
 
       {editDraw && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEditDraw(null)}>
-          <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-4">แก้ไขรอบหวย: {editDraw.draw_code}</h2>
-            <div className="space-y-3 text-sm">
-              <div>
-                <label className="text-xs text-navy-300">รหัสรอบ</label>
-                <input value={editDraw.draw_code} onChange={e => setEditDraw({...editDraw, draw_code: e.target.value})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1 font-mono" />
+        <Modal open onClose={() => setEditDraw(null)} title={`แก้ไขรอบหวย: ${editDraw.draw_code}`}>
+          <div className="space-y-3 text-sm">
+            <Input label="รหัสรอบ" value={editDraw.draw_code} onChange={e => setEditDraw({...editDraw, draw_code: e.target.value})} inputClassName="font-mono" />
+            <Input label="เวลาออกรางวัล" type="datetime-local" value={editDraw.draw_at} onChange={e => setEditDraw({...editDraw, draw_at: e.target.value})} />
+            <Input label="เวลาปิดรับโพย (ต้องก่อนเวลาออกรางวัล)" type="datetime-local" value={editDraw.close_at} onChange={e => setEditDraw({...editDraw, close_at: e.target.value})} />
+            <div className="border-t border-navy-700 pt-3">
+              <label className="text-xs text-amber-300 font-semibold">เลขอั้น (ประกาศล่วงหน้าให้ผู้แทงเห็น)</label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <Input placeholder="เลขบน เช่น 123:400, 456" value={editDraw.announce_top || ''} onChange={e => setEditDraw({...editDraw, announce_top: e.target.value})} inputClassName="font-mono" />
+                <Input placeholder="เลขล่าง เช่น 45:50, 67" value={editDraw.announce_bottom || ''} onChange={e => setEditDraw({...editDraw, announce_bottom: e.target.value})} inputClassName="font-mono" />
               </div>
-              <div>
-                <label className="text-xs text-navy-300">เวลาออกรางวัล</label>
-                <input type="datetime-local" value={editDraw.draw_at} onChange={e => setEditDraw({...editDraw, draw_at: e.target.value})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
-              </div>
-              <div>
-                <label className="text-xs text-navy-300">เวลาปิดรับโพย (ต้องก่อนเวลาออกรางวัล)</label>
-                <input type="datetime-local" value={editDraw.close_at} onChange={e => setEditDraw({...editDraw, close_at: e.target.value})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
-              </div>
-              <div className="border-t border-navy-700 pt-3">
-                <label className="text-xs text-amber-300 font-semibold">เลขอั้น (ประกาศล่วงหน้าให้ผู้แทงเห็น)</label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <input placeholder="เลขบน เช่น 123:400, 456" value={editDraw.announce_top || ''} onChange={e => setEditDraw({...editDraw, announce_top: e.target.value})}
-                    className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 font-mono" />
-                  <input placeholder="เลขล่าง เช่น 45:50, 67" value={editDraw.announce_bottom || ''} onChange={e => setEditDraw({...editDraw, announce_bottom: e.target.value})}
-                    className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 font-mono" />
-                </div>
-                <p className="text-[10px] text-navy-500 mt-1">
-                  หลายเลขคั่นด้วย , • <code>เลข:ตัวคูณ</code> = อัตราจ่ายเฉพาะรายเลข (เช่น 123:400 จ่าย x400) • เว้นว่างตัวคูณ = ใช้ค่าเริ่มต้น (ครึ่งรางวัลหลัก)
-                  • ผู้แทงจะเห็นในหน้ารอบหวยและหน้แทง และ<strong>แทงได้เฉพาะเลขที่ประกาศ</strong>
-                </p>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button onClick={saveEdit} className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">บันทึก</button>
-                <button onClick={() => setEditDraw(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
-              </div>
+              <p className="text-[10px] text-navy-500 mt-1">
+                หลายเลขคั่นด้วย , • <code>เลข:ตัวคูณ</code> = อัตราจ่ายเฉพาะรายเลข (เช่น 123:400 จ่าย x400) • เว้นว่างตัวคูณ = ใช้ค่าเริ่มต้น (ครึ่งรางวัลหลัก)
+                • ผู้แทงจะเห็นในหน้ารอบหวยและหน้แทง และ<strong>แทงได้เฉพาะเลขที่ประกาศ</strong>
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button onClick={saveEdit} className="flex-1">บันทึก</Button>
+              <Button variant="secondary" onClick={() => setEditDraw(null)}>ยกเลิก</Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
@@ -358,22 +338,26 @@ function BulkAnnounce({ types, cats, onDone }) {
       </div>
       <p className="text-[11px] text-navy-400">ใช้กับทุกรอบ status=open/scheduled ที่ยังไม่ถึงเวลาออกรางวัลของตลาดที่เลือก — ใช้เมื่อต้องการประกาศเลขอั้นชุดเดียวกันหลายงวด</p>
       <div className="grid sm:grid-cols-4 gap-2">
-        <select value={f.type_id} onChange={e => setF({...f, type_id: e.target.value, category_id: ''})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs">
+        <Select value={f.type_id} onChange={e => setF({...f, type_id: e.target.value, category_id: ''})}
+          inputClassName="!px-2 !py-1.5 text-xs">
           <option value="">ประเภทหวย *</option>
           {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
-        </select>
-        <select value={f.category_id} onChange={e => setF({...f, category_id: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs">
+        </Select>
+        <Select value={f.category_id} onChange={e => setF({...f, category_id: e.target.value})}
+          inputClassName="!px-2 !py-1.5 text-xs">
           <option value="">ทุกหมวด</option>
           <option value="null">ไม่มีหมวด</option>
           {cats.filter(c => !f.type_id || String(c.lottery_type_id) === String(f.type_id)).map(c => <option key={c.id} value={c.id}>{c.name_th}</option>)}
-        </select>
-        <input placeholder="เลขบน เช่น 123,456:400" value={f.top} onChange={e => setF({...f, top: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs font-mono" />
-        <input placeholder="เลขล่าง เช่น 45,67" value={f.bottom} onChange={e => setF({...f, bottom: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-xs font-mono" />
+        </Select>
+        <Input placeholder="เลขบน เช่น 123,456:400" value={f.top} onChange={e => setF({...f, top: e.target.value})}
+          inputClassName="!px-2 !py-1.5 text-xs font-mono" />
+        <Input placeholder="เลขล่าง เช่น 45,67" value={f.bottom} onChange={e => setF({...f, bottom: e.target.value})}
+          inputClassName="!px-2 !py-1.5 text-xs font-mono" />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={submit} disabled={busy} className="bg-amber-500 text-navy-950 text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-40">
+        <Button size="sm" variant="warning" onClick={submit} disabled={busy}>
           {busy ? 'กำลังตั้ง…' : 'ยืนยันตั้งเลขอั้น'}
-        </button>
+        </Button>
         {msg && <span className={`text-xs ${msg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{msg}</span>}
       </div>
     </div>
