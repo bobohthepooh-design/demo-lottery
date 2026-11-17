@@ -2,7 +2,7 @@
 /**
  * Smoke test — วิ่ง against server ที่รันอยู่ (default https://localhost)
  * ใช้: node tests/smoke.mjs            (LOCAL=https://localhost)
- *      BASE_URL=http://192.168.1.41 node tests/smoke.mjs
+ *      BASE_URL=http://192.168.31.252 node tests/smoke.mjs
  *
  * ครอบคลุม: health → register/login → public config → เกมด่วน (scratch/hilo/kiwi)
  * → แทงหวย → ยกเลิก → wallet deposit/withdraw guards
