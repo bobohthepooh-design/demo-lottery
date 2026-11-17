@@ -85,11 +85,11 @@ export function scheduleFor(typeCode, catCode) {
 }
 
 // ระยะสร้างรอบล่วงหน้าแยกตามความถี่ตลาด — horizon = เวลาที่ผู้เล่นวางแผนแทงได้จริง + buffer ล่ม/ปัญหาแหล่งผล
-// hourly: 3 ชม. (3 รอบ — รายชั่วโมงไม่มีใครวางแผนล่วงหน้าไกล) | daily/weekly: 5 วัน | monthly: 2 ครั้งถัดไป (~1-1.5 เดือน)
+// hourly: 3 ชม. (3 รอบ — รายชั่วโมงไม่มีใครวางแผนล่วงหน้าไกล) | daily/weekly: 2 วัน (การันตีอย่างน้อยรอบถัดไป) | monthly: 2 ครั้งถัดไป (~1-1.5 เดือน)
 function upcomingSpec(sch) {
   if (sch.kind === 'hourly') return { count: 3, horizonH: 4 };
   if (sch.kind === 'monthly') return { count: 2, horizonH: 24 * 60 };
-  return { count: 60, horizonH: 24 * 5 }; // daily/weekly: เติมจนมีรอบครอบ 5 วันข้างหน้า
+  return { count: 60, horizonH: 24 * 2, minOne: true }; // daily/weekly: 2 วันข้างหน้า + การันตีรอบถัดไป (ครอบ gap weekend)
 }
 // หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่
 // LAD: หวยลาวพัฒนา 5/45 (จ-ศ 20:00) ไม่มีแหล่งผลแยกจากหวยลาวหลัก
@@ -99,22 +99,22 @@ const DISABLED_CATS = new Set(['LADAM']);
 const INSTANT_TYPES = new Set(['SC', 'HL', 'KI']);
 
 // สร้างวันที่ออกรางวัลลำดับถัดไปตาม spec {count, horizonH} — หยุดเมื่อครบจำนวนหรือเกิน horizon (ข้ามวันที่ผ่านมาแล้ว/วันหยุด)
-function occurrences(sch, { count, horizonH }) {
+function occurrences(sch, { count, horizonH, minOne }) {
   const out = [];
   const base = new Date(); base.setHours(0, 0, 0, 0);
   const now = new Date();
   const horizonEnd = now.getTime() + horizonH * 3600e3;
+  const within = (o) => o.draw.getTime() <= horizonEnd;
   if (sch.kind === 'hourly') {
     // ออกรางวัลทุกชั่วโมงนาฬิกา (นาที 0) — ปิดรับก่อนเวลาออกรางวัล closeBeforeMin นาที
     const first = new Date(now); first.setMinutes(0, 0, 0); first.setHours(first.getHours() + 1);
     for (let i = 0; i < 24 * 40 && out.length < count; i++) {
       const draw = new Date(first); draw.setHours(first.getHours() + i);
-      if (draw.getTime() > horizonEnd) break;
       const close = new Date(draw); close.setMinutes(close.getMinutes() - (sch.closeBeforeMin || 30));
       if (close <= now) continue;
       out.push({ draw, close });
     }
-    return out;
+    return out.filter(within);
   }
   for (let i = 0; i < 400 && out.length < count; i++) {
     const day = new Date(base); day.setDate(base.getDate() + i);
@@ -124,10 +124,11 @@ function occurrences(sch, { count, horizonH }) {
     const close = new Date(day); close.setHours(sch.closeHour, sch.closeMinute || 0, 0);
     if (close <= new Date()) continue; // เลยเวลาปิดรับแล้ว
     const draw = new Date(day); draw.setHours(sch.hour, sch.minute || 0, 0);
-    if (draw.getTime() > horizonEnd) break;
     out.push({ draw, close });
   }
-  return out;
+  const near = out.filter(within);
+  // horizon สั้นกว่า gap ของตลาด (เช่น หวยลาว จ-ศ: ศุกร์→จันทร์ 3 วัน) — การันตีรอบถัดไปเสมอ ไม่ให้หน้าต่างว่าง
+  return minOne && !near.length ? out.slice(0, 1) : near;
 }
 
 function drawCodeFor(typeCode, catCode, dt) {
