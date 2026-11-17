@@ -109,7 +109,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
-              <img src="/icon.svg" alt="โลโก้" className="w-8 h-8" />
+              <img src="/glo-emblem.png" alt="สำนักงานสลากกินแบ่งรัฐบาล" className="w-9 h-9" />
             </div>
             <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base hidden min-[420px]:block">DEMO LOTTERY</div>
           </Link>
