@@ -239,8 +239,12 @@ export default function ResultPopup() {
       const rows = r.results || [];
       if (seenRef.current === null) {
         seenRef.current = new Set(rows.map(x => x.id));
-        // first load = baseline — ไม่เด้งผลย้อนหลังเลย (popup แจ้งเฉพาะผลที่ออกตอนใช้งานอยู่)
-        // (ผลเก่ายังดูได้ที่หน้า /results — popup มีไว้แจ้งเฉพาะของสด)
+        // first load — เด้งเฉพาะผลล่าสุด 1 อันที่เพิ่งออก (<30 นาที) ไม่เอาย้อนหลังเป็นชุด
+        const latest = rows
+          .map(x => ({ x, ts: pubTs(x) }))
+          .filter(({ ts }) => Number.isFinite(ts))
+          .sort((p, q) => q.ts - p.ts)[0];
+        if (latest && Date.now() - latest.ts < 30 * 60e3) enqueue([latest.x]);
         localStorage.setItem(LS_KEY, String(Date.now()));
         return;
       }
