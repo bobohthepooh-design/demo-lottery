@@ -15,7 +15,7 @@ export default function Modal({ open, onClose, title, children, footer, wide, di
   return createPortal(
     <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/70 p-4 overflow-y-auto"
       onClick={dismissable ? onClose : undefined} role="dialog" aria-modal="true" aria-label={title || undefined}>
-      <div className={`bg-navy-800 border border-navy-600/80 rounded-2xl shadow-2xl shadow-black/60 w-full ${wide ? 'max-w-2xl' : 'max-w-md'} my-8 max-h-[90vh] flex flex-col ${contentClassName}`}>
+      <div className={`bg-navy-800 border border-navy-600/80 rounded-2xl shadow-2xl shadow-black/60 w-full ${wide ? 'max-w-2xl' : 'max-w-md'} my-8 max-h-[90vh] flex flex-col ${contentClassName}`}
         onClick={e => e.stopPropagation()}>
         {title && (
           <div className="flex items-center justify-between px-5 py-4 border-b border-navy-700/60">
