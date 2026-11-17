@@ -230,7 +230,11 @@ export default function ResultPopup() {
     });
   };
 
-  const check = () => api('/lottery/results')
+  const check = () => {
+    // อยู่หน้าผลรางวัล/ตรวจเลขอยู่แล้ว — ข้าม popup (ผลยังเห็นในหน้านั้นอยู่แล้ว)
+    const path = window.location.pathname;
+    if (path.startsWith('/results') || path.startsWith('/check') || path.startsWith('/embed')) return;
+    return api('/lottery/results')
     .then(r => {
       const rows = r.results || [];
       if (seenRef.current === null) {
@@ -263,6 +267,7 @@ export default function ResultPopup() {
       enqueue(fresh);
     })
     .catch(() => {});
+  };
 
   useEffect(() => {
     check();
