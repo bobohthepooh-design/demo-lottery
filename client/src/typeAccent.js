@@ -1,27 +1,27 @@
 // สี accent ตามประเภทหวย — class ต้องเป็น literal เพื่อให้ Tailwind generate
-// TH=ชมพู(กุหลาบ), LA=ฟ้า, HN=เหลืองอำพัน — ตรงกับสีประจำหมวดแต่ละประเทศ
+// TH=ฟ้าอ่อน, LA=น้ำเงินเข้ม, HN=แดง, GS=ชมพู — โทนประจำหมวดแต่ละประเทศ
 // btn = pastel (รอบเปิดรับทั่วไป), btnLive = เข้มกว่า (รอบ ONLINE กำลังมาแรง)
 const ACCENTS = {
   TH: {
-    bar: 'bg-gold-500', text: 'text-gold-600', chip: 'bg-gold-200 text-gold-700 border-gold-300',
-    border: 'border-gold-300', glow: 'hover:border-gold-400',
-    head: 'from-gold-200', dot: 'bg-gold-500',
-    btn: 'from-gold-200 to-gold-300 text-gold-700',
-    btnLive: 'from-gold-500 to-gold-600 text-white',
+    bar: 'bg-sky-400', text: 'text-sky-300', chip: 'bg-sky-400/15 text-sky-300 border-sky-400/50',
+    border: 'border-sky-400/60', glow: 'hover:border-sky-300',
+    head: 'from-sky-600', dot: 'bg-sky-400',
+    btn: 'from-sky-400/40 to-blue-600/40 text-sky-200',
+    btnLive: 'from-sky-400 to-blue-600 text-white',
   },
   LA: {
-    bar: 'bg-blue-500', text: 'text-blue-600', chip: 'bg-blue-100 text-blue-700 border-blue-300',
-    border: 'border-blue-300', glow: 'hover:border-blue-400',
-    head: 'from-blue-200', dot: 'bg-blue-500',
-    btn: 'from-sky-200 to-sky-300 text-sky-700',
-    btnLive: 'from-sky-500 to-blue-600 text-white',
+    bar: 'bg-blue-700', text: 'text-blue-300', chip: 'bg-blue-600/20 text-blue-300 border-blue-500/50',
+    border: 'border-blue-500/60', glow: 'hover:border-blue-400',
+    head: 'from-blue-800', dot: 'bg-blue-500',
+    btn: 'from-blue-700/50 to-blue-900/50 text-blue-200',
+    btnLive: 'from-blue-700 to-blue-900 text-white',
   },
   HN: {
-    bar: 'bg-amber-500', text: 'text-amber-600', chip: 'bg-amber-100 text-amber-700 border-amber-300',
-    border: 'border-amber-300', glow: 'hover:border-amber-400',
-    head: 'from-amber-200', dot: 'bg-amber-500',
-    btn: 'from-amber-200 to-amber-300 text-amber-800',
-    btnLive: 'from-amber-500 to-amber-700 text-white',
+    bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-red-500/15 text-red-300 border-red-400/50',
+    border: 'border-red-400/60', glow: 'hover:border-red-400',
+    head: 'from-red-700', dot: 'bg-red-400',
+    btn: 'from-red-500/40 to-red-800/40 text-red-200',
+    btnLive: 'from-red-500 to-red-800 text-white',
   },
   HR: {
     bar: 'bg-violet-500', text: 'text-violet-400', chip: 'bg-violet-500/15 text-violet-300 border-violet-400/50',
@@ -31,11 +31,11 @@ const ACCENTS = {
     btnLive: 'from-violet-500 to-purple-700 text-white',
   },
   GS: {
-    bar: 'bg-emerald-500', text: 'text-emerald-600', chip: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-    border: 'border-emerald-300', glow: 'hover:border-emerald-400',
-    head: 'from-emerald-200', dot: 'bg-emerald-500',
-    btn: 'from-emerald-200 to-emerald-300 text-emerald-700',
-    btnLive: 'from-emerald-500 to-emerald-600 text-white',
+    bar: 'bg-pink-500', text: 'text-pink-300', chip: 'bg-pink-500/15 text-pink-300 border-pink-400/50',
+    border: 'border-pink-400/60', glow: 'hover:border-pink-400',
+    head: 'from-pink-600', dot: 'bg-pink-400',
+    btn: 'from-pink-500/40 to-rose-700/40 text-pink-200',
+    btnLive: 'from-pink-500 to-rose-700 text-white',
   },
   SC: {
     bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-gold-500/15 text-gold-300 border-gold-400/50',
