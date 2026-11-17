@@ -266,7 +266,9 @@ export default function Home() {
 
       {/* ผลรางวัลวันนี้ — โครงข้อมูลแบบเว็บผลรางวัล: ล่าสุดต่อ ตลาด + รอบถัดไป */}
       {(() => {
-        const todays = todayDraws.filter(drawVisible);
+        // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
+        const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
+        const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code));
         if (!todays.length) return null;
         // แยก settled/pending ต่อ market — ล่าสุดต่อ ตลาด + รอบถัดไป
         const mk = new Map();
@@ -281,7 +283,9 @@ export default function Home() {
           g.settled.sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)));
           g.pending.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
           return g;
-        }).sort((a, b) => String((b.settled[0] || b.pending[0])?.draw_at || '').localeCompare(String((a.settled[0] || a.pending[0])?.draw_at || '')));
+        }).filter(g => g.settled.length > 0) // เฉพาะตลาดที่มีผลรางวัลจริงแล้ว — ไม่เอารอบที่ยังไม่ออกรางวัลมาแสดง
+          .sort((a, b) => String(b.settled[0].draw_at).localeCompare(String(a.settled[0].draw_at))); // ล่าสุดที่ออกรางวัลก่อน
+        if (!cards.length) return null; // วันนี้ยังไม่มีผลรางวัลหวยเลย — ซ่อน section
         return (
           <section>
             <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
