@@ -9,6 +9,7 @@ import { typeAccent } from '../typeAccent.js';
 import { sfx } from '../sound.js';
 import { kindBadge } from '../resultSource.js';
 import { annSummary, annEntries } from '../ann.js';
+import { bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 import { Button } from '../components/ui/index.js';
 
 const BET_TYPE_STYLE = {
@@ -296,7 +297,10 @@ export default function PlaceBet() {
   if (!draw) return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard className="h-28" /><SkeletonCard className="h-64" /></div>;
 
   // เทียบกับเวลา server (draw.server_now) — fallback นาฬิกาเครื่องถ้า field ไม่มี
-  const closed = draw.status !== 'open' || draw.close_at <= (draw.server_now || new Date().toISOString().slice(0,19).replace('T',' '));
+  const nowSqlPB = draw.server_now || new Date().toISOString().slice(0,19).replace('T',' ');
+  const opensAt = draw ? bettingOpenAtSql(draw.close_at) : null;
+  const notYetOpen = !!(draw && draw.status === 'open' && draw.close_at > nowSqlPB && opensAt && nowSqlPB < opensAt);
+  const closed = draw.status !== 'open' || draw.close_at <= nowSqlPB || notYetOpen;
   const ac = draw ? typeAccent(draw.type_code) : null;
   const kb = kindBadge(draw.result_kind);
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;
@@ -319,12 +323,12 @@ export default function PlaceBet() {
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
-              <div className="text-sm mt-1">⏱️ ปิดรับโพย: {!closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
+              <div className="text-sm mt-1">⏱️ ปิดรับโพย: {notYetOpen ? <span className="text-amber-300 font-bold">เปิดรับ {thaiHM(opensAt)} น.</span> : !closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
               {kb && <span className={`text-[9px] px-2 py-0.5 rounded ${kb.cls}`}>{kb.label}</span>}
               <span className={`text-xs font-bold px-3 py-1 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
-                {closed ? 'ปิดรับแล้ว' : 'รับแทงอยู่'}
+                {notYetOpen ? `⏳ เปิดรับ ${thaiHM(opensAt)} น.` : closed ? 'ปิดรับแล้ว' : 'รับแทงอยู่'}
               </span>
             </div>
           </div>

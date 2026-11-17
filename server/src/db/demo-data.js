@@ -61,35 +61,35 @@ export function scheduleFor(typeCode, catCode) {
   if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
   if (typeCode === 'GS') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false }; // government's Savings Bank Bond (ออก 1&16 — วัน/เวลาเดียวกับหวยไทย)
   if (typeCode === 'LA') {
-    if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 30, closeHour: 19, closeMinute: 30, skipHoliday: true }; // ค่ำ จ–ศ
-    if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0, skipHoliday: true }; // เช้า ทุกวัน
-    if (catCode === 'LAM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true }; // หวยลาวเช้า ออก 08:30 ทุกวัน
-    if (catCode === 'LADT') return { kind: 'daily', hour: 12, minute: 30, closeHour: 11, closeMinute: 30, skipHoliday: true }; // ลาวพัฒนาเที่ยง ออก 12:30 ทุกวัน
-    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true }; // หวยลาวหลัก จ–ศ
+    if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 30, closeHour: 19, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // ค่ำ จ–ศ
+    if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0, skipHoliday: true, skipWeekend: true }; // เช้า ทุกวัน
+    if (catCode === 'LAM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // หวยลาวเช้า ออก 08:30 ทุกวัน
+    if (catCode === 'LADT') return { kind: 'daily', hour: 12, minute: 30, closeHour: 11, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // ลาวพัฒนาเที่ยง ออก 12:30 ทุกวัน
+    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true, skipWeekend: true }; // หวยลาวหลัก จ–ศ
   }
   if (typeCode === 'HN') {
     // หวยฮานอยทุกตลาดไม่ออกรางวัลวันอาทิตย์ (XSMB/lotterychecks ไม่มีข้อมูล) → จ.–ส.
-    if (catCode === 'HNM') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true }; // ฮานอยเช้า ออก 08:30 จ.–ส.
+    if (catCode === 'HNM') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // ฮานอยเช้า ออก 08:30 จ.–ส.
     // ฮานอยทางการ (Xổ số kiến thiết Thủ đô): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15–18:30 (เวลาไทย)
-    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true };
+    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true, skipWeekend: true };
     // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
     // HNN ใช้ผล XSMB จริง — ออกรางวัลเฉพาะ จันทร์–เสาร์ (ไม่มีวันอาทิตย์) จึงห้ามสร้างรอบวันอาทิตย์
-    if (catCode === 'HNN') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
+    if (catCode === 'HNN') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true, skipWeekend: true };
     // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
     // หวยฮานอยไม่ออกรางวัลวันอาทิตย์ → จ.–ส. เท่านั้น
-    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true };
+    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true, skipWeekend: true };
   }
   if (typeCode === 'HR') return { kind: 'hourly', closeBeforeMin: 30, skipHoliday: false }; // หวยราศี — ทายราศี ทุกชั่วโมง
-  return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true };
+  return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true, skipWeekend: true };
 }
 
 // ระยะสร้างรอบล่วงหน้าแยกตามความถี่ตลาด — horizon = เวลาที่ผู้เล่นวางแผนแทงได้จริง + buffer ล่ม/ปัญหาแหล่งผล
-// hourly: 3 ชม. (3 รอบ — รายชั่วโมงไม่มีใครวางแผนล่วงหน้าไกล) | daily/weekly: 2 วัน (การันตีอย่างน้อยรอบถัดไป) | monthly: 2 ครั้งถัดไป (~1-1.5 เดือน)
+// hourly: 3 ชม. (3 รอบ) | daily/weekly LA-HN: ล่วงหน้า 1 รอบ (เสาร์-อาทิตย์เลื่อนเป็นจันทร์) | monthly TH/GS: 1 ครั้งถัดไป
 function upcomingSpec(sch) {
   if (sch.kind === 'hourly') return { count: 3, horizonH: 4 };
-  if (sch.kind === 'monthly') return { count: 2, horizonH: 24 * 60 };
-  return { count: 60, horizonH: 24 * 2, minOne: true }; // daily/weekly: 2 วันข้างหน้า + การันตีรอบถัดไป (ครอบ gap weekend)
+  if (sch.kind === 'monthly') return { count: 1, horizonH: 24 * 60 };
+  return { count: 1, horizonH: 24 * 14, minOne: true }; // daily/weekly (LA/HN): ล่วงหน้า 1 รอบ — เสาร์-อาทิตย์เลื่อนเป็นจันทร์ (skipWeekend)
 }
 // หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่
 // LAD: หวยลาวพัฒนา 5/45 (จ-ศ 20:00) ไม่มีแหล่งผลแยกจากหวยลาวหลัก
@@ -119,6 +119,7 @@ function occurrences(sch, { count, horizonH, minOne }) {
   for (let i = 0; i < 400 && out.length < count; i++) {
     const day = new Date(base); day.setDate(base.getDate() + i);
     if (sch.skipHoliday && isHoliday(day)) continue;
+    if (sch.skipWeekend) { const dw = day.getDay(); if (dw === 0 || dw === 6) continue; } // LA/HN: เสาร์-อาทิตย์เลื่อนเป็นจันทร์
     if (sch.kind === 'monthly' && !sch.days.includes(day.getDate())) continue;
     if (sch.kind === 'weekly' && !sch.weekdays.includes(day.getDay())) continue;
     const close = new Date(day); close.setHours(sch.closeHour, sch.closeMinute || 0, 0);
@@ -220,7 +221,7 @@ export async function seedDemoDraws() {
     const [tid, cid] = slot.split('|');
     const r = await qRun(`DELETE FROM lottery_draws d
         WHERE d.lottery_type_id = $1 AND d.category_id IS NOT DISTINCT FROM $2::bigint
-          AND d.status IN ('open','scheduled') AND d.draw_at > $3
+          AND d.status IN ('open','scheduled','closed') AND d.draw_at > $3
           AND d.draw_code LIKE '%DEMO%'
           AND NOT EXISTS (SELECT 1 FROM bet_slips bs WHERE bs.draw_id = d.id)`,
       [Number(tid), cid === '' ? null : Number(cid), maxAt]);

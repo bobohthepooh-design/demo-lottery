@@ -8,6 +8,7 @@ import { typeAccent } from '../typeAccent.js';
 import { GameArt } from '../components/GameArt.jsx';
 import { mergeBanner } from '../bannerConfig.js';
 import { kindBadge, marketInfo, MODE_BADGE, sourceBadge, isOfficial } from '../resultSource.js';
+import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 
 // ผลย่อกระชับสำหรับการ์ดหน้าแรก — เฉพาะเลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
@@ -53,8 +54,8 @@ function countdownText(closeAtSql, now) {
 
 // แถวรอบหวยของแต่ละประเทศ/หมวด — แสดงเวลาออกรางวัล + นับถอยหลังปิดรับ
 function DrawLine({ d, now }) {
-  const isOpen = d.status === 'open';
-  const isScheduled = d.status === 'scheduled';
+  const isOpen = isBettingOpen(d);
+  const isScheduled = d.status === 'scheduled' || (d.status === 'open' && !isOpen);
   return (
     <div className={`bg-navy-800/70 border rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap ${isOpen ? 'border-navy-700/60' : 'border-navy-700/40 opacity-75'}`}>
       <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
@@ -66,7 +67,7 @@ function DrawLine({ d, now }) {
         <span className={`text-[8px] px-1 py-0.5 rounded shrink-0 ${b.cls}`}>{b.short}</span>
       ) : null; })()}
       <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ml-auto ${isOpen ? 'bg-gold-500/15 text-gold-600' : isScheduled ? 'bg-lav-100 text-lav-500 border border-lav-100' : 'bg-navy-100 text-navy-400'}`}>
-        {isOpen ? countdownText(d.close_at, now) : isScheduled ? 'กำหนดการ' : 'ปิดรับแล้ว'}
+        {isOpen ? countdownText(d.close_at, now) : isScheduled ? (d.status === 'open' ? `เปิด ${thaiHM(bettingOpenAtSql(d.close_at))} น.` : 'กำหนดการ') : 'ปิดรับแล้ว'}
       </span>
     </div>
   );
@@ -152,7 +153,7 @@ export default function Home() {
 
   // รอบหวยราศีที่เปิดรับอยู่ใกล้ปิดสุด — สำหรับการ์ดโปรโมชันพิเศษ
   const zodiacDraw = visDraws
-    .filter(d => d.type_code === 'HR' && d.status === 'open' && msLeft(d.close_at, now) > 0)
+    .filter(d => d.type_code === 'HR' && isBettingOpen(d))
     .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)))[0];
 
   // instant games (สล็อต/ไฮโล) + หวยราศี — แสดงการ์ดเด่นบนสุด แถวเดียวกันบน tablet/desktop
@@ -175,7 +176,7 @@ export default function Home() {
     HR: { code: '✦', tag: 'ปีนักษัตรออกผลทุกชั่วโมง', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — ตัวแรก/ท้าย 2-3 ตัว + วิ่ง', cta: 'ดูรอบปีนักษัตร', grad: 'from-violet-700 to-purple-900' },
   };
 
-  const openCount = visDraws.filter(d => d.status === 'open').length;
+  const openCount = visDraws.filter(d => isBettingOpen(d)).length;
   const b = mergeBanner(banner);
 
   return (
@@ -413,7 +414,7 @@ export default function Home() {
           {marketTypes.slice(0, 6).map((t, i) => {
             const typeDraws = openByCategory.filter(d => d.type_code === t.code);
             const ac = typeAccent(t.code);
-            const openN = typeDraws.filter(d => d.status === 'open').length;
+            const openN = typeDraws.filter(d => isBettingOpen(d)).length;
             const isHR = t.code === 'HR';
             const cardLink = `/lotteries?type=${t.id}`;
             return (

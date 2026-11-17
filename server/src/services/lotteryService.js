@@ -190,8 +190,19 @@ export async function getDraw(id) {
   return d ? { ...d, result_kind: resultKindOf(d), server_now: nowSql() } : d;
 }
 
+// หน้าต่างรับแทง: เปิดรับได้ล่วงหน้า BETTING_WINDOW_HOURS ชม. ก่อน close_at — รอบที่สร้างล่วงหน้ายังแทงไม่ได้จนกว่าจะถึงเวลา
+export const BETTING_WINDOW_HOURS = 24;
+export function bettingOpensAt(closeAtSql) {
+  const t = Date.parse(String(closeAtSql || '').replace(' ', 'T') + 'Z');
+  return Number.isFinite(t) ? new Date(t - BETTING_WINDOW_HOURS * 3600e3).toISOString().slice(0, 19).replace('T', ' ') : null;
+}
+export function isBettingWindowOpen(draw) {
+  const opens = bettingOpensAt(draw.close_at);
+  return draw.status === 'open' && draw.close_at > nowSql() && (!opens || nowSql() >= opens);
+}
+
 export async function isDrawOpen(draw) {
-  if (draw.status === 'open' && draw.close_at > nowSql()) return true;
+  if (isBettingWindowOpen(draw)) return true;
   if (draw.status === 'open' && draw.close_at <= nowSql()) {
     await qRun(`UPDATE lottery_draws SET status = 'closed',
         updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = $1`, [draw.id]);
@@ -235,7 +246,11 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
 
   const draw = await getDraw(drawId);
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
-  if (!(await isDrawOpen(draw))) throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพย', 'DRAW_CLOSED');
+  if (!(await isDrawOpen(draw))) {
+    const opens = bettingOpensAt(draw.close_at);
+    const notYet = draw.status === 'open' && draw.close_at > nowSql() && opens && nowSql() < opens;
+    throw new HttpError(400, notYet ? 'ยังไม่ถึงเวลาเปิดรับโพย' : 'รอบหวยนี้ไม่เปิดรับโพย', 'DRAW_CLOSED');
+  }
 
   const rg = await qGet('SELECT age_confirmed, self_excluded_until, daily_limit_satang, monthly_limit_satang FROM users WHERE id = $1', [userId]);
   if (rg && !rg.age_confirmed)
@@ -311,7 +326,8 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
 
       const cur = await d.prepare(`SELECT d.status, d.close_at, COALESCE(c.is_active, 1) AS cat_active
         FROM lottery_draws d LEFT JOIN lottery_categories c ON c.id = d.category_id WHERE d.id = ?`).get(drawId);
-      if (!cur || cur.status !== 'open' || cur.close_at <= nowSql())
+      const curOpens = cur ? bettingOpensAt(cur.close_at) : null;
+      if (!cur || cur.status !== 'open' || cur.close_at <= nowSql() || (curOpens && nowSql() < curOpens))
         throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพยแล้ว', 'DRAW_CLOSED');
       if (Number(cur.cat_active) !== 1)
         throw new HttpError(400, 'ตลาดหวยนี้ปิดให้บริการแล้ว', 'MARKET_CLOSED');

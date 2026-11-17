@@ -8,6 +8,7 @@ import { typeAccent } from '../typeAccent.js';
 import { kindBadge } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 import { annSummary } from '../ann.js';
+import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'รับแทงอยู่', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -18,6 +19,7 @@ export default function Lotteries() {
   const [rulesByType, setRulesByType] = useState({}); // กติกาต่อ type — ไว้โชว์อัตราจ่ายบนการ์ด
   const [country, setCountry] = useState('');     // ฟิลเตอร์กลุ่มประเทศ
   const [openOnly, setOpenOnly] = useState(false); // เฉพาะรอบที่เปิดรับอยู่
+  const [showPast, setShowPast] = useState(false); // แสดงรอบที่ผ่านมา (ย้อนหลัง 2 รอบ)
   const { isAdmin } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -61,7 +63,7 @@ export default function Lotteries() {
   let draws = selType ? pool.filter(d => String(d.lottery_type_id) === String(selType)) : pool;
   if (country) draws = draws.filter(d => countryOf(d.type_code) === country);
   const nowSql0 = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  if (openOnly) draws = draws.filter(d => d.status === 'open' && d.close_at > nowSql0);
+  if (openOnly) draws = draws.filter(d => isBettingOpen(d, nowSql0));
   // เกมด่วน (ขูด/ไฮโล/ยี่กี) ไม่มีรอบแทง — ไม่แสดงในเมนูประเภทหวย (เล่นที่หน้าเกมของตัวเอง)
   const INSTANT = new Set(['SC', 'HL', 'KI']);
   const visibleTypes = types.filter(t => (isAdmin || !hiddenSet.has(t.code)) && !INSTANT.has(t.code));
@@ -69,7 +71,7 @@ export default function Lotteries() {
   const countries = [...new Set(visibleTypes.map(t => countryOf(t.code)))];
 
   const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  const isLive = d => d.status === 'open' && d.close_at > nowSql;
+  const isLive = d => isBettingOpen(d, nowSql); // แทงได้จริง = open + อยู่ในหน้าต่าง 24 ชม.ก่อนปิดรับ
   // รอบปัจจุบัน = รอบที่เปิดรับและใกล้วันออกรางวัลที่สุด ของแต่ละประเภท/หมวด
   const liveMap = new Map();
   for (const d of draws.filter(isLive)) {
@@ -85,7 +87,11 @@ export default function Lotteries() {
   // ปิดรับแล้วรอผล — แยก 2 ช่วง: ถึงเวลาออกรางวัลแล้ว (กำลังออกรางวัล) vs ยังไม่ถึงเวลา (ปิดรับแล้ว รอออก)
   const drawingDraws = otherDraws.filter(d => d.status === 'closed' && d.draw_at <= nowSql);
   const upcomingOthers = otherDraws.filter(d =>
-    (!isLive(d) && d.status !== 'closed') || (d.status === 'closed' && d.draw_at > nowSql));
+    d.status !== 'settled' && d.status !== 'cancelled' &&
+    ((!isLive(d) && d.status !== 'closed') || (d.status === 'closed' && d.draw_at > nowSql)));
+  // รอบที่ผ่านไปแล้ว (ออกผล/ยกเลิก) — ซ่อนโดย default, ปุ่ม (+) แสดงย้อนหลัง 2 รอบล่าสุด
+  const pastDraws = otherDraws.filter(d => (d.status === 'settled' || d.status === 'cancelled') && d.draw_at <= nowSql)
+    .sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)));
 
   const ZODIAC_GLYPHS = ['🐭', '🐂', '🐯', '🐰', '🐉', '🐍', '🐴', '🐐', '🐵', '🐓', '🐕', '🐷'];
 
@@ -155,8 +161,11 @@ export default function Lotteries() {
             </span>
           )
         ) : (
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${drawing ? 'bg-gold-500/25 text-gold-300 border border-gold-400/60 animate-pulse' : d.status === 'open' ? (isHR ? 'bg-violet-500/25 text-violet-200 border border-violet-400/50' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40') : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
-            {drawing ? '🎰 กำลังออกรางวัล…' : awaitingDraw ? '🔒 ปิดรับแล้ว' : notOpenYet ? '🚫 ไม่เปิดให้แทง' : STATUS_TH[d.status] || d.status}
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${drawing ? 'bg-gold-500/25 text-gold-300 border border-gold-400/60 animate-pulse' : live ? (isHR ? 'bg-violet-500/25 text-violet-200 border border-violet-400/50' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40') : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
+            {drawing ? '🎰 กำลังออกรางวัล…' : awaitingDraw ? '🔒 ปิดรับแล้ว' : notOpenYet ? '🚫 ไม่เปิดให้แทง'
+              : live ? STATUS_TH.open
+              : d.status === 'open' ? `⏳ เปิด ${thaiHM(bettingOpenAtSql(d.close_at))} น.`
+              : STATUS_TH[d.status] || d.status}
           </span>
         )}
       </div>
@@ -192,6 +201,7 @@ export default function Lotteries() {
             : drawing ? '🎰 กำลังออกรางวัล…'
             : awaitingDraw ? '🔒 ปิดรับแล้ว — รอเวลาออกรางวัล'
             : notOpenYet ? '🚫 ไม่เปิดให้แทง'
+            : d.status === 'open' ? `⏳ เปิดรับ ${thaiHM(bettingOpenAtSql(d.close_at))} น.`
             : '🗓️ ยังไม่เปิดรับ'}
         </button>
       )}
@@ -284,6 +294,22 @@ export default function Lotteries() {
           </div>
         </section>
       )}
+      {/* รอบที่ผ่านมา — ซ่อนโดย default, กด (+) เพื่อดูย้อนหลัง 2 รอบล่าสุด */}
+      {pastDraws.length > 0 && (
+        <section>
+          <button onClick={() => setShowPast(v => !v)}
+            className="text-sm font-bold text-navy-300 hover:text-gold-300 flex items-center gap-2 mb-2">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-navy-500 text-gold-300">{showPast ? '–' : '+'}</span>
+            รอบที่ผ่านมา ({pastDraws.length})
+          </button>
+          {showPast && (
+            <div className="grid md:grid-cols-2 gap-4">
+              {pastDraws.slice(0, 2).map(d => <DrawCard key={d.id} d={d} />)}
+            </div>
+          )}
+        </section>
+      )}
+
       {!draws.length && <div className="text-navy-300 text-center py-10">ไม่พบรอบหวย</div>}
 
       {/* เลขเด็ด/เลขดัง — สถิติจากผลจริงภายนอก */}
