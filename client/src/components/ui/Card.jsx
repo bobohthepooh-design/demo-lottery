@@ -4,6 +4,7 @@ const VARIANTS = {
   default: 'bg-navy-800 border border-navy-700/70',
   subtle: 'bg-navy-900/60 border border-navy-700/60',
   gold: 'bg-gradient-to-br from-[#f7ecc4] via-[#efd78f] to-[#e3c05c] border border-gold-500/40',
+  danger: 'bg-red-500/10 border border-red-500/40',
 };
 
 export function Card({ variant = 'default', className = '', children, ...rest }) {

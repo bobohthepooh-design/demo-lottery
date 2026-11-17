@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { toast } from '../components/toast.js';
+import { Button } from '../components/ui/index.js';
 
 // หน้าแชทแอดมิน — รายการ thread สมาชิก + ตอบกลับ 1:1
 export default function AdminChat() {
@@ -134,10 +135,9 @@ export default function AdminChat() {
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                   maxLength={500} placeholder={`ตอบกลับ ${selThread?.displayName || selThread?.username || ''}...`}
                   className="flex-1 bg-navy-900 border border-navy-600 rounded-xl px-3 py-2 text-sm focus:outline-none" />
-                <button onClick={send} disabled={busy || !input.trim()}
-                  className="bg-gold-500 text-navy-950 font-bold px-4 rounded-xl text-sm disabled:opacity-50 hover:brightness-105">
+                <Button onClick={send} disabled={busy || !input.trim()} size="md" className="px-4">
                   ส่ง
-                </button>
+                </Button>
               </div>
             </>
           )}

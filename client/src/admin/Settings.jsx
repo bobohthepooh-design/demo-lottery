@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
+import { Card, CardBody, Button } from '../components/ui/index.js';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState([]);
@@ -108,7 +109,8 @@ export default function AdminSettings() {
       {msg && <div className="text-sm text-gold-300 bg-navy-800 border border-navy-700 rounded-lg p-3">{msg}</div>}
 
       {/* Blind mode — ซ่อนเมนูแทงหวยจากสมาชิก */}
-      <div className={`rounded-xl border p-4 flex items-center gap-4 ${betMenuOn ? 'bg-navy-800 border-navy-700' : 'bg-red-500/10 border-red-500/40'}`}>
+      <Card variant={betMenuOn ? 'default' : 'danger'}>
+      <CardBody className="flex items-center gap-4">
         <div className="flex-1">
           <div className="font-bold text-white">🎰 แสดงเมนูแทงหวย (Blind Mode)</div>
           <div className="text-xs text-navy-300 mt-0.5">
@@ -118,15 +120,16 @@ export default function AdminSettings() {
           </div>
           <div className="text-[11px] text-navy-500 mt-1">⚠️ อันนี้แค่ซ่อนเมนู — ถ้าต้องการปิดตลาดจริง (หยุดสร้างรอบ/หยุดรับแทง) ไปที่ <b>ประเภทหวย &amp; กติกา → ปิดประเภท</b></div>
         </div>
-        <button onClick={toggleBetMenu}
-          className={`font-bold px-5 py-2.5 rounded-lg text-sm transition ${betMenuOn ? 'bg-red-500/80 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
-          {betMenuOn ? '🚫 ปิดทั้งหมด' : '✅ เปิดทั้งหมด'}
-        </button>
-      </div>
+        <Button variant={betMenuOn ? 'danger' : 'accent'} onClick={toggleBetMenu}>
+          {betMenuOn ? 'ปิดทั้งหมด' : 'เปิดทั้งหมด'}
+        </Button>
+      </CardBody>
+      </Card>
 
       {/* เลือกซ่อนรายประเภท — มีผลเมื่อเปิดเมนูรวมอยู่ */}
       {betMenuOn && lotteryTypes.length > 0 && (
-        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+        <Card>
+        <CardBody>
           <div className="text-sm font-bold text-white mb-1">🎯 ซ่อนเมนูเฉพาะประเภท (แสดงผลอย่างเดียว)</div>
           <div className="text-xs text-navy-400 mb-1">ติ๊ก "แสดง" = สมาชิกเห็นเมนูประเภทนั้น • ติ๊กออก = ซ่อนการ์ดเมนูเฉยๆ — <b className="text-amber-300">ระบบยังสร้างรอบและรับแทงได้ปกติ</b> (ต่างจากปิดตลาดจริงที่หน้าประเภทหวย &amp; กติกา)</div>
           <div className="grid sm:grid-cols-2 gap-2">
@@ -143,11 +146,13 @@ export default function AdminSettings() {
               );
             })}
           </div>
-        </div>
+        </CardBody>
+        </Card>
       )}
 
       {/* Cashback promotion — คืนยอดเสียให้สมาชิก */}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
+      <Card>
+        <CardBody>
         <div className="text-sm font-bold text-white mb-1">🎁 Cashback — คืนยอดเสีย</div>
         <div className="text-xs text-navy-400 mb-3">
           คืนเครดิต % ของยอดเสียสุทธิ (เดิมพัน − รางวัล) ย้อนหลัง 24 ชม. • รันอัตโนมัติวันละครั้ง หรือกดจ่ายเองได้ • เครดิตเสมือนเพื่อการศึกษา
@@ -158,17 +163,9 @@ export default function AdminSettings() {
             <input value={cashbackPct} onChange={e => setCashbackPct(e.target.value)}
               className="w-28 mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" placeholder="0" />
           </label>
-          <button onClick={saveCashback} className="bg-gold-500 text-navy-950 font-bold px-5 py-2 rounded-lg text-sm hover:bg-gold-400">
-            บันทึก %
-          </button>
-          <button onClick={() => cashbackAction('preview')}
-            className="border border-navy-500 text-navy-200 hover:bg-navy-700 px-4 py-2 rounded-lg text-sm">
-            👁 ดูยอดที่จะจ่าย
-          </button>
-          <button onClick={() => cashbackAction('run')}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm">
-            💸 จ่ายเลย
-          </button>
+          <Button onClick={saveCashback} size="sm">บันทึก %</Button>
+          <Button variant="ghost" size="sm" onClick={() => cashbackAction('preview')}>ดูยอดที่จะจ่าย</Button>
+          <Button variant="accent" size="sm" onClick={() => cashbackAction('run')}>จ่ายเลย</Button>
         </div>
         {cashbackPreview && (
           <div className="mt-3 text-xs text-navy-200 bg-navy-900/70 border border-navy-600 rounded-lg px-3 py-2">
@@ -176,9 +173,10 @@ export default function AdminSettings() {
           </div>
         )}
         {cashbackMsg && <div className={`text-xs mt-3 ${cashbackMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-400'}`}>{cashbackMsg}</div>}
-      </div>
+        </CardBody>
+      </Card>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-xl divide-y divide-navy-700">
+      <Card className="divide-y divide-navy-700">
         {settings.filter(s => s.key !== 'betting_menu_enabled' && s.key !== 'bet_menu_hidden_types' && !GAME_KEYS.includes(s.key) && !['cashback_percent', 'cashback_last_run'].includes(s.key)).map(s => (
           <div key={s.key} className="p-4 flex items-center gap-4">
             <div className="w-56 shrink-0">
@@ -187,11 +185,11 @@ export default function AdminSettings() {
             </div>
             <input value={edits[s.key] ?? ''} onChange={e => setEdits({...edits, [s.key]: e.target.value})}
               className="flex-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm font-mono" />
-            <button onClick={() => save(s.key)} className="text-sm bg-navy-700 hover:bg-navy-600 text-gold-300 px-4 py-2 rounded-lg">บันทึก</button>
+            <Button variant="ghost" size="sm" onClick={() => save(s.key)}>บันทึก</Button>
           </div>
         ))}
         {!settings.length && <div className="p-6 text-center text-navy-400">ไม่มีการตั้งค่า</div>}
-      </div>
+      </Card>
       <div className="text-xs text-navy-400">หมายเหตุ: การตั้งค่าเช่น initial_credit มีผลกับสมาชิกใหม่เท่านั้น</div>
     </div>
   );

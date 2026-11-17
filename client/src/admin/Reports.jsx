@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { thaiDate } from '../time.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
+import { StatCard } from '../components/ui/index.js';
 
 const DRAW_STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ',
@@ -14,13 +15,7 @@ const DRAW_STATUS_CLS = {
 };
 
 function Kpi({ label, value, sub, tone = 'text-white' }) {
-  return (
-    <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-      <div className="text-xs text-navy-400">{label}</div>
-      <div className={`text-xl font-bold mt-1 ${tone}`}>{value}</div>
-      {sub && <div className="text-[11px] text-navy-500 mt-0.5">{sub}</div>}
-    </div>
-  );
+  return <StatCard label={label} value={value} sub={sub} accent={tone} />;
 }
 
 function Th({ children, right, center }) {
