@@ -22,7 +22,7 @@ const loginLimiter = rateLimit({
 
 const registerSchema = z.object({
   username: z.string().min(3).max(32),
-  email: z.string().email().max(200).optional(),
+  email: z.preprocess(v => (typeof v === 'string' && !v.trim() ? undefined : v), z.string().email().max(200).optional()),
   password: z.string().min(8).max(128),
   displayName: z.string().max(100).optional(),
   ageConfirmed: z.literal(true),

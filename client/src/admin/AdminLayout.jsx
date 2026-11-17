@@ -12,6 +12,7 @@ export const adminGroups = [
     items: [
       { to: '/admin', label: 'ภาพรวม', icon: 'dashboard', end: true },
       { to: '/admin/reports', label: 'รายงาน', icon: 'reports' },
+      { to: '/admin/health', label: 'สุขภาพระบบ', icon: 'bell' },
     ],
   },
   {

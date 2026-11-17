@@ -29,6 +29,7 @@ const AdminDraws = lazy(() => import('./admin/Draws.jsx'));
 const AdminWallet = lazy(() => import('./admin/WalletAdmin.jsx'));
 const AdminBets = lazy(() => import('./admin/Bets.jsx'));
 const AdminReports = lazy(() => import('./admin/Reports.jsx'));
+const AdminHealth = lazy(() => import('./admin/Health.jsx'));
 const AdminAudit = lazy(() => import('./admin/Audit.jsx'));
 const AdminSecurity = lazy(() => import('./admin/Security.jsx'));
 const AdminSettings = lazy(() => import('./admin/Settings.jsx'));
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="bets" element={<AdminBets />} />
             <Route path="my-bets" element={<MyBets />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="health" element={<AdminHealth />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="security" element={<AdminSecurity />} />
             <Route path="settings" element={<AdminSettings />} />

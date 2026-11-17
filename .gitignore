@@ -13,3 +13,5 @@ server/test-dbg.db*
 *.log
 server/data/
 backups/
+e2e/shots/
+.watchdog-state.json

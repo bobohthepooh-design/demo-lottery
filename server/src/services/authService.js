@@ -84,16 +84,18 @@ const USER_BY_CRED_PG = 'SELECT * FROM users WHERE LOWER(username) = LOWER($1) O
 
 export async function register({ username, email, password, displayName, ip, userAgent }) {
   if (!/^[a-zA-Z0-9_]{3,32}$/.test(username)) throw new HttpError(400, 'ชื่อผู้ใช้ต้องเป็นตัวอักษร/ตัวเลข 3-32 ตัว');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, 'อีเมลไม่ถูกต้อง');
+  const mail = (email || '').trim().toLowerCase();
+  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new HttpError(400, 'อีเมลไม่ถูกต้อง');
   if (password.length < 8) throw new HttpError(400, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
+  const finalEmail = mail || `${username.toLowerCase()}@member.local`;
 
   const dup = await qGet('SELECT id FROM users WHERE LOWER(username) = LOWER($1) OR email = $2',
-    [username, email.toLowerCase()]);
+    [username, finalEmail]);
   if (dup) throw new HttpError(409, 'ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้งานแล้ว');
 
   const userId = await txAsync(async (d) => {
     const r = await d.prepare(`INSERT INTO users (username, email, password_hash, display_name) VALUES (?, ?, ?, ?)`)
-      .run(username, email.toLowerCase(), hashPassword(password), displayName || username);
+      .run(username, finalEmail, hashPassword(password), displayName || username);
     const id = Number(r.lastInsertRowid);
     const memberRole = await d.prepare(`SELECT id FROM roles WHERE name = 'member'`).get();
     if (memberRole) await d.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)').run(id, memberRole.id);
