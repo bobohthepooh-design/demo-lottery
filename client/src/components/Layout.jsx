@@ -111,8 +111,8 @@ export default function Layout() {
         <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="h-9 px-2 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
-              <img src="/glo-logo.svg" alt="สำนักงานสลากกินแบ่งรัฐบาล" className="h-7 w-auto object-contain" />
+            <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
+              <img src="/glo-emblem-cartoon.svg" alt="สำนักงานสลากกินแบ่งรัฐบาล" className="w-9 h-9 object-contain" />
             </div>
             <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base hidden min-[420px]:block">DEMO LOTTERY</div>
           </Link>
