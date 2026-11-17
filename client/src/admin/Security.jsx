@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { toast } from '../components/toast.js';
+import { Card } from '../components/ui/index.js';
 
 const SEV = { info: 'text-blue-300', warning: 'text-yellow-300', critical: 'text-red-400' };
 
@@ -19,7 +20,7 @@ export default function AdminSecurity() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-white">Security Monitoring</h1>
-      <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
+      <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
             <tr><th className="text-left px-4 py-3">เวลา</th><th className="text-left px-4 py-3">เหตุการณ์</th><th className="text-left px-4 py-3">ระดับ</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">IP</th><th className="text-left px-4 py-3">รายละเอียด</th></tr>
@@ -41,7 +42,7 @@ export default function AdminSecurity() {
             {!events.length && <tr><td colSpan="6" className="px-4 py-8 text-center text-navy-400">ไม่มีเหตุการณ์</td></tr>}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, satang, drawLabel, fmtDateTime } from '../api.js';
+import { Input, Select, Button } from '../components/ui/index.js';
 
 const STATUS_TH = {
   pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก',
@@ -131,18 +132,17 @@ export default function AdminBets() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">ตรวจสอบโพย (Bet Monitoring)</h1>
         <div className="flex items-center gap-2 flex-wrap">
-          <input value={q} onChange={e => setQ(e.target.value)}
+          <Input value={q} onChange={e => setQ(e.target.value)}
             placeholder="ค้นหา username / เลขโพย / รอบหวย..."
-            className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-64" />
-          <select value={status} onChange={e => setStatus(e.target.value)} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+            inputClassName="w-64 py-2 text-sm" />
+          <Select value={status} onChange={e => setStatus(e.target.value)} inputClassName="py-2 text-sm">
             <option value="">ทุกสถานะ</option>
             {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-          <button onClick={exportAll}
-            className="bg-navy-900 border border-navy-600 hover:border-gold-500/50 text-navy-200 hover:text-gold-300 text-sm px-3 py-2 rounded-lg transition"
+          </Select>
+          <Button variant="ghost" size="sm" onClick={exportAll}
             title="ดาวน์โหลดโพยทั้งหมดที่ตรงเงื่อนไขเป็น CSV">
             ⬇ CSV
-          </button>
+          </Button>
         </div>
       </div>
       {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>}
@@ -183,10 +183,9 @@ export default function AdminBets() {
           );
         })}
         {hasMore && (
-          <button onClick={loadMore} disabled={loadingMore}
-            className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition disabled:opacity-50">
+          <Button variant="ghost" onClick={loadMore} disabled={loadingMore} className="w-full">
             {loadingMore ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${PAGE} รายการ (เหลือ ${(total - slips.length).toLocaleString()})`}
-          </button>
+          </Button>
         )}
         {!slips.length && <div className="text-center text-navy-400 py-10">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
       </div>

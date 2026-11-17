@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { toast } from '../components/toast.js';
+import { Card, Input, Select, Button } from '../components/ui/index.js';
 
 const ACTION_TH = {
   'user.login': 'เข้าสู่ระบบ', 'user.login_line': 'เข้าสู่ระบบ (LINE)',
@@ -62,22 +63,20 @@ export default function AdminAudit() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">Audit Log</h1>
         <div className="flex items-center gap-2">
-          <input value={q} onChange={e => { setQ(e.target.value); setPage(0); }}
+          <Input value={q} onChange={e => { setQ(e.target.value); setPage(0); }}
             placeholder="ค้นหา ผู้ใช้ / entity / IP / รายละเอียด..."
-            className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-64" />
-          <select value={action} onChange={e => { setAction(e.target.value); setPage(0); }}
-            className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm">
+            inputClassName="w-64 py-2 text-sm" />
+          <Select value={action} onChange={e => { setAction(e.target.value); setPage(0); }} inputClassName="py-2 text-sm">
             <option value="">ทุก action</option>
             {actionKeys.map(k => <option key={k} value={k}>{ACTION_TH[k] || k}</option>)}
-          </select>
-          <button onClick={() => exportCsv(filtered, `audit-${new Date().toISOString().slice(0, 10)}.csv`)}
-            className="bg-navy-900 border border-navy-600 hover:border-gold-500/50 text-navy-200 hover:text-gold-300 text-sm px-3 py-2 rounded-lg transition"
+          </Select>
+          <Button variant="ghost" size="sm" onClick={() => exportCsv(filtered, `audit-${new Date().toISOString().slice(0, 10)}.csv`)}
             title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่เป็น CSV">
             ⬇ CSV
-          </button>
+          </Button>
         </div>
       </div>
-      <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
+      <Card className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-navy-900 text-navy-300">
             <tr><th className="text-left px-3 py-3">เวลา</th><th className="text-left px-3 py-3">ผู้ใช้</th><th className="text-left px-3 py-3">Action</th><th className="text-left px-3 py-3">Entity</th><th className="text-left px-3 py-3">IP</th><th className="text-left px-3 py-3">รายละเอียด</th></tr>
@@ -99,15 +98,13 @@ export default function AdminAudit() {
           </tbody>
         </table>
         {!filtered.length && <div className="text-center text-navy-400 py-8 text-sm">{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
-      </div>
+      </Card>
       {pageCount > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-navy-400">หน้า {page + 1}/{pageCount} • {filtered.length} รายการ</span>
           <div className="flex gap-2">
-            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
-              className="px-3 py-1.5 rounded-lg border border-navy-600 text-navy-200 disabled:opacity-40 hover:border-gold-500/50">← ก่อนหน้า</button>
-            <button disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1.5 rounded-lg border border-navy-600 text-navy-200 disabled:opacity-40 hover:border-gold-500/50">ถัดไป →</button>
+            <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← ก่อนหน้า</Button>
+            <Button variant="ghost" size="sm" disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)}>ถัดไป →</Button>
           </div>
         </div>
       )}

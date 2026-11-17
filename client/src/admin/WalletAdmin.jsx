@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
+import { Card, CardHeader, Input, Select, Button } from '../components/ui/index.js';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -85,25 +86,29 @@ export default function AdminWallet() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-white">จัดการเครดิตเสมือน (Virtual Wallet)</h1>
-      <form onSubmit={submit} className="bg-navy-800 border border-navy-700 rounded-xl p-5 grid sm:grid-cols-2 gap-3">
-        <select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
+      <Card>
+      <CardBody>
+      <form onSubmit={submit} className="grid sm:grid-cols-2 gap-3">
+        <Select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} inputClassName="py-2.5">
           <option value="">— เลือกสมาชิก —</option>
           {members.map(m => <option key={m.id} value={m.id}>{m.username} ({satang(m.balance)} บาท)</option>)}
-        </select>
-        <input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5" />
-        <select value={form.direction} onChange={e => setForm({...form, direction: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
+        </Select>
+        <Input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} inputClassName="py-2.5" />
+        <Select value={form.direction} onChange={e => setForm({...form, direction: e.target.value})} inputClassName="py-2.5">
           <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>
-        </select>
-        <input required placeholder="เหตุผล (บังคับ)" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5" />
-        <input placeholder="Idempotency key" value={form.idempotencyKey} onChange={e => setForm({...form, idempotencyKey: e.target.value})} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 font-mono text-xs" />
-        <button className="bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">ปรับเครดิต</button>
-        {msg && <div className={`sm:col-span-2 text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`}>{msg}</div>}
+        </Select>
+        <Input required placeholder="เหตุผล (บังคับ)" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} inputClassName="py-2.5" />
+        <Input placeholder="Idempotency key" value={form.idempotencyKey} onChange={e => setForm({...form, idempotencyKey: e.target.value})} inputClassName="py-2.5 font-mono text-xs" />
+        <Button className="sm:col-span-2">ปรับเครดิต</Button>
+        {msg && <div className={`sm:col-span-2 text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`} role="status">{msg}</div>}
       </form>
+      </CardBody>
+      </Card>
 
       {/* ปรับเครดิตหลายบัญชีพร้อมกัน */}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
-        <h2 className="font-bold text-white mb-1">ปรับเครดิตหลายบัญชี</h2>
-        <p className="text-[11px] text-navy-400 mb-3">เลือกสมาชิกหลายคนหรือทั้งหมด — ใช้เหตุผลเดียวกัน ทุกบัญชีบันทึก audit แยก (สูงสุด 200 คน/ครั้ง)</p>
+      <Card>
+      <CardHeader title="ปรับเครดิตหลายบัญชี" sub="เลือกสมาชิกหลายคนหรือทั้งหมด — ใช้เหตุผลเดียวกัน ทุกบัญชีบันทึก audit แยก (สูงสุด 200 คน/ครั้ง)" />
+      <CardBody>
         <form onSubmit={submitBulk} className="space-y-3">
           <div className="flex gap-2">
             <button type="button" onClick={() => setBulk(b => ({ ...b, mode: 'selected' }))}
@@ -127,27 +132,24 @@ export default function AdminWallet() {
             </div>
           )}
           <div className="grid sm:grid-cols-3 gap-3">
-            <input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={bulk.amount} onChange={e => setBulk({ ...bulk, amount: e.target.value })} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5" />
-            <select value={bulk.direction} onChange={e => setBulk({ ...bulk, direction: e.target.value })} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5">
+            <Input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={bulk.amount} onChange={e => setBulk({ ...bulk, amount: e.target.value })} inputClassName="py-2.5" />
+            <Select value={bulk.direction} onChange={e => setBulk({ ...bulk, direction: e.target.value })} inputClassName="py-2.5">
               <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>
-            </select>
-            <input required placeholder="เหตุผล (บังคับ)" value={bulk.reason} onChange={e => setBulk({ ...bulk, reason: e.target.value })} className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5" />
+            </Select>
+            <Input required placeholder="เหตุผล (บังคับ)" value={bulk.reason} onChange={e => setBulk({ ...bulk, reason: e.target.value })} inputClassName="py-2.5" />
           </div>
-          <button disabled={bulkBusy || (bulk.mode === 'selected' && !bulk.userIds.length)}
-            className="bg-gold-500 text-navy-950 font-bold px-5 py-2.5 rounded-lg hover:bg-gold-400 disabled:opacity-40 text-sm">
+          <Button disabled={bulkBusy || (bulk.mode === 'selected' && !bulk.userIds.length)}>
             {bulkBusy ? 'กำลังปรับ…' : `ปรับเครดิตให้ ${bulk.mode === 'all' ? 'สมาชิกทั้งหมด' : `${bulk.userIds.length} คน`}`}
-          </button>
-          {bulkMsg && <div className={`text-sm rounded-lg p-3 ${bulkMsg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`}>{bulkMsg}</div>}
+          </Button>
+          {bulkMsg && <div className={`text-sm rounded-lg p-3 ${bulkMsg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`} role="status">{bulkMsg}</div>}
         </form>
-      </div>
+      </CardBody>
+      </Card>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
-        <div className="px-5 py-4 border-b border-navy-700 flex items-center justify-between">
-          <span className="font-bold text-white">ประวัติธุรกรรมทั้งหมด</span>
-          <button onClick={exportCsv} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition">
-            ⬇️ Export CSV
-          </button>
-        </div>
+      <Card className="overflow-x-auto">
+        <CardHeader title="ประวัติธุรกรรมทั้งหมด" actions={
+          <Button variant="ghost" size="sm" onClick={exportCsv}>⬇️ Export CSV</Button>
+        } />
         <table className="w-full text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
             <tr><th className="text-left px-4 py-3">Ref</th><th className="text-left px-4 py-3">สมาชิก</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-right px-4 py-3">จำนวน</th><th className="text-right px-4 py-3">คงเหลือ</th><th className="text-left px-4 py-3">เวลา</th><th className="text-left px-4 py-3">รายละเอียด</th></tr>
@@ -166,7 +168,7 @@ export default function AdminWallet() {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }

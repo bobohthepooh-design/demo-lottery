@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, satang } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
+import { Card, Input, Button, Modal, Select } from '../components/ui/index.js';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([]);
@@ -32,12 +33,12 @@ export default function AdminMembers() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">จัดการสมาชิก</h1>
-        <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
-          placeholder="ค้นหา username/email..." className="bg-navy-900 border border-navy-600 rounded-lg px-4 py-2 text-sm w-64" />
+        <Input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
+          placeholder="ค้นหา username/email..." inputClassName="w-64 py-2 text-sm" />
       </div>
-      <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
+      <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
             <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="text-left px-4 py-3">18+/RG</th><th className="px-4 py-3 sticky right-0 bg-navy-900 z-10"></th></tr>
@@ -60,75 +61,59 @@ export default function AdminMembers() {
                   {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap sticky right-0 bg-navy-800 group-hover:bg-navy-700/40 z-10">
-                  <button onClick={() => setEdit({ ...m })} className="text-gold-400 text-xs hover:underline mr-3">แก้ไข</button>
+                  <button onClick={() => setEdit({ ...m })} className="text-[#67e8f9] text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-      {edit && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEdit(null)}>
-          <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-4">แก้ไขสมาชิก: {edit.username}</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-navy-300">ชื่อที่แสดง</label>
-                <input value={edit.displayName || ''} onChange={e => setEdit({...edit, displayName: e.target.value})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
-              </div>
-              <div>
-                <label className="text-xs text-navy-300">สถานะ</label>
-                <select value={edit.status} onChange={e => setEdit({...edit, status: e.target.value})}
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
-                  <option value="active">active</option><option value="locked">locked</option><option value="disabled">disabled</option>
-                </select>
-              </div>
-              <div className="flex items-start gap-2 bg-navy-900/60 border border-navy-700 rounded-lg p-3">
-                <input type="checkbox" id="wd-unlock" checked={!!edit.withdrawUnlocked}
-                  onChange={e => setEdit({ ...edit, withdrawUnlocked: e.target.checked })}
-                  className="mt-0.5 accent-gold-500" />
-                <label htmlFor="wd-unlock" className="text-xs text-navy-200 leading-relaxed">
-                  💸 <b>อนุญาตให้ถอนเครดิต</b> — ถอนได้เต็มยอดคงเหลือ แต่ระบบจะ<b>หักเครดิตแถม 50 บาท ออก</b> และต้องเหลืออย่างน้อย 50 บาท จึงจะถอนได้
-                </label>
-              </div>
-              {(edit.selfExcludedUntil || edit.dailyLimitSatang || edit.monthlyLimitSatang || !edit.ageConfirmed) && (
-                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs space-y-1">
-                  <div className="text-navy-300 font-semibold mb-1">สถานะ Responsible Gambling</div>
-                  {!edit.ageConfirmed && <div className="text-red-300">❗ ยังไม่ยืนยันอายุ 18+</div>}
-                  {edit.selfExcludedUntil && <div className="text-red-300">⛔ ระงับการแทง{edit.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${edit.selfExcludedUntil}`}</div>}
-                  {(edit.dailyLimitSatang || edit.monthlyLimitSatang) && (
-                    <div className="text-amber-300">⚠️ วงเงิน: วัน {satang(edit.dailyLimitSatang || 0)} บาท • เดือน {satang(edit.monthlyLimitSatang || 0)} บาท</div>
-                  )}
-                </div>
+      </Card>
+
+      {/* modal แก้ไขสมาชิก — Modal กลาง (ESC + backdrop ปิด) */}
+      <Modal open={!!edit} onClose={() => setEdit(null)} title={`แก้ไขสมาชิก: ${edit?.username || ''}`}>
+        <div className="space-y-3">
+          <Input label="ชื่อที่แสดง" value={edit?.displayName || ''} onChange={e => setEdit({ ...edit, displayName: e.target.value })}
+            inputClassName="py-2" />
+          <Select label="สถานะ" value={edit?.status} onChange={e => setEdit({ ...edit, status: e.target.value })} inputClassName="py-2">
+            <option value="active">active</option><option value="locked">locked</option><option value="disabled">disabled</option>
+          </Select>
+          <div className="flex items-start gap-2 bg-navy-900/60 border border-navy-700 rounded-lg p-3">
+            <input type="checkbox" id="wd-unlock" checked={!!edit?.withdrawUnlocked}
+              onChange={e => setEdit({ ...edit, withdrawUnlocked: e.target.checked })}
+              className="mt-0.5 accent-gold-500" />
+            <label htmlFor="wd-unlock" className="text-xs text-navy-200 leading-relaxed">
+              💸 <b>อนุญาตให้ถอนเครดิต</b> — ถอนได้เต็มยอดคงเหลือ แต่ระบบจะ<b>หักเครดิตแถม 50 บาท ออก</b> และต้องเหลืออย่างน้อย 50 บาท จึงจะถอนได้
+            </label>
+          </div>
+          {edit && (edit.selfExcludedUntil || edit.dailyLimitSatang || edit.monthlyLimitSatang || !edit.ageConfirmed) && (
+            <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs space-y-1">
+              <div className="text-navy-300 font-semibold mb-1">สถานะ Responsible Gambling</div>
+              {!edit.ageConfirmed && <div className="text-red-300">❗ ยังไม่ยืนยันอายุ 18+</div>}
+              {edit.selfExcludedUntil && <div className="text-red-300">⛔ ระงับการแทง{edit.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${edit.selfExcludedUntil}`}</div>}
+              {(edit.dailyLimitSatang || edit.monthlyLimitSatang) && (
+                <div className="text-amber-300">⚠️ วงเงิน: วัน {satang(edit.dailyLimitSatang || 0)} บาท • เดือน {satang(edit.monthlyLimitSatang || 0)} บาท</div>
               )}
-              <div>
-                <label className="text-xs text-navy-300">รีเซ็ตรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label>
-                <input type="password" value={edit.password || ''} onChange={e => setEdit({...edit, password: e.target.value})} placeholder="อย่างน้อย 8 ตัว"
-                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button onClick={save} className="flex-1 bg-gold-500 text-navy-950 font-bold py-2.5 rounded-lg">บันทึก</button>
-                <button onClick={() => setEdit(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
-              </div>
             </div>
+          )}
+          <Input label="รีเซ็ตรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)" type="password" value={edit?.password || ''}
+            onChange={e => setEdit({ ...edit, password: e.target.value })} placeholder="อย่างน้อย 8 ตัว" inputClassName="py-2" />
+          <div className="flex gap-2 pt-2">
+            <Button onClick={save} className="flex-1">บันทึก</Button>
+            <Button variant="ghost" onClick={() => setEdit(null)}>ยกเลิก</Button>
           </div>
         </div>
-      )}
-      {del && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setDel(null)}>
-          <div className="bg-navy-800 border border-navy-600 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-2">ลบสมาชิก?</h2>
-            <p className="text-sm text-navy-300 mb-1">ต้องการลบบัญชี <span className="text-white font-semibold">{del.username}</span> ใช่หรือไม่</p>
-            <p className="text-xs text-navy-400 mb-4">กระเป๋า เครดิต และเซสชันทั้งหมดจะถูกลบถาวร (ลบไม่ได้ถ้ามีประวัติโพย)</p>
-            <div className="flex gap-2">
-              <button onClick={remove} className="flex-1 bg-red-500 text-white font-bold py-2.5 rounded-lg">ลบสมาชิก</button>
-              <button onClick={() => setDel(null)} className="px-5 py-2.5 border border-navy-600 rounded-lg">ยกเลิก</button>
-            </div>
-          </div>
+      </Modal>
+
+      {/* modal ยืนยันลบสมาชิก */}
+      <Modal open={!!del} onClose={() => setDel(null)} title="ลบสมาชิก?">
+        <p className="text-sm text-navy-300 mb-1">ต้องการลบบัญชี <span className="text-white font-semibold">{del?.username}</span> ใช่หรือไม่</p>
+        <p className="text-xs text-navy-400 mb-4">กระเป๋า เครดิต และเซสชันทั้งหมดจะถูกลบถาวร (ลบไม่ได้ถ้ามีประวัติโพย)</p>
+        <div className="flex gap-2">
+          <Button variant="danger" onClick={remove} className="flex-1">ลบสมาชิก</Button>
+          <Button variant="ghost" onClick={() => setDel(null)}>ยกเลิก</Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

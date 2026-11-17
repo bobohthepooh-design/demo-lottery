@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { DEFAULT_BANNER } from '../bannerConfig.js';
 import { confirmAction } from './confirm.jsx';
+import { Card, CardBody, Button } from '../components/ui/index.js';
 
 const FIELDS = [
   { key: 'enabled', label: 'แสดงแบนเนอร์', type: 'checkbox' },
@@ -55,7 +56,8 @@ export default function AdminBanner() {
       {msg && <div className={`text-sm rounded-lg p-3 border ${msg.startsWith('ERROR') ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-green-400 bg-green-500/10 border-green-500/30'}`}>{msg}</div>}
 
       {/* Preview */}
-      <div className="bg-navy-800/60 border border-navy-700 rounded-xl p-4">
+      <Card variant="subtle">
+        <CardBody>
         <div className="text-xs text-navy-400 mb-2">ตัวอย่าง (ใกล้เคียงของจริง)</div>
         <div className="rounded-xl border border-gold-500/40 bg-gradient-to-br from-navy-800 to-navy-950 px-4 py-5 text-center">
           <div className="text-2xl mb-1">{form.emoji}</div>
@@ -67,10 +69,12 @@ export default function AdminBanner() {
             <span className="text-xs border border-gold-500/50 text-gold-300 px-4 py-1.5 rounded-lg">{form.cta_register}</span>
           </div>
         </div>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* แถบประกาศวิ่ง */}
-      <div className="bg-navy-800 border border-navy-700 rounded-xl p-4 space-y-3">
+      <Card>
+        <CardBody className="space-y-3">
         <div className="text-sm font-bold text-white">📢 แถบประกาศ (ข้อความวิ่งใต้เมนู)</div>
         <label className="flex items-center gap-2 text-sm text-navy-200">
           <input type="checkbox" checked={!!announce.enabled} onChange={e => setAnnounce(a => ({ ...a, enabled: e.target.checked }))}
@@ -92,9 +96,10 @@ export default function AdminBanner() {
             </div>
           </div>
         )}
-      </div>
+        </CardBody>
+      </Card>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-xl divide-y divide-navy-700">
+      <Card className="divide-y divide-navy-700">
         {FIELDS.map(f => (
           <div key={f.key} className="p-4 flex items-center gap-4">
             <label className="w-64 shrink-0 text-sm text-navy-200">{f.label}</label>
@@ -107,11 +112,11 @@ export default function AdminBanner() {
             )}
           </div>
         ))}
-      </div>
+      </Card>
 
       <div className="flex gap-3">
-        <button onClick={save} className="bg-gold-500 text-navy-950 font-bold px-6 py-2.5 rounded-lg hover:bg-gold-400">บันทึกแบนเนอร์</button>
-        <button onClick={() => setForm(DEFAULT_BANNER)} className="border border-navy-600 text-navy-200 px-5 py-2.5 rounded-lg hover:bg-navy-700">คืนค่าเริ่มต้น</button>
+        <Button onClick={save}>บันทึกแบนเนอร์</Button>
+        <Button variant="ghost" onClick={() => setForm(DEFAULT_BANNER)}>คืนค่าเริ่มต้น</Button>
       </div>
     </div>
   );
