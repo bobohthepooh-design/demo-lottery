@@ -297,6 +297,7 @@ router.patch('/lottery/rules/:id', requirePerm('lottery.manage'), async (req, re
     const fields = Object.keys(r).filter(k => r[k] !== undefined);
     if (!fields.length) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
     const existing = await db().prepare('SELECT bet_type FROM lottery_rules WHERE id = ?').get(id);
+    if (!existing) throw new HttpError(404, 'ไม่พบกติกา');
     await db().prepare(`UPDATE lottery_rules SET ${fields.map(f => `${f}=?`).join(',')} WHERE id=?`)
       .run(...fields.map(f => r[f]), id);
     // sync กลับเข้า settings + เผยแพร่ราคาให้ทุกกติกาของเกมนั้น — กันราคาเพี้ยนข้ามกติกา/ข้ามหน้า
