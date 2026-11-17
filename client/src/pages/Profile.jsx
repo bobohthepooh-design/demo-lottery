@@ -134,8 +134,54 @@ function PrefsCard() {
   );
 }
 
+// PDPA — export ข้อมูลส่วนตัว + ลบบัญชี (anonymize)
+function PrivacyCard({ onDeleted }) {
+  const [busy, setBusy] = useState(false);
+
+  const exportData = async () => {
+    setBusy(true);
+    try {
+      const data = await api('/auth/me/export');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click(); URL.revokeObjectURL(a.href);
+      toast('ดาวน์โหลดข้อมูลของคุณแล้ว');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setBusy(false); }
+  };
+
+  const deleteAccount = async () => {
+    if (!(await confirmAction({
+      title: '⚠️ ยืนยันลบบัญชีถาวร',
+      message: 'ลบบัญชีและข้อมูลส่วนตัวทั้งหมด (ชื่อ/อีเมล/เบอร์/รหัสผ่าน) — ไม่สามารถกู้คืนได้\nประวัติการเงินยังถูกเก็บตามกฎหมาย แต่ไม่ผูกกับตัวตนคุณอีกต่อไป',
+      danger: true, confirmLabel: 'ลบบัญชีถาวร',
+    }))) return;
+    setBusy(true);
+    try {
+      await api('/auth/me', { method: 'DELETE', body: { confirm: true } });
+      toast('ลบบัญชีสำเร็จ');
+      onDeleted?.();
+    } catch (e) { toast(e.message, 'error'); setBusy(false); }
+  };
+
+  return (
+    <Card>
+      <CardHeader title="ความเป็นส่วนตัว (PDPA)" sub="สิทธิ์ของเจ้าของข้อมูลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนตัว" />
+      <CardBody>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" size="sm" onClick={exportData} disabled={busy}>⤓ ดาวน์โหลดข้อมูลของฉัน</Button>
+          <Button variant="danger" size="sm" onClick={deleteAccount} disabled={busy}>ลบบัญชีถาวร</Button>
+        </div>
+        <p className="text-[11px] text-navy-500 mt-2">การลบบัญชีจะลบข้อมูลส่วนตัวทั้งหมดและระงับการใช้งานทันที — เครดิตคงเหลือและประวัติธุรกรรมจะถูกเก็บไว้เพื่อตามกฎหมาย</p>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function Profile() {
-  const { user, refresh } = useAuth();
+  const { user, refresh, logout } = useAuth();
   const isAdmin = (user?.roles || []).some(r => ['admin', 'super_admin'].includes(r));
   const [pw, setPw] = useState({ oldPassword: '', newPassword: '', confirm: '' });
   const [msg, setMsg] = useState('');
@@ -196,6 +242,9 @@ export default function Profile() {
 
       {/* Responsible gambling — วงเงินเดิมพัน + self-exclusion */}
       <RGCard user={user} onDone={refresh} />
+
+      {/* PDPA — export + delete account */}
+      <PrivacyCard onDeleted={async () => { await logout(); window.location.href = '/'; }} />
 
       {isAdmin && (
       <Card>

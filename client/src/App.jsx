@@ -1,39 +1,40 @@
-import { Component } from 'react';
+import { Component, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth.jsx';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
-import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import Profile from './pages/Profile.jsx';
-import Lotteries from './pages/Lotteries.jsx';
-import PlaceBet from './pages/PlaceBet.jsx';
-import Winners from './pages/Winners.jsx';
-import Results from './pages/Results.jsx';
-import Check from './pages/Check.jsx';
-import EmbedResults from './pages/EmbedResults.jsx';
-import Wallet from './pages/Wallet.jsx';
-import MyBets from './pages/MyBets.jsx';
-import Scratch from './pages/Scratch.jsx';
-import Hilo from './pages/Hilo.jsx';
-import Kiwi from './pages/Kiwi.jsx';
-import Performance from './pages/Performance.jsx';
-import AdminLayout from './admin/AdminLayout.jsx';
-import AdminOverview from './admin/Overview.jsx';
-import AdminMembers from './admin/Members.jsx';
-import AdminRoles from './admin/Roles.jsx';
-import AdminLotteries from './admin/Lotteries.jsx';
-import AdminDraws from './admin/Draws.jsx';
-import AdminWallet from './admin/WalletAdmin.jsx';
-import AdminBets from './admin/Bets.jsx';
-import AdminReports from './admin/Reports.jsx';
-import AdminAudit from './admin/Audit.jsx';
-import AdminSecurity from './admin/Security.jsx';
-import AdminSettings from './admin/Settings.jsx';
-import AdminBanner from './admin/Banner.jsx';
-import AdminChat from './admin/Chat.jsx';
-import AdminBroadcast from './admin/Broadcast.jsx';
+// code splitting — หน้าอื่นโหลดเป็น chunk แยก (bundle หลักเล็กลง ~40%)
+const Login = lazy(() => import('./pages/Login.jsx'));
+const Register = lazy(() => import('./pages/Register.jsx'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
+const Profile = lazy(() => import('./pages/Profile.jsx'));
+const Lotteries = lazy(() => import('./pages/Lotteries.jsx'));
+const PlaceBet = lazy(() => import('./pages/PlaceBet.jsx'));
+const Winners = lazy(() => import('./pages/Winners.jsx'));
+const Results = lazy(() => import('./pages/Results.jsx'));
+const Check = lazy(() => import('./pages/Check.jsx'));
+const EmbedResults = lazy(() => import('./pages/EmbedResults.jsx'));
+const Wallet = lazy(() => import('./pages/Wallet.jsx'));
+const MyBets = lazy(() => import('./pages/MyBets.jsx'));
+const Scratch = lazy(() => import('./pages/Scratch.jsx'));
+const Hilo = lazy(() => import('./pages/Hilo.jsx'));
+const Kiwi = lazy(() => import('./pages/Kiwi.jsx'));
+const Performance = lazy(() => import('./pages/Performance.jsx'));
+const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
+const AdminOverview = lazy(() => import('./admin/Overview.jsx'));
+const AdminMembers = lazy(() => import('./admin/Members.jsx'));
+const AdminRoles = lazy(() => import('./admin/Roles.jsx'));
+const AdminLotteries = lazy(() => import('./admin/Lotteries.jsx'));
+const AdminDraws = lazy(() => import('./admin/Draws.jsx'));
+const AdminWallet = lazy(() => import('./admin/WalletAdmin.jsx'));
+const AdminBets = lazy(() => import('./admin/Bets.jsx'));
+const AdminReports = lazy(() => import('./admin/Reports.jsx'));
+const AdminAudit = lazy(() => import('./admin/Audit.jsx'));
+const AdminSecurity = lazy(() => import('./admin/Security.jsx'));
+const AdminSettings = lazy(() => import('./admin/Settings.jsx'));
+const AdminBanner = lazy(() => import('./admin/Banner.jsx'));
+const AdminChat = lazy(() => import('./admin/Chat.jsx'));
+const AdminBroadcast = lazy(() => import('./admin/Broadcast.jsx'));
 
 function Protected({ children, admin = false }) {
   const { user, loading, isAdmin } = useAuth();
@@ -65,6 +66,7 @@ export default function App() {
   return (
     <ErrorBoundary>
     <AuthProvider>
+      <Suspense fallback={<div className="p-10"><div className="skeleton h-8 w-48 mx-auto mb-6" /><div className="skeleton h-64 w-full max-w-3xl mx-auto" /></div>}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
@@ -106,6 +108,7 @@ export default function App() {
         {/* embed widget — ไม่มี Layout สำหรับใช้ใน iframe */}
         <Route path="/embed/results" element={<EmbedResults />} />
       </Routes>
+      </Suspense>
     </AuthProvider>
     </ErrorBoundary>
   );

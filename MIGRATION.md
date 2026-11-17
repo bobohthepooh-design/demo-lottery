@@ -82,3 +82,19 @@
 - Adapter + schema: ~1 session
 - Port 338 call sites + test: ~2-3 sessions
 - Data migration + verify: ~1 session
+
+## Rollback / Down-migration policy (P2-5)
+
+Migrations เป็น **forward-only** — ไม่มี down migration อัตโนมัติโดยตั้งใจ เพราะ:
+- schema ส่วนใหญ่เป็น `CREATE TABLE IF NOT EXISTS` / `ALTER ... IF NOT EXISTS` (idempotent, ไม่ต้อง down)
+- ข้อมูล demo/transaction ห้ามลบย้อน — down ที่ทำลายข้อมูลแย่กว่า schema เก่า
+
+**วิธี rollback ที่ถูกต้อง:**
+1. **ก่อน deploy migration เสี่ยง** → `scripts/backup-pg.sh` (pg_dump custom format) + ทดสอบ restore บน scratch DB
+2. **Migration พังหลัง deploy** → `pg_restore` กลับจาก dump ล่าสุด (`scripts/restore-pg.sh`) — schema + data กลับพร้อมกัน
+3. **Migration ผิดแต่ข้อมูลต้องเก็บ** → เขียน migration ใหม่ (NNN_*.sql) ที่แก้ย้อนแบบเจาะจง อย่า DROP TABLE ย้อน
+
+**Migration ที่มีผลกับข้อมูล (ระวังเป็นพิเศษ):**
+- `025_result_source_demo.sql` — backfill `source='auto'→'demo'` 120 rows: ย้อนได้ด้วย `UPDATE lottery_results SET source='auto' WHERE source='demo' AND draw_id IN (SELECT id FROM lottery_draws WHERE draw_code LIKE '%-DEMO-%')` (แต่ไม่แนะนำ — 'demo' คือค่าที่ถูกต้อง)
+- `021_bet_rule_snapshot.sql` — เพิ่ม column snapshot: additive, ไม่ต้อง down
+- `023/024` — index-only: additive

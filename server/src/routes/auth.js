@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import * as auth from '../services/authService.js';
 import { config } from '../config.js';
 import { getBalance, getWallet, listTransactions } from '../services/walletService.js';
-import { getDb } from '../db/index.js';
+import { getDb, txAsync } from '../db/index.js';
 import { getSetting } from '../services/settingsService.js';
 import { randomToken } from '../lib/password.js';
 import { audit, HttpError } from '../lib/audit.js';
@@ -298,6 +298,71 @@ router.get('/line/callback', async (req, res) => {
     console.error('[line-auth]', e);
     fail('เกิดข้อผิดพลาดในการเข้าสู่ระบบ LINE');
   }
+});
+
+// ---------- PDPA: data export + account deletion ----------
+// export: snapshot ข้อมูลทั้งหมดที่ผูกกับบัญชี (ไม่รวม password_hash/mfa_secret)
+router.get('/me/export', auth.requireAuth, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const uid = req.user.id;
+    const user = await db.prepare(`SELECT id, username, email, display_name, phone, status,
+        created_at, updated_at, timezone, language, age_confirmed, withdraw_unlocked,
+        daily_limit_satang, monthly_limit_satang, self_excluded_until
+      FROM users WHERE id = ?`).get(uid);
+    if (!user) throw new HttpError(404, 'ไม่พบบัญชี');
+    const [wallet, transactions, slips, notifications, auditLogs, roles] = await Promise.all([
+      db.prepare('SELECT balance, version, updated_at FROM virtual_wallets WHERE user_id = ?').get(uid),
+      db.prepare(`SELECT reference, type, amount, balance_after, direction, status, description, created_at
+                  FROM virtual_transactions WHERE user_id = ? ORDER BY id`).all(uid),
+      db.prepare(`SELECT id, slip_ref, draw_id, status, total_stake, total_payout, created_at, settled_at
+                  FROM bet_slips WHERE user_id = ? ORDER BY id`).all(uid),
+      db.prepare('SELECT type, title, body, link, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 500').all(uid),
+      db.prepare(`SELECT action, entity_type, entity_id, detail, created_at FROM audit_logs WHERE user_id = ? ORDER BY id`).all(uid),
+      db.prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(uid),
+    ]);
+    res.json({
+      exportedAt: new Date().toISOString(),
+      user: { ...user, roles: roles.map(r => r.name) },
+      wallet,
+      transactions,
+      betSlips: slips,
+      notifications,
+      auditLogs,
+    });
+  } catch (e) { next(e); }
+});
+
+// delete: anonymize บัญชี (PDPA erasure) — เก็บ ledger/ประวัติการเงินไว้เพื่อ audit
+// แต่ลบ PII ทั้งหมด: username/email/phone/display_name/password/mfa/session
+// บล็อก: admin roles + มีโพยที่ยกเลิกได้ค้างอยู่ + require confirm:true
+router.delete('/me', auth.requireAuth, async (req, res, next) => {
+  try {
+    if (req.body?.confirm !== true) throw new HttpError(400, 'ต้องส่ง { confirm: true } เพื่อยืนยันการลบบัญชี', 'CONFIRM_REQUIRED');
+    const db = getDb();
+    const uid = req.user.id;
+    const roles = (await db.prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(uid)).map(r => r.name);
+    if (roles.some(r => r !== 'member')) throw new HttpError(403, 'บัญชีผู้ดูแลระบบลบบัญชีเองไม่ได้ — ติดต่อ super admin', 'ADMIN_ACCOUNT');
+    const pending = await db.prepare(`SELECT COUNT(*)::int AS c FROM bet_slips s JOIN lottery_draws d ON d.id = s.draw_id
+      WHERE s.user_id = ? AND s.status = 'pending' AND d.status = 'open'
+        AND d.close_at > to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')`).get(uid);
+    if ((pending?.c || 0) > 0) throw new HttpError(400, 'มีโพยที่ยังรับเดิมพันอยู่ — กรุณารอผลหรือยกเลิกก่อนลบบัญชี', 'PENDING_BETS');
+    const u = await db.prepare('SELECT phone FROM users WHERE id = ?').get(uid);
+    await txAsync(async (d) => {
+      if (u?.phone) await d.prepare('DELETE FROM otp_codes WHERE phone = ?').run(u.phone);
+      await d.prepare('UPDATE user_sessions SET revoked_at = to_char(now() AT TIME ZONE \'UTC\',\'YYYY-MM-DD HH24:MI:SS\') WHERE user_id = ? AND revoked_at IS NULL').run(uid);
+      await d.prepare(`UPDATE users SET username = ?, email = ?, display_name = 'ผู้ใช้ที่ลบข้อมูล',
+          phone = NULL, password_hash = ?, mfa_secret = NULL, mfa_enabled = 0,
+          failed_login_count = 0, locked_until = NULL, status = 'disabled',
+          self_excluded_until = NULL, daily_limit_satang = NULL, monthly_limit_satang = NULL,
+          timezone = NULL, language = NULL, updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')
+        WHERE id = ?`).run(`deleted_${uid}`, `deleted_${uid}@deleted.local`, hashPassword(randomToken(24)), uid);
+      // bet_slips เก็บ user_id เดิมไว้เพื่อ ledger — แต่ไม่เหลือ PII ผูกกับ id นี้แล้ว
+    });
+    audit({ userId: uid, action: 'user.delete_account', entityType: 'user', entityId: String(uid), detail: { anonymized: true } });
+    res.setHeader('Set-Cookie', 'dl_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+    res.json({ ok: true, message: 'ลบบัญชีและลบข้อมูลส่วนตัวแล้ว — ประวัติการเงินยังถูกเก็บตามกฎหมาย' });
+  } catch (e) { next(e); }
 });
 
 export default router;

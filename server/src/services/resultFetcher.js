@@ -4,7 +4,7 @@ import { audit, HttpError } from '../lib/audit.js';
 import { broadcast } from './events.js';
 import { notify } from './notifyService.js';
 import { ZODIAC_SIGNS } from '../lib/zodiac.js';
-import { q, qGet, qRun } from '../db/pg.js';
+import { q, qGet, qRun, getPool } from '../db/pg.js';
 
 /**
  * ดึงผลรางวัลอัตโนมัติจากแหล่งข้อมูลทางการ/สาธารณะ
@@ -298,6 +298,8 @@ function pendingDraws() {
 }
 
 let settleRunning = false;
+// session-level advisory lock — กันหลาย instance settle ซ้ำกัน (single-instance ก็ใช้ได้ปลอดภัย)
+const ADVISORY_LOCK_KEY = 727001;
 // throttle Telegram alert — กัน spam ทุก 1 นาทีที่ scheduler รัน
 let lastAlertAt = 0, lastAlertSig = '';
 const ALERT_COOLDOWN_MS = 30 * 60e3;
@@ -305,8 +307,26 @@ const OVERDUE_MS = 6 * 3600e3; // รอบที่เลยเวลาออ�
 export async function autoSettleResults() {
   if (settleRunning) return { settled: [], skipped: [], errors: [], sources: [], note: 'previous run still in progress' };
   settleRunning = true;
+  // advisory lock บน dedicated connection — ถ้า instance อื่นกำลัง settle อยู่ ให้ข้ามรอบนี้
+  let lockClient = null, locked = false;
+  try {
+    lockClient = await getPool().connect();
+    const r = await lockClient.query('SELECT pg_try_advisory_lock($1) AS ok', [ADVISORY_LOCK_KEY]);
+    locked = !!r.rows[0]?.ok;
+    if (!locked) return { settled: [], skipped: [], errors: [], sources: [], note: 'another instance is settling' };
+  } catch (e) {
+    // lock พัง (เช่น DB เก่า) — ปล่อย lockClient แล้วทำต่อแบบไม่มี lock ดีกว่าหยุด settle ทั้งระบบ
+    console.error('[auto-settle] advisory lock failed, continuing unlocked:', e.message);
+    if (lockClient) { try { lockClient.release(); } catch {} lockClient = null; }
+  }
   try { return await autoSettleResultsInner(); }
-  finally { settleRunning = false; }
+  finally {
+    settleRunning = false;
+    if (locked && lockClient) {
+      try { await lockClient.query('SELECT pg_advisory_unlock($1)', [ADVISORY_LOCK_KEY]); } catch {}
+    }
+    if (lockClient) lockClient.release();
+  }
 }
 
 async function autoSettleResultsInner() {

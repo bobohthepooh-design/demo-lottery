@@ -844,6 +844,28 @@ router.get('/reports/summary', requirePerm('reports.view'), async (req, res) => 
   });
 });
 
+// ---------- wallet reconciliation ----------
+// เทียบยอด wallet จริงกับ ledger (SUM ของ transactions ที่ completed) — ต้องตรงกันทุกกระเป๋า
+// ใช้ตรวจจับ ledger drift / transaction หาย / balance ถูกแก้นอกระบบ
+router.get('/reports/reconciliation', requirePerm('reports.view'), async (req, res) => {
+  const rows = await db().prepare(`SELECT w.id AS wallet_id, w.user_id, u.username, w.balance,
+      COALESCE(SUM(CASE WHEN t.direction='credit' THEN t.amount ELSE -t.amount END),0) AS ledger
+    FROM virtual_wallets w
+    JOIN users u ON u.id = w.user_id
+    LEFT JOIN virtual_transactions t ON t.wallet_id = w.id AND t.status = 'completed'
+    GROUP BY w.id, w.user_id, u.username, w.balance`).all();
+  const mismatches = rows.filter(r => Number(r.balance) !== Number(r.ledger));
+  res.json({
+    ok: mismatches.length === 0,
+    checked: rows.length,
+    mismatchCount: mismatches.length,
+    mismatches: mismatches.slice(0, 50).map(r => ({
+      walletId: r.wallet_id, userId: r.user_id, username: r.username,
+      balance: r.balance, ledger: r.ledger, diff: r.balance - r.ledger,
+    })),
+  });
+});
+
 // ---------- system health ----------
 // ภาพรวมสุขภาพระบบ: ผลล่าสุดแต่ละแหล่ง, รอบค้างออกผล, สถานะเปิดรับ
 router.get('/health', requirePerm('dashboard.admin'), async (req, res) => {
