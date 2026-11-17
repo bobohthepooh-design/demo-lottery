@@ -298,6 +298,10 @@ function pendingDraws() {
 }
 
 let settleRunning = false;
+// throttle Telegram alert — กัน spam ทุก 1 นาทีที่ scheduler รัน
+let lastAlertAt = 0, lastAlertSig = '';
+const ALERT_COOLDOWN_MS = 30 * 60e3;
+const OVERDUE_MS = 6 * 3600e3; // รอบที่เลยเวลาออกผลเกิน 6 ชม. ถือว่าค้าง
 export async function autoSettleResults() {
   if (settleRunning) return { settled: [], skipped: [], errors: [], sources: [], note: 'previous run still in progress' };
   settleRunning = true;
@@ -378,6 +382,25 @@ async function autoSettleResultsInner() {
       `🎉 ผลออกแล้ว ${out.settled.length} รอบ\n${out.settled.slice(0, 10).join('\n')}${out.settled.length > 10 ? `\n…อีก ${out.settled.length - 10} รอบ` : ''}`
     )).catch(() => {});
   }
+  // แจ้งเตือน error / รอบค้างผลนานเกิน OVERDUE_MS ทาง Telegram — throttle 30 นาที (cooldown + signature เดิมไม่ส่งซ้ำ)
+  try {
+    const nowMs = Date.now();
+    const overdue = draws.filter(d => {
+      if (d.result_mode === 'manual') return false;
+      const t = new Date(String(d.draw_at).replace(' ', 'T') + 'Z').getTime();
+      return !isNaN(t) && nowMs - t > OVERDUE_MS;
+    });
+    if (out.errors.length || overdue.length) {
+      const sig = `${out.errors.length}|${overdue.map(d => d.draw_code).join(',')}`;
+      if (sig !== lastAlertSig || nowMs - lastAlertAt > ALERT_COOLDOWN_MS) {
+        lastAlertSig = sig; lastAlertAt = nowMs;
+        const lines = [];
+        if (out.errors.length) lines.push(`❌ error ${out.errors.length}: ${out.errors.slice(0, 5).join(' | ')}`);
+        if (overdue.length) lines.push(`⏰ รอบค้างผล ${overdue.length}: ${overdue.slice(0, 5).map(d => d.draw_code).join(', ')}${overdue.length > 5 ? ' …' : ''}`);
+        import('./telegramService.js').then(m => m.sendTelegram(`⚠️ Auto-settle alert\n${lines.join('\n')}`)).catch(() => {});
+      }
+    }
+  } catch { /* alert ต้องไม่ทำให้ settle พัง */ }
   return out;
 }
 

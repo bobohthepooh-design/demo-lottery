@@ -7,7 +7,7 @@ import { SkeletonGrid } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
 import { GameArt } from '../components/GameArt.jsx';
 import { mergeBanner } from '../bannerConfig.js';
-import { kindBadge, marketInfo, MODE_BADGE, sourceBadge } from '../resultSource.js';
+import { kindBadge, marketInfo, MODE_BADGE, sourceBadge, isOfficial } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 
 // ผลย่อกระชับสำหรับการ์ดหน้าแรก — เฉพาะเลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
@@ -315,8 +315,8 @@ export default function Home() {
                         <div className="text-[10px] text-navy-500 font-mono truncate">{last?.draw_code || g.type_name_th}</div>
                       </div>
                       {last
-                        ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}` : ''}>{srcB.short}</span>)
-                        : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label}</span>)}
+                        ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}${mi.mode === 'auto' && !isOfficial(mi) ? ' — ไม่ใช่ผลทางการ' : ''}` : ''}>{srcB.short}</span>)
+                        : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`} title={mi.mode === 'auto' && !isOfficial(mi) ? 'ผลจากเว็บภายนอก — ไม่ใช่ผลทางการ' : ''}>{mi.mode === 'auto' && !isOfficial(mi) ? '⚠️ ' : ''}{MODE_BADGE[mi.mode]?.label}</span>)}
                     </div>
                     {/* body: ผลย่อบรรทัดเดียว หรือรอบถัดไป */}
                     <div className="mt-2 flex-1 min-h-[1.25rem]">

@@ -384,17 +384,28 @@ export async function listMyBets(userId, { limit = 50, offset = 0, status = null
                            LEFT JOIN lottery_categories c ON c.id = d.category_id
                            WHERE bs.user_id = $1${statusClause} ORDER BY bs.id DESC LIMIT $2 OFFSET $3`,
     status ? [userId, limit, offset, status] : [userId, limit, offset]);
-  const out = [];
-  for (const s of slips) {
-    let ann = null;
-    try { ann = s.draw_announce ? JSON.parse(s.draw_announce) : null; } catch {}
-    const rawItems = await q(`SELECT bi.id, bi.rule_id, bi.bet_type, bi.number, bi.amount, bi.status, bi.payout, bi.result_detail, bi.is_tod,
+  // ดึง items ของทุก slip ใน query เดียว (แก้ N+1) แล้ว group ตาม slip_id
+  const itemsBySlip = new Map();
+  if (slips.length) {
+    const placeholders = slips.map(() => '?').join(',');
+    const rawItems = await q(`SELECT bi.slip_id, bi.id, bi.rule_id, bi.bet_type, bi.number, bi.amount, bi.status, bi.payout, bi.result_detail, bi.is_tod,
                                      lr.name_th AS rule_name_th,
                                      COALESCE(bi.payout_multiplier, lr.payout_multiplier) AS payout_multiplier,
                                      COALESCE(bi.match_config, lr.match_config) AS match_config
                               FROM bet_items bi JOIN lottery_rules lr ON lr.id = bi.rule_id
-                              WHERE bi.slip_id = $1`, [s.id]);
-    const items = rawItems.map(it => {
+                              WHERE bi.slip_id IN (${placeholders}) ORDER BY bi.id`,
+      slips.map(s => s.id));
+    for (const it of rawItems) {
+      const arr = itemsBySlip.get(it.slip_id) || [];
+      arr.push(it);
+      itemsBySlip.set(it.slip_id, arr);
+    }
+  }
+  const out = [];
+  for (const s of slips) {
+    let ann = null;
+    try { ann = s.draw_announce ? JSON.parse(s.draw_announce) : null; } catch {}
+    const items = (itemsBySlip.get(s.id) || []).map(it => {
       if (it.is_tod) {
         try {
           const cfg = JSON.parse(it.match_config || '{}');

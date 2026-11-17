@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lottery
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: lottery_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U lottery -d lottery_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install server deps
+        run: npm ci --prefix server
+      - name: Server tests (unit + API against postgres)
+        env:
+          TEST_DATABASE_URL: postgres://lottery:ci-test-password@127.0.0.1:5432/lottery_test
+        run: npm --prefix server test
+      - name: Install client deps
+        run: npm ci --prefix client
+      - name: Client build
+        run: npm --prefix client run build
+      - name: Dependency audit (server)
+        run: npm --prefix server audit --audit-level=high
+      - name: Dependency audit (client)
+        run: npm --prefix client audit --audit-level=high
+      - name: Dependency audit (root)
+        run: npm audit --audit-level=high
