@@ -26,7 +26,7 @@ export default function Modal({ open, onClose, title, children, footer, wide, di
             )}
           </div>
         )}
-        <div className="p-5 overflow-y-auto">{children}</div>
+        <div className="p-5 overflow-y-auto flex-1 min-h-0">{children}</div>
         {footer && <div className="px-5 py-4 border-t border-navy-700/60 flex gap-3">{footer}</div>}
       </div>
     </div>,
