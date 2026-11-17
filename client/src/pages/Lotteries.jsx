@@ -100,7 +100,7 @@ export default function Lotteries() {
           ? 'border-navy-600/50 bg-gradient-to-b from-navy-800/50 to-navy-900/50'
           : 'border-navy-700 hover:border-navy-500 bg-gradient-to-b from-navy-800 to-navy-900';
     return (
-    <div className={`${cardCls} border rounded-xl p-5 pt-4 hoverable`}>
+    <div className={`${cardCls} border rounded-xl p-5 pt-4 hoverable flex flex-col`}>
       {isHR ? (
         <div className="hr-shine h-1.5 w-full rounded-full mb-2" />
       ) : (
@@ -175,7 +175,8 @@ export default function Lotteries() {
           ) : null;
         })()}
       </div>
-      {/* ปุ่มแทงด่วนทุกการ์ด — เปิดรับกดได้เลย, ปิด/ยังไม่เปิดแสดงสถานะเป็นปุ่ม disabled */}
+      {/* ปุ่มแทงด่วนทุกการ์ด — ติดก้นกรอบเสมอ (mt-auto) • เปิดรับกดได้เลย, ปิด/ยังไม่เปิดแสดงสถานะเป็นปุ่ม disabled */}
+      <div className="mt-auto pt-4">
       {live ? (
         <Link to={`/bet/${d.id}`} className={`mt-4 block text-center ${isHR ? 'hr-shine text-white' : `bg-gradient-to-r ${featured ? ac.btnLive : ac.btn}`} font-bold py-2.5 rounded-lg hover:brightness-110 transition`}>
           {isHR ? '🔮 แทงปีนักษัตรรอบนี้' : '🎯 แทงหวยรอบนี้'}
@@ -189,6 +190,7 @@ export default function Lotteries() {
             : '🗓️ ยังไม่เปิดรับ'}
         </button>
       )}
+      </div>
     </div>
     );
   };
