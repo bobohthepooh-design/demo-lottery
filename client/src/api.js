@@ -52,5 +52,8 @@ export async function api(path, { method = 'GET', body } = {}) {
 }
 
 export const satang = (n) => (n / 100).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// idempotency key — crypto.randomUUID มีเฉพาะ secure context (HTTPS/localhost)
+// http://<LAN-IP> เป็น insecure context → undefined → ต้องมี fallback ไม่งั้น bet/play พังเงียบๆ
+export const newIdemKey = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 export const bahtToSatang = (baht) => Math.round(parseFloat(baht) * 100);
 export { fmtDateTime, fmtDate, thaiDate, thaiTime, drawLabel } from './time.js';

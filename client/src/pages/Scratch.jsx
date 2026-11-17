@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, satang, fmtDateTime } from '../api.js';
+import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { SymbolGrid } from '../components/ScratchCard.jsx';
 import SlotMachine from '../components/SlotMachine.jsx';
@@ -69,7 +69,7 @@ export default function Scratch() {
   const buyIdem = useRef(null); // คง key เดิมจนกว่าจะสำเร็จ — retry/ดับเน็ตจะไม่ซื้อซ้ำ
   const buy = async () => {
     setErr(''); setBusy(true);
-    if (!buyIdem.current) buyIdem.current = crypto.randomUUID();
+    if (!buyIdem.current) buyIdem.current = newIdemKey();
     try {
       const r = await api('/scratch/buy', { method: 'POST', body: { idempotencyKey: buyIdem.current } });
       buyIdem.current = null;

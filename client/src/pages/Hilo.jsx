@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, satang, fmtDateTime } from '../api.js';
+import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import FairnessNote from '../components/Fairness.jsx';
 import WinBurst from '../components/WinBurst.jsx';
@@ -129,7 +129,7 @@ export default function Hilo() {
   const playNew = async (pick) => {
     setErr(''); setBusy(true);
     if (!playIdem.current || playIdem.current.pick !== pick)
-      playIdem.current = { pick, key: crypto.randomUUID() };
+      playIdem.current = { pick, key: newIdemKey() };
     try {
       const r = await api('/hilo/play', { method: 'POST', body: { pick, idempotencyKey: playIdem.current.key } });
       playIdem.current = null;

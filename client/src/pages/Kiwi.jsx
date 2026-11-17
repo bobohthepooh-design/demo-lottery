@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, satang, fmtDateTime } from '../api.js';
+import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import FairnessNote from '../components/Fairness.jsx';
 import WinBurst from '../components/WinBurst.jsx';
@@ -400,7 +400,7 @@ export default function Kiwi() {
     setErr(''); setBusy(true);
     const sig = JSON.stringify([game, picks, betType]);
     if (!playIdem.current || playIdem.current.sig !== sig)
-      playIdem.current = { sig, key: crypto.randomUUID() };
+      playIdem.current = { sig, key: newIdemKey() };
     try {
       const r = await api('/kiwi/play', { method: 'POST', body: { game, picks, betType: g?.dice ? betType : undefined, idempotencyKey: playIdem.current.key } });
       playIdem.current = null;
