@@ -202,7 +202,12 @@ export default function ResultPopup() {
       .filter(({ ts }) => Number.isFinite(ts))
       .sort((a, b) => a.ts - b.ts)
       .map(({ x }) => x);
-    if (fresh.length) setQueue(q => [...q, ...fresh].slice(-4));
+    // กัน id ซ้ำในคิว + เก็บไว้สูงสุด 2 ใบล่าสุด (เดิม 4 ใบ = เด้งรัวครึ่งนาที)
+    if (fresh.length) setQueue(q => {
+      const have = new Set(q.map(i => i.id));
+      const add = fresh.filter(x => !have.has(x.id));
+      return add.length ? [...q, ...add].slice(-2) : q;
+    });
   };
 
   const check = () => api('/lottery/results')
@@ -210,11 +215,16 @@ export default function ResultPopup() {
       const rows = r.results || [];
       if (seenRef.current === null) {
         seenRef.current = new Set(rows.map(x => x.id));
-        // เปิดเว็บมาใหม่: เด้งเฉพาะผลที่เผยแพร่หลังจากครั้งที่แล้วมาดู + ไม่เกิน 12 ชม.
+        // เปิดเว็บมาใหม่: เด้งเฉพาะผลที่เพิ่งออกจริง — backlog เกิน 30 นาทีไม่เด้ง
+        // (ผลเก่ายังดูได้ที่หน้า /results — popup มีไว้แจ้งเฉพาะของสด)
         const lastSeen = Number(localStorage.getItem(LS_KEY) || 0);
-        const cutoff = Math.max(lastSeen, Date.now() - 12 * 3600e3);
+        const cutoff = Math.max(lastSeen, Date.now() - 30 * 60e3);
         const missed = rows.filter(x => { const ts = pubTs(x); return ts > cutoff; });
-        if (missed.length) enqueue(missed);
+        if (missed.length) {
+          // เฉพาะ 2 ผลล่าสุดจริงๆ (API ไม่ได้เรียงตามเวลา — เรียงใหม่→เก่าแล้วตัด)
+          const latest = [...missed].sort((a, b) => pubTs(b) - pubTs(a)).slice(0, 2);
+          enqueue(latest);
+        }
         localStorage.setItem(LS_KEY, String(Date.now()));
         return;
       }
