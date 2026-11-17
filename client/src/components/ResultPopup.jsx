@@ -4,6 +4,7 @@ import { resultSchema } from '../lotterySchema.js';
 import { FlagIcon } from './ResultLine.jsx';
 import { ZodiacChip, zodiacList, zodiacGlyph, isZodiacEmoji } from './ZodiacChip.jsx';
 import { sourceBadge } from '../resultSource.js';
+import WinBurst from './WinBurst.jsx';
 
 // Popup ประกาศผลรางวัล "ฉบับย่อ" — การ์ดเล็กมุมขวาล่างเด้งเมื่อผลใหม่ออก
 // (SSE 'results' หรือ polling 60 วิ) — ไม่บังเนื้อหา เล่นหลายผลต่อเนื่องใน queue
@@ -41,8 +42,9 @@ function HeroValue({ f, raw }) {
   return (
     <span className="inline-flex gap-1 flex-wrap">
       {vals.flatMap(v => String(v).split('')).filter(c => c.trim()).map((c, i) => (
-        <span key={i} className="lotto-ball" style={{ fontSize: '1.15em', minWidth: '1.9em', height: '1.9em' }}>{c}</span>
-      ))}
+        <span key={i} className="lotto-ball animate-digit"
+          style={{ fontSize: '1.15em', minWidth: '1.9em', height: '1.9em', animationDelay: `${0.15 + i * 0.09}s` }}>{c}</span>
+      ))}  
     </span>
   );
 }
@@ -95,6 +97,13 @@ function MiniCard({ r, remaining, onClose, onNext }) {
     return () => clearTimeout(t);
   }, [r.id, onClose]);
 
+  // confetti ทองราว ๆ 5 วิ ตอนผลออก — แล้วหายเอง (component remount ทุกผลผ่าน key=cur.id)
+  const [showFx, setShowFx] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShowFx(false), 5200);
+    return () => clearTimeout(t);
+  }, [r.id]);
+
   const data = parseData(r);
   const isHR = r.type_code === 'HR';
   const schema = resultSchema(r.type_code, r.category_code);
@@ -109,11 +118,30 @@ function MiniCard({ r, remaining, onClose, onNext }) {
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
       {/* backdrop จางๆ — ไม่บล็อกคลิก (pointer-events-none) */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+      {/* confetti ทองตกจากบนจอ — ฉลองผลออก ~5 วิ */}
+      {showFx && (
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          {Array.from({ length: 26 }).map((_, i) => (
+            <span key={i} className="confetti-piece"
+              style={{
+                left: `${(i * 37 + 11) % 100}%`,
+                background: ['#d4af37', '#fbbf24', '#fde68a', '#22c55e', '#f472b6', '#60a5fa'][i % 6],
+                animationDuration: `${2.2 + (i % 4) * 0.5}s`,
+                animationDelay: `${(i % 8) * 0.12}s`,
+                borderRadius: i % 3 === 0 ? '50%' : '2px',
+              }} />
+          ))}
+        </div>
+      )}
       <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto animate-result-pop pointer-events-auto">
       <div className="bg-gradient-to-b from-navy-800 to-navy-950 border border-gold-500/60 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
-        <div className="hr-shine h-1.5" />
+        {/* ribbon ผลรางวัล — แถบทองเด่นเหมือนใบประกาศ + เส้น shine */}
+        <div className="bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 text-center py-1.5">
+          <span className="text-[11px] font-black tracking-[0.35em] text-navy-950 uppercase">🏆 ผลรางวัล</span>
+        </div>
+        <div className="hr-shine h-1" />
         {/* head */}
-        <div className="flex items-center gap-3 px-5 pt-4 pb-2">
+        <div className="flex items-center gap-3 px-5 pt-3 pb-2">
           <FlagIcon code={r.type_code} className="w-10 h-7 text-[11px]" />
           <div className="min-w-0">
             <div className="text-base font-bold text-white leading-tight truncate">
@@ -125,7 +153,7 @@ function MiniCard({ r, remaining, onClose, onNext }) {
             className="ml-auto w-8 h-8 rounded-lg bg-navy-700 text-navy-400 text-sm hover:text-white hover:bg-navy-600 shrink-0">✕</button>
         </div>
         {/* body */}
-        <div className="px-5 pb-3">
+        <div className="px-5 pb-3 relative">
           {hero && (
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-xs text-navy-400 w-16 shrink-0">{hero.short || hero.label}</span>
@@ -133,10 +161,11 @@ function MiniCard({ r, remaining, onClose, onNext }) {
             </div>
           )}
           {subs.length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-3">
+            <div className="grid grid-cols-2 gap-1.5 mt-3">
               {subs.map(f => <PrizeChip key={f.key} f={f} raw={data[f.key]} />)}
             </div>
           )}
+          <WinBurst count={12} />
         </div>
         {/* foot */}
         <div className="flex items-center gap-3 px-5 py-3 border-t border-navy-700/70 bg-navy-900/60">
@@ -147,6 +176,10 @@ function MiniCard({ r, remaining, onClose, onNext }) {
             </button>
           ) : null}
           {remaining > 1 && <span className="text-[11px] text-navy-400">อีก {remaining - 1} ผล</span>}
+          <a href="/results" onClick={onClose}
+            className="text-[11px] font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-2">
+            ดูผลทั้งหมด →
+          </a>
           <span className="ml-auto"><CountdownText seconds={11} /></span>
         </div>
       </div>
