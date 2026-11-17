@@ -9,6 +9,6 @@
   "background_color": "#0a1526",
   "theme_color": "#0a1526",
   "icons": [
-    { "src": "/glo-emblem.png", "sizes": "any", "type": "image/png", "purpose": "any" }
+    { "src": "/glo-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }
