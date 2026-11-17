@@ -154,6 +154,25 @@ function MiniCard({ r, remaining, onClose, onNext }) {
         </div>
         {/* body */}
         <div className="px-5 pb-3 relative">
+          {isHR ? (
+            // หวยราศี — ชิปราศีแบบ WinningBoard: รางวัลใหญ่ตัวเด่น + ผล 6 ราศีครบ
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-navy-400 w-16 shrink-0">รางวัลใหญ่</span>
+                {data.zodiac
+                  ? <ZodiacChip sign={String(data.zodiac)} hero />
+                  : <span className="text-navy-500 text-sm">—</span>}
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xs text-navy-400 w-16 shrink-0 pt-2">ผล 6 ราศี</span>
+                <div className="flex gap-1.5 flex-wrap">
+                  {zodiacList(data.seq).length
+                    ? zodiacList(data.seq).map((sg, i) => <ZodiacChip key={i} sign={sg} hero={i === 0} />)
+                    : <span className="text-navy-500 text-sm">—</span>}
+                </div>
+              </div>
+            </div>
+          ) : (<>
           {hero && (
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-xs text-navy-400 w-16 shrink-0">{hero.short || hero.label}</span>
@@ -165,6 +184,7 @@ function MiniCard({ r, remaining, onClose, onNext }) {
               {subs.map(f => <PrizeChip key={f.key} f={f} raw={data[f.key]} />)}
             </div>
           )}
+          </>)}
           <WinBurst count={12} />
         </div>
         {/* foot */}
