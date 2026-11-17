@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
-import { Card, CardHeader, Input, Select, Button } from '../components/ui/index.js';
+import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
