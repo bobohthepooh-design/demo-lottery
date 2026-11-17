@@ -5,6 +5,7 @@ import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
+import { Card, CardHeader, StatCard, Modal, Button } from '../components/ui/index.js';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -116,18 +117,16 @@ export default function Wallet() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-gradient-to-br from-[#f7ecc4] via-[#efd78f] to-[#e3c05c] border border-gold-500/40 rounded-2xl p-8 text-center shadow-[0_0_24px_rgba(226,168,18,0.15)]">
+      <Card variant="gold" className="p-8 text-center">
         <div className="text-sm font-bold text-navy-950/80">ยอดเครดิตจำลองคงเหลือ</div>
         <div className="text-5xl font-black text-black mt-2 drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">{satang(balance)} บาท</div>
         <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
-          <button onClick={() => { setModal('deposit'); setAmount(''); setErr(''); }}
-            className="bg-navy-950 text-gold-300 font-bold px-6 py-2.5 rounded-xl hover:bg-navy-900 transition shadow-lg">
+          <Button variant="dark" onClick={() => { setModal('deposit'); setAmount(''); setErr(''); }}>
             ＋ เติมเครดิต
-          </button>
-          <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); }}
-            className="bg-navy-950 text-gold-300 font-bold px-6 py-2.5 rounded-xl hover:bg-navy-900 transition shadow-lg">
+          </Button>
+          <Button variant="dark" onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); }}>
             － แลกเครดิต
-          </button>
+          </Button>
         </div>
         {wd && (
           <div className={`text-xs mt-3 font-semibold ${wd.pendingSlips > 0 ? 'text-amber-800' : wd.unlocked ? 'text-green-800' : 'text-amber-800'}`}>
@@ -144,20 +143,18 @@ export default function Wallet() {
           </div>
         )}
         <div className="text-xs text-navy-950/70 mt-2 font-semibold">⚠️ เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่ใช่เงินจริงและไม่สามารถแลกเป็นเงินจริงได้</div>
-      </div>
+      </Card>
 
       {/* สรุปยอดเดิมพัน/รางวัล */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[['แทงวันนี้', sumToday.stake, 'text-red-300'], ['รางวัลวันนี้', sumToday.win, 'text-green-300'], ['แทง 7 วัน', sumWeek.stake, 'text-red-300'], ['รางวัล 7 วัน', sumWeek.win, 'text-green-300']].map(([label, v, cls]) => (
-          <div key={label} className="bg-navy-800 border border-navy-700 rounded-xl px-4 py-3 text-center">
-            <div className="text-[11px] text-navy-400">{label}</div>
-            <div className={`text-lg font-bold ${cls}`}>{satang(v)} ฿</div>
-          </div>
-        ))}
+        <StatCard label="แทงวันนี้" value={`${satang(sumToday.stake)} ฿`} accent="text-red-300" />
+        <StatCard label="รางวัลวันนี้" value={`${satang(sumToday.win)} ฿`} accent="text-green-300" />
+        <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-red-300" />
+        <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-green-300" />
       </div>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-navy-700 font-bold text-white">ประวัติธุรกรรมเครดิต</div>
+      <Card className="overflow-hidden">
+        <CardHeader title="ประวัติธุรกรรมเครดิต" />
         {/* มือถือ/แท็บเล็ต: การ์ดเรียงแนวตั้ง ไม่ล้นจอ */}
         <div className="md:hidden divide-y divide-navy-700">
           {txs.map(t => (
@@ -205,14 +202,12 @@ export default function Wallet() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      {/* modal เติม/ถอนเครดิต — portal ไปที่ body เช่นกัน */}
-      {modal && createPortal(
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setModal(null)}>
-          <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-1">{modal === 'deposit' ? '💰 เติมเครดิตจำลอง' : '💸 แลกเครดิตจำลอง'}</h2>
-            <p className="text-xs text-navy-400 mb-4">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท • สำหรับ Demo เท่านั้น</p>
+      {/* modal เติม/ถอนเครดิต — Modal กลาง (ESC + backdrop ปิด) */}
+      <Modal open={!!modal} onClose={() => !busy && setModal(null)}
+        title={modal === 'deposit' ? 'เติมเครดิตจำลอง' : 'แลกเครดิตจำลอง'}>
+            <p className="text-xs text-navy-400 mb-4 -mt-1">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท • สำหรับ Demo เท่านั้น</p>
             {modal === 'withdraw' && wd && (
               <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
                 {wd.unlocked
@@ -289,19 +284,15 @@ export default function Wallet() {
               className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
             {err && <div className="text-red-400 text-sm mt-2">{err}</div>}
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setModal(null)} disabled={busy}
-                className="flex-1 border border-navy-600 text-navy-200 py-2.5 rounded-lg hover:bg-navy-700 disabled:opacity-40">
+              <Button variant="ghost" onClick={() => setModal(null)} disabled={busy} className="flex-1">
                 ยกเลิก
-              </button>
-              <button onClick={doAction} disabled={busy}
-                className={`flex-1 font-bold py-2.5 rounded-lg disabled:opacity-40 ${modal === 'deposit' ? 'bg-gold-500 text-navy-950 hover:bg-gold-400' : 'bg-red-500/80 text-white hover:bg-red-500'}`}>
+              </Button>
+              <Button onClick={doAction} disabled={busy}
+                variant={modal === 'deposit' ? 'primary' : 'danger'} className="flex-1">
                 {busy ? 'กำลังดำเนินการ...' : modal === 'deposit' ? 'ยืนยันเติมเครดิต' : 'ยืนยันแลกเครดิต'}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      </Modal>
 
       {/* overlay ฉลอง/เสียใจผลโพยล่าสุด — portal ไปที่ body เพื่ออยู่บนสุดเสมอ
           (กัน ancestor ที่มี transform/animation ทำ fixed หลุดจาก viewport) */}
