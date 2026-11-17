@@ -89,7 +89,7 @@ export default function AdminLayout() {
                 {g.items.map(i => (
                   <NavLink key={i.to} to={i.to} end={i.end}
                     className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors ${isActive
-                      ? 'bg-gold-500/10 text-gold-300 font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-full before:bg-gold-400'
+                      ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]'
                       : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800/70'}`}>
                     <Icon name={i.icon} className="w-4 h-4 shrink-0" />
                     {i.label}

@@ -151,6 +151,32 @@ const PATHS = {
       <path d="M12 7.5V12l3 2" />
     </>
   ),
+  menu: (
+    <>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </>
+  ),
+  bank: (
+    <>
+      <path d="M3.5 9.5 12 4l8.5 5.5" />
+      <path d="M5 9.5V18M9.5 9.5V18M14.5 9.5V18M19 9.5V18" />
+      <path d="M3.5 18.5h17M12 4v14.5" />
+    </>
+  ),
+  qr: (
+    <>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M18 18h2v2h-2z" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect x="7" y="3.5" width="10" height="17" rx="2.5" />
+      <path d="M11 17.5h2" />
+    </>
+  ),
 };
 
 export function Icon({ name, className = 'w-4 h-4' }) {

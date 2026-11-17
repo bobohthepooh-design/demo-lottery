@@ -6,6 +6,7 @@ import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
 import { Card, CardHeader, StatCard, Modal, Button } from '../components/ui/index.js';
+import { Icon } from '../components/icons.jsx';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -16,9 +17,9 @@ const TYPE_TH = {
 const PRESETS = [100, 500, 1000, 5000, 10000];
 
 const DEPOSIT_METHODS = [
-  { key: 'bank_transfer', icon: '🏦', name: 'โอนเงินเข้าธนาคาร', desc: 'โอนผ่านแอปธนาคาร' },
-  { key: 'qr_promptpay', icon: '📱', name: 'QR พร้อมเพย์', desc: 'สแกนจ่ายผ่านแอปธนาคาร' },
-  { key: 'truemoney', icon: '💳', name: 'TrueMoney Wallet', desc: 'สแกน/ชำระผ่าน TrueMoney' },
+  { key: 'bank_transfer', icon: 'bank', name: 'โอนเงินเข้าธนาคาร', desc: 'โอนผ่านแอปธนาคาร' },
+  { key: 'qr_promptpay', icon: 'qr', name: 'QR พร้อมเพย์', desc: 'สแกนจ่ายผ่านแอปธนาคาร' },
+  { key: 'truemoney', icon: 'phone', name: 'TrueMoney Wallet', desc: 'สแกน/ชำระผ่าน TrueMoney' },
 ];
 
 // QR ลายจำลองสำหรับ demo — ไม่ใช่ QR จริง สแกนไม่ได้
@@ -147,10 +148,10 @@ export default function Wallet() {
 
       {/* สรุปยอดเดิมพัน/รางวัล */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="แทงวันนี้" value={`${satang(sumToday.stake)} ฿`} accent="text-red-300" />
-        <StatCard label="รางวัลวันนี้" value={`${satang(sumToday.win)} ฿`} accent="text-green-300" />
-        <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-red-300" />
-        <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-green-300" />
+        <StatCard label="แทงวันนี้" value={`${satang(sumToday.stake)} ฿`} accent="text-lose-300" />
+        <StatCard label="รางวัลวันนี้" value={`${satang(sumToday.win)} ฿`} accent="text-win-300" />
+        <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-lose-300" />
+        <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-win-300" />
       </div>
 
       <Card className="overflow-hidden">
@@ -226,7 +227,7 @@ export default function Wallet() {
                   {DEPOSIT_METHODS.map(m => (
                     <button key={m.key} type="button" onClick={() => setPayMethod(m.key)}
                       className={`py-2 rounded-lg text-xs font-bold border transition ${payMethod === m.key ? 'bg-gold-500/20 border-gold-500 text-gold-300' : 'bg-navy-700 border-navy-600 text-navy-300 hover:border-gold-500/50'}`}>
-                      <div className="text-base">{m.icon}</div>{m.name}
+                      <Icon name={m.icon} className="w-5 h-5 mx-auto mb-1" />{m.name}
                     </button>
                   ))}
                 </div>

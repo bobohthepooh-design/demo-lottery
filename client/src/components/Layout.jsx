@@ -89,13 +89,16 @@ export default function Layout() {
     return () => clearInterval(t);
   }, []);
 
-  // แสดงวันที่+เวลาปัจจุบันบน title tab ด้านบนของเบราว์เซอร์ด้วย
+  // แสดงวันที่+เวลาบน title tab — อัปเดตครั้งเดียวต่อนาที (ไม่ให้ title กะพริบทุกวินาที)
+  const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
   useEffect(() => {
     const p = n => String(n).padStart(2, '0');
-    const dateStr = `${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()}`;
-    const timeStr = `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+    const d = new Date();
+    const dateStr = `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const timeStr = `${p(d.getHours())}:${p(d.getMinutes())}`;
     document.title = `Demo Lottery — ${dateStr} ${timeStr}`;
-  }, [now]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minuteKey]);
 
   const dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -207,7 +210,7 @@ export default function Layout() {
               className="flex items-center justify-center w-9 h-9 rounded-lg border border-navy-600/80 bg-navy-900/60 text-navy-200 hover:text-gold-300 hover:border-gold-500/50 transition">
               <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4.5 h-4.5" />
             </button>
-            <button className="text-navy-200 hover:text-gold-300 text-xl px-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู">☰</button>
+            <button className="text-navy-200 hover:text-gold-300 p-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู"><Icon name="menu" className="w-6 h-6" /></button>
           </div>
         </div>
       </header>
