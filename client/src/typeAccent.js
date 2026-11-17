@@ -1,5 +1,5 @@
 // สี accent ตามประเภทหวย — class ต้องเป็น literal เพื่อให้ Tailwind generate
-// TH=ฟ้าอ่อน, LA=น้ำเงินเข้ม, HN=แดง, GS=ชมพู — โทนประจำหมวดแต่ละประเทศ
+// TH=ฟ้าอ่อน, LA=เขียวมรกต (ต่างจากฟ้าชัดเจน), HN=แดง, GS=ชมพู — โทนประจำหมวดแต่ละประเทศ
 // btn = pastel (รอบเปิดรับทั่วไป), btnLive = เข้มกว่า (รอบ ONLINE กำลังมาแรง)
 const ACCENTS = {
   TH: {
@@ -10,11 +10,11 @@ const ACCENTS = {
     btnLive: 'from-sky-400 to-blue-600 text-white',
   },
   LA: {
-    bar: 'bg-blue-700', text: 'text-blue-300', chip: 'bg-blue-600/20 text-blue-300 border-blue-500/50',
-    border: 'border-blue-500/60', glow: 'hover:border-blue-400',
-    head: 'from-blue-800', dot: 'bg-blue-500',
-    btn: 'from-blue-700/50 to-blue-900/50 text-blue-200',
-    btnLive: 'from-blue-700 to-blue-900 text-white',
+    bar: 'bg-emerald-500', text: 'text-emerald-300', chip: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/50',
+    border: 'border-emerald-400/60', glow: 'hover:border-emerald-300',
+    head: 'from-emerald-600', dot: 'bg-emerald-400',
+    btn: 'from-emerald-500/40 to-emerald-700/40 text-emerald-200',
+    btnLive: 'from-emerald-500 to-emerald-700 text-white',
   },
   HN: {
     bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-red-500/15 text-red-300 border-red-400/50',
