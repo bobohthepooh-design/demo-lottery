@@ -82,15 +82,16 @@ export default function Lotteries() {
     .sort((a, b) => a.draw_at.localeCompare(b.draw_at));
   // separa: abertas p/ aposta (mas não são a rodada em destaque) vs. futuras/encerradas
   const openOthers = otherDraws.filter(isLive);
-  // ปิดรับแล้วรอผล — โชว์เด่นๆ แยกจากรอบทั่วไป (live draw experience)
-  const drawingDraws = otherDraws.filter(d => d.status === 'closed');
-  const upcomingOthers = otherDraws.filter(d => !isLive(d) && d.status !== 'closed');
+  // ปิดรับแล้วรอผล — แยก 2 ช่วง: ถึงเวลาออกรางวัลแล้ว (กำลังออกรางวัล) vs ยังไม่ถึงเวลา (ปิดรับแล้ว รอออก)
+  const drawingDraws = otherDraws.filter(d => d.status === 'closed' && d.draw_at <= nowSql);
+  const upcomingOthers = otherDraws.filter(d =>
+    (!isLive(d) && d.status !== 'closed') || (d.status === 'closed' && d.draw_at > nowSql));
 
   const ZODIAC_GLYPHS = ['🐭', '🐂', '🐯', '🐰', '🐉', '🐍', '🐴', '🐐', '🐵', '🐓', '🐕', '🐷'];
 
   const DrawCard = ({ d, featured, soft }) => {
     const live = isLive(d);
-    const drawing = d.status === 'closed'; // ปิดรับแล้ว รอผล — ช่วง "ดูก่อนออก"
+    const drawing = d.status === 'closed' && d.draw_at <= nowSql; // ถึงเวลาออกรางวัลแล้ว รอผล — ช่วง "ดูก่อนออก"
     const ac = typeAccent(d.type_code);
     const isHR = d.type_code === 'HR';
     const cardCls = isHR
@@ -153,7 +154,7 @@ export default function Lotteries() {
           )
         ) : (
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${drawing ? 'bg-gold-500/25 text-gold-300 border border-gold-400/60 animate-pulse' : d.status === 'open' ? (isHR ? 'bg-violet-500/25 text-violet-200 border border-violet-400/50' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40') : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
-            {drawing ? '🎰 กำลังออกรางวัล…' : STATUS_TH[d.status] || d.status}
+            {drawing ? '🎰 กำลังออกรางวัล…' : d.status === 'closed' ? '🔒 ปิดรับแล้ว' : STATUS_TH[d.status] || d.status}
           </span>
         )}
       </div>
@@ -187,7 +188,7 @@ export default function Lotteries() {
           {d.status === 'cancelled' ? '🚫 ยกเลิกรอบแล้ว'
             : d.status === 'settled' ? '🏆 ออกผลแล้ว'
             : drawing ? '🎰 กำลังออกรางวัล…'
-            : d.status === 'closed' ? '🔒 ปิดรับแล้ว'
+            : d.status === 'closed' ? '🔒 ปิดรับแล้ว — รอเวลาออกรางวัล'
             : '🗓️ ยังไม่เปิดรับ'}
         </button>
       )}
