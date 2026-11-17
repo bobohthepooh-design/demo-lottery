@@ -115,7 +115,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 /* ================= Casino component layer ================= */
 
 /* การ์ด — มุมมน + ขอบทองจาง + เงา dark */
-.rounded-2xl, .rounded-xl { border-radius: 1.25rem; }
+.rounded-2xl, .rounded-xl { border-radius: 1.375rem; }
 [class*="bg-navy-800"], [class*="bg-navy-900"] {
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(226, 168, 18, 0.05);
 }
@@ -763,10 +763,10 @@ body::after {
   font-weight: 800;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #f4c94e;
-  text-shadow: 0 0 12px rgba(244, 201, 78, 0.35);
+  color: #67e8f9;
+  text-shadow: 0 0 12px rgba(34,211,238,0.45);
 }
-/* เส้นคั่นทองเล็กๆ หลัง kicker */
+/* เส้นคั่นหลัง kicker */
 .kicker::after {
   content: '';
   display: inline-block;
@@ -774,7 +774,7 @@ body::after {
   height: 1px;
   margin-left: 8px;
   vertical-align: middle;
-  background: linear-gradient(90deg, rgba(244,201,78,0.7), transparent);
+  background: linear-gradient(90deg, rgba(34,211,238,0.7), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -827,12 +827,7 @@ button, a, [role="button"] { touch-action: manipulation; }
 }
 
 /* ===== Casino Red — accent แดงสำหรับ navigation/brand, gold เก็บไว้สำหรับเงิน/เดิมพัน ===== */
-/* kicker section header → แดง velvet */
-.kicker { color: #67e8f9 !important; text-shadow: 0 0 12px rgba(34,211,238,0.45); }
-.kicker::after { background: linear-gradient(90deg, rgba(34,211,238,0.7), transparent); }
-
-/* card มนขึ้นเล็กน้อย — สไตล์ LINE */
-.rounded-2xl, .rounded-xl { border-radius: 1.375rem; }
+/* kicker section header → cyan (นิยามเดียวที่ด้านบน ไม่ override ซ้ำ) */
 
 /* link ทั่วไป hover → เขียวอ่อน (คง gold สำหรับตัวเลขเงิน/เครดิต) */
 main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !important; }

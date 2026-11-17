@@ -9,6 +9,7 @@ import { typeAccent } from '../typeAccent.js';
 import { sfx } from '../sound.js';
 import { kindBadge } from '../resultSource.js';
 import { annSummary, annEntries } from '../ann.js';
+import { Button } from '../components/ui/index.js';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน',
@@ -285,8 +286,8 @@ export default function PlaceBet() {
       <p className="text-navy-200 mt-2">เลขที่โพย: <code className="text-gold-300">{done.slipRef}</code></p>
       <p className="text-navy-200">ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
       <div className="mt-6 flex gap-3 justify-center">
-        <Link to="/my-bets" className="bg-gold-500 text-navy-950 font-bold px-5 py-2.5 rounded-lg">ดูโพยของฉัน</Link>
-        <Link to={draw ? `/lotteries?type=${draw.lottery_type_id}` : '/lotteries'} className="border border-navy-600 px-5 py-2.5 rounded-lg">แทงรอบอื่น</Link>
+        <Button to="/my-bets">ดูโพยของฉัน</Button>
+        <Button to={draw ? `/lotteries?type=${draw.lottery_type_id}` : '/lotteries'} variant="secondary">แทงรอบอื่น</Button>
       </div>
     </div>
   );
@@ -508,9 +509,9 @@ export default function PlaceBet() {
               </div>
             </div>
             {err && <div className="text-red-400 text-sm">{err}</div>}
-            <button onClick={addItem} className="w-full border border-gold-500/60 text-gold-300 font-semibold py-3 rounded-lg hover:bg-navy-700">
+            <Button onClick={addItem} variant="secondary" className="w-full !py-3 border-gold-500/60 text-gold-300 hover:bg-navy-700">
               + เพิ่มลงโพย
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -569,10 +570,10 @@ export default function PlaceBet() {
           </div>
           <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
             📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>
-          <button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
-            className="mt-4 w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-40">
+          <Button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
+            className="mt-4 w-full !py-3">
             ตรวจสอบและยืนยันโพย
-          </button>
+          </Button>
           {!user && <div className="text-center text-sm text-navy-300 mt-2"><Link to="/login" className="text-gold-400">เข้าสู่ระบบ</Link> เพื่อแทง</div>}
         </div>
       </div>
@@ -628,14 +629,14 @@ export default function PlaceBet() {
               </div>
             </div>
             <div className="flex gap-3 mt-4">
-              <button onClick={() => setConfirming(false)} disabled={busy}
-                className="flex-1 border border-navy-500/60 text-navy-200 py-3 rounded-xl hover:bg-navy-800 disabled:opacity-40 backdrop-blur-sm">
+              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}
+                className="flex-1 !py-3 backdrop-blur-sm">
                 ← แก้ไขต่อ
-              </button>
-              <button onClick={submit} disabled={busy}
-                className="flex-1 bg-gold-500 text-navy-950 font-bold py-3 rounded-xl hover:bg-gold-400 disabled:opacity-40 shadow-lg shadow-gold-500/20">
+              </Button>
+              <Button onClick={submit} disabled={busy}
+                className="flex-1 !py-3 shadow-lg shadow-gold-500/20">
                 {busy ? 'กำลังส่ง...' : '✓ ยืนยันส่งโพย'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
