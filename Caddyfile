@@ -8,6 +8,18 @@
 	auto_https disable_redirects
 }
 
+# HTTP localhost — DOMAIN=localhost ใช้ HTTPS (port 443) แต่ local dev ชอบ http://localhost
+http://localhost {
+	reverse_proxy app:4000 {
+		flush_interval -1
+	}
+
+	header {
+		-Server
+		X-Powered-By
+	}
+}
+
 {$DOMAIN} {
 	reverse_proxy app:4000 {
 		flush_interval -1
