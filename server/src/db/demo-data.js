@@ -1,4 +1,4 @@
-import { q } from './pg.js';
+import { q, qRun } from './pg.js';
 
 /**
  * สร้างรอบหวยตัวอย่างสำหรับ Demo — idempotent (เช็ค draw_code ก่อนสร้าง)
@@ -84,7 +84,13 @@ export function scheduleFor(typeCode, catCode) {
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true };
 }
 
-const UPCOMING_PER_TARGET = 5;
+// ระยะสร้างรอบล่วงหน้าแยกตามความถี่ตลาด — horizon = เวลาที่ผู้เล่นวางแผนแทงได้จริง + buffer ล่ม/ปัญหาแหล่งผล
+// hourly: 3 ชม. (3 รอบ — รายชั่วโมงไม่มีใครวางแผนล่วงหน้าไกล) | daily/weekly: 10 วัน | monthly: 2 ครั้งถัดไป (~1-1.5 เดือน)
+function upcomingSpec(sch) {
+  if (sch.kind === 'hourly') return { count: 3, horizonH: 4 };
+  if (sch.kind === 'monthly') return { count: 2, horizonH: 24 * 60 };
+  return { count: 60, horizonH: 24 * 10 }; // daily/weekly: เติมจนมีรอบครอบ 10 วันข้างหน้า
+}
 // หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่
 // LAD: หวยลาวพัฒนา 5/45 (จ-ศ 20:00) ไม่มีแหล่งผลแยกจากหวยลาวหลัก
 // LADAM: "ลาวพัฒนาเช้า" ไม่มีอยู่ในหวยจริง — ผลเป็น generated ล้วน ไม่ใช่ตลาดจริง
@@ -92,16 +98,18 @@ const DISABLED_CATS = new Set(['LADAM']);
 // เกมด่วน (ขูด/ไฮโล) ใช้ standing draw ถาวรอยู่แล้ว — ไม่ต้องสร้างรอบตามตาราง
 const INSTANT_TYPES = new Set(['SC', 'HL', 'KI']);
 
-// สร้างวันที่ออกรางวัลลำดับถัดไป count ครั้ง (ข้ามวันที่ผ่านมาแล้ว/วันหยุด)
-function occurrences(sch, count = UPCOMING_PER_TARGET) {
+// สร้างวันที่ออกรางวัลลำดับถัดไปตาม spec {count, horizonH} — หยุดเมื่อครบจำนวนหรือเกิน horizon (ข้ามวันที่ผ่านมาแล้ว/วันหยุด)
+function occurrences(sch, { count, horizonH }) {
   const out = [];
   const base = new Date(); base.setHours(0, 0, 0, 0);
   const now = new Date();
+  const horizonEnd = now.getTime() + horizonH * 3600e3;
   if (sch.kind === 'hourly') {
     // ออกรางวัลทุกชั่วโมงนาฬิกา (นาที 0) — ปิดรับก่อนเวลาออกรางวัล closeBeforeMin นาที
     const first = new Date(now); first.setMinutes(0, 0, 0); first.setHours(first.getHours() + 1);
     for (let i = 0; i < 24 * 40 && out.length < count; i++) {
       const draw = new Date(first); draw.setHours(first.getHours() + i);
+      if (draw.getTime() > horizonEnd) break;
       const close = new Date(draw); close.setMinutes(close.getMinutes() - (sch.closeBeforeMin || 30));
       if (close <= now) continue;
       out.push({ draw, close });
@@ -116,6 +124,7 @@ function occurrences(sch, count = UPCOMING_PER_TARGET) {
     const close = new Date(day); close.setHours(sch.closeHour, sch.closeMinute || 0, 0);
     if (close <= new Date()) continue; // เลยเวลาปิดรับแล้ว
     const draw = new Date(day); draw.setHours(sch.hour, sch.minute || 0, 0);
+    if (draw.getTime() > horizonEnd) break;
     out.push({ draw, close });
   }
   return out;
@@ -141,9 +150,7 @@ function planDraws(types) {
     for (const c of cats) {
       if (DISABLED_CATS.has(c.code)) continue;
       const sch = scheduleFor(t.code, c.code);
-      // รายชั่วโมง (ราศี) สร้างล่วงหน้าแค่รอบเดียว — ให้เหลือรอบเปิดรับปัจจุบัน ไม่ให้รอบซ้อนหลายใบ
-      const upcomingCount = sch.kind === 'hourly' ? 1 : UPCOMING_PER_TARGET;
-      for (const { draw, close } of occurrences(sch, upcomingCount)) {
+      for (const { draw, close } of occurrences(sch, upcomingSpec(sch))) {
         plans.push({
           lotteryTypeId: t.id, categoryId: c.id,
           drawCode: drawCodeFor(t.code, c.code, draw),
@@ -190,7 +197,14 @@ export async function seedDemoDraws() {
   const codes = new Set(existing.map(r => r.draw_code));
   const slots = new Set(existing.map(r => `${r.lottery_type_id}|${r.category_id ?? ''}|${r.draw_at}`));
   let created = 0;
-  for (const p of planDraws(types)) {
+  const plans = planDraws(types);
+  // horizon สูงสุดต่อ (type,cat) — ใช้เก็บกวาดรอบ DEMO ที่อยู่นอกระยะกำหนด
+  const horizonBySlot = new Map();
+  for (const p of plans) {
+    const slot = `${p.lotteryTypeId}|${p.categoryId ?? ''}`;
+    if (!horizonBySlot.has(slot) || p.drawAt > horizonBySlot.get(slot)) horizonBySlot.set(slot, p.drawAt);
+  }
+  for (const p of plans) {
     const slot = `${p.lotteryTypeId}|${p.categoryId ?? ''}|${p.drawAt}`;
     if (codes.has(p.drawCode) || slots.has(slot)) continue;
     const status = p.closeAt > nowUtc() ? 'open' : 'scheduled';
@@ -199,7 +213,19 @@ export async function seedDemoDraws() {
       [p.lotteryTypeId, p.categoryId, p.drawCode, p.drawAt, p.closeAt, status]);
     created++;
   }
-  console.log(`[demo-data] created ${created} draws`);
+  // ลบรอบ DEMO ที่เลย horizon และไม่มีโพยผูก — กัน list รอบถัดไปยาวเกินจำเป็น (รอบที่มีโพย/ผล/ยกเลิกแล้วไม่แตะ)
+  let pruned = 0;
+  for (const [slot, maxAt] of horizonBySlot) {
+    const [tid, cid] = slot.split('|');
+    const r = await qRun(`DELETE FROM lottery_draws d
+        WHERE d.lottery_type_id = $1 AND d.category_id IS NOT DISTINCT FROM $2::bigint
+          AND d.status IN ('open','scheduled') AND d.draw_at > $3
+          AND d.draw_code LIKE '%DEMO%'
+          AND NOT EXISTS (SELECT 1 FROM bet_slips bs WHERE bs.draw_id = d.id)`,
+      [Number(tid), cid === '' ? null : Number(cid), maxAt]);
+    pruned += r.changes || 0;
+  }
+  console.log(`[demo-data] created ${created} draws${pruned ? `, pruned ${pruned} beyond-horizon` : ''}`);
   return created;
 }
 
