@@ -78,7 +78,7 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
   return (
     <form onSubmit={verify} className="space-y-4">
       <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2 text-xs text-green-300">
-        ส่งรหัสไปที่ +66 {phone} แล้ว
+        ขอรหัส OTP สำหรับ +66 {phone} แล้ว (ระบบ Demo — ไม่ได้ส่ง SMS จริง)
       </div>
       {devCode && (
         <div className="bg-gold-500/10 border border-gold-500/40 rounded-lg px-3 py-2.5 text-center">
