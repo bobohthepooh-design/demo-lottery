@@ -205,7 +205,7 @@ function winningFor(kind, x) {
     const s6 = lcNum(x, 'special-prize', 6);
     const s5 = s6.slice(-5);
     return {
-      last4: s6.slice(-4), num4: s6.slice(-4), last5: s5, db5: s5,
+      last4: s6.slice(-4), num4: s6.slice(-4), db5: s5,
       top3: lcNum(x, 'three-digit-top', 3), last3: lcNum(x, 'three-digit-top', 3),
       last2: lcNum(x, 'two-digit-bottom', 2), bottom2: lcNum(x, 'two-digit-bottom', 2),
     };
