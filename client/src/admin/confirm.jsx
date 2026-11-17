@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 
 // Confirm dialog แบบ promise — ใช้ได้ทั่ว admin: const ok = await confirmAction({...})
 let state = { open: false, opts: null, resolve: null };
@@ -46,7 +47,9 @@ export function ConfirmHost() {
   );
   if (!snap.open || !snap.opts) return null;
   const o = snap.opts;
-  return (
+  // portal ไปที่ body — ถ้า render ใน AdminLayout ปกติ ancestor ที่มี transform/filter
+  // จะสร้าง stacking context ทำให้ z-[10000] แพ้ modal (z-9990) ที่ portal อยู่แล้ว
+  return createPortal(
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 p-4" onClick={() => settle(false)}>
       <div className="bg-navy-800 border border-gold-500/40 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
         <div className="text-4xl mb-2 text-center">{o.danger ? '⚠️' : '❓'}</div>
@@ -63,6 +66,7 @@ export function ConfirmHost() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
