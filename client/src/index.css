@@ -587,7 +587,7 @@ input:focus, select:focus, textarea:focus {
 .text-green-200, .text-green-300 { color: #4ade80 !important; }
 .text-green-400 { color: #22c55e !important; }
 .text-emerald-200, .text-emerald-300 { color: #34d399 !important; }
-.text-red-200, .text-gold-300 { color: #f87171 !important; }
+.text-red-200, .text-red-300 { color: #f87171 !important; }
 .text-red-400 { color: #ef4444 !important; }
 .text-blue-200, .text-blue-300 { color: #60a5fa !important; }
 .text-sky-200, .text-sky-300 { color: #38bdf8 !important; }
@@ -628,8 +628,7 @@ button.bg-gold-500:disabled, a.bg-gold-500:disabled { opacity: .55; }
 ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 8px; border: 2px solid #0a1526; }
 ::-webkit-scrollbar-thumb:hover { background: #e2a812; }
 
-/* focus ring ชัดสำหรับ keyboard/screen reader — โทนทอง */
-:focus-visible { outline: 2px solid #f4c94e; outline-offset: 2px; border-radius: 6px; }
+/* focus ring เดียวที่ด้านล่าง (Phase A) — ห้ามประกาศ :focus-visible ซ้ำที่นี่ */
 
 /* fade-up เบาๆ ตอนเปลี่ยนหน้า/โหลดเนื้อหาใหม่ — ห้ามใช้ transform เด็ดขาด
    เพราะ transform บน ancestor ทำให้ position:fixed ลูกหลาน (modal/celebration overlay)
@@ -783,7 +782,7 @@ body::after {
 }
 
 
-/* ??????? � ???????????? */
+/* แถบประกาศ (announcement bar) — ไอคอนกะพริบเตือนความสนใจ */
 @keyframes ann-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
