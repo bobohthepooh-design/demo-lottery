@@ -23,6 +23,7 @@ import scratchRoutes from './routes/scratch.js';
 import hiloRoutes from './routes/hilo.js';
 import pushRoutes from './routes/push.js';
 import { maybeDailyCashback } from './services/promoService.js';
+import { sendTelegram } from './services/telegramService.js';
 import * as scratchService from './services/scratchService.js';
 import * as hiloService from './services/hiloService.js';
 import * as kiwiService from './services/kiwiService.js';
@@ -48,6 +49,28 @@ if (config.env !== 'test') {
   const tickSeed = () => Promise.resolve(seedDemoDraws()).catch(e => console.error('[demo-data] tick seed failed:', e.message));
   try { await tickSeed(); } catch (e) { console.error('[demo-data] auto-seed failed:', e.message); }
   // ดึงผลรางวัลอัตโนมัติทุก 1 นาที — พร้อม top-up รอบหวย (ราศีต้องมีรอบเปิดรับเดียวหมุนต่อเนื่อง)
+  // แจ้งเตือน Telegram เมื่อมีรอบหวยค้างผล >2 ชม. — กันแอดมินไม่รู้ตัว
+  let lastOverdueAlert = 0;
+  const checkOverdue = async () => {
+    try {
+      const d = getDb();
+      const rows = await d.prepare(`SELECT d.draw_code, d.draw_at, lt.name_th AS type_name, c.name_th AS cat_name
+        FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
+        LEFT JOIN lottery_categories c ON c.id = d.category_id
+        WHERE d.status IN ('open','scheduled','closed')
+          AND datetime(d.draw_at) <= datetime('now', '-2 hours')
+          AND lt.code NOT IN ('SC','HL','KI','CF')
+          AND d.id NOT IN (SELECT draw_id FROM lottery_results)
+        ORDER BY d.draw_at LIMIT 10`).all();
+      if (!rows.length) return;
+      const now = Date.now();
+      if (now - lastOverdueAlert < 30 * 60 * 1000) return;
+      lastOverdueAlert = now;
+      const list = rows.map(r => `• ${r.draw_code} (${r.cat_name || r.type_name}) ออก ${r.draw_at}`).join('\n');
+      await sendTelegram(`🚨 หวยค้างผลเกิน 2 ชม. — ${rows.length} รอบ\n${list}\n\nตรวจสอบ: /admin/health`);
+      logger.warn('overdue-alert', rows.map(r => r.draw_code).join(', '));
+    } catch (e) { console.error('[overdue-alert] failed:', e.message); }
+  };
   const autoSettle = () => autoSettleResults()
     .then(r => {
       if (r.settled.length) logger.info('auto-settle', `settled: ${r.settled.join(', ')}`);
@@ -58,6 +81,7 @@ if (config.env !== 'test') {
   setInterval(() => {
     tickSeed();
     autoSettle();
+    checkOverdue();
     Promise.resolve(maybeDailyCashback()).catch(e => console.error('[cashback] failed:', e.message));
   }, 60 * 1000).unref();
 
