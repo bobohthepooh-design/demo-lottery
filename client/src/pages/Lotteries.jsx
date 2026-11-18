@@ -86,9 +86,17 @@ export default function Lotteries() {
   const openOthers = otherDraws.filter(isLive);
   // ปิดรับแล้วรอผล — แยก 2 ช่วง: ถึงเวลาออกรางวัลแล้ว (กำลังออกรางวัล) vs ยังไม่ถึงเวลา (ปิดรับแล้ว รอออก)
   const drawingDraws = otherDraws.filter(d => d.status === 'closed' && d.draw_at <= nowSql);
-  const upcomingOthers = otherDraws.filter(d =>
-    d.status !== 'settled' && d.status !== 'cancelled' &&
-    ((!isLive(d) && d.status !== 'closed') || (d.status === 'closed' && d.draw_at > nowSql)));
+  // รอบถัดไป — แสดงเฉพาะใบใกล้สุด 1 ใบต่อตลาด (ออนไลน์ + ล่วงหน้าอีก 1 รอบ)
+  const upcomingSeen = new Set();
+  const upcomingOthers = [];
+  for (const d of otherDraws) { // otherDraws เรียงตาม draw_at แล้ว — ใบแรกของแต่ละตลาดคือใบใกล้สุด
+    if (d.status === 'settled' || d.status === 'cancelled') continue;
+    if (isLive(d) || (d.status === 'closed' && d.draw_at <= nowSql)) continue;
+    const key = `${d.lottery_type_id}:${d.category_id || 0}`;
+    if (upcomingSeen.has(key)) continue;
+    upcomingSeen.add(key);
+    upcomingOthers.push(d);
+  }
   // รอบที่ผ่านไปแล้ว (ออกผล/ยกเลิก) — ซ่อนโดย default, ปุ่ม (+) แสดงย้อนหลัง 2 รอบล่าสุด
   const pastDraws = otherDraws.filter(d => (d.status === 'settled' || d.status === 'cancelled') && d.draw_at <= nowSql)
     .sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)));

@@ -85,11 +85,11 @@ export function scheduleFor(typeCode, catCode) {
 }
 
 // ระยะสร้างรอบล่วงหน้าแยกตามความถี่ตลาด — horizon = เวลาที่ผู้เล่นวางแผนแทงได้จริง + buffer ล่ม/ปัญหาแหล่งผล
-// hourly: 3 ชม. (3 รอบ) | daily/weekly LA-HN: ล่วงหน้า 1 รอบ (เสาร์-อาทิตย์เลื่อนเป็นจันทร์) | monthly TH/GS: 1 ครั้งถัดไป
+// ทุกตลาด: ปัจจุบัน + ล่วงหน้าอีก 1 รอบ (count=2) — hourly 2 รอบ (~2 ชม.), daily/weekly LA-HN 2 รอบ (เสาร์-อาทิตย์เลื่อนเป็นจันทร์), monthly TH/GS 2 ครั้งถัดไป
 function upcomingSpec(sch) {
-  if (sch.kind === 'hourly') return { count: 3, horizonH: 4 };
-  if (sch.kind === 'monthly') return { count: 1, horizonH: 24 * 60 };
-  return { count: 1, horizonH: 24 * 14, minOne: true }; // daily/weekly (LA/HN): ล่วงหน้า 1 รอบ — เสาร์-อาทิตย์เลื่อนเป็นจันทร์ (skipWeekend)
+  if (sch.kind === 'hourly') return { count: 2, horizonH: 3 };
+  if (sch.kind === 'monthly') return { count: 2, horizonH: 24 * 60 };
+  return { count: 2, horizonH: 24 * 14, minOne: true }; // daily/weekly (LA/HN): 2 รอบ — เสาร์-อาทิตย์เลื่อนเป็นจันทร์ (skipWeekend)
 }
 // หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่
 // LAD: หวยลาวพัฒนา 5/45 (จ-ศ 20:00) ไม่มีแหล่งผลแยกจากหวยลาวหลัก
