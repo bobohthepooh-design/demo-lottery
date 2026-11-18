@@ -126,6 +126,24 @@ export default function AdminHealth() {
             </CardBody>
           </Card>
 
+          {/* สถานะการดึงผลล่าสุดของแต่ละ source (รวม fallback) */}
+          {(d?.fetchHealth || []).length > 0 && (
+            <Card>
+              <CardBody>
+                <h2 className="font-bold text-white mb-3">🔄 การดึงผลอัตโนมัติ (source chain + fallback)</h2>
+                <div className="flex flex-wrap gap-2">
+                  {d.fetchHealth.map(h => (
+                    <div key={h.label} className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${h.ok === false ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-green-500/30 bg-green-500/5 text-green-300'}`}>
+                      <span className="font-bold">{h.label}</span>
+                      <span className="text-navy-400 ml-1">{h.ok === false ? `✕ ${h.lastError || 'error'}` : `✓ ${age(h.lastOkAt) || '—'}`}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[11px] text-navy-500 mt-2">✓ = ดึงสำเร็จล่าสุด • ✕ = ดึงล้มเหลวล่าสุด (ระบบจะลอง source ถัดไปใน chain อัตโนมัติ)</div>
+              </CardBody>
+            </Card>
+          )}
+
           {/* รอบค้างออกผล */}
           {overdue.length > 0 && (
             <Card variant="danger">

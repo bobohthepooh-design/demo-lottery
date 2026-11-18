@@ -901,6 +901,7 @@ router.get('/health', requirePerm('dashboard.admin'), async (req, res) => {
   };
   res.json({
     sources: sources.map(s => ({ ...s, last: bySource[s.source] || null })),
+    fetchHealth: fetcher.getSourceHealth(),
     overdue, counts,
   });
 });
