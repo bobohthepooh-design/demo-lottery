@@ -364,34 +364,28 @@ export default function Home() {
               <p className="text-xs text-navy-400 mt-0.5">เกมด่วนเล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {/* icon-grid แบบทางรัฐ — tile uniform: icon กลาง + ชื่อ + badge สถานะ */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {topRowTypes.map((t, i) => {
               const m = instantMeta[t.code] || {};
-              const ac = typeAccent(t.code);
               return (
-                <div key={t.id} className={`casino-table relative overflow-hidden rounded-2xl p-4 sm:p-5 hoverable deal-in`} style={{ animationDelay: `${i * 90}ms` }}>
-                  <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full ${ac.bar} opacity-10 blur-3xl pointer-events-none`} />
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-navy-950/60 border border-gold-500/30 flex items-center justify-center shadow-inner shrink-0`}>
-                      <GameArt code={t.code} className="w-12 h-12 sm:w-14 sm:h-14" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className={`font-bold text-base sm:text-lg ${ac.text} leading-tight truncate`}>{t.name_th}</div>
-                      <div className="text-[11px] text-navy-400 mt-0.5 truncate">{m.tag}</div>
-                    </div>
-                    <span className={`ml-auto shrink-0 text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${t.code === 'HR' ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-green-500/20 text-green-300 border-green-500/40 animate-online'}`}>
-                      {t.code === 'HR' ? '✦ รายชั่วโมง' : '● เปิดตลอด'}
-                    </span>
+                <Link key={t.id} to={user ? instantLink(t) : '/login'}
+                  className={`casino-table rounded-2xl p-4 flex flex-col items-center text-center gap-2 hoverable deal-in hover:border-gold-500/50 transition`} style={{ animationDelay: `${i * 90}ms` }}>
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-navy-950/60 border border-gold-500/30 flex items-center justify-center shadow-inner`}>
+                    <GameArt code={t.code} className="w-12 h-12 sm:w-14 sm:h-14" />
                   </div>
-                  <p className="text-xs text-navy-300 mt-3">{m.desc}</p>
-                  <Link to={user ? instantLink(t) : '/login'}
-                    className={`mt-4 block text-center bg-gradient-to-r ${m.grad} font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide shadow-lg hover:brightness-110 transition border border-white/10`}>
-                    {m.cta}
-                  </Link>
-                </div>
+                  <div className="font-bold text-sm text-white leading-tight">{t.name_th}</div>
+                  <div className="text-[10px] text-navy-400 leading-tight line-clamp-2 min-h-[2rem]">{m.tag}</div>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${t.code === 'HR' ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-green-500/20 text-green-300 border-green-500/40 animate-online'}`}>
+                    {t.code === 'HR' ? '✦ รายชั่วโมง' : '● 24 ชม.'}
+                  </span>
+                </Link>
               );
             })}
           </div>
+          <p className="text-[11px] text-navy-400 mt-3 text-center">
+            {topRowTypes.map(t => instantMeta[t.code]?.desc).filter(Boolean).join(' • ')}
+          </p>
         </section>
       )}
 
