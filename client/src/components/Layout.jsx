@@ -342,7 +342,7 @@ export default function Layout() {
       </nav>
 
       <footer className="border-t border-navy-800 py-4 pb-20 sm:pb-4 text-center text-xs text-navy-300">
-        {t('footer')}
+        <span>{t('footer')}</span><div className="mt-1"><Link to="/legal" className="text-gold-400 hover:text-gold-300">ข้อกำหนด • ความเป็นส่วนตัว • เล่นอย่างรับผิดชอบ</Link></div>
       </footer>
 
       <ToastHost />

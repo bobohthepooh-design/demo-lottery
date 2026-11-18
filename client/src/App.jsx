@@ -19,6 +19,7 @@ const MyBets = lazy(() => import('./pages/MyBets.jsx'));
 const Scratch = lazy(() => import('./pages/Scratch.jsx'));
 const Hilo = lazy(() => import('./pages/Hilo.jsx'));
 const Kiwi = lazy(() => import('./pages/Kiwi.jsx'));
+const Legal = lazy(() => import('./pages/Legal.jsx'));
 const Performance = lazy(() => import('./pages/Performance.jsx'));
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminOverview = lazy(() => import('./admin/Overview.jsx'));
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="/winners" element={<Winners />} />
           <Route path="/results" element={<Results />} />
           <Route path="/check" element={<Check />} />
+          <Route path="/legal" element={<Legal />} />
           <Route path="/scratch" element={<Protected><Scratch /></Protected>} />
           <Route path="/hilo" element={<Protected><Hilo /></Protected>} />
           <Route path="/kiwi" element={<Protected><Kiwi /></Protected>} />
