@@ -298,7 +298,7 @@ export default function PlaceBet() {
 
   // เทียบกับเวลา server (draw.server_now) — fallback นาฬิกาเครื่องถ้า field ไม่มี
   const nowSqlPB = draw.server_now || new Date().toISOString().slice(0,19).replace('T',' ');
-  const opensAt = draw ? bettingOpenAtSql(draw.close_at) : null;
+  const opensAt = draw ? bettingOpenAtSql(draw.close_at, draw.type_code) : null;
   const notYetOpen = !!(draw && draw.status === 'open' && draw.close_at > nowSqlPB && opensAt && nowSqlPB < opensAt);
   const closed = draw.status !== 'open' || draw.close_at <= nowSqlPB || notYetOpen;
   const ac = draw ? typeAccent(draw.type_code) : null;

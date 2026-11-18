@@ -67,7 +67,7 @@ function DrawLine({ d, now }) {
         <span className={`text-[8px] px-1 py-0.5 rounded shrink-0 ${b.cls}`}>{b.short}</span>
       ) : null; })()}
       <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ml-auto ${isOpen ? 'bg-gold-500/15 text-gold-600' : isScheduled ? 'bg-lav-100 text-lav-500 border border-lav-100' : 'bg-navy-100 text-navy-400'}`}>
-        {isOpen ? countdownText(d.close_at, now) : isScheduled ? (d.status === 'open' ? `เปิด ${thaiHM(bettingOpenAtSql(d.close_at))} น.` : 'กำหนดการ') : 'ปิดรับแล้ว'}
+        {isOpen ? countdownText(d.close_at, now) : isScheduled ? (d.status === 'open' ? `เปิด ${thaiHM(bettingOpenAtSql(d.close_at, d.type_code))} น.` : 'กำหนดการ') : 'ปิดรับแล้ว'}
       </span>
     </div>
   );

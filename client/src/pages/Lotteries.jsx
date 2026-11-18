@@ -164,7 +164,7 @@ export default function Lotteries() {
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${drawing ? 'bg-gold-500/25 text-gold-300 border border-gold-400/60 animate-pulse' : live ? (isHR ? 'bg-violet-500/25 text-violet-200 border border-violet-400/50' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40') : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>
             {drawing ? '🎰 กำลังออกรางวัล…' : awaitingDraw ? '🔒 ปิดรับแล้ว' : notOpenYet ? '🚫 ไม่เปิดให้แทง'
               : live ? STATUS_TH.open
-              : d.status === 'open' ? `⏳ เปิด ${thaiHM(bettingOpenAtSql(d.close_at))} น.`
+              : d.status === 'open' ? `⏳ เปิด ${thaiHM(bettingOpenAtSql(d.close_at, d.type_code))} น.`
               : STATUS_TH[d.status] || d.status}
           </span>
         )}
@@ -201,7 +201,7 @@ export default function Lotteries() {
             : drawing ? '🎰 กำลังออกรางวัล…'
             : awaitingDraw ? '🔒 ปิดรับแล้ว — รอเวลาออกรางวัล'
             : notOpenYet ? '🚫 ไม่เปิดให้แทง'
-            : d.status === 'open' ? `⏳ เปิดรับ ${thaiHM(bettingOpenAtSql(d.close_at))} น.`
+            : d.status === 'open' ? `⏳ เปิดรับ ${thaiHM(bettingOpenAtSql(d.close_at, d.type_code))} น.`
             : '🗓️ ยังไม่เปิดรับ'}
         </button>
       )}
