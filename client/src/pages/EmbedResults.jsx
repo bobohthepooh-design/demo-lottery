@@ -18,7 +18,7 @@ export default function EmbedResults() {
   }, [lottery, limit]);
 
   return (
-    <div className="min-h-screen bg-[#0a1526] text-white p-3 font-sans">
+    <div className="min-h-screen bg-[#ffffff] text-white p-3 font-sans">
       <div className="max-w-md mx-auto">
         <div className="text-center text-[11px] text-slate-400 mb-2 tracking-widest uppercase">
           ผลรางวัล • {lottery}
@@ -27,7 +27,7 @@ export default function EmbedResults() {
         {!data && !err && <div className="text-slate-400 text-xs text-center py-4">กำลังโหลด…</div>}
         <div className="space-y-2">
           {(data || []).map(d => (
-            <div key={d.drawCode} className="bg-[#0f1e33] border border-cyan-500/20 rounded-lg p-2.5">
+            <div key={d.drawCode} className="bg-[#f8fafc] border border-cyan-500/20 rounded-lg p-2.5">
               <div className="flex items-center justify-between text-[11px] mb-1">
                 <span className="font-bold text-cyan-300">{d.lotteryName}</span>
                 <span className="text-slate-400">{d.displayName}</span>

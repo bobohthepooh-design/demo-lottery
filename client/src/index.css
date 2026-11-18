@@ -3,21 +3,21 @@
 @theme {
   /* Ocean Blue — dark theme:'bg-navy-*' = พื้น/การ์ดน้ำเงินเข้ม, 'text-navy-*' = ข้อความสว่าง
      gold-* = ทอง wagering (เงิน/เครดิต), cyan = accent tech (nav/kicker/interactive) */
-  --color-navy-950: #040a14;   /* พื้นหลังลึกสุด / gradient end */
-  --color-navy-900: #0a1526;   /* panel / input */
-  --color-navy-800: #0f1e33;   /* การ์ดหลัก */
-  --color-navy-700: #1e3a5f;   /* เส้นขอบ/active */
-  --color-navy-600: #2f5580;   /* เส้นขอบเข้ม */
-  --color-navy-500: #6b8aa8;   /* ข้อความจาง */
-  --color-navy-400: #9db8d0;   /* secondary text */
-  --color-navy-300: #c8dcec;   /* body text */
-  --color-navy-200: #e2eef8;   /* text สว่าง */
-  --color-navy-100: #f2f8fd;   /* text สว่างสุด (rare) */
+  --color-navy-950: #eef2f8;   /* พื้นหลังหน้า — เทาอ่อน */
+  --color-navy-900: #ffffff;   /* panel / การ์ด */
+  --color-navy-800: #f8fafc;   /* การ์ดรอง */
+  --color-navy-700: #e2e8f0;   /* เส้นขอบ */
+  --color-navy-600: #cbd5e1;   /* เส้นขอบเข้ม */
+  --color-navy-500: #64748b;   /* ข้อความจาง */
+  --color-navy-400: #475569;   /* secondary text */
+  --color-navy-300: #334155;   /* body text */
+  --color-navy-200: #1e293b;   /* text เข้ม */
+  --color-navy-100: #0f172a;   /* text เข้มสุด (rare) */
 
   /* โทนทองคาสิโน — jackpot gold */
   --color-gold-100: #fdf3d0;
-  --color-gold-200: #f9e3a1;
-  --color-gold-300: #ffe08a;
+  --color-gold-200: #eab308;
+  --color-gold-300: #ca8a04;
   --color-gold-400: #f0c419;
   --color-gold-500: #f5c518;   /* primary gold — accent สดแบบ lotterychecks */
   --color-gold-600: #d9a520;
@@ -84,14 +84,14 @@
 }
 
 body {
-  background-color: #040a14;
+  background-color: #eef2f8;
   /* glows ฟ้า neon/ทอง — บรรยากาศ ocean tech */
   background-image:
-    radial-gradient(700px 420px at 85% -5%, rgba(226, 168, 18, 0.10), transparent 60%),
-    radial-gradient(560px 420px at -10% 30%, rgba(34, 211, 238, 0.14), transparent 60%),
-    radial-gradient(540px 440px at 60% 110%, rgba(14, 165, 233, 0.10), transparent 60%);
+    radial-gradient(700px 420px at 85% -5%, rgba(226, 168, 18, 0.12), transparent 60%),
+    radial-gradient(560px 420px at -10% 30%, rgba(34, 211, 238, 0.10), transparent 60%),
+    radial-gradient(540px 440px at 60% 110%, rgba(14, 165, 233, 0.08), transparent 60%);
   background-attachment: fixed;
-  color: #c8dcec;
+  color: #334155;
   font-family: var(--font-sans);
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
@@ -99,10 +99,10 @@ body {
 
 h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.01em; }
 
-/* text-navy-950 / text-white = ตัวหนังสือหลัก → สว่างบนพื้น dark theme */
-.text-navy-950 { color: #f2f8fd !important; }
-.text-white { color: #ffffff !important; }
-.text-white\/80, .text-white\/70, .text-white\/60 { color: rgba(255, 255, 255, 0.78) !important; }
+/* text-navy-950 / text-white = ตัวหนังสือหลัก → เข้มบนพื้น light theme */
+.text-navy-950 { color: #0f172a !important; }
+.text-white { color: #0f172a !important; }
+.text-white\/80, .text-white\/70, .text-white\/60 { color: rgba(15, 23, 42, 0.78) !important; }
 /* ข้อยกเว้น: ตัวหนังสือสีเข้มบนพื้นสีอ่อน (ปุ่ม/pill โทนทองอ่อน ฯลฯ) */
 [class*="bg-gold-100"][class*="text-navy-950"],
 [class*="bg-gold-200"][class*="text-navy-950"] { color: #3a2a05 !important; }
@@ -120,8 +120,8 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(226, 168, 18, 0.05);
 }
 /* เส้นขอบการ์ด — แดงจางให้ความรู้สึกพรีเมียม */
-.border-navy-700 { border-color: #1e3a5f; }
-.border-navy-600 { border-color: #2f5580; }
+.border-navy-700 { border-color: #e2e8f0; }
+.border-navy-600 { border-color: #cbd5e1; }
 
 /* ปุ่ม — นุ่ม + press feedback */
 button, a[class*="rounded"] {
@@ -164,14 +164,14 @@ a[class*="from-gold-500"]::after {
 
 /* ตาราง — deep ocean */
 main table thead th {
-  background: #0a1526;
+  background: #ffffff;
   font-family: var(--font-display);
   letter-spacing: .02em;
-  color: #c8dcec;
+  color: #334155;
 }
-main table tbody tr:hover { background: #12233c; }
-main table tbody tr { border-color: #1e3a5f; }
-main table td, main table th { border-color: #1e3a5f; }
+main table tbody tr:hover { background: #f1f5f9; }
+main table tbody tr { border-color: #e2e8f0; }
+main table td, main table th { border-color: #e2e8f0; }
 
 /* ตัวหนังสือขนาดเล็ก — ขยายให้อ่านง่าย/เห็นชัดขึ้น (มาตรฐานเดียวกันทุก platform) */
 .text-xs { font-size: 14px; line-height: 1.5; }
@@ -190,7 +190,7 @@ main table td, main table th { border-color: #1e3a5f; }
 }
 
 /* placeholder — มองเห็นชัดบนพื้น dark */
-::placeholder { color: #6b8aa8; opacity: 1; }
+::placeholder { color: #94a3b8; opacity: 1; }
 
 /* หัวข้อ — หนาและชัดขึ้น */
 h1, h2, h3 { font-weight: 700; }
@@ -198,7 +198,7 @@ main h2 { letter-spacing: 0.005em; }
 
 /* skeleton — dark shimmer */
 .skeleton {
-  background: linear-gradient(90deg, #0a1526 25%, #16304f 50%, #0a1526 75%);
+  background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s linear infinite;
   border-radius: 0.75rem;
@@ -624,8 +624,8 @@ button.bg-gold-500:disabled, a.bg-gold-500:disabled { opacity: .55; }
 
 /* ===== UX polish — scrollbar / focus / page transition ===== */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #0a1526; }
-::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 8px; border: 2px solid #0a1526; }
+::-webkit-scrollbar-track { background: #ffffff; }
+::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 8px; border: 2px solid #ffffff; }
 ::-webkit-scrollbar-thumb:hover { background: #e2a812; }
 
 /* focus ring เดียวที่ด้านล่าง (Phase A) — ห้ามประกาศ :focus-visible ซ้ำที่นี่ */
@@ -674,21 +674,19 @@ body::after {
 /* โต๊ะเกม — พื้น felt น้ำเงินเข้มเรืองฟ้า neon ขอบทอง */
 .casino-table {
   background:
-    radial-gradient(130% 110% at 50% -10%, rgba(34, 211, 238, 0.15), transparent 55%),
-    radial-gradient(100% 90% at 50% 115%, rgba(0, 0, 0, 0.55), transparent 60%),
-    linear-gradient(165deg, #16304f 0%, #0a1526 52%, #0f1e33 100%);
+    radial-gradient(130% 110% at 50% -10%, rgba(34, 211, 238, 0.08), transparent 55%),
+    linear-gradient(165deg, #ffffff 0%, #f4f7fb 100%);
   border: 1px solid rgba(226, 168, 18, 0.35) !important;
   box-shadow:
-    0 12px 34px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 0 60px rgba(0, 0, 0, 0.35),
-    0 0 26px rgba(226, 168, 18, 0.12);
+    0 4px 18px rgba(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgba(226, 168, 18, 0.05),
+    0 0 26px rgba(226, 168, 18, 0.10);
 }
 .casino-table:hover {
   border-color: rgba(244, 201, 78, 0.6) !important;
   box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 10px 28px rgba(15, 23, 42, 0.12),
+    inset 0 0 0 1px rgba(226, 168, 18, 0.08),
     0 0 34px rgba(226, 168, 18, 0.16);
 }
 
@@ -711,7 +709,7 @@ body::after {
 
 /* ticker LED — แถบดำสนิท ตัวหนังสือทองเรืองแสงเหมือนป้ายไฟตารางประกาศผล */
 .ticker-led {
-  background: linear-gradient(180deg, #040a14 0%, #0a1526 100%);
+  background: linear-gradient(180deg, #fff7dd 0%, #fdeec4 100%);
   border-color: rgba(226, 168, 18, 0.45) !important;
 }
 .ticker-led .ticker-item {
@@ -763,8 +761,7 @@ body::after {
   font-weight: 800;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #67e8f9;
-  text-shadow: 0 0 12px rgba(34,211,238,0.45);
+  color: #b8860b;
 }
 /* เส้นคั่นหลัง kicker */
 .kicker::after {
@@ -774,7 +771,7 @@ body::after {
   height: 1px;
   margin-left: 8px;
   vertical-align: middle;
-  background: linear-gradient(90deg, rgba(34,211,238,0.7), transparent);
+  background: linear-gradient(90deg, rgba(184,134,11,0.7), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -830,7 +827,7 @@ button, a, [role="button"] { touch-action: manipulation; }
 /* kicker section header → cyan (นิยามเดียวที่ด้านบน ไม่ override ซ้ำ) */
 
 /* link ทั่วไป hover → เขียวอ่อน (คง gold สำหรับตัวเลขเงิน/เครดิต) */
-main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !important; }
+main a.text-gold-400:hover, main a.text-gold-300:hover { color: #0e7490 !important; }
 
 /* ===== Hero felt table - green club-felt + wooden rail + vignette (home hero only) ===== */
 .casino-hero-felt {
@@ -839,8 +836,8 @@ main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !importa
     radial-gradient(110% 80% at 50% -12%, rgba(34, 211, 238, 0.20), transparent 55%),
     radial-gradient(90% 90% at 50% 118%, rgba(0, 0, 0, 0.6), transparent 62%),
     repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.014) 0 2px, transparent 2px 5px),
-    linear-gradient(168deg, #16304f 0%, #0f1e33 42%, #0a1526 78%, #081120 100%);
-  background-color: #0a1526;
+    linear-gradient(168deg, #e6ecf4 0%, #f8fafc 42%, #ffffff 78%, #081120 100%);
+  background-color: #ffffff;
 }
 /* wooden table rail - thick dark wood ring + thin gold pinstripe, inset via shadow */
 .casino-rail {
@@ -872,7 +869,7 @@ main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !importa
 
 /* ================= Phase A: Accessibility — focus ring ชัดทุก interactive element ================= */
 :focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #0891b2;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -916,7 +913,7 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 .announce-hero {
   background:
     radial-gradient(120% 140% at 50% -20%, rgba(245, 197, 24, 0.14), transparent 55%),
-    linear-gradient(180deg, #0f1e33 0%, #0a1526 100%);
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
   border: 1px solid rgba(245, 197, 24, 0.25);
 }
 .announce-num {
@@ -936,6 +933,6 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 
 /* focus ring สำหรับ element ที่เป็น div role=button */
 [role="button"]:focus-visible, [tabindex]:focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #0891b2;
   outline-offset: 2px;
 }

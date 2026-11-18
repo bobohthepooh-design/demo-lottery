@@ -24,9 +24,9 @@ export default function ForgotPassword() {
       <form onSubmit={submit} className="space-y-4">
         <Input required type="email" value={email} onChange={e => setEmail(e.target.value)}
           placeholder="อีเมลที่ลงทะเบียน" autoComplete="email" />
-        {msg && <div className="text-sm text-[#a5f3fc] bg-navy-900 border border-navy-700 rounded-lg p-3" role="status">{msg}</div>}
+        {msg && <div className="text-sm text-[#0e7490] bg-navy-900 border border-navy-700 rounded-lg p-3" role="status">{msg}</div>}
         <Button disabled={busy} className="w-full">{busy ? 'กำลังดำเนินการ...' : 'ส่งคำขอรีเซ็ต'}</Button>
-        <div className="text-center text-sm"><Link to="/login" className="text-[#67e8f9]">← กลับไปเข้าสู่ระบบ</Link></div>
+        <div className="text-center text-sm"><Link to="/login" className="text-[#0369a1]">← กลับไปเข้าสู่ระบบ</Link></div>
       </form>
     </AuthShell>
   );

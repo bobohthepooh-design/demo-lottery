@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 // ghost(ขอบ) danger(แดง) subtle(พื้นเรียบ) — size: sm md lg
 const VARIANTS = {
   primary: 'bg-gold-500 text-navy-950 font-bold hover:brightness-110 border border-gold-400/60 shadow-[0_2px_14px_rgba(226,168,18,0.35)]',
-  accent: 'bg-[#22d3ee]/15 text-[#a5f3fc] font-semibold border border-[#22d3ee]/40 hover:bg-[#22d3ee]/25 hover:border-[#22d3ee]/70',
+  accent: 'bg-[#0891b2]/15 text-[#0e7490] font-semibold border border-[#0891b2]/40 hover:bg-[#0891b2]/25 hover:border-[#0891b2]/70',
   ghost: 'border border-navy-600 bg-navy-900/60 text-navy-200 hover:border-gold-500/50 hover:text-gold-300',
   secondary: 'border border-navy-600 bg-navy-800 text-navy-200 font-semibold hover:border-navy-500 hover:text-white',
   danger: 'bg-red-500/85 text-white font-bold hover:bg-red-500 border border-red-400/50',

@@ -214,7 +214,7 @@ export default function SlotMachine({
           </div>
 
           {/* ===== แผงควบคุมล่าง ===== */}
-          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#e6ecf4] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
             <Display label="BET" value={betLabel} />
             <Display label="CREDIT" value={creditLabel} accent="text-gold-300" />
             <Display label="LINES" value="20" accent="text-sky-300" />
