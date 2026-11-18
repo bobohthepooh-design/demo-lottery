@@ -160,7 +160,7 @@ router.post('/change-password', auth.requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/forgot-password', async (req, res, next) => {
+router.post('/forgot-password', loginLimiter, async (req, res, next) => {
   try {
     const data = forgotSchema.parse(req.body);
     await auth.forgotPassword({ email: data.email });
