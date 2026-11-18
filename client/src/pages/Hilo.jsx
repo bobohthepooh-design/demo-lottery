@@ -311,7 +311,7 @@ export default function Hilo() {
               </div>
 
               {/* ===== จอ LCD — ผลรวม/ข้าง/สถานะ ===== */}
-              <div className="mt-2 rounded-lg bg-gradient-to-b from-[#e6ecf4] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+              <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
                 <DiceDisplay label="SUM" value={sumVal} accent="text-amber-300" />
                 <DiceDisplay label="SIDE" value={sideVal} accent="text-sky-300" />
                 <DiceDisplay label="RESULT" value={statVal} accent={statCls} />

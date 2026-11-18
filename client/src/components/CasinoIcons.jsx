@@ -30,7 +30,7 @@ const ICONS = {
     <>
       <path d="M3.5 10.8 12 4l8.5 6.8a.8.8 0 0 1 .3 1.1l-.6 1a.8.8 0 0 1-1.1.3L12 8.6l-7.1 5.6a.8.8 0 0 1-1.1-.3l-.6-1a.8.8 0 0 1 .3-1.1Z" fill={g} />
       <path d="M6 11.5V20a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-8.5l-1.2.9V19H7.2v-6.6L6 11.5Z" fill={g} />
-      <rect x="10.5" y="14" width="3" height="6" rx="0.8" fill="#ffffff" />
+      <rect x="10.5" y="14" width="3" height="6" rx="0.8" fill="#0a1526" />
     </>
   ),
   // หวย — ลูกบอลลอตเตอรี่มีเลข 7
@@ -46,7 +46,7 @@ const ICONS = {
   bets: (g) => (
     <>
       <path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 4v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 15.5v-2a2 2 0 0 0 0-4v-2Z" fill={g} />
-      <path d="M14.5 6v12" stroke="#ffffff" strokeWidth="1.1" strokeDasharray="2 1.8" />
+      <path d="M14.5 6v12" stroke="#0a1526" strokeWidth="1.1" strokeDasharray="2 1.8" />
       <path d="M16.8 10.2l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2.7-1.4Z" fill="#fff8e0" />
     </>
   ),

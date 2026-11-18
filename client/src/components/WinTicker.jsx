@@ -33,7 +33,7 @@ export default function WinTicker() {
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 pt-2">
-      <div className="rounded-xl overflow-hidden border border-gold-500/40 bg-gradient-to-r from-[#f8fafc]/80 via-navy-900/80 to-[#f8fafc]/80">
+      <div className="rounded-xl overflow-hidden border border-gold-500/40 bg-gradient-to-r from-[#0f1e33]/80 via-navy-900/80 to-[#0f1e33]/80">
         <div className="flex items-center gap-2 px-4 py-1 bg-black/50 border-b border-gold-500/30">
           <span className="text-xs font-bold text-gold-300">🏆 ผู้ชนะล่าสุด</span>
           <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-green-500/15 text-green-300">

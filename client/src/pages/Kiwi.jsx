@@ -176,11 +176,11 @@ function DiceMachineResult({ last, spinDone, g, game, onSpinDone }) {
   const resCls = !spinDone ? 'text-amber-300' : won ? 'text-emerald-300' : 'text-red-400';
   return (
     <div className="relative select-none">
-      <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#e6ecf4] via-[#f8fafc] to-[#ffffff] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
+      <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#16304f] via-[#0f1e33] to-[#0a1526] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
         <div className="rounded-xl border border-gold-400/30 bg-black/30 p-1.5 sm:p-2">
 
           {/* ===== Marquee ===== */}
-          <div className="relative rounded-lg bg-gradient-to-b from-[#f8fafc] to-[#eef2f8] border border-gold-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
+          <div className="relative rounded-lg bg-gradient-to-b from-[#0f1e33] to-[#040a14] border border-gold-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
             <div className="flex justify-between px-1 mb-1">
               {Array.from({ length: 16 }).map((_, i) => (
                 <span key={i} className="slot-bulb w-1.5 h-1.5 rounded-full"
@@ -211,7 +211,7 @@ function DiceMachineResult({ last, spinDone, g, game, onSpinDone }) {
           </div>
 
           {/* ===== จอ LCD ===== */}
-          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#e6ecf4] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
             <LcdDisplay label="TYPE" value={betTh} accent="text-sky-300" />
             <LcdDisplay label="PICK" value={pickTh} accent="text-violet-300" />
             <LcdDisplay label="RESULT" value={resVal} accent={resCls} />
@@ -297,11 +297,11 @@ function KiwiDrawMachine({ last, g, game, onDone }) {
 
   return (
     <div className="relative select-none">
-      <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#e6ecf4] via-[#f8fafc] to-[#ffffff] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
+      <div className="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#16304f] via-[#0f1e33] to-[#0a1526] p-2 sm:p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.7),inset_0_2px_0_rgba(255,255,255,0.08)]">
         <div className="rounded-xl border border-gold-400/30 bg-black/30 p-1.5 sm:p-2">
 
           {/* ===== Marquee ===== */}
-          <div className="relative rounded-lg bg-gradient-to-b from-[#f8fafc] to-[#eef2f8] border border-gold-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
+          <div className="relative rounded-lg bg-gradient-to-b from-[#0f1e33] to-[#040a14] border border-gold-400/40 px-3 pt-2 pb-1.5 mb-2 overflow-hidden">
             <div className="flex justify-between px-1 mb-1">
               {Array.from({ length: 16 }).map((_, i) => (
                 <span key={i} className="slot-bulb w-1.5 h-1.5 rounded-full"
@@ -328,7 +328,7 @@ function KiwiDrawMachine({ last, g, game, onDone }) {
           </div>
 
           {/* ===== จอ LCD ===== */}
-          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#e6ecf4] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
+          <div className="mt-2 rounded-lg bg-gradient-to-b from-[#16304f] to-[#081120] border border-white/10 px-2 sm:px-3 py-2 flex items-center gap-2 sm:gap-3">
             <LcdDisplay label="TYPE" value={typeTh} accent="text-sky-300" />
             <LcdDisplay label="PICK" value={pickTh || '—'} accent="text-violet-300" />
             <LcdDisplay label="RESULT" value={resVal} accent={resCls} />
@@ -449,8 +449,8 @@ export default function Kiwi() {
         {games.map(x => (
           <button key={x.game} onClick={() => pickGame(x.game)}
             className={`rounded-xl border px-2 py-2.5 text-center transition ${game === x.game
-              ? 'border-[#0891b2]/70 bg-gradient-to-b from-[#0891b2]/20 to-[#0891b2]/5 shadow-[0_0_18px_rgba(34,211,238,0.3)]'
-              : 'border-navy-700 bg-navy-800/60 hover:border-[#0891b2]/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]'}`}>
+              ? 'border-[#22d3ee]/70 bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/5 shadow-[0_0_18px_rgba(34,211,238,0.3)]'
+              : 'border-navy-700 bg-navy-800/60 hover:border-[#22d3ee]/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]'}`}>
             <div className="text-xs font-bold text-white leading-tight">{x.label}</div>
             <div className="text-[10px] text-navy-400 mt-0.5">{satang(x.price)} บาท</div>
             <div className="text-[9px] text-gold-300/80 mt-0.5 leading-tight">

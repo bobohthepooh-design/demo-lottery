@@ -41,7 +41,7 @@ export default function Login() {
     navigate('/');
   };
 
-  const tabCls = (t) => `flex-1 py-2.5 text-sm font-bold rounded-lg transition ${tab === t ? 'bg-[#0891b2]/20 text-[#0e7490] border border-[#0891b2]/40' : 'text-navy-300 hover:text-white border border-transparent'}`;
+  const tabCls = (t) => `flex-1 py-2.5 text-sm font-bold rounded-lg transition ${tab === t ? 'bg-[#22d3ee]/20 text-[#a5f3fc] border border-[#22d3ee]/40' : 'text-navy-300 hover:text-white border border-transparent'}`;
 
   return (
     <AuthShell title={needsMfa ? 'ยืนยันตัวตนสองชั้น' : 'เข้าสู่ระบบ'}>
@@ -71,8 +71,8 @@ export default function Login() {
               {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
               <Button disabled={busy} className="w-full">{busy ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</Button>
               <div className="flex justify-between text-sm">
-                <Link to="/forgot-password" className="text-navy-300 hover:text-[#0e7490]">ลืมรหัสผ่าน?</Link>
-                <Link to="/register" className="text-[#0369a1] hover:underline">สมัครสมาชิกใหม่</Link>
+                <Link to="/forgot-password" className="text-navy-300 hover:text-[#a5f3fc]">ลืมรหัสผ่าน?</Link>
+                <Link to="/register" className="text-[#67e8f9] hover:underline">สมัครสมาชิกใหม่</Link>
               </div>
             </form>
           ) : (

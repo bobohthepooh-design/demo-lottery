@@ -107,7 +107,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#eef2f8] via-[#ffffff] to-[#eef2f8] backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/30">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#040a14] via-[#0a1526] to-[#040a14] backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/30">
         <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
@@ -122,7 +122,7 @@ export default function Layout() {
           <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-md:order-3 max-md:basis-full max-md:mx-3 max-md:mt-1 max-md:mb-1.5">
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
-                className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#0891b2]/20 to-[#0891b2]/10 text-[#0e7490] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#0369a1] hover:bg-white/5'}`}>
+                className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                 <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
               </NavLink>
               {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
@@ -130,7 +130,7 @@ export default function Layout() {
                   {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-md:hidden" />}
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
-                      className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#0891b2]/20 to-[#0891b2]/10 text-[#0e7490] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#0369a1] hover:bg-white/5'}`}>
+                      className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                       {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
                       {t(n.k)}
                     </NavLink>
@@ -148,14 +148,14 @@ export default function Layout() {
                     <svg viewBox="0 0 24 24" className={`w-3 h-3 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
                   </button>
                   {adminMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border border-gold-500/30 bg-[#ffffff]/98 backdrop-blur-md shadow-2xl shadow-black/60 py-1.5 z-50">
+                    <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border border-gold-500/30 bg-[#0a1526]/98 backdrop-blur-md shadow-2xl shadow-black/60 py-1.5 z-50">
                       <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-gold-400/80 border-b border-navy-700/60 mb-1">Admin Panel</div>
                       {adminNavGroups.map(g => (
                         <div key={g.label}>
                           <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-400">{g.label}</div>
                           {g.items.map(i => (
                             <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
-                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-[#0369a1] font-semibold bg-[#0891b2]/10' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
+                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
                               {i.icon && <Icon name={i.icon} className="w-5 h-5 shrink-0" />}
                               {i.label}
                             </NavLink>
@@ -219,9 +219,9 @@ export default function Layout() {
 
       {/* เมนูมือถือ/แท็บเล็ต — overlay เต็มจอ เปิดได้จากปุ่ม ☰ หรือ "เพิ่มเติม" ใน bottom nav */}
       {menuOpen && (
-        <div className="sm:hidden fixed inset-0 z-50 bg-[#eef2f8]/97 backdrop-blur-md overflow-y-auto" onClick={() => setMenuOpen(false)}>
+        <div className="sm:hidden fixed inset-0 z-50 bg-[#040a14]/97 backdrop-blur-md overflow-y-auto" onClick={() => setMenuOpen(false)}>
           <div className="suit-pattern min-h-full px-4 py-4 space-y-1" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 pt-1 pb-3 sticky top-0 bg-[#eef2f8]/95 backdrop-blur-md">
+            <div className="flex items-center justify-between px-3 pt-1 pb-3 sticky top-0 bg-[#040a14]/95 backdrop-blur-md">
               <span className="kicker">{t('menu')}</span>
               <div className="flex items-center gap-3">
                 {user && <span className="text-xs font-black font-mono text-gold-300">{t('credit')} {satang(balance)} บาท</span>}
@@ -230,7 +230,7 @@ export default function Layout() {
               </div>
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#0369a1] font-semibold bg-[#0891b2]/10 border border-[#0891b2]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
               <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
@@ -242,7 +242,7 @@ export default function Layout() {
                       <div className="px-4 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-500">{ag.label}</div>
                       {ag.items.map(i => (
                         <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setMenuOpen(false)}
-                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-[15px] tracking-wide rounded-xl ${isActive ? 'text-[#0369a1] font-semibold bg-[#0891b2]/10 border border-[#0891b2]/30' : 'text-navy-200 hover:bg-white/5'}`}>
+                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-[15px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-200 hover:bg-white/5'}`}>
                           {i.icon && <Icon name={i.icon} className="w-6 h-6" />}
                           {i.label}
                         </NavLink>
@@ -255,7 +255,7 @@ export default function Layout() {
                   <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#0369a1] font-semibold bg-[#0891b2]/10 border border-[#0891b2]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
                       {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
                       {t(n.k)}
                     </NavLink>
@@ -295,8 +295,8 @@ export default function Layout() {
       <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
-        <div className="relative border-t border-[#0891b2]/30 bg-gradient-to-b from-[#f8fafc]/95 to-[#ffffff]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
-          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-[#0891b2]/40 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+        <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
+          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-[#22d3ee]/40 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
           {/* เส้นเรืองทองด้านบน */}
           <div className="absolute top-0 inset-x-8 h-px"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent)' }} />
@@ -318,7 +318,7 @@ export default function Layout() {
                   <>
                     {/* active: วงทองเรืองนุ่ม + ไอคอนโตกว่า (inactive = เทา) */}
                     {isActive && (
-                      <span className="absolute top-1.5 h-10 w-12 rounded-full border border-[#0891b2]/40"
+                      <span className="absolute top-1.5 h-10 w-12 rounded-full border border-[#22d3ee]/40"
                         style={{ background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.28), rgba(34,211,238,0.05) 70%)', boxShadow: '0 0 16px rgba(34,211,238,0.35)' }} />
                     )}
                     <span className={`relative transition-transform duration-200 ${isActive ? 'scale-110 -translate-y-0.5' : 'opacity-70'}`}
