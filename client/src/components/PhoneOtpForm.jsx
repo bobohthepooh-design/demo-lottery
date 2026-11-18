@@ -62,7 +62,7 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
               placeholder="ชื่อที่แสดง (ไม่บังคับ)" className={inputCls} />
             <label className="flex items-start gap-2 text-xs text-navy-300 cursor-pointer">
               <input type="checkbox" checked={ageOk} onChange={e => setAgeOk(e.target.checked)} className="mt-0.5 accent-amber-500" />
-              <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> และยอมรับเงื่อนไขการใช้งาน (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
+              <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> ยอมรับ<a href="/legal" target="_blank" className="text-[#f5c518] underline">ข้อกำหนด</a> และ<a href="/legal" target="_blank" className="text-[#f5c518] underline">นโยบายความเป็นส่วนตัว (PDPA)</a> (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
             </label>
           </>
         )}

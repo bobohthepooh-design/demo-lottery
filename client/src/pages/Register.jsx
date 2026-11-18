@@ -65,7 +65,7 @@ export default function Register() {
             <input type="checkbox" required checked={form.ageConfirmed}
               onChange={e => setForm({...form, ageConfirmed: e.target.checked})}
               className="mt-0.5 accent-amber-500" />
-            <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> และยอมรับเงื่อนไขการใช้งาน (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
+            <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> ยอมรับ<a href="/legal" target="_blank" className="text-[#f5c518] underline">ข้อกำหนด</a> และ<a href="/legal" target="_blank" className="text-[#f5c518] underline">นโยบายความเป็นส่วนตัว (PDPA)</a> (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
           </label>
           {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
           <Button disabled={busy} className="w-full">{busy ? 'กำลังสมัคร...' : 'สมัครและเข้าใช้งานเลย'}</Button>

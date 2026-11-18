@@ -207,6 +207,14 @@ export default function Home() {
           <span className="text-gold-200">โปรโมชั่น: <b className="text-gold-300">คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
         </div>
       )}
+      {/* Responsible gambling — เตือนเบาๆ + ลิงก์เอกสาร */}
+      {user && (
+        <div className="rounded-xl border border-navy-700 bg-navy-800/50 px-4 py-2.5 flex items-center gap-2 text-xs text-navy-400">
+          <span>🛡️</span>
+          <span className="flex-1">เล่นอย่างมีความรับผิดชอบ — ตั้งวงเงินได้ที่โปรไฟล์ • ระบบจำลองเพื่อการศึกษา</span>
+          <Link to="/legal" className="text-gold-400 hover:text-gold-300 font-semibold shrink-0">ข้อกำหนด/PDPA →</Link>
+        </div>
+      )}
       {/* Hero — ดึงดูดให้เข้ามาแทง (ข้อความแก้ไขได้ที่ /admin/banner) */}
       {b.enabled && (
       <section className="casino-frame casino-hero-felt casino-rail relative overflow-hidden rounded-2xl border border-gold-500/50 px-5 py-10 sm:px-12 sm:py-14 text-center">
