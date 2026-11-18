@@ -184,14 +184,14 @@ export default function AdminSettle() {
     setSchema(resultSchema(d?.type_code, d?.category_code));
   }, [sel, draws]);
 
-  // ดึงผลอัตโนมัติจากแหล่งข้อมูล (ไทย=GLO, ฮานอย=XSMB) มาเติมในฟอร์มให้ตรวจก่อน settle
+  // ดึงผลอัตโนมัติจาก source chain (ไทย=GLO→lotterychecks, ฮานอย=XSMB→lotterychecks) มาเติมในฟอร์มให้ตรวจก่อน settle
   const fetchAuto = async () => {
     setErr(''); setResult(null);
     try {
       const r = await api(`/admin/draws/${sel}/fetch-result`, { method: 'POST', body: {} });
       fillFields(r.winning, setFields);
       setErr('');
-      toast(`ดึงผลสำเร็จ (วันที่ ${r.date || '-'}) — ตรวจสอบแล้วกดยืนยันออกผล`, 'success');
+      toast(`ดึงผลสำเร็จจาก ${r.source || '-'} (วันที่ ${r.date || '-'}) — ตรวจสอบแล้วกดยืนยันออกผล`, 'success');
     } catch (e) { setErr(e.message); }
   };
 
@@ -233,14 +233,14 @@ export default function AdminSettle() {
         <Button variant="success" onClick={runAutoSettle} disabled={autoBusy}>
           {autoBusy ? 'กำลังตรวจสอบ...' : '⚡ ตรวจผลอัตโนมัติทั้งหมดตอนนี้'}
         </Button>
-        <span className="text-xs text-navy-400">ออกผลทุกประเภทที่ตั้งเป็น "อัตโนมัติ" และถึงเวลาแล้วทันที — ไม่ต้องรอรอบเช็ค 15 นาที</span>
+        <span className="text-xs text-navy-400">ออกผลทุกประเภทที่ตั้งเป็น "อัตโนมัติ" และถึงเวลาแล้วทันที — ไม่ต้องรอรอบเช็ค 60 วินาที</span>
         {autoSources.length > 0 && (
           <div className="w-full flex flex-wrap items-center gap-2 mt-1">
             <span className="text-xs text-navy-400">สถานะการดึงผล:</span>
             {autoSources.map(s => (
               <span key={s.code} title={s.error || 'ดึงข้อมูลสำเร็จ'}
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${s.ok ? 'bg-green-500/10 border-green-500/40 text-green-300' : 'bg-red-500/10 border-red-500/40 text-red-300'}`}>
-                <FlagIcon code={s.code} className="w-4 h-3" />
+                <FlagIcon code={String(s.code || s.label || '').split('(')[0]} className="w-4 h-3" />
                 {s.label} {s.ok ? '✓' : '✗'}
               </span>
             ))}

@@ -3,7 +3,7 @@
 //   *gen* / *dev-gen* → 🎲 DEMO (ระบบสุ่มจำลอง)
 //   อื่นๆ            → 🌐 เว็บจริง (ดึงจากแหล่งข้อมูลภายนอก เช่น GLO/XSMB/laodl/lotterychecks)
 const SITE_NAME = {
-  GLO: 'glo.or.th', XSMB: 'xsmb', laodl: 'laodl.com',
+  GLO: 'glo.or.th', XSMB: 'xsmb', laodl: 'laodl.com', LC: 'lotterychecks',
   'hanoi-adhoc': 'lotterychecks', 'hanoi-special': 'lotterychecks', 'hanoi-vip': 'lotterychecks',
 };
 
