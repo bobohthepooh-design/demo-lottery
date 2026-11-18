@@ -369,22 +369,24 @@ export default function Home() {
             {topRowTypes.map((t, i) => {
               const m = instantMeta[t.code] || {};
               return (
-                <Link key={t.id} to={user ? instantLink(t) : '/login'}
-                  className={`casino-table rounded-2xl p-4 flex flex-col items-center text-center gap-2 hoverable deal-in hover:border-gold-500/50 transition`} style={{ animationDelay: `${i * 90}ms` }}>
-                  <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-navy-950/60 border border-gold-500/30 flex items-center justify-center shadow-inner`}>
-                    <GameArt code={t.code} className="w-12 h-12 sm:w-14 sm:h-14" />
-                  </div>
-                  <div className="font-bold text-sm text-white leading-tight">{t.name_th}</div>
-                  <div className="text-[10px] text-navy-400 leading-tight line-clamp-2 min-h-[2rem]">{m.tag}</div>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${t.code === 'HR' ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-green-500/20 text-green-300 border-green-500/40 animate-online'}`}>
-                    {t.code === 'HR' ? '✦ รายชั่วโมง' : '● 24 ชม.'}
-                  </span>
-                </Link>
+                <div key={t.id} className="flex flex-col items-center text-center">
+                  <Link to={user ? instantLink(t) : '/login'}
+                    className={`casino-table rounded-2xl p-4 pb-3 flex flex-col items-center text-center gap-2 w-full hoverable deal-in hover:border-gold-500/50 transition`} style={{ animationDelay: `${i * 90}ms` }}>
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-navy-950/60 border border-gold-500/30 flex items-center justify-center shadow-inner`}>
+                      <GameArt code={t.code} className="w-12 h-12 sm:w-14 sm:h-14" />
+                    </div>
+                    <div className="font-bold text-sm text-white leading-tight">{t.name_th}</div>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${t.code === 'HR' ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-green-500/20 text-green-300 border-green-500/40 animate-online'}`}>
+                      {t.code === 'HR' ? '✦ รายชั่วโมง' : '● 24 ชม.'}
+                    </span>
+                  </Link>
+                  <div className="text-[10px] text-navy-400 leading-tight mt-1.5 px-1">{m.tag}</div>
+                </div>
               );
             })}
           </div>
           <p className="text-[11px] text-navy-400 mt-3 text-center">
-            {topRowTypes.map(t => instantMeta[t.code]?.tag).filter(Boolean).join(' • ')}
+            แตะที่ไอคอนเพื่อเข้าเล่นเกม — เปิดตลอด 24 ชม.
           </p>
         </section>
       )}
