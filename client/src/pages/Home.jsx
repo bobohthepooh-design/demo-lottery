@@ -384,7 +384,7 @@ export default function Home() {
             })}
           </div>
           <p className="text-[11px] text-navy-400 mt-3 text-center">
-            {topRowTypes.map(t => instantMeta[t.code]?.desc).filter(Boolean).join(' • ')}
+            {topRowTypes.map(t => instantMeta[t.code]?.tag).filter(Boolean).join(' • ')}
           </p>
         </section>
       )}
