@@ -101,6 +101,7 @@ export default function Results() {
   const [expanded, setExpanded] = useState({}); // draw_id -> bool: แสดงผลละเอียด
   const [date, setDate] = useState(bkkTodayStr);
   const [typeFilter, setTypeFilter] = useState(''); // '' = ทุกประเภท
+  const [q, setQ] = useState('');                    // ค้นหารหัสรอบ/ชื่อรอบ
 
   const load = () => api(`/lottery/today?date=${date}`).then(setData).catch(e => setErr(e.message));
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
@@ -156,7 +157,12 @@ export default function Results() {
     return !isNaN(t) && fmtDay(new Date(t.getTime() + 7 * 3600e3)) === date;
   }).slice(0, 8);
 
-  const draws = data?.draws || [];
+  const draws = (data?.draws || []).filter(d => {
+    if (!q.trim()) return true;
+    const t = q.trim().toLowerCase();
+    return [d.draw_code, d.type_name_th, d.cat_name_th, d.round_no != null ? `รอบ ${d.round_no}` : '']
+      .filter(Boolean).some(v => String(v).toLowerCase().includes(t));
+  });
   const settled = draws.filter(d => d.status === 'settled');
   const pending = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
   // เมื่อเลือก tab ประเภท — section ออกผลแล้ว/รอผล กรองตามด้วย
@@ -278,6 +284,13 @@ export default function Results() {
       </div>
 
       {err && <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl px-4 py-3 text-sm">{err}</div>}
+
+      {/* ค้นหารอบ — กรองตามรหัส/ชื่อรอบ/หมวด */}
+      <div className="max-w-sm mx-auto">
+        <input value={q} onChange={e => setQ(e.target.value)}
+          placeholder="🔍 ค้นหารหัสรอบ / ชื่อหวย เช่น HNN-20261119-00"
+          className="w-full bg-navy-800 border border-navy-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-navy-500 focus:outline-none focus:border-gold-500/60" />
+      </div>
 
       {/* tab กรองตามประเภทหวย — แสดงเฉพาะเมื่อมีมากกว่า 1 ประเภทในวันนี้ */}
       {typeTabs.length > 1 && (
