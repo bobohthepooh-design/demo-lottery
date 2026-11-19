@@ -276,7 +276,7 @@ export default function MyBets() {
         const newlyWon = merged.find(s => s.status === 'won' && prevStatus.current[s.id] && prevStatus.current[s.id] !== 'won');
         merged.forEach(s => { prevStatus.current[s.id] = s.status; });
         if (newlyWon) {
-          sfx.win();
+          sfx.win(); navigator.vibrate?.([80,40,80]); // haptic ฉลองถูกรางวัล
           setCelebrate(newlyWon.id);
           setTimeout(() => setCelebrate(c => (c === newlyWon.id ? null : c)), 5000);
         }

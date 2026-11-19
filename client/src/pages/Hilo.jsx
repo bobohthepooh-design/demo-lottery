@@ -167,7 +167,7 @@ export default function Hilo() {
     setPending(null);
     setRevealing(false);
     if (!r) return;
-    if (r.outcome === 'win') sfx.win(); else if (r.outcome === 'lose') sfx.lose();
+    if (r.outcome === 'win') sfx.win(); navigator.vibrate?.([80,40,80]); // haptic ฉลองถูกรางวัล else if (r.outcome === 'lose') sfx.lose();
     const tid = r.id; // id ของตั๋วที่เพิ่งเล่น — กัน user สลับไปดูตั๋วอื่นระหว่าง animation
     const updated = { ...r, id: tid, status: 'revealed' };
     setTickets(ts => ts.some(t => t.id === tid) ? ts.map(t => t.id === tid ? updated : t) : [updated, ...ts]);

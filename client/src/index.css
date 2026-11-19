@@ -950,3 +950,7 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 .admin-compact .mb-5 { margin-bottom: 1rem; }
 .admin-compact .gap-4 { gap: 0.75rem; }
 .admin-compact .gap-6 { gap: 1rem; }
+
+/* Press feedback — ปุ่ม/การ์ดยุบตัวเบาๆ ตอนกด (haptic-like บน touch) */
+button:active, [role="button"]:active, a:active { transform: scale(0.97); transition: transform 80ms ease; }
+button, [role="button"], a { transition: transform var(--duration-fast, 120ms) ease; }

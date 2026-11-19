@@ -519,13 +519,13 @@ export default function Kiwi() {
         <DiceMachineResult key={last.id} last={last} spinDone={spinDone} g={g} game={game}
           onSpinDone={() => {
             setSpinDone(true); setSpinningId(null);
-            if (last.outcome === 'win' || (last.payout || 0) > 0) sfx.win(); else sfx.lose();
+            if (last.outcome === 'win' || (last.payout || 0) > 0) sfx.win(); navigator.vibrate?.([80,40,80]); // haptic ฉลองถูกรางวัล else sfx.lose();
           }} />
       ) : last && (
         <KiwiDrawMachine key={last.id} last={last} g={g} game={game}
           onDone={() => {
             setSpinningId(null);
-            if (last.outcome === 'win' || (last.payout || 0) > 0) sfx.win(); else sfx.lose();
+            if (last.outcome === 'win' || (last.payout || 0) > 0) sfx.win(); navigator.vibrate?.([80,40,80]); // haptic ฉลองถูกรางวัล else sfx.lose();
           }} />
       )}
 

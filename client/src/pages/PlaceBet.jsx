@@ -276,6 +276,7 @@ export default function PlaceBet() {
       setDone(r);
       idemKey.current = null; // โพยถัดไปใช้ key ใหม่
       sfx.bet();
+      navigator.vibrate?.(60); // haptic สั่นเบาๆ ยืนยันส่งโพย (มือถือ/แท็บเล็ต)
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
