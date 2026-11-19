@@ -53,6 +53,37 @@ export default function AdminOverview() {
         </div>
       </div>
 
+      {/* สิ่งที่ต้องทำวันนี้ — action items รวมจาก health (overdue/stale source/โพยรอผล) */}
+      {(() => {
+        const items = [];
+        const od = health?.overdue || [];
+        if (od.length) items.push({ tone: 'red', icon: 'security', text: `${od.length} รอบค้างออกผลเกินเวลา`, sub: od.slice(0, 3).map(x => x.draw_code).join(', ') + (od.length > 3 ? ' …' : ''), to: '/admin/settle' });
+        const stale = (health?.fetchHealth || []).filter(h => h.ok === false);
+        if (stale.length) items.push({ tone: 'amber', icon: 'reports', text: `แหล่งผลมีปัญหา ${stale.length} แห่ง`, sub: stale.map(h => h.label).join(', '), to: '/admin/health' });
+        const srcStale = (health?.sources || []).filter(s => s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
+        if (srcStale.length && !stale.length) items.push({ tone: 'amber', icon: 'reports', text: `แหล่งผลเงียบ >36 ชม. ${srcStale.length} แห่ง`, sub: srcStale.map(s => s.source).join(', '), to: '/admin/health' });
+        if (!items.length) return null;
+        const toneCls = { red: 'border-red-500/50 bg-red-500/10', amber: 'border-amber-500/40 bg-amber-500/10' };
+        const txtCls = { red: 'text-red-300', amber: 'text-amber-300' };
+        return (
+          <div className="bg-navy-800/70 border border-navy-700 rounded-2xl p-4">
+            <h2 className="font-bold text-white mb-3">📋 สิ่งที่ต้องทำ ({items.length})</h2>
+            <div className="space-y-2">
+              {items.map((it, i) => (
+                <a key={i} href={it.to} className={`flex items-center gap-3 border rounded-xl px-4 py-3 hover:brightness-110 transition ${toneCls[it.tone]}`}>
+                  <Icon name={it.icon} className={`w-5 h-5 shrink-0 ${txtCls[it.tone]}`} />
+                  <div className="min-w-0">
+                    <div className={`text-sm font-bold ${txtCls[it.tone]}`}>{it.text}</div>
+                    {it.sub && <div className="text-[11px] text-navy-400 truncate">{it.sub}</div>}
+                  </div>
+                  <span className="ml-auto text-xs text-navy-300 shrink-0">จัดการ →</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* รายรับ / รายจ่าย หลัก */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-green-500/25 to-emerald-700/10 border border-green-500/50 rounded-2xl p-6 relative overflow-hidden">

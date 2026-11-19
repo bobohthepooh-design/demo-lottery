@@ -9,11 +9,14 @@ import { kindBadge } from '../resultSource.js';
 import LuckyNumbers from '../components/LuckyNumbers.jsx';
 import { annSummary } from '../ann.js';
 import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
+import { SkeletonGrid } from '../components/Skeleton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'รับแทงอยู่', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
 export default function Lotteries() {
   const [allDraws, setAllDraws] = useState([]);   // รอบ upcoming ทั้งหมด
+  const [loaded, setLoaded] = useState(false);      // โหลดรอบแรกเสร็จแล้วหรือยัง (กัน flash "ไม่พบรอบ")
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [types, setTypes] = useState([]);         // สำหรับ sidebar ประเภทหวย (desktop)
   const [rulesByType, setRulesByType] = useState({}); // กติกาต่อ type — ไว้โชว์อัตราจ่ายบนการ์ด
@@ -26,7 +29,7 @@ export default function Lotteries() {
   const selType = params.get('type');
 
   useEffect(() => {
-    const load = () => api('/lottery/draws?upcoming=1').then(r => setAllDraws(r.draws)).catch(() => {});
+    const load = () => api('/lottery/draws?upcoming=1').then(r => { setAllDraws(r.draws); setLoaded(true); }).catch(() => setLoaded(true));
     load();
     const t = setInterval(load, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
     api('/lottery/public-config').then(r => setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : [])).catch(() => {});
@@ -318,7 +321,8 @@ export default function Lotteries() {
         </section>
       )}
 
-      {!draws.length && <div className="text-navy-300 text-center py-10">ไม่พบรอบหวย</div>}
+      {!loaded && <SkeletonGrid count={6} />}
+      {loaded && !draws.length && <EmptyState emoji="🎟️" title="ไม่พบรอบหวย" hint="ลองเปลี่ยนตัวกรองประเทศ หรือกลับมาดูใหม่ภายหลัง" to="/lotteries" cta="ดูทั้งหมด" />}
 
       {/* เลขเด็ด/เลขดัง — สถิติจากผลจริงภายนอก */}
       <LuckyNumbers />
