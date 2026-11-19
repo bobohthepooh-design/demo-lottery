@@ -107,6 +107,7 @@ export default function Lotteries() {
   const ZODIAC_GLYPHS = ['🐭', '🐂', '🐯', '🐰', '🐉', '🐍', '🐴', '🐐', '🐵', '🐓', '🐕', '🐷'];
 
   const DrawCard = ({ d, featured, soft }) => {
+    const [detailOpen, setDetailOpen] = useState(false); // มือถือ: ย่อรายละเอียด จนกว่าจะแตะ
     const live = isLive(d);
     const drawing = d.status === 'closed' && d.draw_at <= nowSql; // ถึงเวลาออกรางวัลแล้ว รอผล — ช่วง "ดูก่อนออก"
     const awaitingDraw = d.status === 'closed' && d.draw_at > nowSql && d.close_at <= nowSql; // เคยเปิดรับแล้วปิดจริง — รอเวลาออก
@@ -138,6 +139,12 @@ export default function Lotteries() {
           {(() => { const b = kindBadge(d.result_kind); return b && (
             <div className={`mt-1 text-[9px] px-1.5 py-0.5 rounded inline-block ${b.cls}`}>{b.label}</div>
           ); })()}
+          {/* มือถือ: ปุ่มกาง/ย่อรายละเอียด — desktop แสดงตลอด (sm:block) */}
+          <button type="button" onClick={() => setDetailOpen(o => !o)}
+            className="sm:hidden mt-2 text-[11px] font-bold text-[#67e8f9] flex items-center gap-1">
+            {detailOpen ? '▾ ย่อรายละเอียด' : '▸ ดูรายละเอียด'}
+          </button>
+          <div className={detailOpen ? 'block' : 'hidden sm:block'}>
           {(() => { const s = annSummary(d.announce); return s ? (
             <div className="ann-blink mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block bg-amber-500/20 border border-amber-400 text-amber-300">
               📣 เลขอั้น: {s}
@@ -158,6 +165,7 @@ export default function Lotteries() {
               </span>
             </div>
           )}
+          </div>
         </div>
         {featured ? (
           isHR ? (
@@ -180,6 +188,7 @@ export default function Lotteries() {
           </span>
         )}
       </div>
+      <div className={detailOpen ? 'block' : 'hidden sm:block'}>
       {isHR && (
         <div className="flex items-center justify-between mt-3 text-lg leading-none select-none" aria-hidden="true">
           {ZODIAC_GLYPHS.map((g, i) => (
@@ -190,15 +199,16 @@ export default function Lotteries() {
       <div className="mt-3 text-sm text-navy-300 space-y-1">
         <div>🕐 ออกรางวัล: <span className="text-white">{fmtDateTime(d.draw_at)}</span></div>
         <div>⏱️ ปิดรับโพย: <Countdown closeAt={d.close_at} /></div>
-        {live && (() => {
-          // เหลือเวลาอีกไม่เกิน 30 นาทีถึงเวลาปิดรับ → badge เร่งด่วน (เวลา close_at เป็นเวลาไทย)
-          const t = Date.parse(String(d.close_at).replace(' ', 'T') + '+07:00');
-          const mins = Math.round((t - Date.now()) / 60000);
-          return Number.isFinite(mins) && mins > 0 && mins <= 30 ? (
-            <div className="text-[11px] font-bold text-orange-300 animate-pulse">⏰ ปิดรับในอีก ~{mins} นาที — รีบแทง!</div>
-          ) : null;
-        })()}
       </div>
+      </div>
+      {live && (() => {
+        // badge เร่งด่วน — อยู่นอกส่วนย่อ เห็นเสมอแม้มือถือยังไม่กางรายละเอียด
+        const t = Date.parse(String(d.close_at).replace(' ', 'T') + '+07:00');
+        const mins = Math.round((t - Date.now()) / 60000);
+        return Number.isFinite(mins) && mins > 0 && mins <= 30 ? (
+          <div className="mt-2 text-[11px] font-bold text-orange-300 animate-pulse">⏰ ปิดรับในอีก ~{mins} นาที — รีบแทง!</div>
+        ) : null;
+      })()}
       {/* ปุ่มแทงด่วนทุกการ์ด — ติดก้นกรอบเสมอ (mt-auto) • เปิดรับกดได้เลย, ปิด/ยังไม่เปิดแสดงสถานะเป็นปุ่ม disabled */}
       <div className="mt-auto pt-4">
       {live ? (
