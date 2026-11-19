@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { SkeletonCard } from '../components/Skeleton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import FairnessNote from '../components/Fairness.jsx';
@@ -101,6 +103,7 @@ const PICK_TH = { low: 'ต่ำ', high: 'สูง', eleven: '11 ไฮโล'
 export default function Hilo() {
   const { balance, setBalance } = useAuth();
   const [tickets, setTickets] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState(null);
   const [busy, setBusy] = useState(false);
   const [revealing, setRevealing] = useState(false); // กำลังทอยรอบสุดท้ายก่อนเปิดผล
@@ -111,7 +114,7 @@ export default function Hilo() {
   const [mult, setMult] = useState(null);   // อัตราจ่าย ต่ำ/สูง/11 จาก server settings
   const playIdem = useRef(null); // {pick, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry ซื้อซ้ำ
 
-  const load = () => api('/hilo/mine').then(r => setTickets(r.tickets)).catch(() => {});
+  const load = () => api('/hilo/mine').then(r => { setTickets(r.tickets); setLoaded(true); }).catch(() => setLoaded(true));
   const loadCfg = () => api('/lottery/public-config').then(r => {
     const p = r.instantGame?.hiloPrice;
     if (p) setPrice(p);
@@ -353,6 +356,10 @@ export default function Hilo() {
       </div>
 
       {/* history */}
+      {!loaded && <SkeletonCard />}
+      {loaded && !tickets.length && (
+        <EmptyState emoji="🎲" title="ยังไม่มีตั๋วไฮโล" hint="กดปุ่มเล่นเพื่อเริ่มเสี่ยงโชค" />
+      )}
       {tickets.length > 0 && (
         <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-navy-700 font-bold text-white flex items-center gap-2">

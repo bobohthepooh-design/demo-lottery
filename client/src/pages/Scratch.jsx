@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { SkeletonCard } from '../components/Skeleton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { SymbolGrid } from '../components/ScratchCard.jsx';
@@ -39,6 +41,7 @@ const MiniGrid = ({ grid }) => !grid ? null : (
 export default function Scratch() {
   const { user, balance, setBalance } = useAuth();
   const [cards, setCards] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState(null);   // card กำลังเล่น
   const [result, setResult] = useState(null);   // outcome หลัง reveal
   const [busy, setBusy] = useState(false);
@@ -50,7 +53,7 @@ export default function Scratch() {
   const [prizes, setPrizes] = useState(DEFAULT_PRIZES); // ตารางรางวัลจาก server
   const reelIcons = prizes.map(p => p.icon);
 
-  const load = () => api('/scratch/mine').then(r => setCards(r.cards)).catch(() => {});
+  const load = () => api('/scratch/mine').then(r => { setCards(r.cards); setLoaded(true); }).catch(() => setLoaded(true));
   const loadCfg = () => api('/lottery/public-config').then(r => {
     const p = r.instantGame?.scratchPrice;
     if (p) setPrice(p);
@@ -209,7 +212,8 @@ export default function Scratch() {
           </div>
         )}
 
-        {!active && !cards.length && !busy && (
+        {!loaded && <><SkeletonCard /><SkeletonCard /></>}
+        {!active && loaded && !cards.length && !busy && (
           <div className="text-center py-8 text-navy-400">
             <div className="text-4xl mb-2">🎰</div>
             ยังไม่มีเกม — กดปุ่ม "เล่นเกม" บนแถบด้านล่างเพื่อเริ่มสปินเลย!

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { SkeletonCard } from '../components/Skeleton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import FairnessNote from '../components/Fairness.jsx';
@@ -366,6 +368,7 @@ export default function Kiwi() {
   const [picks, setPicks] = useState([]);
   const [betType, setBetType] = useState(null);
   const [tickets, setTickets] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [last, setLast] = useState(null);
@@ -374,7 +377,7 @@ export default function Kiwi() {
   const playIdem = useRef(null); // {sig, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry เล่นซ้ำ
 
   const g = games.find(x => x.game === game) || games[0] || null;
-  const load = () => api('/kiwi/mine').then(r => setTickets(r.tickets)).catch(() => {});
+  const load = () => api('/kiwi/mine').then(r => { setTickets(r.tickets); setLoaded(true); }).catch(() => setLoaded(true));
   const loadInfo = () => api('/kiwi/info').then(r => setGames(r.games)).catch(() => {});
   useEffect(() => {
     load();
@@ -527,6 +530,10 @@ export default function Kiwi() {
       )}
 
       {/* history */}
+      {!loaded && <SkeletonCard />}
+      {loaded && !tickets.length && (
+        <EmptyState emoji="🎲" title="ยังไม่มีตั๋วยี่กี" hint="กดปุ่มเล่นเพื่อเริ่มเสี่ยงโชค" />
+      )}
       {tickets.length > 0 && (
         <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-navy-700 font-bold text-white">ประวัติยี่กี</div>
