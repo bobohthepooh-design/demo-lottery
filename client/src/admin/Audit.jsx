@@ -77,7 +77,7 @@ export default function AdminAudit() {
         </div>
       </div>
       <Card className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full min-w-[640px] text-xs">
           <thead className="bg-navy-900 text-navy-300">
             <tr><th className="text-left px-3 py-3">เวลา</th><th className="text-left px-3 py-3">ผู้ใช้</th><th className="text-left px-3 py-3">Action</th><th className="text-left px-3 py-3">Entity</th><th className="text-left px-3 py-3">IP</th><th className="text-left px-3 py-3">รายละเอียด</th></tr>
           </thead>

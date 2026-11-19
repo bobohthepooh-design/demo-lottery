@@ -39,7 +39,7 @@ export default function AdminMembers() {
           placeholder="ค้นหา username/email..." inputClassName="w-64 py-2 text-sm" />
       </div>
       <Card className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
             <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="text-left px-4 py-3">18+/RG</th><th className="px-4 py-3 sticky right-0 bg-navy-900 z-10"></th></tr>
           </thead>

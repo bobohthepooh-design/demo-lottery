@@ -230,7 +230,7 @@ export default function AdminDraws() {
       </div>
 
       <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-navy-900 text-navy-300 text-xs">
             <tr><th className="text-left px-4 py-3">รอบ</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-left px-4 py-3">ออกรางวัล</th><th className="text-left px-4 py-3">ปิดรับ</th><th className="text-left px-4 py-3">สถานะ</th><th className="px-4 py-3">จัดการ</th></tr>
           </thead>
