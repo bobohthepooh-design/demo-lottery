@@ -68,7 +68,7 @@ export default function AdminLayout() {
     .map(g => ({ ...g, items: g.items.filter(i => !i.superOnly || isSuper) }))
     .filter(g => g.items.length > 0);
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="admin-compact flex flex-col lg:flex-row gap-6">
       <aside className="lg:w-60 shrink-0">
         <div className="bg-navy-900 border border-navy-700/70 rounded-2xl lg:sticky lg:top-24 shadow-lg shadow-black/20">
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-navy-700/60">
