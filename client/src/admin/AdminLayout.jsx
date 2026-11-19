@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { ConfirmHost } from './confirm.jsx';
 import { useAuth } from '../auth.jsx';
 import { api } from '../api.js';
@@ -42,6 +42,7 @@ export const adminGroups = [
 
 export default function AdminLayout() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [chatUnread, setChatUnread] = useState(0);
   const prevUnread = useRef(0);
 
@@ -62,6 +63,21 @@ export default function AdminLayout() {
     window.addEventListener('sys:update', h);
     return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
   }, []);
+
+  // keyboard shortcuts — กดตัวอักษรเดี่ยวขณะไม่ได้พิมพ์ใน input เพื่อกระโดดไปหน้าต่างๆ
+  // o=ภาพรวม r=รายงาน h=สุขภาพ m=สมาชิก l=ประเภทหวย d=รอบหวย b=โพย c=แชท w=เครดิต a=audit s=ตั้งค่า
+  useEffect(() => {
+    const MAP = { o: '/admin', r: '/admin/reports', h: '/admin/health', m: '/admin/members', l: '/admin/lotteries', d: '/admin/draws', b: '/admin/bets', c: '/admin/chat', w: '/admin/wallet', a: '/admin/audit', s: '/admin/settings' };
+    const onKey = (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      const to = MAP[e.key.toLowerCase()];
+      if (to) { e.preventDefault(); navigate(to); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
 
   const isSuper = (user?.roles || []).includes('super_admin');
   const visibleGroups = adminGroups
