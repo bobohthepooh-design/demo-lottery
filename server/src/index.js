@@ -54,14 +54,16 @@ if (config.env !== 'test') {
   const checkOverdue = async () => {
     try {
       const d = getDb();
+      // draw_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' — เทียบ string ตรงๆ (Postgres ไม่มี datetime())
+      const cutoff = new Date(Date.now() - 2 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
       const rows = await d.prepare(`SELECT d.draw_code, d.draw_at, lt.name_th AS type_name, c.name_th AS cat_name
         FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
         LEFT JOIN lottery_categories c ON c.id = d.category_id
         WHERE d.status IN ('open','scheduled','closed')
-          AND datetime(d.draw_at) <= datetime('now', '-2 hours')
+          AND d.draw_at <= ?
           AND lt.code NOT IN ('SC','HL','KI','CF')
           AND d.id NOT IN (SELECT draw_id FROM lottery_results)
-        ORDER BY d.draw_at LIMIT 10`).all();
+        ORDER BY d.draw_at LIMIT 10`).all(cutoff);
       if (!rows.length) return;
       const now = Date.now();
       if (now - lastOverdueAlert < 30 * 60 * 1000) return;

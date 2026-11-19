@@ -377,7 +377,7 @@ async function autoSettleResultsInner() {
       { label: 'TH(LC)',  get: () => cached('src:TH(LC)', () => lcWin('thai-government', 'thai-gov')) },
     ];
     if (d.type_code === 'HR')
-      return [{ label: 'HR(gen)', get: async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) }) }];
+      return [{ label: 'HR(gen)', get: () => cached('src:HR(gen)', async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) })) }];
     if (d.type_code === 'HN' && (cat === 'HNN' || cat === 'HNST')) return [
       { label: 'HN(XSMB)', get: () => cached('src:HN(XSMB)', fetchHanoiResult) },
       { label: 'HN(LC)',   get: () => cached('src:HN(LC)', () => lcWin('hanoi-normal', 'hn')) },
