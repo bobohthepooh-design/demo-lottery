@@ -202,9 +202,10 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* มือถือ (<640px) — เวลา + เสียง + hamburger (เมนูอยู่ใน bottom nav + overlay) */}
+          {/* มือถือ (<640px) — เวลา + กระดิ่ง + เสียง + hamburger (เมนูอยู่ใน bottom nav + overlay) */}
           <div className="flex items-center gap-2 sm:hidden">
             <div className="text-xs font-mono font-bold text-gold-300">{timeStr}</div>
+            {user && <NotificationBell />}
             <button
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
               title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
