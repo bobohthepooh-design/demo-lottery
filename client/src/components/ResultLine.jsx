@@ -98,6 +98,8 @@ export default function ResultLine({ r }) {
   const fields = (schema?.fields?.length ? schema.fields : []).filter(f => !f.optional);
   const known = new Set(fields.map(f => f.key));
   const extras = Object.entries(data || {}).filter(([k, v]) => !known.has(k) && v !== '');
+  const sourceChecks = r.source_checks || [];
+  const hasMismatch = sourceChecks.some(c => c.verification_status === 'mismatch');
   const cell = (key, label, raw) => {
     const vals = raw === undefined || raw === null || raw === '' ? '—'
       : (Array.isArray(raw) ? raw : [raw]).join(', ');
@@ -127,6 +129,19 @@ export default function ResultLine({ r }) {
         )}
         <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.</span>
       </div>
+      {sourceChecks.length > 0 && (
+        <div className={`mt-1 text-[9px] ${hasMismatch ? 'text-amber-300' : 'text-navy-400'}`}>
+          {hasMismatch ? '⚠ แหล่งข้อมูลไม่ตรงกัน' : 'ตรวจแหล่งข้อมูล'}:{' '}
+          {sourceChecks.map(c => {
+            const status = {
+              matched: 'ตรงกัน', mismatch: 'ไม่ตรง', unverified: 'ยังไม่มีแหล่งเทียบ',
+              unavailable: 'ดึงไม่สำเร็จ', date_mismatch: 'วันที่ไม่ตรง',
+            }[c.verification_status] || c.verification_status;
+            return `${c.source} (${status})`;
+          }).join(' · ')}
+          {hasMismatch && ` — ใช้ ${r.source}`}
+        </div>
+      )}
       {r.type_code === 'HR' ? (
         // หวยราษี — แสดงผลเป็นชิปราศีเหมือนช่องสัญลักษณ์หวยขูด
         <div className="flex gap-4 mt-1.5 flex-wrap items-center">

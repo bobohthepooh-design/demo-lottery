@@ -557,13 +557,17 @@ router.post('/draws/:id/settle', requirePerm('results.publish'), async (req, res
     const drawId = Number(req.params.id);
     // หวยไทยต้องออกผลจากแหล่งทางการ (GLO) เท่านั้น — ห้ามกรอกเอง/ใช้ผลเทียม
     const draw = await lottery.getDraw(drawId);
+    let sourceLabel = null;
     if (draw?.type_code === 'TH') {
       const official = await fetcher.fetchResultForDraw(drawId);
       if (!sameWinningNumbers(official.winning, winning_numbers))
         throw new HttpError(400,
           'หวยไทยต้องใช้ผลทางการที่ระบบดึงมาเท่านั้น — กรุณากด "ดึงผล" ก่อน แล้วใช้ตัวเลขที่ระบบแสดง', 'OFFICIAL_RESULT_REQUIRED');
+      sourceLabel = official.source;
+    } else if (draw && draw.result_mode !== 'manual') {
+      sourceLabel = await fetcher.sourceLabelForWinning(draw, winning_numbers);
     }
-    const result = await lottery.settleDraw(req.user.id, drawId, winning_numbers);
+    const result = await lottery.settleDraw(req.user.id, drawId, winning_numbers, sourceLabel);
     broadcast('results');
     res.json({ ok: true, ...result });
   } catch (e) { next(e); }

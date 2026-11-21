@@ -279,6 +279,80 @@ export async function fetchHanoiResult() {
 
 // ---------- matching & settle ----------
 // draw_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' — แปลงเป็นวันที่เวลาไทยสำหรับเทียบกับวันที่ผลจริง
+// ---------- source verification (draw_result_sources) ----------
+// บันทึกว่าผลของแต่ละแหล่งตรงกันไหม — user/admin เห็นความน่าเชื่อถือของผลย้อนหลังได้
+
+function canonicalWinning(value) {
+  if (Array.isArray(value)) return value.map(canonicalWinning).sort();
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().map(k => [k, canonicalWinning(value[k])]));
+  }
+  return String(value ?? '').trim();
+}
+
+function sameWinning(a, b) {
+  return JSON.stringify(canonicalWinning(a)) === JSON.stringify(canonicalWinning(b));
+}
+
+async function storeSourceChecks(drawId, observations) {
+  for (const o of observations) {
+    await qRun(`INSERT INTO draw_result_sources
+      (draw_id, source, source_role, source_url, result_date, winning_numbers,
+       verification_status, error, checked_at, last_available_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'),
+        CASE WHEN $9 THEN to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') ELSE NULL END)
+      ON CONFLICT (draw_id, source) DO UPDATE SET
+        source_role = EXCLUDED.source_role,
+        source_url = EXCLUDED.source_url,
+        result_date = COALESCE(EXCLUDED.result_date, draw_result_sources.result_date),
+        winning_numbers = COALESCE(EXCLUDED.winning_numbers, draw_result_sources.winning_numbers),
+        verification_status = EXCLUDED.verification_status,
+        error = EXCLUDED.error,
+        checked_at = EXCLUDED.checked_at,
+        last_available_at = COALESCE(EXCLUDED.last_available_at, draw_result_sources.last_available_at)`,
+    [
+      drawId, o.source, o.role, o.url, o.date || null,
+      o.winning ? JSON.stringify(o.winning) : null, o.status, o.error || null, !!o.available,
+    ]);
+  }
+}
+
+function parseSourceCheck(row) {
+  let winning = null;
+  try { winning = row.winning_numbers ? JSON.parse(row.winning_numbers) : null; } catch {}
+  return { ...row, winning_numbers: undefined, winning };
+}
+
+export async function getResultSourceChecks(drawIds) {
+  const ids = [...new Set((drawIds || []).map(Number).filter(Number.isInteger))];
+  if (!ids.length) return new Map();
+  const rows = await q(`SELECT draw_id, source, source_role, source_url, result_date,
+      winning_numbers, verification_status, error, checked_at, last_available_at
+    FROM draw_result_sources WHERE draw_id = ANY($1::bigint[])
+    ORDER BY draw_id, CASE source_role WHEN 'official' THEN 0 WHEN 'primary' THEN 1 ELSE 2 END, source`,
+  [ids]);
+  const grouped = new Map();
+  for (const row of rows) {
+    const key = Number(row.draw_id);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(parseSourceCheck(row));
+  }
+  return grouped;
+}
+
+// หา source label ที่รายงานผลตรงกับ winning ที่กำลังจะ settle — ใช้ติดป้ายกำกับผลย้อนหลัง
+export async function sourceLabelForWinning(draw, winning) {
+  const grouped = await getResultSourceChecks([draw.id]);
+  const checks = grouped.get(Number(draw.id)) || [];
+  const targetDate = drawLocalDate(draw);
+  return checks.find(c =>
+    c.result_date === targetDate
+    && !['unavailable', 'date_mismatch'].includes(c.verification_status)
+    && c.winning
+    && sameWinning(c.winning, winning)
+  )?.source || null;
+}
+
 function drawLocalDate(draw) {
   const d = new Date(String(draw.draw_at).replace(' ', 'T') + 'Z');
   return isNaN(d) ? String(draw.draw_at).slice(0, 10) : d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
@@ -370,22 +444,24 @@ async function autoSettleResultsInner() {
 
   // source chain ต่อ draw — ลำดับ = ความน่าเชื่อถือ (official ก่อน, fallback ตามหลัง)
   // ทุก candidate ต้องผ่าน date-match กับรอบนั้นๆ ถึงจะ settle — กัน source เก่า/ผิดวัน
+  const GLO_URL = 'https://www.glo.or.th/api/lottery/getLatestLottery';
+  const LC_URL = (slug) => `https://lotterychecks.com/api/public/results?lottery=${encodeURIComponent(slug)}&limit=1`;
   const candidatesFor = (d) => {
     const cat = d.cat_code;
     if (d.type_code === 'TH') return [
-      { label: 'TH(GLO)', get: () => cached('src:TH(GLO)', fetchThaiResult) },
-      { label: 'TH(LC)',  get: () => cached('src:TH(LC)', () => lcWin('thai-government', 'thai-gov')) },
+      { label: 'TH(GLO)', role: 'official', url: GLO_URL, get: () => cached('src:TH(GLO)', fetchThaiResult) },
+      { label: 'TH(LC)',  role: 'backup',   url: LC_URL('thai-government'), get: () => cached('src:TH(LC)', () => lcWin('thai-government', 'thai-gov')) },
     ];
     if (d.type_code === 'HR')
-      return [{ label: 'HR(gen)', get: () => cached('src:HR(gen)', async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) })) }];
+      return [{ label: 'HR(gen)', role: 'primary', url: 'internal:generate', get: () => cached('src:HR(gen)', async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) })) }];
     if (d.type_code === 'HN' && (cat === 'HNN' || cat === 'HNST')) return [
-      { label: 'HN(XSMB)', get: () => cached('src:HN(XSMB)', fetchHanoiResult) },
-      { label: 'HN(LC)',   get: () => cached('src:HN(LC)', () => lcWin('hanoi-normal', 'hn')) },
+      { label: 'HN(XSMB)', role: 'primary', url: XSMB_URL, get: () => cached('src:HN(XSMB)', fetchHanoiResult) },
+      { label: 'HN(LC)',   role: 'backup',  url: LC_URL('hanoi-normal'), get: () => cached('src:HN(LC)', () => lcWin('hanoi-normal', 'hn')) },
     ];
     if (d.type_code === 'LA' || d.type_code === 'HN' || d.type_code === 'GS') {
       const m = LC_MARKET_MAP[cat] || LC_MARKET_MAP[d.type_code];
       if (!m) return [];
-      return [{ label: `${d.type_code}(${m.slug})`, get: () => cached(`src:${m.slug}`, () => lcWin(m.slug, m.kind)) }];
+      return [{ label: `${d.type_code}(${m.slug})`, role: 'primary', url: LC_URL(m.slug), get: () => cached(`src:${m.slug}`, () => lcWin(m.slug, m.kind)) }];
     }
     return [];
   };
@@ -396,7 +472,10 @@ async function autoSettleResultsInner() {
     const cands = candidatesFor(d);
     if (!cands.length) { out.skipped.push(`${d.draw_code}: no source`); continue; }
     const tried = [];
-    let done = false;
+    const observations = [];
+    let selected = null;
+    // ประเมินทุก candidate (fetch ถูก cache ต่อ label อยู่แล้ว) — เก็บผลทุกแหล่งลง draw_result_sources
+    // เพื่อให้ user เห็นว่าแต่ละแหล่งรายงานตรงกันไหม ก่อน settle ด้วย candidate แรกที่ผ่าน date-match
     for (const c of cands) {
       const res = await c.get();
       if (!srcSeen.has(c.label)) {
@@ -404,21 +483,43 @@ async function autoSettleResultsInner() {
         out.sources.push({ code: c.label, label: c.label, ok: res.ok, ...(res.ok ? {} : { error: res.e?.message }) });
       }
       noteSource(c.label, res.ok, res.e?.message);
-      if (!res.ok) { tried.push(`${c.label}:fail`); continue; }
-      const src = res.r;
       const localDate = drawLocalDate(d);
-      if (src.date && localDate !== src.date) { tried.push(`${c.label}:date ${src.date}`); continue; }
+      if (!res.ok) {
+        tried.push(`${c.label}:fail`);
+        observations.push({ source: c.label, role: c.role, url: c.url, available: false, status: 'unavailable', error: String(res.e?.message || '').slice(0, 200) });
+        continue;
+      }
+      const src = res.r;
+      if (src.date && localDate !== src.date) {
+        tried.push(`${c.label}:date ${src.date}`);
+        observations.push({ source: c.label, role: c.role, url: c.url, date: src.date, winning: src.winning, available: true, status: 'date_mismatch' });
+        continue;
+      }
+      observations.push({ source: c.label, role: c.role, url: c.url, date: src.date, winning: src.winning, available: true, status: 'unverified' });
+      if (!selected) selected = { c, src };
+    }
+    // เปรียบเทียบผลข้ามแหล่ง — eligible ทั้งหมดตรงกัน = matched, ไม่ตรง = mismatch
+    const eligible = observations.filter(o => o.available && o.status !== 'date_mismatch');
+    if (eligible.length > 1) {
+      const base = eligible.find(o => o.role === 'official') || eligible[0];
+      const status = eligible.every(o => sameWinning(base.winning, o.winning)) ? 'matched' : 'mismatch';
+      for (const o of eligible) o.status = status;
+    }
+    if (observations.length) {
+      try { await storeSourceChecks(d.id, observations); }
+      catch (e) { console.error('[source-checks] store failed:', e.message); }
+    }
+    if (selected) {
       try {
-        await settleDraw(null, d.id, src.winning, c.label);
-        out.settled.push(`${d.draw_code}(${c.label})`);
-        audit({ action: 'draw.auto_settle', entityType: 'draw', entityId: String(d.id), detail: { source: c.label, winning: src.winning } });
+        await settleDraw(null, d.id, selected.src.winning, selected.c.label);
+        out.settled.push(`${d.draw_code}(${selected.c.label})`);
+        audit({ action: 'draw.auto_settle', entityType: 'draw', entityId: String(d.id), detail: { source: selected.c.label, winning: selected.src.winning } });
       } catch (e) {
         out.errors.push(`${d.draw_code}: ${e.message}`);
       }
-      done = true;
-      break;
+    } else {
+      out.skipped.push(`${d.draw_code}: รอผลจริง [${tried.join(' | ') || 'no data'}]`);
     }
-    if (!done) out.skipped.push(`${d.draw_code}: รอผลจริง [${tried.join(' | ') || 'no data'}]`);
   }
   if (out.settled.length) {
     broadcast('results');
@@ -456,25 +557,48 @@ export async function fetchResultForDraw(drawId) {
   const d = { ...draw, cat_code: draw.cat_code || draw.category_code };
   const localDate = drawLocalDate(d);
   if (d.result_mode === 'manual') throw new HttpError(400, 'รอบนี้ตั้งค่ากรอกผลเอง — ดึงผลอัตโนมัติไม่ได้');
+  const GLO_URL = 'https://www.glo.or.th/api/lottery/getLatestLottery';
+  const LC_URL = (slug) => `https://lotterychecks.com/api/public/results?lottery=${encodeURIComponent(slug)}&limit=1`;
   const cands = [];
-  if (d.type_code === 'TH') cands.push(['TH(GLO)', fetchThaiResult], ['TH(LC)', () => lcWinning('thai-government', 'thai-gov')]);
+  if (d.type_code === 'TH') cands.push(
+    ['TH(GLO)', 'official', GLO_URL, fetchThaiResult],
+    ['TH(LC)', 'backup', LC_URL('thai-government'), () => lcWinning('thai-government', 'thai-gov')]);
   else if (d.type_code === 'HR') return { date: localDate, winning: generateZodiacResult(d.draw_code) };
   else if (d.type_code === 'HN' && (d.cat_code === 'HNN' || d.cat_code === 'HNST'))
-    cands.push(['HN(XSMB)', fetchHanoiResult], ['HN(LC)', () => lcWinning('hanoi-normal', 'hn')]);
+    cands.push(
+      ['HN(XSMB)', 'primary', XSMB_URL, fetchHanoiResult],
+      ['HN(LC)', 'backup', LC_URL('hanoi-normal'), () => lcWinning('hanoi-normal', 'hn')]);
   else if (d.type_code === 'LA' || d.type_code === 'HN' || d.type_code === 'GS') {
     const m = LC_MARKET_MAP[d.cat_code] || LC_MARKET_MAP[d.type_code];
     if (!m) throw new HttpError(400, 'ไม่ทราบแหล่งผลสำหรับหวยประเภทนี้ — กรุณากรอกผลเอง');
-    cands.push([`${d.type_code}(${m.slug})`, () => lcWinning(m.slug, m.kind)]);
+    cands.push([`${d.type_code}(${m.slug})`, 'primary', LC_URL(m.slug), () => lcWinning(m.slug, m.kind)]);
   } else throw new HttpError(400, 'ไม่ทราบแหล่งผลสำหรับหวยประเภทนี้ — กรุณากรอกผลเอง');
   const errors = [];
-  for (const [label, fn] of cands) {
+  const observations = [];
+  for (const [label, role, url, fn] of cands) {
     try {
       const src = await fn();
       noteSource(label, true);
-      if (src.date && src.date !== localDate) { errors.push(`${label}: ผลวันที่ ${src.date}`); continue; }
+      if (src.date && src.date !== localDate) {
+        errors.push(`${label}: ผลวันที่ ${src.date}`);
+        observations.push({ source: label, role, url, date: src.date, winning: src.winning, available: true, status: 'date_mismatch' });
+        continue;
+      }
+      observations.push({ source: label, role, url, date: src.date, winning: src.winning, available: true, status: 'unverified' });
+      const eligible = observations.filter(o => o.available && o.status !== 'date_mismatch');
+      if (eligible.length > 1) {
+        const base = eligible.find(o => o.role === 'official') || eligible[0];
+        const st = eligible.every(o => sameWinning(base.winning, o.winning)) ? 'matched' : 'mismatch';
+        for (const o of eligible) o.status = st;
+      }
+      try { await storeSourceChecks(d.id, observations); } catch {}
       return { date: src.date, winning: src.winning, source: label };
-    } catch (e) { noteSource(label, false, e.message); errors.push(`${label}: ${e.message}`); }
+    } catch (e) {
+      noteSource(label, false, e.message); errors.push(`${label}: ${e.message}`);
+      observations.push({ source: label, role, url, available: false, status: 'unavailable', error: String(e.message || e).slice(0, 200) });
+    }
   }
+  try { await storeSourceChecks(d.id, observations); } catch {}
   throw new HttpError(409, `ดึงผลไม่สำเร็จ — ${errors.join(' | ') || 'ไม่มีข้อมูล'}`);
 }
 

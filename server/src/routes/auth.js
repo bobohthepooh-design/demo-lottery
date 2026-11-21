@@ -20,6 +20,14 @@ const loginLimiter = rateLimit({
   message: { error: 'พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่' },
 });
 
+const authFlowLimiter = rateLimit({
+  windowMs: config.rateLimitWindowMs,
+  max: config.loginRateLimitMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'ทำรายการยืนยันตัวตนบ่อยเกินไป กรุณารอสักครู่' },
+});
+
 const registerSchema = z.object({
   username: z.string().min(3).max(32),
   email: z.preprocess(v => (typeof v === 'string' && !v.trim() ? undefined : v), z.string().email().max(200).optional()),
@@ -36,6 +44,10 @@ const changePwSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 const forgotSchema = z.object({ email: z.string().email().max(200) });
+const resetPasswordSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/i),
+  newPassword: z.string().min(8).max(128),
+});
 const otpRequestSchema = z.object({
   phone: z.string().min(9).max(15),
   purpose: z.enum(['register', 'login']),
@@ -49,7 +61,7 @@ const otpVerifySchema = z.object({
 });
 const mfaCodeSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 
-router.post('/register', loginLimiter, async (req, res, next) => {
+router.post('/register', authFlowLimiter, async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
     const email = data.email || `${data.username.toLowerCase()}@demo.local`;
@@ -160,16 +172,24 @@ router.post('/change-password', auth.requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/forgot-password', loginLimiter, async (req, res, next) => {
+router.post('/forgot-password', authFlowLimiter, async (req, res, next) => {
   try {
     const data = forgotSchema.parse(req.body);
-    await auth.forgotPassword({ email: data.email });
-    res.json({ ok: true, message: 'หากอีเมลนี้มีในระบบ เราจะส่งลิงก์รีเซ็ตรหัสผ่าน (Demo: ไม่ได้ส่งอีเมลจริง)' });
+    const r = await auth.forgotPassword({ email: data.email, ip: req.ip });
+    res.json({ ok: true, message: 'หากอีเมลนี้มีในระบบ เราจะส่งลิงก์รีเซ็ตรหัสผ่าน (Demo: ไม่ได้ส่งอีเมลจริง)', ...r });
+  } catch (e) { next(e); }
+});
+
+router.post('/reset-password', authFlowLimiter, async (req, res, next) => {
+  try {
+    const data = resetPasswordSchema.parse(req.body);
+    await auth.resetPassword({ ...data, req });
+    res.json({ ok: true, message: 'ตั้งรหัสผ่านใหม่สำเร็จ — เข้าสู่ระบบได้เลย' });
   } catch (e) { next(e); }
 });
 
 // ขอ OTP — DEMO: ไม่ได้ส่ง SMS จริง ส่งรหัสกลับใน response (devCode) ให้ frontend แสดง
-router.post('/otp/request', loginLimiter, async (req, res, next) => {
+router.post('/otp/request', authFlowLimiter, async (req, res, next) => {
   try {
     const data = otpRequestSchema.parse(req.body);
     const r = await auth.requestOtp({ ...data, ip: req.ip });
@@ -180,7 +200,7 @@ router.post('/otp/request', loginLimiter, async (req, res, next) => {
 });
 
 // ยืนยัน OTP — สมัครใหม่ (purpose=register) หรือเข้าสู่ระบบ (purpose=login)
-router.post('/otp/verify', loginLimiter, async (req, res, next) => {
+router.post('/otp/verify', authFlowLimiter, async (req, res, next) => {
   try {
     const data = otpVerifySchema.parse(req.body);
     if (data.purpose === 'register' && data.ageConfirmed !== true)

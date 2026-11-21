@@ -51,6 +51,16 @@ CREATE TABLE user_sessions (
   revoked_at TEXT
 );
 
+CREATE TABLE password_reset_tokens (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  request_ip TEXT,
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
+);
+
 CREATE TABLE virtual_wallets (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -121,6 +131,20 @@ CREATE TABLE lottery_results (
   published_by BIGINT REFERENCES users(id),
   published_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
 , source TEXT);
+
+CREATE TABLE draw_result_sources (
+  draw_id BIGINT NOT NULL REFERENCES lottery_draws(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,
+  source_role TEXT NOT NULL CHECK (source_role IN ('official','primary','backup')),
+  source_url TEXT NOT NULL,
+  result_date TEXT,
+  winning_numbers TEXT,
+  verification_status TEXT NOT NULL CHECK (verification_status IN ('matched','mismatch','unverified','unavailable','date_mismatch')),
+  error TEXT,
+  checked_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  last_available_at TEXT,
+  PRIMARY KEY (draw_id, source)
+);
 
 CREATE TABLE bet_slips (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -292,6 +316,7 @@ CREATE INDEX idx_chat_threads_last ON chat_threads(last_msg_at DESC);
 CREATE INDEX idx_draws_close ON lottery_draws(close_at);
 
 CREATE INDEX idx_draws_type_status ON lottery_draws(lottery_type_id, status);
+CREATE INDEX idx_draw_result_sources_draw ON draw_result_sources(draw_id, source_role);
 
 CREATE INDEX idx_hilo_user ON hilo_tickets(user_id, status);
 

@@ -718,7 +718,7 @@ export async function settleDraw(adminId, drawId, winningNumbers, sourceLabel) {
     if (cur.status === 'settled') throw new HttpError(400, 'รอบนี้ออกผลแล้ว', 'ALREADY_SETTLED');
 
     await d.prepare(`INSERT INTO lottery_results (draw_id, winning_numbers, published_by, source) VALUES (?, ?, ?, ?)`)
-      .run(drawId, JSON.stringify(winningNumbers), adminId, adminId ? 'manual' : (sourceLabel || 'auto'));
+      .run(drawId, JSON.stringify(winningNumbers), adminId, sourceLabel || (adminId ? 'manual' : 'auto'));
     await d.prepare(`UPDATE lottery_draws SET status = 'settled', result_numbers = ?,
         updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = ?`)
       .run(JSON.stringify(winningNumbers), drawId);

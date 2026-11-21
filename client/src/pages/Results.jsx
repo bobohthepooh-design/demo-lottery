@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import { FlagIcon } from '../components/ResultLine.jsx';
+import ResultLine, { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
 import { typeAccent } from '../typeAccent.js';
 import { toast } from '../components/toast.js';
@@ -96,6 +96,7 @@ const thaiFull = s => { const d = parseDay(s); return d.toLocaleDateString('th-T
 export default function Results() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [latestResults, setLatestResults] = useState([]);
   const [err, setErr] = useState('');
   const [wonDraws, setWonDraws] = useState(() => new Set()); // draw_id ที่โพยของฉันมีรายการถูกรางวัล
   const [expanded, setExpanded] = useState({}); // draw_id -> bool: แสดงผลละเอียด
@@ -131,11 +132,15 @@ export default function Results() {
   const [winners, setWinners] = useState([]); // ผู้ชนะล่าสุด — กรองตามวันที่ฝั่ง client
 
   useEffect(() => {
-    api('/lottery/results').then(j => {
+    const loadLatestResults = () => api('/lottery/results').then(j => {
+      setLatestResults(j.results || []);
       const ms = (j.results || []).map(r => ({ key: marketKey(r), type_code: r.type_code, category_code: r.category_code, label: marketLabel(r) }));
       setMarkets(ms);
-      if (ms.length && !sel) setSel(ms[0].key);
-    }).catch(() => {});
+      if (ms.length) setSel(current => current || ms[0].key);
+    }).catch(e => setErr(e.message));
+    loadLatestResults();
+    const timer = setInterval(loadLatestResults, 60000);
+    return () => clearInterval(timer);
   }, []);
 
   const loadStats = () => {
@@ -202,6 +207,8 @@ export default function Results() {
     const sum = resultSummary(d.winning);
     const compact = compactSummary(d.winning);
     const open = !!expanded[d.id];
+    const sourceChecks = d.source_checks || [];
+    const hasMismatch = sourceChecks.some(c => c.verification_status === 'mismatch');
     return (
       <div key={d.id} className="px-4 py-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -221,6 +228,34 @@ export default function Results() {
             {STATUS_TH[d.status] || d.status}
           </span>
         </div>
+        {sourceChecks.length > 0 && (
+          <div className={`mt-2 rounded-lg border px-3 py-2 text-[10px] ${hasMismatch ? 'border-amber-500/50 bg-amber-500/10 text-amber-200' : 'border-navy-700 bg-navy-900/50 text-navy-300'}`}>
+            <div className="font-semibold">
+              {hasMismatch
+                ? `⚠️ แหล่งข้อมูลรายงานผลไม่ตรงกัน — ใช้ผลจาก ${d.result_source || 'แหล่งที่แสดงด้านบน'}`
+                : 'ตรวจสอบแหล่งข้อมูล'}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+              {sourceChecks.map(c => {
+                const role = c.source_role === 'official' ? 'ทางการ' : c.source_role === 'backup' ? 'สำรอง' : 'แหล่งหลัก';
+                const status = {
+                  matched: 'ตรงกัน', mismatch: 'ไม่ตรง', unverified: 'ยังไม่เทียบ',
+                  unavailable: 'ดึงไม่สำเร็จ', date_mismatch: 'วันที่ไม่ตรง',
+                }[c.verification_status] || c.verification_status;
+                return (
+                  <span key={c.source} title={c.error || `ตรวจเมื่อ ${c.checked_at || '-'}`}>
+                    {role}:{' '}
+                    <a href={c.source_url} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-white">
+                      {c.source}
+                    </a>
+                    {' '}· {status}
+                    {c.winning && <span className="text-navy-400"> · {compactSummary(c.winning) || 'มีผลบันทึก'}</span>}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {d.status === 'settled' && d.winning && heroNumbers(d.winning).length > 0 && (
           <div className="announce-hero rounded-xl mt-2 px-4 py-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -284,6 +319,18 @@ export default function Results() {
       </div>
 
       {err && <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl px-4 py-3 text-sm">{err}</div>}
+
+      {latestResults.length > 0 && (
+        <section className="space-y-2">
+          <div>
+            <h2 className="text-sm font-bold text-white">🏆 ผลล่าสุดที่บันทึกแล้วทุกตลาด ({latestResults.length})</h2>
+            <p className="text-[11px] text-navy-400 mt-0.5">แสดงผลล่าสุดของแต่ละประเภทโดยไม่ขึ้นกับวันที่เลือก • ตลาดกรอกผลเองจะแสดงหลังแอดมินบันทึกผล</p>
+          </div>
+          <div className="space-y-2">
+            {latestResults.map(r => <ResultLine key={`${r.type_code}:${r.category_code || ''}`} r={r} />)}
+          </div>
+        </section>
+      )}
 
       {/* ค้นหารอบ — กรองตามรหัส/ชื่อรอบ/หมวด */}
       <div className="max-w-sm mx-auto">

@@ -182,7 +182,8 @@ router.get('/results', async (req, res) => {
     )
     SELECT * FROM ranked WHERE rn = 1
     ORDER BY COALESCE(published_at, draw_at) DESC`).all();
-  res.json({ results: rows.map(r => ({ ...r, fairness: fetcher.fairnessForSource(r.source, r.draw_code) })) });
+  const sourceChecks = await fetcher.getResultSourceChecks(rows.map(r => r.draw_id));
+  res.json({ results: rows.map(r => ({ ...r, source_checks: sourceChecks.get(Number(r.draw_id)) || [], fairness: fetcher.fairnessForSource(r.source, r.draw_code) })) });
 });
 
 // ประวัติผลย้อนหลังของตลาด (type_code + category_code) — settled draws ล่าสุด
@@ -205,11 +206,12 @@ router.get('/history', async (req, res, next) => {
         AND (($2::text IS NULL AND c.code IS NULL) OR c.code = $2)
       ORDER BY d.draw_at DESC
       LIMIT $3`).all(typeCode, catCode, limit);
+    const sourceChecks = await fetcher.getResultSourceChecks(rows.map(d => d.id));
     res.json({
       draws: rows.map(d => {
         let winning = null;
         try { winning = d.winning_numbers ? JSON.parse(d.winning_numbers) : null; } catch {}
-        return { ...d, winning_numbers: undefined, winning };
+        return { ...d, winning_numbers: undefined, winning, source_checks: sourceChecks.get(Number(d.id)) || [] };
       }),
     });
   } catch (e) { next(e); }
@@ -340,12 +342,13 @@ router.get('/today', async (req, res) => {
     WHERE lt.is_active = 1 AND d.draw_code NOT LIKE '%-STANDING'
       AND to_char((d.draw_at::timestamp + interval '7 hours'), 'YYYY-MM-DD') = $1
     ORDER BY d.draw_at`).all(bkkToday);
+  const sourceChecks = await fetcher.getResultSourceChecks(draws.map(d => d.id));
   res.json({
     date: bkkToday,
     draws: draws.map(d => {
       let winning = null;
       try { winning = d.winning_numbers ? JSON.parse(d.winning_numbers) : null; } catch {}
-      return { ...d, winning_numbers: undefined, winning, result_kind: d.result_source ? 'real' : null };
+      return { ...d, winning_numbers: undefined, winning, result_kind: d.result_source ? 'real' : null, source_checks: sourceChecks.get(Number(d.id)) || [] };
     }),
   });
 });

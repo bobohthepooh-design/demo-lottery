@@ -9,8 +9,27 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STATE_FILE = path.join(ROOT, '.watchdog-state.json');
 const env = fs.readFileSync(path.join(ROOT, '.env'), 'utf8');
+import os from 'node:os';
 const LAN_IP = (env.match(/LAN_IP=(.+)/) || [])[1]?.trim() || 'localhost';
-const BASE = `http://${LAN_IP}`;
+// auto-detect IP ปัจจุบันทุก tick — รองรับ DHCP เปลี่ยน IP เอง (เช่น 192.168.31.251 → .252)
+// ลำดับ: NIC ที่มี IPv4 ในวง 192.168/10.x/172.16-31 จริง → .env LAN_IP → localhost
+function detectBase() {
+  try {
+    const addrs = [];
+    for (const infos of Object.values(os.networkInterfaces())) {
+      for (const i of infos || []) {
+        if (i.family === 'IPv4' && !i.internal) addrs.push(i.address);
+      }
+    }
+    // เลือก LAN จริง — 192.168 ก่อน (กัน Docker 172.17/WSL 172.29 หลอก)
+    const pick = addrs.find(a => a.startsWith('192.168.'))
+      || addrs.find(a => a.startsWith('10.'))
+      || addrs.find(a => /^172\.(1[6-9]|2\d|3[01])\./.test(a));
+    if (pick) return `http://${pick}`;
+  } catch {}
+  return `http://${LAN_IP === 'localhost' ? 'localhost' : LAN_IP}`;
+}
+let BASE = detectBase();
 const INTERVAL_MS = 60_000;
 const FAIL_THRESHOLD = 2;
 
@@ -47,6 +66,7 @@ function saveState(s) { fs.writeFileSync(STATE_FILE, JSON.stringify(s)); }
 let state = loadState();
 
 async function tick() {
+  BASE = detectBase(); // อัปเดต IP ล่าสุดทุกครั้ง
   let ok = false, detail = '';
   try {
     const r = await fetch(`${BASE}/api/health?deep=1`, { signal: AbortSignal.timeout(15000) });

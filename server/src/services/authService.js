@@ -177,12 +177,47 @@ export async function changePassword(userId, oldPassword, newPassword, req = nul
   securityEvent({ eventType: 'password.changed', userId, ip: req?.ip || null, detail: { sessions_revoked: true } });
 }
 
-export async function forgotPassword({ email }) {
-  const user = await qGet('SELECT id FROM users WHERE email = $1', [(email || '').toLowerCase()]);
+export async function forgotPassword({ email, ip }) {
+  const user = await qGet('SELECT id FROM users WHERE email = $1', [(email || '').trim().toLowerCase()]);
   if (user) {
-    audit({ userId: user.id, action: 'user.password_reset_requested', entityType: 'user', entityId: String(user.id), detail: { note: 'Demo mode — token not sent externally' } });
-    securityEvent({ eventType: 'password_reset_requested', userId: user.id, detail: { demo: true } });
+    const token = randomToken();
+    const tokenHash = createHash('sha256').update(`password-reset:${token}`).digest('hex');
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    await txAsync(async (d) => {
+      await d.prepare(`UPDATE password_reset_tokens
+        SET used_at = ?
+        WHERE user_id = ? AND used_at IS NULL`).run(now, user.id);
+      await d.prepare(`INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, request_ip)
+        VALUES (?, ?, to_char((now() AT TIME ZONE 'UTC') + interval '30 minutes','YYYY-MM-DD HH24:MI:SS'), ?)`)
+        .run(user.id, tokenHash, ip || null);
+    });
+    audit({ userId: user.id, action: 'user.password_reset_requested', entityType: 'user', entityId: String(user.id), detail: { demo: true } });
+    securityEvent({ eventType: 'password_reset_requested', userId: user.id, ip, detail: { demo: true } });
+    return canEchoOtp(ip) ? { devResetToken: token } : {};
   }
+  return {};
+}
+
+export async function resetPassword({ token, newPassword, req = null }) {
+  if (newPassword.length < 8 || newPassword.length > 128)
+    throw new HttpError(400, 'รหัสผ่านใหม่ต้องมี 8-128 ตัวอักษร');
+  const tokenHash = createHash('sha256').update(`password-reset:${token}`).digest('hex');
+  const userId = await txAsync(async (d) => {
+    const reset = await d.prepare(`SELECT id, user_id, expires_at, used_at FROM password_reset_tokens
+      WHERE token_hash = ? FOR UPDATE`).get(tokenHash);
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    if (!reset || reset.used_at || reset.expires_at <= now)
+      throw new HttpError(400, 'ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หมดอายุ หรือถูกใช้แล้ว');
+
+    await d.prepare(`UPDATE password_reset_tokens SET used_at = ? WHERE id = ?`).run(now, reset.id);
+    await d.prepare(`UPDATE users SET password_hash = ?, failed_login_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?`)
+      .run(hashPassword(newPassword), now, reset.user_id);
+    await d.prepare(`UPDATE user_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`)
+      .run(now, reset.user_id);
+    return reset.user_id;
+  });
+  audit({ userId, action: 'user.password_reset_completed', entityType: 'user', entityId: String(userId), req });
+  securityEvent({ eventType: 'password_reset_completed', userId, ip: req?.ip || null, detail: { sessions_revoked: true } });
   return true;
 }
 
