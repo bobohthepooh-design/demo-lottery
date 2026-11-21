@@ -68,17 +68,15 @@ export function scheduleFor(typeCode, catCode) {
     return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true, skipWeekend: true }; // หวยลาวหลัก จ–ศ
   }
   if (typeCode === 'HN') {
-    // หวยฮานอยทุกตลาดไม่ออกรางวัลวันอาทิตย์ (XSMB/lotterychecks ไม่มีข้อมูล) → จ.–ส.
-    if (catCode === 'HNM') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // ฮานอยเช้า ออก 08:30 จ.–ส.
+    // หวยฮานอยไม่ออกรางวัลเฉพาะวันอาทิตย์ (XSMB/lotterychecks ไม่มีข้อมูล) → จ.–ส. (เสาร์มีผลจริง)
+    const hnSkip = { skipHoliday: true, skipSunday: true };
+    if (catCode === 'HNM') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: 8, minute: 30, closeHour: 7, closeMinute: 30, ...hnSkip }; // ฮานอยเช้า ออก 08:30 จ.–ส.
     // ฮานอยทางการ (Xổ số kiến thiết Thủ đô): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15–18:30 (เวลาไทย)
-    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, skipHoliday: true, skipWeekend: true };
+    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, ...hnSkip };
     // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
-    // HNN ใช้ผล XSMB จริง — ออกรางวัลเฉพาะ จันทร์–เสาร์ (ไม่มีวันอาทิตย์) จึงห้ามสร้างรอบวันอาทิตย์
-    if (catCode === 'HNN') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true, skipWeekend: true };
     // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
-    // หวยฮานอยไม่ออกรางวัลวันอาทิตย์ → จ.–ส. เท่านั้น
-    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, skipHoliday: true, skipWeekend: true };
+    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, ...hnSkip };
   }
   if (typeCode === 'HR') return { kind: 'hourly', closeBeforeMin: 30, skipHoliday: false }; // หวยราศี — ทายราศี ทุกชั่วโมง
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true, skipWeekend: true };
@@ -119,7 +117,8 @@ function occurrences(sch, { count, horizonH, minOne }) {
   for (let i = 0; i < 400 && out.length < count; i++) {
     const day = new Date(base); day.setDate(base.getDate() + i);
     if (sch.skipHoliday && isHoliday(day)) continue;
-    if (sch.skipWeekend) { const dw = day.getDay(); if (dw === 0 || dw === 6) continue; } // LA/HN: เสาร์-อาทิตย์เลื่อนเป็นจันทร์
+    if (sch.skipWeekend) { const dw = day.getDay(); if (dw === 0 || dw === 6) continue; } // LA: เสาร์-อาทิตย์เลื่อนเป็นจันทร์
+    if (sch.skipSunday && day.getDay() === 0) continue; // HN: ออกรางวัล จ.–ส. (เสาร์มีจริง)
     if (sch.kind === 'monthly' && !sch.days.includes(day.getDate())) continue;
     if (sch.kind === 'weekly' && !sch.weekdays.includes(day.getDay())) continue;
     const close = new Date(day); close.setHours(sch.closeHour, sch.closeMinute || 0, 0);
