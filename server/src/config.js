@@ -29,6 +29,12 @@ export const config = {
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '300', 10),
   loginRateLimitMax: parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '10', 10),
   adminMfaRequired: process.env.ADMIN_MFA_REQUIRED !== 'false',
+  // Payment — PromptPay QR + SlipOK slip verification (เติม/ถอนเงินจริง)
+  // PROMPTPAY_ID: เบอร์มือถือ 0xxxxxxxxx / เลขบัตร ปชช. 13 หลัก / e-Wallet 15 หลัก
+  promptPayId: process.env.PROMPTPAY_ID || '',
+  // SlipOK: https://slipok.com — branchId + apiKey (เว้นว่าง = ปิด auto-verify → admin approve เอง)
+  slipokBranchId: process.env.SLIPOK_BRANCH_ID || '',
+  slipokApiKey: process.env.SLIPOK_API_KEY || '',
   line: {
     channelId: process.env.LINE_CHANNEL_ID || '',
     channelSecret: process.env.LINE_CHANNEL_SECRET || '',

@@ -28,6 +28,7 @@ const AdminRoles = lazy(() => import('./admin/Roles.jsx'));
 const AdminLotteries = lazy(() => import('./admin/Lotteries.jsx'));
 const AdminDraws = lazy(() => import('./admin/Draws.jsx'));
 const AdminWallet = lazy(() => import('./admin/WalletAdmin.jsx'));
+const AdminPayments = lazy(() => import('./admin/Payments.jsx'));
 const AdminBets = lazy(() => import('./admin/Bets.jsx'));
 const AdminReports = lazy(() => import('./admin/Reports.jsx'));
 const AdminHealth = lazy(() => import('./admin/Health.jsx'));
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="draws" element={<AdminDraws />} />
             <Route path="settle" element={<Navigate to="/admin/lotteries?tab=settle" replace />} />
             <Route path="wallet" element={<AdminWallet />} />
+            <Route path="payments" element={<AdminPayments />} />
             <Route path="bets" element={<AdminBets />} />
             <Route path="my-bets" element={<MyBets />} />
             <Route path="reports" element={<AdminReports />} />

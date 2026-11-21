@@ -29,6 +29,7 @@ import * as hiloService from './services/hiloService.js';
 import * as kiwiService from './services/kiwiService.js';
 import kiwiRoutes from './routes/kiwi.js';
 import publicRoutes from './routes/public.js';
+import paymentRoutes from './routes/payments.js';
 import { logger } from './lib/logger.js';
 import { openApiSpec } from './lib/openapi.js';
 
@@ -124,6 +125,7 @@ app.use(helmet({
   } : false,
   crossOriginEmbedderPolicy: false,
 }));
+app.use('/api/payments', express.json({ limit: '6mb' }));
 app.use(express.json({ limit: '256kb' }));
 
 const limiter = rateLimit({
@@ -166,6 +168,7 @@ const apiRouters = [
   ['/auth', authRoutes],
   ['/lottery', lotteryRoutes],
   ['/bets', betRoutes],
+  ['/payments', paymentRoutes],
   ['/notifications', notificationRoutes],
   ['/scratch', scratchRoutes],
   ['/hilo', hiloRoutes],

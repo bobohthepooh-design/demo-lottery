@@ -31,6 +31,7 @@ export const adminGroups = [
     label: 'เครดิต & ระบบ',
     items: [
       { to: '/admin/wallet', label: 'จัดการเครดิต', icon: 'wallet' },
+      { to: '/admin/payments', label: 'ชำระเงิน', icon: 'wallet' },
       { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก', icon: 'banner' },
       { to: '/admin/audit', label: 'Audit Log', icon: 'audit', superOnly: true },
       { to: '/admin/security', label: 'Security Events', icon: 'security', superOnly: true },

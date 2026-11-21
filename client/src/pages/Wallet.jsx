@@ -6,8 +6,6 @@ import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
 import { Card, CardHeader, StatCard, Modal, Button } from '../components/ui/index.js';
-import { Icon } from '../components/icons.jsx';
-
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
   bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
@@ -16,41 +14,12 @@ const TYPE_TH = {
 
 const PRESETS = [100, 500, 1000, 5000, 10000];
 
-const DEPOSIT_METHODS = [
-  { key: 'bank_transfer', icon: 'bank', name: 'โอนเงินเข้าธนาคาร', desc: 'โอนผ่านแอปธนาคาร' },
-  { key: 'qr_promptpay', icon: 'qr', name: 'QR พร้อมเพย์', desc: 'สแกนจ่ายผ่านแอปธนาคาร' },
-  { key: 'truemoney', icon: 'phone', name: 'TrueMoney Wallet', desc: 'สแกน/ชำระผ่าน TrueMoney' },
-];
-
-// QR ลายจำลองสำหรับ demo — ไม่ใช่ QR จริง สแกนไม่ได้
-function FakeQr() {
-  const n = 21;
-  const cells = [];
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const inFinder = (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
-    const on = inFinder ? true : ((x * 31 + y * 17 + ((x * y) % 7)) % 3 === 0);
-    cells.push(<rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={on ? '#1f2937' : '#ffffff'} />);
-  }
-  return (
-    <svg viewBox={`0 0 ${n} ${n}`} className="w-28 h-28 bg-white rounded-lg border border-navy-600 p-1">
-      {cells}
-      {[ [0,0],[n-7,0],[0,n-7] ].map(([fx,fy],i) => (
-        <g key={i}>
-          <rect x={fx} y={fy} width={7} height={7} fill="none" stroke="#1f2937" strokeWidth={1.4} />
-          <rect x={fx+1.5} y={fy+1.5} width={4} height={4} fill="#1f2937" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 export default function Wallet() {
   const { balance, setBalance } = useAuth();
   const [txs, setTxs] = useState([]);
   const [wd, setWd] = useState(null); // { deposited, won, withdrawn, withdrawable, unlocked }
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // 'deposit' | 'withdraw' | null
-  const [payMethod, setPayMethod] = useState('bank_transfer');
   const [accountNo, setAccountNo] = useState('');
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
@@ -59,6 +28,16 @@ export default function Wallet() {
   const idemRef = useRef({ sig: '', key: '' }); // idempotency key ต่อ (ประเภท+จำนวน) กันกดซ้ำ/หลุดแล้วเติม-ถอนซ้ำ
 
   const [params, setParams] = useSearchParams();
+  const [payReqs, setPayReqs] = useState([]);
+  const [depStep, setDepStep] = useState('form'); // 'form' | 'qr'
+  const [depInfo, setDepInfo] = useState(null); // {id, reference, qrDataUrl, amount}
+  const [slipFile, setSlipFile] = useState(null);
+  const [bankName, setBankName] = useState('');
+  const [bankAccName, setBankAccName] = useState('');
+
+  const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
+
+  const loadPays = () => api('/payments').then(r => setPayReqs(r.requests || [])).catch(() => {});
   const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
     .catch(() => {}).finally(() => setLoading(false));
   useEffect(() => {
@@ -69,6 +48,7 @@ export default function Wallet() {
       setParams({}, { replace: true });
     }
     load();
+    loadPays();
     // ดึงโพยล่าสุดที่ออกผลแล้วมาแสดงอารมณ์ถูก/ไม่ถูก
     api('/bets/mine?limit=10').then(r => {
       const s = (r.slips || []).find(x => ['won', 'lost', 'partial'].includes(x.status));
@@ -81,23 +61,47 @@ export default function Wallet() {
     }).catch(() => {});
   }, []);
 
+  const fileToB64 = (f) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+
   const doAction = async () => {
     setErr('');
     const satangAmt = bahtToSatang(amount);
-    if (!satangAmt || satangAmt < 100) return setErr('กรอกจำนวนเงินอย่างน้อย 1 บาท');
-    if (satangAmt > 1000000) return setErr('สูงสุด 10,000 บาทต่อรายการ');
-    if (modal === 'withdraw') {
-      if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อนจึงจะสามารถแลกเครดิตได้');
-      if (wd && satangAmt > wd.withdrawable) return setErr(`แลกได้สูงสุด ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล)`);
-    }
+    if (!satangAmt || satangAmt < 10000) return setErr('ขั้นต่ำ 100 บาท');
+    if (satangAmt > 100000000) return setErr('สูงสุด 1,000,000 บาทต่อรายการ');
     setBusy(true);
     try {
-      const sig = `${modal}:${satangAmt}`;
-      if (idemRef.current.sig !== sig) idemRef.current = { sig, key: (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`) };
-      const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, paymentMethod: payMethod, idempotencyKey: idemRef.current.key, ...(accountNo ? { accountNo } : {}) } });
-      setBalance(r.balance);
-      setModal(null); setAmount(''); idemRef.current = { sig: '', key: '' };
-      load();
+      if (modal === 'deposit' && depStep === 'form') {
+        // สร้างคำขอเติม → แสดง QR พร้อมเพย์จริง
+        const r = await api('/payments/deposit', { method: 'POST', body: { amount: satangAmt, method: 'promptpay' } });
+        setDepInfo({ id: r.id, reference: r.reference, qrDataUrl: r.qrDataUrl, amount: r.amount });
+        setDepStep('qr');
+        return;
+      }
+      if (modal === 'deposit' && depStep === 'qr') {
+        if (!slipFile) return setErr('กรุณาแนบรูปสลิปการโอนเงินก่อน');
+        const imageBase64 = await fileToB64(slipFile);
+        const r = await api(`/payments/${depInfo.id}/slip`, { method: 'POST', body: { imageBase64 } });
+        setModal(null); setAmount(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); idemRef.current = { sig: '', key: '' };
+        load(); loadPays();
+        if (r.credited) { setBalance(r.balance); alert(`✅ เติมเครดิตสำเร็จ +฿${(depInfo.amount / 100).toLocaleString('th-TH')} — สลิปผ่านการตรวจสอบอัตโนมัติ`); }
+        else alert(`📨 ส่งสลิปแล้ว — รอแอดมินตรวจสอบ\n${r.reason || ''}`);
+        return;
+      }
+      if (modal === 'withdraw') {
+        if (!bankName || !bankAccName || !accountNo) return setErr('กรุณากรอกข้อมูลบัญชีธนาคารให้ครบ (ธนาคาร/เลขบัญชี/ชื่อบัญชี)');
+        if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อนจึงจะสามารถถอนเงินได้');
+        if (wd && satangAmt > wd.withdrawable) return setErr(`ถอนได้สูงสุด ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล)`);
+        const r = await api('/payments/withdraw', { method: 'POST', body: { amount: satangAmt, bankName, accountNo, accountName: bankAccName } });
+        setModal(null); setAmount(''); setBankName(''); setBankAccName(''); setAccountNo('');
+        load(); loadPays();
+        alert(`📨 ส่งคำขอถอน ฿${(r.amount / 100).toLocaleString('th-TH')} แล้ว — รอแอดมินอนุมัติ`);
+        return;
+      }
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
@@ -205,95 +209,127 @@ export default function Wallet() {
         </div>
       </Card>
 
-      {/* modal เติม/ถอนเครดิต — Modal กลาง (ESC + backdrop ปิด) */}
+      {/* modal เติม/ถอนเงินจริง — PromptPay QR + สลิป / ถอนรออนุมัติ */}
       <Modal open={!!modal} onClose={() => !busy && setModal(null)}
-        title={modal === 'deposit' ? 'เติมเครดิตจำลอง' : 'แลกเครดิตจำลอง'}>
-            <p className="text-xs text-navy-400 mb-4 -mt-1">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท • สำหรับ Demo เท่านั้น</p>
+        title={modal === 'deposit' ? (depStep === 'qr' ? 'สแกน QR พร้อมเพย์' : 'เติมเครดิต') : 'ถอนเครดิต'}>
+            <p className="text-xs text-navy-400 mb-4 -mt-1">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท</p>
             {modal === 'withdraw' && wd && (
               <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
                 {wd.unlocked
-                  ? wd.override
-                    ? balance < 5000
-                      ? `ได้รับอนุญาตจากแอดมินแล้ว แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท — แลกไม่ได้`
-                      : `แลกได้ ${satang(wd.withdrawable)} บาท — ยอดสุทธิหักเครดิตแถม (ได้รับอนุญาตจากแอดมิน)`
-                    : `แลกได้สูงสุด ${satang(wd.withdrawable)} บาท — ยอดคงเหลือหักเครดิตแถม (เครดิตโปรโมชั่นแลกไม่ได้)`
-                  : `ยังแลกไม่ได้ — ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อน (เติมแล้ว ${satang(wd.deposited)} บาท)`}
+                  ? `ถอนได้ ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล/ยอดสุทธิ — เครดิตโปรโมชั่นถอนไม่ได้)`
+                  : `ยังถอนไม่ได้ — ต้องมียอดฝาก/เล่นจนถอนได้ขั้นต่ำ (ฝากแล้ว ${satang(wd.deposited)} บาท)`}
               </div>
             )}
-            {modal && (
-              <div className="mb-4">
-                <div className="text-xs text-navy-400 mb-1.5">{modal === 'deposit' ? 'เลือกช่องทางเติมเครดิต' : 'เลือกช่องทางรับเครดิต'} (ระบบจำลอง):</div>
+            {modal === 'deposit' && depStep === 'qr' && depInfo ? (
+              <div className="space-y-4">
+                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-4 text-center">
+                  <img src={depInfo.qrDataUrl} alt="QR พร้อมเพย์" className="mx-auto rounded-lg bg-white p-2" />
+                  <div className="text-gold-300 font-bold text-xl mt-2">฿{(depInfo.amount / 100).toLocaleString('th-TH')}</div>
+                  <div className="text-xs text-navy-400 mt-1">สแกนด้วยแอปธนาคาร → โอนยอด <b className="text-white">ตรงตามจำนวน</b></div>
+                  <div className="text-[11px] text-navy-400 mt-1">Ref: <span className="font-mono text-gold-300">{depInfo.reference}</span></div>
+                </div>
+                <div>
+                  <div className="text-xs text-navy-400 mb-1.5">แนบรูปสลิปการโอน (JPG/PNG):</div>
+                  <input type="file" accept="image/*" capture="environment"
+                    onChange={e => setSlipFile(e.target.files?.[0] || null)}
+                    className="w-full text-sm text-navy-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gold-500 file:text-navy-950 file:font-bold file:cursor-pointer" />
+                  {slipFile && <div className="text-xs text-green-400 mt-1">✓ {slipFile.name}</div>}
+                  <div className="text-[11px] text-navy-400 mt-2">ระบบจะตรวจสอบสลิปอัตโนมัติ — ถ้าผ่าน เครดิตเข้าทันที ไม่ผ่านแอดมินจะตรวจสอบให้</div>
+                </div>
+              </div>
+            ) : modal === 'deposit' ? (
+              <div className="mb-3">
+                <div className="text-xs text-navy-400 mb-1.5">ช่องทาง: สแกน QR พร้อมเพย์ (แสดง QR หลังเลือกจำนวน)</div>
+                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300">
+                  <div className="flex justify-between"><span>ช่องทาง</span><span className="text-white font-semibold">QR พร้อมเพย์</span></div>
+                  <div className="text-navy-400 mt-1">โอนเงิน → ได้ QR → สแกนจ่าย → แนบสลิป → เครดิตเข้าทันที</div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-3 space-y-2">
+                <div className="text-xs text-navy-400">ข้อมูลบัญชีรับเงิน (แอดมินจะโอนให้):</div>
+                <select value={bankName} onChange={e => setBankName(e.target.value)}
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white">
+                  <option value="">— เลือกธนาคาร —</option>
+                  {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+                <input value={accountNo} onChange={e => setAccountNo(e.target.value.replace(/[^\d-]/g, ''))}
+                  placeholder="เลขบัญชี" inputMode="numeric"
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
+                <input value={bankAccName} onChange={e => setBankAccName(e.target.value)}
+                  placeholder="ชื่อบัญชี (ตามบัญชีธนาคาร)"
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
+                <div className="text-[11px] text-navy-400">⚠️ คำขอถอนจะรอแอดมินตรวจสอบและโอนเงินจริงให้ — ระยะเวลา 1-3 วันทำการ</div>
+              </div>
+            )}
+            {modal && depStep === 'form' && (
+              <>
+                <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'} (ขั้นต่ำ 100 บาท):</div>
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  {DEPOSIT_METHODS.map(m => (
-                    <button key={m.key} type="button" onClick={() => setPayMethod(m.key)}
-                      className={`py-2 rounded-lg text-xs font-bold border transition ${payMethod === m.key ? 'bg-gold-500/20 border-gold-500 text-gold-300' : 'bg-navy-700 border-navy-600 text-navy-300 hover:border-gold-500/50'}`}>
-                      <Icon name={m.icon} className="w-5 h-5 mx-auto mb-1" />{m.name}
+                  {PRESETS.map(p => (
+                    <button key={p} type="button" onClick={() => setAmount(String(p))}
+                      className={`py-2.5 rounded-lg text-sm font-bold border transition ${Number(amount) === p ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-700 border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300'}`}>
+                      {p.toLocaleString()} บาท
                     </button>
                   ))}
                 </div>
-                {modal === 'deposit' ? (
-                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300 space-y-1.5">
-                  {payMethod === 'bank_transfer' && (
-                    <>
-                      <div className="flex justify-between"><span>ธนาคาร</span><span className="text-white font-semibold">ธนาคารกสิกรไทย (ตัวอย่าง)</span></div>
-                      <div className="flex justify-between"><span>เลขบัญชี</span><span className="font-mono text-gold-300">xxx-x-xxxxx-x</span></div>
-                      <div className="flex justify-between"><span>ชื่อบัญชี</span><span className="text-white">Devin Lottery (DEMO)</span></div>
-                    </>
-                  )}
-                  {payMethod === 'qr_promptpay' && (
-                    <div className="flex items-center gap-3">
-                      <FakeQr />
-                      <div>
-                        <div className="text-white font-semibold mb-1">สแกน QR เพื่อชำระ</div>
-                        <div>พร้อมเพย์: <span className="font-mono text-gold-300">081-234-5678</span></div>
-                        <div className="text-navy-400">ชื่อ: Devin Lottery (DEMO)</div>
-                      </div>
-                    </div>
-                  )}
-                  {payMethod === 'truemoney' && (
-                    <>
-                      <div className="flex justify-between"><span>เบอร์ TrueMoney</span><span className="font-mono text-gold-300">081-234-5678</span></div>
-                      <div className="flex justify-between"><span>ชื่อผู้รับ</span><span className="text-white">Devin Lottery (DEMO)</span></div>
-                      <div className="text-navy-400">ชำระผ่านแอป TrueMoney Wallet</div>
-                    </>
-                  )}
-                  <div className="text-[11px] text-navy-400 pt-1 border-t border-navy-700">⚠️ ช่องทางทั้งหมดเป็นข้อมูลจำลอง — ระบบเติมเครดิตเข้าทันที ไม่เกี่ยวกับเงินจริง</div>
-                </div>
-                ) : (
-                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300 space-y-2">
-                  <div>กรอกเลขบัญชี/เบอร์ปลายทางที่ต้องการรับเงิน (จำลอง):</div>
-                  <input value={accountNo} onChange={e => setAccountNo(e.target.value)}
-                    placeholder={payMethod === 'bank_transfer' ? 'เลขบัญชีธนาคาร' : payMethod === 'qr_promptpay' ? 'เบอร์พร้อมเพย์' : 'เบอร์ TrueMoney'}
-                    className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
-                  <div className="text-[11px] text-navy-400">⚠️ ระบบจำลอง — เครดิตถูกหักจากกระเป๋าทันที ไม่มีการโอนเงินจริง</div>
-                </div>
-                )}
-              </div>
+                <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง:</div>
+                <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
+                  inputMode="decimal" placeholder="0.00"
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
+              </>
             )}
-            <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'แลก'}:</div>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {PRESETS.map(p => (
-                <button key={p} type="button" onClick={() => setAmount(String(p))}
-                  className={`py-2.5 rounded-lg text-sm font-bold border transition ${Number(amount) === p ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-700 border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300'}`}>
-                  {p.toLocaleString()} บาท
-                </button>
-              ))}
-            </div>
-            <div className="text-xs text-navy-400 mb-1.5">หรือกรอกจำนวนเอง (ขั้นต่ำ 1 บาท สูงสุด 10,000 บาท):</div>
-            <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
-              inputMode="decimal" placeholder="0.00" autoFocus
-              className="w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
             {err && <div className="text-red-400 text-sm mt-2">{err}</div>}
             <div className="flex gap-3 mt-5">
-              <Button variant="ghost" onClick={() => setModal(null)} disabled={busy} className="flex-1">
-                ยกเลิก
-              </Button>
+              {modal === 'deposit' && depStep === 'qr' ? (
+                <Button variant="ghost" onClick={() => { setDepStep('form'); setDepInfo(null); setSlipFile(null); setErr(''); }} disabled={busy} className="flex-1">
+                  ← ย้อนกลับ
+                </Button>
+              ) : (
+                <Button variant="ghost" onClick={() => setModal(null)} disabled={busy} className="flex-1">
+                  ยกเลิก
+                </Button>
+              )}
               <Button onClick={doAction} disabled={busy}
                 variant={modal === 'deposit' ? 'primary' : 'danger'} className="flex-1">
-                {busy ? 'กำลังดำเนินการ...' : modal === 'deposit' ? 'ยืนยันเติมเครดิต' : 'ยืนยันแลกเครดิต'}
+                {busy ? 'กำลังดำเนินการ...' : modal === 'deposit'
+                  ? (depStep === 'qr' ? 'ส่งสลิปยืนยัน' : 'สร้าง QR พร้อมเพย์')
+                  : 'ส่งคำขอถอน'}
               </Button>
             </div>
       </Modal>
+
+      {/* ประวัติคำขอชำระเงิน */}
+      {payReqs.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader title="คำขอเติม/ถอนเงิน" />
+          <div className="divide-y divide-navy-700/50">
+            {payReqs.slice(0, 10).map(p => (
+              <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+                <div className="min-w-0">
+                  <div className="font-semibold text-white">
+                    {p.kind === 'deposit' ? '💳 เติม' : '🏦 ถอน'} ฿{satang(p.amount)}
+                    <span className="ml-2 text-[11px] font-mono text-navy-400">{p.reference}</span>
+                  </div>
+                  <div className="text-[11px] text-navy-400 truncate">
+                    {fmtDateTime(p.created_at)}
+                    {p.slip_trans_ref ? ` • สลิป ${p.slip_trans_ref}` : ''}
+                    {p.bank_name ? ` • ${p.bank_name} ${p.bank_account_no}` : ''}
+                    {p.slip_error ? ` • ⚠️ ${p.slip_error}` : ''}
+                    {p.admin_note ? ` • หมายเหตุ: ${p.admin_note}` : ''}
+                  </div>
+                </div>
+                <span className={`shrink-0 text-[11px] font-bold px-2 py-1 rounded ${
+                  p.status === 'approved' ? 'bg-green-500/15 text-green-300'
+                  : p.status === 'rejected' ? 'bg-red-500/15 text-red-300'
+                  : 'bg-amber-500/15 text-amber-300'}`}>
+                  {p.status === 'approved' ? '✅ สำเร็จ' : p.status === 'rejected' ? '❌ ปฏิเสธ' : p.status === 'pending_slip' ? '📤 รอสลิป' : '⏳ รอตรวจสอบ'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* overlay ฉลอง/เสียใจผลโพยล่าสุด — portal ไปที่ body เพื่ออยู่บนสุดเสมอ
           (กัน ancestor ที่มี transform/animation ทำ fixed หลุดจาก viewport) */}

@@ -975,3 +975,20 @@ router.post('/wallet/bulk-adjust', requirePerm('wallet.adjust'), async (req, res
 });
 
 export default router;
+
+// ---------- Payment requests (เติม/ถอนเงินจริง) ----------
+import * as paySvc from '../services/paymentService.js';
+router.get('/payments', requirePerm('wallet.adjust'), async (req, res, next) => {
+  try {
+    res.json({ requests: await paySvc.adminList({ status: req.query.status || 'pending_review', kind: req.query.kind || null }) });
+  } catch (e) { next(e); }
+});
+
+const reviewSchema = z.object({ action: z.enum(['approve', 'reject']), note: z.string().max(500).optional() });
+router.post('/payments/:id/review', requirePerm('wallet.adjust'), async (req, res, next) => {
+  try {
+    const { action, note } = reviewSchema.parse(req.body);
+    const r = await paySvc.adminReview({ adminId: req.user.id, paymentId: Number(req.params.id), action, note });
+    res.json({ ok: true, ...r });
+  } catch (e) { next(e); }
+});
