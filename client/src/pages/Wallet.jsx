@@ -29,6 +29,7 @@ export default function Wallet() {
 
   const [params, setParams] = useSearchParams();
   const [payReqs, setPayReqs] = useState([]);
+  const [payConfigured, setPayConfigured] = useState(null); // null=loading, true=real payments, false=demo mode
   const [depStep, setDepStep] = useState('form'); // 'form' | 'qr'
   const [depInfo, setDepInfo] = useState(null); // {id, reference, qrDataUrl, amount}
   const [slipFile, setSlipFile] = useState(null);
@@ -37,7 +38,7 @@ export default function Wallet() {
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
-  const loadPays = () => api('/payments').then(r => setPayReqs(r.requests || [])).catch(() => {});
+  const loadPays = () => api('/payments').then(r => { setPayReqs(r.requests || []); setPayConfigured(!!r.paymentsConfigured); }).catch(() => setPayConfigured(false));
   const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
     .catch(() => {}).finally(() => setLoading(false));
   useEffect(() => {
@@ -71,10 +72,20 @@ export default function Wallet() {
   const doAction = async () => {
     setErr('');
     const satangAmt = bahtToSatang(amount);
-    if (!satangAmt || satangAmt < 10000) return setErr('ขั้นต่ำ 100 บาท');
+    if (!satangAmt || satangAmt < 100) return setErr('กรุณากรอกจำนวนเงินอย่างน้อย 1 บาท');
     if (satangAmt > 100000000) return setErr('สูงสุด 1,000,000 บาทต่อรายการ');
     setBusy(true);
     try {
+      // DEMO MODE — ระบบเงินจริงยังไม่ตั้งค่า (ไม่มี PROMPTPAY_ID) → ใช้ flow เดิม
+      if (payConfigured === false) {
+        const sig = `${modal}:${satangAmt}`;
+        if (idemRef.current.sig !== sig) idemRef.current = { sig, key: (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`) };
+        const r = await api('/bets/wallet/action', { method: 'POST', body: { direction: modal, amount: satangAmt, paymentMethod: 'bank_transfer', idempotencyKey: idemRef.current.key, ...(accountNo ? { accountNo } : {}) } });
+        setBalance(r.balance);
+        setModal(null); setAmount(''); idemRef.current = { sig: '', key: '' };
+        load();
+        return;
+      }
       if (modal === 'deposit' && depStep === 'form') {
         // สร้างคำขอเติม → แสดง QR พร้อมเพย์จริง
         const r = await api('/payments/deposit', { method: 'POST', body: { amount: satangAmt, method: 'promptpay' } });
@@ -212,7 +223,12 @@ export default function Wallet() {
       {/* modal เติม/ถอนเงินจริง — PromptPay QR + สลิป / ถอนรออนุมัติ */}
       <Modal open={!!modal} onClose={() => !busy && setModal(null)}
         title={modal === 'deposit' ? (depStep === 'qr' ? 'สแกน QR พร้อมเพย์' : 'เติมเครดิต') : 'ถอนเครดิต'}>
-            <p className="text-xs text-navy-400 mb-4 -mt-1">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท</p>
+            <p className="text-xs text-navy-400 mb-4 -mt-1">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท{payConfigured === false ? ' • โหมด DEMO (เครดิตจำลอง)' : ''}</p>
+            {payConfigured === false && (
+              <div className="text-[11px] bg-amber-500/10 text-amber-300 rounded-lg px-3 py-2 mb-3">
+                ⚠️ ระบบเติม/ถอนเงินจริงยังไม่เปิด — ใช้เครดิตเดโมสำหรับทดสอบเท่านั้น
+              </div>
+            )}
             {modal === 'withdraw' && wd && (
               <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-green-300' : 'bg-amber-500/10 text-amber-300'}`}>
                 {wd.unlocked
@@ -239,11 +255,27 @@ export default function Wallet() {
               </div>
             ) : modal === 'deposit' ? (
               <div className="mb-3">
+                {payConfigured === false ? (
+                  <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300">
+                    <div className="text-white font-semibold mb-1">เติมเครดิตเดโม</div>
+                    <div className="text-navy-400">กดยืนยันแล้วเครดิตเข้าทันที — ไม่เกี่ยวกับเงินจริง</div>
+                  </div>
+                ) : (
+                <>
                 <div className="text-xs text-navy-400 mb-1.5">ช่องทาง: สแกน QR พร้อมเพย์ (แสดง QR หลังเลือกจำนวน)</div>
                 <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-xs text-navy-300">
                   <div className="flex justify-between"><span>ช่องทาง</span><span className="text-white font-semibold">QR พร้อมเพย์</span></div>
                   <div className="text-navy-400 mt-1">โอนเงิน → ได้ QR → สแกนจ่าย → แนบสลิป → เครดิตเข้าทันที</div>
                 </div>
+                </>
+                )}
+              </div>
+            ) : payConfigured === false ? (
+              <div className="mb-3">
+                <div className="text-xs text-navy-400 mb-1.5">(เดโม) กรอกปลายทางรับเครดิตถ้าต้องการ:</div>
+                <input value={accountNo} onChange={e => setAccountNo(e.target.value)}
+                  placeholder="เลขบัญชี/เบอร์ (ไม่บังคับ)"
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
               </div>
             ) : (
               <div className="mb-3 space-y-2">
