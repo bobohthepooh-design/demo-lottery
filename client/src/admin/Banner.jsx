@@ -82,7 +82,7 @@ export default function AdminBanner() {
           แสดงแถบประกาศ
         </label>
         <input value={announce.text ?? ''} onChange={e => setAnnounce(a => ({ ...a, text: e.target.value }))}
-          placeholder="เช่น ยินดีต้อนรับสู่ Demo Lottery —Experiences..."
+          placeholder="เช่น ยินดีต้อนรับสู่ Devin Lottery —Experiences..."
           className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" />
         {announce.enabled && announce.text && (
           <div className="bg-navy-900/60 border border-gold-500/20 rounded-lg overflow-hidden">

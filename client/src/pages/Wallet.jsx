@@ -237,7 +237,7 @@ export default function Wallet() {
                     <>
                       <div className="flex justify-between"><span>ธนาคาร</span><span className="text-white font-semibold">ธนาคารกสิกรไทย (ตัวอย่าง)</span></div>
                       <div className="flex justify-between"><span>เลขบัญชี</span><span className="font-mono text-gold-300">xxx-x-xxxxx-x</span></div>
-                      <div className="flex justify-between"><span>ชื่อบัญชี</span><span className="text-white">Demo Lottery (DEMO)</span></div>
+                      <div className="flex justify-between"><span>ชื่อบัญชี</span><span className="text-white">Devin Lottery (DEMO)</span></div>
                     </>
                   )}
                   {payMethod === 'qr_promptpay' && (
@@ -246,14 +246,14 @@ export default function Wallet() {
                       <div>
                         <div className="text-white font-semibold mb-1">สแกน QR เพื่อชำระ</div>
                         <div>พร้อมเพย์: <span className="font-mono text-gold-300">081-234-5678</span></div>
-                        <div className="text-navy-400">ชื่อ: Demo Lottery (DEMO)</div>
+                        <div className="text-navy-400">ชื่อ: Devin Lottery (DEMO)</div>
                       </div>
                     </div>
                   )}
                   {payMethod === 'truemoney' && (
                     <>
                       <div className="flex justify-between"><span>เบอร์ TrueMoney</span><span className="font-mono text-gold-300">081-234-5678</span></div>
-                      <div className="flex justify-between"><span>ชื่อผู้รับ</span><span className="text-white">Demo Lottery (DEMO)</span></div>
+                      <div className="flex justify-between"><span>ชื่อผู้รับ</span><span className="text-white">Devin Lottery (DEMO)</span></div>
                       <div className="text-navy-400">ชำระผ่านแอป TrueMoney Wallet</div>
                     </>
                   )}

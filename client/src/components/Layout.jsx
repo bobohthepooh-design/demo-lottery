@@ -96,7 +96,7 @@ export default function Layout() {
     const d = new Date();
     const dateStr = `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
     const timeStr = `${p(d.getHours())}:${p(d.getMinutes())}`;
-    document.title = `Demo Lottery — ${dateStr} ${timeStr}`;
+    document.title = `Devin Lottery — ${dateStr} ${timeStr}`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minuteKey]);
 
@@ -112,9 +112,9 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
-              <img src="/garuda.svg" alt="ตราครุฑ" className="w-9 h-9 object-contain" />
+              <img src="/devin.svg" alt="Devin" className="w-9 h-9 object-contain" />
             </div>
-            <div className="font-display font-bold text-gold-300 leading-none tracking-[0.22em] text-base hidden min-[420px]:block">DEMO LOTTERY</div>
+            <div className="font-display font-bold text-cyan-300 leading-none tracking-[0.22em] text-base hidden min-[420px]:block">DEVIN</div>
           </Link>
 
           {/* เมนูหลัก — glass pill bar เดียวจบ: ลิงก์เลื่อนในตัว + เวลา/กระดิ่ง/เครดิต/ปุ่มทั้งหมดปักขวาสุด

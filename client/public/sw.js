@@ -1,8 +1,8 @@
-// Service worker — Web Push notifications for Demo Lottery (virtual credits, education only)
+// Service worker — Web Push notifications for Devin Lottery (virtual credits, education only)
 self.addEventListener('push', (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: event.data ? event.data.text() : 'Demo Lottery' }; }
-  event.waitUntil(self.registration.showNotification(data.title || 'Demo Lottery', {
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: event.data ? event.data.text() : 'Devin Lottery' }; }
+  event.waitUntil(self.registration.showNotification(data.title || 'Devin Lottery', {
     body: data.body || '',
     icon: '/icon.svg',
     badge: '/icon.svg',

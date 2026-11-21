@@ -1,6 +1,6 @@
 {
-  "name": "DEMO LOTTERY",
-  "short_name": "Demo Lottery",
+  "name": "DEVIN LOTTERY",
+  "short_name": "Devin Lottery",
   "description": "ระบบจำลองหวยออนไลน์เพื่อการศึกษา — ใช้เครดิตเสมือน",
   "lang": "th",
   "start_url": "/",
@@ -9,6 +9,6 @@
   "background_color": "#0a1526",
   "theme_color": "#0a1526",
   "icons": [
-    { "src": "/garuda.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/devin.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

@@ -81,7 +81,7 @@ const potential = (i) => i.est_payout ?? Math.floor(i.amount * Number(i.payout_m
 const SHARE_THRESHOLD = 50000; // สตางค์
 
 function shareText(s) {
-  return `🎉 ฉันถูกรางวัล ${satang(s.total_payout)} บาท จาก ${s.type_name_th || ''} ${s.draw_code || ''} บน Demo Lottery! (เครดิตจำลอง เพื่อการศึกษา)`;
+  return `🎉 ฉันถูกรางวัล ${satang(s.total_payout)} บาท จาก ${s.type_name_th || ''} ${s.draw_code || ''} บน Devin Lottery! (เครดิตจำลอง เพื่อการศึกษา)`;
 }
 
 function ShareButtons({ s }) {
