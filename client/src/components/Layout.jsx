@@ -122,16 +122,15 @@ export default function Layout() {
           <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-md:order-3 max-md:basis-full max-md:mx-3 max-md:mt-1 max-md:mb-1.5">
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
-                className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
-                <Icon name="home" className="w-5 h-5 max-md:w-4 max-md:h-4" />{t('home')}
+                className={({ isActive }) => `shrink-0 px-2 py-1.5 text-[12.5px] transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                {t('home')}
               </NavLink>
               {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
                 <Fragment key={g.label}>
                   {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-md:hidden" />}
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
-                      className={({ isActive }) => `shrink-0 px-3 max-md:px-2.5 py-1.5 text-[13px] tracking-wide transition rounded-lg inline-flex items-center gap-1.5 max-md:gap-1 ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
-                      {n.icon && <Icon name={n.icon} className="w-5 h-5 max-md:w-4 max-md:h-4" />}
+                      className={({ isActive }) => `shrink-0 px-2 py-1.5 text-[12.5px] transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                       {t(n.k)}
                     </NavLink>
                   ))}
@@ -143,7 +142,7 @@ export default function Layout() {
               {isAdmin && (
                 <div className="relative" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setAdminMenuOpen(v => !v)}
-                    className={`px-2.5 py-1.5 text-[13px] font-bold tracking-wide rounded-lg border transition inline-flex items-center gap-1.5 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
+                    className={`px-2 py-1.5 text-[12.5px] font-bold transition rounded-lg border inline-flex items-center gap-1 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
                     <Icon name="dashboard" className="w-4.5 h-4.5" />{t('admin')}
                     <svg viewBox="0 0 24 24" className={`w-3 h-3 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
                   </button>
@@ -166,7 +165,7 @@ export default function Layout() {
                   )}
                 </div>
               )}
-              <div className="flex items-center gap-1.5 rounded-lg border border-navy-600/80 bg-navy-900/60 px-2 py-1" title="วันที่และเวลาปัจจุบัน">
+              <div className="hidden lg:flex items-center gap-1.5 rounded-lg border border-navy-600/80 bg-navy-900/60 px-2 py-1" title="วันที่และเวลาปัจจุบัน">
                 <Icon name="clock" className="w-3.5 h-3.5 text-gold-400/80 shrink-0" />
                 <div className="leading-tight text-right">
                   <div className="text-[9px] text-navy-300">{dateStr}</div>
