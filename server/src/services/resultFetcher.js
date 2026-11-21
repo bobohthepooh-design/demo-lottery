@@ -358,6 +358,12 @@ function drawLocalDate(draw) {
   return isNaN(d) ? String(draw.draw_at).slice(0, 10) : d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
 }
 
+//<HNS=manual> — หวยฮานอยเฉพาะกิจออกเป็นงวดไม่แน่นอน (ไม่ใช่ทุกวัน) ไม่มีแหล่งผลอัตโนมัติที่เชื่อถือได้
+// → admin เป็นคนกรอกผลเองเฉพาะวันที่หวยจริงออก (กันรอบค้างรอผลที่ไม่มีวันหมด)
+export function isManualDraw(d) {
+  return d.result_mode === 'manual' || (d.type_code === 'HN' && (d.cat_code === 'HNS' || d.category_code === 'HNS'));
+}
+
 const PENDING_DRAWS_SQL = `SELECT d.*, lt.code AS type_code, lt.result_mode AS result_mode, c.code AS cat_code
     FROM lottery_draws d JOIN lottery_types lt ON lt.id=d.lottery_type_id
     LEFT JOIN lottery_categories c ON c.id=d.category_id
@@ -468,7 +474,7 @@ async function autoSettleResultsInner() {
 
   const srcSeen = new Set();
   for (const d of draws) {
-    if (d.result_mode === 'manual') { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
+    if (isManualDraw(d)) { out.skipped.push(`${d.draw_code}: manual mode`); continue; }
     const cands = candidatesFor(d);
     if (!cands.length) { out.skipped.push(`${d.draw_code}: no source`); continue; }
     const tried = [];
@@ -532,7 +538,7 @@ async function autoSettleResultsInner() {
   try {
     const nowMs = Date.now();
     const overdue = draws.filter(d => {
-      if (d.result_mode === 'manual') return false;
+      if (isManualDraw(d)) return false;
       const t = new Date(String(d.draw_at).replace(' ', 'T') + 'Z').getTime();
       return !isNaN(t) && nowMs - t > OVERDUE_MS;
     });
@@ -556,7 +562,7 @@ export async function fetchResultForDraw(drawId) {
   if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
   const d = { ...draw, cat_code: draw.cat_code || draw.category_code };
   const localDate = drawLocalDate(d);
-  if (d.result_mode === 'manual') throw new HttpError(400, 'รอบนี้ตั้งค่ากรอกผลเอง — ดึงผลอัตโนมัติไม่ได้');
+  if (isManualDraw(d)) throw new HttpError(400, 'รอบนี้ตั้งค่ากรอกผลเอง — ดึงผลอัตโนมัติไม่ได้');
   const GLO_URL = 'https://www.glo.or.th/api/lottery/getLatestLottery';
   const LC_URL = (slug) => `https://lotterychecks.com/api/public/results?lottery=${encodeURIComponent(slug)}&limit=1`;
   const cands = [];

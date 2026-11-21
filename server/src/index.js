@@ -56,14 +56,15 @@ if (config.env !== 'test') {
       const d = getDb();
       // draw_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' — เทียบ string ตรงๆ (Postgres ไม่มี datetime())
       const cutoff = new Date(Date.now() - 2 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
-      const rows = await d.prepare(`SELECT d.draw_code, d.draw_at, lt.name_th AS type_name, c.name_th AS cat_name
+      const rows = await d.prepare(`SELECT d.draw_code, d.draw_at, lt.name_th AS type_name, lt.code AS type_code, lt.result_mode, c.code AS cat_code, c.name_th AS cat_name
         FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
         LEFT JOIN lottery_categories c ON c.id = d.category_id
         WHERE d.status IN ('open','scheduled','closed')
           AND d.draw_at <= ?
           AND lt.code NOT IN ('SC','HL','KI','CF')
           AND d.id NOT IN (SELECT draw_id FROM lottery_results)
-        ORDER BY d.draw_at LIMIT 10`).all(cutoff);
+        ORDER BY d.draw_at LIMIT 10`).all(cutoff)
+        .then(rs => rs.filter(r => r.result_mode !== 'manual' && !(r.type_code === 'HN' && r.cat_code === 'HNS')));
       if (!rows.length) return;
       const now = Date.now();
       if (now - lastOverdueAlert < 30 * 60 * 1000) return;

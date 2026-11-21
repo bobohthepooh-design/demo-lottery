@@ -137,7 +137,8 @@ export async function rulesForDraw(drawId) {
 /** ประเภทที่มาของผลรางวัลสำหรับรอบที่ยังไม่ออกผล — ตรงกับ srcLabel ใน resultFetcher
  *  manual = admin กรอกเอง | demo = ระบบสุ่มจำลอง | web = ดึงผลจริงจากเว็บภายนอก */
 export function resultKindOf(d) {
-  if (d.result_mode === 'manual') return 'manual';
+  // HNS (ฮานอยเฉพาะกิจ) ออกเป็นงวดไม่แน่นอน — admin กรอกผลเอง
+  if (d.result_mode === 'manual' || (d.type_code === 'HN' && d.category_code === 'HNS')) return 'manual';
   if (['HR', 'SC', 'HL'].includes(d.type_code)) return 'demo';
   // ลาวพัฒนา (LAD) ไม่มีแหล่งผลอัตโนมัติ — admin กรอกเอง; หมวดลาวอื่นมีผลจริงจาก lotterychecks
   if (d.type_code === 'LA' && d.category_code === 'LAD') return 'manual';

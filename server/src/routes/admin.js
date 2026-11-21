@@ -564,7 +564,7 @@ router.post('/draws/:id/settle', requirePerm('results.publish'), async (req, res
         throw new HttpError(400,
           'หวยไทยต้องใช้ผลทางการที่ระบบดึงมาเท่านั้น — กรุณากด "ดึงผล" ก่อน แล้วใช้ตัวเลขที่ระบบแสดง', 'OFFICIAL_RESULT_REQUIRED');
       sourceLabel = official.source;
-    } else if (draw && draw.result_mode !== 'manual') {
+    } else if (draw && !fetcher.isManualDraw(draw)) {
       sourceLabel = await fetcher.sourceLabelForWinning(draw, winning_numbers);
     }
     const result = await lottery.settleDraw(req.user.id, drawId, winning_numbers, sourceLabel);
