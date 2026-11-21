@@ -21,6 +21,9 @@ http://localhost {
 }
 
 {$DOMAIN} {
+	# TLS-CERT-MANUAL — scripts/setup-https.sh จะแทนบรรทัดนี้ด้วย:
+	#   tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/key.pem
+	# เมื่อตั้ง DOMAIN=โดเมนจริง + มี cert จาก Let's Encrypt (DNS-01 ผ่าน Cloudflare)
 	reverse_proxy app:4000 {
 		flush_interval -1
 	}

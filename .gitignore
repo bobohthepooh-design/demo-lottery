@@ -15,3 +15,4 @@ server/data/
 backups/
 e2e/shots/
 .watchdog-state.json
+certs/

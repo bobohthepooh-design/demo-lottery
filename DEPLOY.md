@@ -64,8 +64,31 @@ docker compose restart app        # ไม่จำเป็นต้อง stop
 
 ## HTTPS
 
-- **มี domain จริง** → ตั้ง `DOMAIN=lottery.example.com` ใน `.env` แล้ว `docker compose up -d caddy`
-  Caddy จะออก Let's Encrypt cert ให้อัตโนมัติ (port 80/443 ต้องเข้าถึงจาก internet ได้)
-- **ไม่มี domain / ใช้ใน LAN** → ใช้ `http://<LAN-IP>` ตามเดิม (Caddy มี `{$LAN_IP}` + `tls internal` สำรองสำหรับ https://IP แต่ browser จะเตือน cert)
+### ทางเลือก A — domain จริง (แนะนำสำหรับใช้ public)
+1. มี domain → ชี้ DNS มาที่เครื่อง (A record → IP public ของเราเตอร์ + port-forward 80/443)
+   หรือถ้าเครื่องอยู่หลัง NAT → ใช้ Cloudflare Tunnel / VPN
+2. ตั้ง `DOMAIN=lottery.example.com` ใน `.env` → `docker compose up -d caddy`
+   Caddy ออก Let's Encrypt cert อัตโนมัติ (port 80/443 ต้องเข้าถึงจาก internet)
+
+### ทางเลือก B — domain ฟรี + HTTPS บน LAN (ไม่มี public IP)
+เหมาะกับเครื่องอยู่ใน LAN/NAT — cert จริงจาก Let's Encrypt ผ่าน DNS-01 (ไม่ต้อง port-forward):
+
+1. **สมัคร domain ฟรี**: https://login.us.kg (login ด้วย GitHub) → ได้ `xxx.us.kg`
+   หรือ https://pp.ua (รออนุมัติ ~1 วัน)
+2. **ย้าย DNS ไป Cloudflare** (ฟรี): dash.cloudflare.com → Add site → ใส่ domain →
+   เปลี่ยน nameserver ที่ผู้ให้ domain ตามที่ CF แสดง → รอ active (นาที-ชม.)
+3. สร้าง **API Token**: My Profile → API Tokens → Create Token →
+   template "Edit zone DNS" → Zone Resources = domain ที่ใช้ → สร้างแล้ว copy token
+4. หา **Account ID**: Cloudflare dashboard → คลิก domain → ดู URL หรือ sidebar
+5. เพิ่มใน `.env`:
+   ```
+   DOMAIN=xxx.us.kg
+   CF_API_TOKEN=<token>
+   CF_ACCOUNT_ID=<account-id>
+   ```
+6. รัน: `bash scripts/setup-https.sh` — ออก cert → mount เข้า Caddy → patch Caddyfile → reload
+7. **ให้ client resolve domain มาที่เครื่อง** — ตั้ง DNS ใน router ให้ `xxx.us.kg → 192.168.1.122`
+   (หรือจอง IP เครื่องไว้ก่อน) แล้วเข้า `https://xxx.us.kg` ได้เลย — cert trusted ทุก browser
+
+- renew: acme.sh cron ต่ออายุอัตโนมัติ + reload Caddy ผ่าน hook ที่ setup-https.sh ตั้งไว้
 - ⚠️ HTTP ล้วน + cookie session = ไม่เหมาะกับข้อมูลเงินจริงข้าม internet — ต้องมี HTTPS ก่อนเปิดใช้จริง
-- ถ้าเครื่องอยู่หลัง NAT/เราเตอร์ → ต้อง port-forward 80/443 ที่เราเตอร์ หรือใช้ tunnel (cloudflared/ngrok) แทน

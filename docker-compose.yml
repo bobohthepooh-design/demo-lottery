@@ -52,6 +52,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro   # cert จาก Let's Encrypt (acme.sh dns_cf) — scripts/setup-https.sh
       - caddy-data:/data
       - caddy-config:/config
     environment:
