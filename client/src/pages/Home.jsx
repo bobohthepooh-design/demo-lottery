@@ -276,7 +276,7 @@ export default function Home() {
       {/* ผลรางวัลวันนี้ — โครงข้อมูลแบบเว็บผลรางวัล: ล่าสุดต่อ ตลาด + รอบถัดไป */}
       {(() => {
         // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
-        const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
+        const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']); // รวมราศี — เกมด่วนมี popup ของตัวเอง
         const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code));
         if (!todays.length) return null;
         // แยก settled/pending ต่อ market — ล่าสุดต่อ ตลาด + รอบถัดไป
@@ -306,7 +306,7 @@ export default function Home() {
               <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {cards.slice(0, 6).map(g => {
+              {cards.slice(0, 4).map(g => {
                 const ac = typeAccent(g.type_code);
                 const last = g.settled[0];
                 const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
@@ -349,9 +349,9 @@ export default function Home() {
                 );
               })}
             </div>
-            {cards.length > 6 && (
+            {cards.length > 4 && (
               <Link to="/results" className="mt-3 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
-                + อีก {cards.length - 6} ตลาด — ดูผลรางวัลทั้งหมด →
+                + อีก {cards.length - 4} ตลาด — ดูผลรางวัลทั้งหมด →
               </Link>
             )}
           </section>
