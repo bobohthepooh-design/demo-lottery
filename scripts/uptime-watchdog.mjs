@@ -65,6 +65,51 @@ function saveState(s) { fs.writeFileSync(STATE_FILE, JSON.stringify(s)); }
 
 let state = loadState();
 
+// ---------- ops checks (ทุก 1 ชม.) — backup freshness + disk space ----------
+const OPS_INTERVAL_MS = 60 * 60 * 1000;
+let lastOpsCheck = 0;
+const opsState = { backupBad: false, diskBad: false };
+
+function newestBackupAge() {
+  try {
+    const dir = path.join(ROOT, 'backups');
+    const files = fs.readdirSync(dir).filter(f => f.startsWith('lottery-') && f.endsWith('.dump'));
+    if (!files.length) return Infinity;
+    const newest = Math.max(...files.map(f => fs.statSync(path.join(dir, f)).mtimeMs));
+    return Date.now() - newest;
+  } catch { return Infinity; }
+}
+
+function diskFreeBytes() {
+  try {
+    const out = execSync('powershell -NoProfile -Command "(Get-PSDrive C).Free"', { encoding: 'utf8' }).trim();
+    return Number(out);
+  } catch { return null; }
+}
+
+async function checkOps() {
+  const newlyBad = [];
+  const recovered = [];
+  const flag = (key, bad, msg, okMsg) => {
+    if (bad && !opsState[key]) { opsState[key] = true; newlyBad.push(msg); }
+    else if (!bad && opsState[key]) { opsState[key] = false; recovered.push(okMsg); }
+  };
+  // backup ต้องไม่เก่ากว่า 26 ชม. (task รัน 03:00 ทุกวัน)
+  const ageH = newestBackupAge() / 3600e3;
+  flag('backupBad', ageH > 26,
+    `🗄️ backup เก่าเกิน 26 ชม. (ล่าสุด ${Number.isFinite(ageH) ? ageH.toFixed(0) + ' ชม.' : 'ไม่มีไฟล์'})`,
+    'backup กลับมาปกติ');
+  // disk ว่างต้อง > 2GB
+  const free = diskFreeBytes();
+  flag('diskBad', free !== null && free < 2 * 1024 ** 3,
+    `💾 disk C: เหลือ ${free !== null ? (free / 1024 ** 3).toFixed(1) + ' GB (<2GB)' : '?'}`,
+    'disk กลับมาปกติ');
+  if (newlyBad.length)
+    await sendTelegram(`⚠️ <b>Ops alert</b>\n${newlyBad.join('\n')}\nเวลา: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}`);
+  if (recovered.length) await sendTelegram(`✅ ${recovered.join(', ')}`);
+  if (newlyBad.length || recovered.length) log('OPS', [...newlyBad, ...recovered].join(' | '));
+}
+
 async function tick() {
   BASE = detectBase(); // อัปเดต IP ล่าสุดทุกครั้ง
   let ok = false, detail = '';
@@ -93,6 +138,10 @@ async function tick() {
     }
   }
   saveState(state);
+  if (Date.now() - lastOpsCheck > OPS_INTERVAL_MS) {
+    lastOpsCheck = Date.now();
+    await checkOps().catch(e => log('ops-check failed:', e.message));
+  }
 }
 
 log(`start — watch ${BASE}/api/health?deep=1 every ${INTERVAL_MS / 1000}s (alert after ${FAIL_THRESHOLD} fails)`);

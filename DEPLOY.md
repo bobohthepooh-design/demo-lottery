@@ -61,3 +61,11 @@ docker compose restart app        # ไม่จำเป็นต้อง stop
 - Lottery draws ทุกตลาดฮานอยไม่ออกรางวัลวันอาทิตย์ — ระบบสร้างรอบเฉพาะ จ.–ส.
 - ถ้าต้องการ scale หลาย instance: ย้าย scheduler (auto-settle/cashback) ไป advisory lock + session store ไป Redis (ยังเป็น single-instance design)
 - ติดตั้ง backup cron จริง: `crontab -e` แล้ววางบรรทัดในหัวข้อ Backup ด้านบน
+
+## HTTPS
+
+- **มี domain จริง** → ตั้ง `DOMAIN=lottery.example.com` ใน `.env` แล้ว `docker compose up -d caddy`
+  Caddy จะออก Let's Encrypt cert ให้อัตโนมัติ (port 80/443 ต้องเข้าถึงจาก internet ได้)
+- **ไม่มี domain / ใช้ใน LAN** → ใช้ `http://<LAN-IP>` ตามเดิม (Caddy มี `{$LAN_IP}` + `tls internal` สำรองสำหรับ https://IP แต่ browser จะเตือน cert)
+- ⚠️ HTTP ล้วน + cookie session = ไม่เหมาะกับข้อมูลเงินจริงข้าม internet — ต้องมี HTTPS ก่อนเปิดใช้จริง
+- ถ้าเครื่องอยู่หลัง NAT/เราเตอร์ → ต้อง port-forward 80/443 ที่เราเตอร์ หรือใช้ tunnel (cloudflared/ngrok) แทน
