@@ -21,15 +21,18 @@ function tickerText(r) {
   return `${r.category_name_th || r.type_name_th}: ${parts.join(' • ') || '—'}${src}${upd}`;
 }
 
-// Ticker ผลรางวัลล่าสุด — แสดงใต้แถบประกาศทุกหน้า
+// เกมด่วน/ราศี — มี ResultPopup เด้งอยู่แล้ว ไม่ต้องมาแย่ง ticker
+const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']);
+
+// Ticker ผลรางวัลล่าสุด — แสดงใต้แถบประกาศทุกหน้า (เฉพาะหวยแทง 4 ผลล่าสุด)
 export default function ResultsTicker() {
-  const [results, setResults] = useState([]);
+  const [rawResults, setRawResults] = useState([]);
   const [lastSync, setLastSync] = useState(null);
   const [live, setLive] = useState(true); // SSE connection status
 
   useEffect(() => {
     const load = () => api('/lottery/results').then(r => {
-      setResults(r.results);
+      setRawResults(r.results);
       setLastSync(new Date());
     }).catch(() => {});
     load();
@@ -50,13 +53,15 @@ export default function ResultsTicker() {
   // SSE — ผลรางวัลออกปุ๊บอัปเดตทันที
   useEffect(() => {
     const h = () => api('/lottery/results').then(r => {
-      setResults(r.results);
+      setRawResults(r.results);
       setLastSync(new Date());
     }).catch(() => {});
     window.addEventListener('sys:update', h);
     return () => window.removeEventListener('sys:update', h);
   }, []);
 
+  // เฉพาะผลหวยแทง (ไม่เอาเกมด่วน/ราศี) 4 อันล่าสุด
+  const results = rawResults.filter(r => !INSTANT.has(r.type_code)).slice(0, 4);
   if (!results.length) return null;
   const syncStr = lastSync
     ? `${String(lastSync.getHours()).padStart(2, '0')}:${String(lastSync.getMinutes()).padStart(2, '0')}:${String(lastSync.getSeconds()).padStart(2, '0')}`
