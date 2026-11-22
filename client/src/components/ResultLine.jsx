@@ -115,11 +115,11 @@ export default function ResultLine({ r, compact = false }) {
       : (Array.isArray(raw) ? raw : [raw]).join(', ');
     const tokens = String(vals).split(/([,\s]+)/);
     return (
-      <div key={key} className={`shrink-0 text-center ${isCompact ? 'min-w-[2.8rem]' : 'min-w-[3.4rem]'}`}>
-        <div className={`leading-tight text-navy-400 ${isCompact ? 'text-[8px]' : 'text-[9px]'}`}>{label}</div>
-        <div className={`font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-0.5 ${isCompact ? 'text-[10px] max-w-[8rem] sm:max-w-[10rem]' : 'text-xs max-w-[11rem] sm:max-w-[13rem] lg:max-w-[15rem]'}`}>
+      <div key={key} className={`shrink-0 text-center ${isCompact ? 'min-w-[3rem]' : 'min-w-[3.6rem]'}`}>
+        <div className={`leading-tight text-navy-300 ${isCompact ? 'text-[9px]' : 'text-[10px]'}`}>{label}</div>
+        <div className={`font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-1 ${isCompact ? 'text-[11px] max-w-[8.5rem] sm:max-w-[11rem]' : 'text-sm max-w-[12rem] sm:max-w-[14rem] lg:max-w-[16rem]'}`}>
           {tokens.map((t, ti) => /^\d/.test(t) ? (
-            <span key={ti} className="lotto-ball" style={{ fontSize: isCompact ? '0.7em' : '0.8em' }}>{t}</span>
+            <span key={ti} className="lotto-ball" style={{ fontSize: isCompact ? '0.95em' : '1.05em' }}>{t}</span>
           ) : <span key={ti}>{t}</span>)}
         </div>
       </div>
@@ -137,7 +137,7 @@ export default function ResultLine({ r, compact = false }) {
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
             title={`Provably fair — ผล generate จาก seed "${r.fairness.seed}" ตรวจสอบย้อนหลังได้ที่ /api/lottery/fairness/gen?kind=${r.fairness.kind}&code=${r.draw_code}`}>🔐 ตรวจสอบได้</span>
         )}
-        <span className={`text-navy-500 ml-auto ${isCompact ? 'truncate text-[9px]' : ''}`}>{fmtDate(r.draw_at)}{!isCompact && ` • ออก ${thaiTime(r.draw_at)} น.`}</span>
+        <span className={`text-navy-400 ml-auto ${isCompact ? 'truncate text-[10px]' : ''}`}>{fmtDate(r.draw_at)}{!isCompact && ` • ออก ${thaiTime(r.draw_at)} น.`}</span>
       </div>
       {!isCompact && sourceChecks.length > 0 && (
         <div className={`mt-1 text-[9px] ${hasMismatch ? 'text-amber-300' : 'text-navy-400'}`}>

@@ -34,8 +34,8 @@ const ACCENTS = {
     bar: 'bg-pink-500', text: 'text-pink-300', chip: 'bg-pink-500/15 text-pink-300 border-pink-400/50',
     border: 'border-pink-400/60', glow: 'hover:border-pink-400',
     head: 'from-pink-600', dot: 'bg-pink-400',
-    btn: 'from-pink-500/40 to-rose-700/40 text-pink-200',
-    btnLive: 'from-pink-500 to-rose-700 text-white',
+    btn: 'from-pink-500/50 to-rose-600/50 text-pink-100',
+    btnLive: 'from-pink-500 to-rose-600 text-white',
   },
   SC: {
     bar: 'bg-red-500', text: 'text-red-400', chip: 'bg-gold-500/15 text-gold-300 border-gold-400/50',

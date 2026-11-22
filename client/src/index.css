@@ -625,9 +625,9 @@ body::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.85em;
-  height: 1.85em;
-  padding: 0 0.32em;
+  min-width: 2em;
+  height: 2em;
+  padding: 0 0.34em;
   border-radius: 9999px;
   background: radial-gradient(circle at 32% 26%, #fff8dc 0%, #f4c94e 38%, #b8860b 78%, #6e4b05 100%);
   color: #3a2405;
