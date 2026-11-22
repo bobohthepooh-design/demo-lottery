@@ -711,6 +711,8 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
     const firstRaw = Array.isArray(winningNumbers.first) ? winningNumbers.first[0] : winningNumbers.first;
     const d = String(firstRaw ?? '').replace(/\D/g, '');
     if (d.length >= 4) winningNumbers.top4 = d.slice(-4);
+    if (d.length >= 2 && winningNumbers.top2 == null) winningNumbers.top2 = d.slice(-2);
+    if (d.length >= 1 && winningNumbers.last1 == null) winningNumbers.last1 = d.slice(-1);
   }
   return winningNumbers;
 }

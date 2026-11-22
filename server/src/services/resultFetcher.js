@@ -53,6 +53,8 @@ export async function fetchThaiResult() {
       front3: vals(g.last3f),
       top3: vals(g.last3b),
       top4: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-4) || null,
+      top2: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-2) || null,
+      last1: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-1) || null,
       bottom2: vals(g.last2)[0] || null,
     },
   };
@@ -123,6 +125,8 @@ export function generateLaoDevResult(drawCode) {
       num4: base.slice(0, 4),
       top3: base.slice(-3),
       top4: base.slice(-4),
+      top2: base.slice(-2),
+      last1: base.slice(-1),
       bottom2: base.slice(-5, -3),
       last4: base.slice(-4),
       last3: base.slice(-3),

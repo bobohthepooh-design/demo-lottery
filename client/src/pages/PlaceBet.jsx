@@ -19,7 +19,7 @@ const BET_TYPE_STYLE = {
 };
 
 // เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
-const BET_ORDER = ['first', 'top4', 'num4', 'front3', 'front3tod', 'last4', 'top3', '3tod', 'last3', 'top2', 'top2tod', 'bottom2', 'bottom2tod', 'last2', 'run_top', 'run_bottom', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
+const BET_ORDER = ['first', '2top', '3top', 'top4', 'num4', 'front3', 'front3tod', 'last4', 'top3', '3tod', 'last3', 'top2', 'top2tod', 'bottom2', 'bottom2tod', 'last2', 'run_top', 'run_bottom', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
 
 // 12 ปีนักษัตรไทย — ต้องตรงกับ server/src/lib/zodiac.js
 const ZODIAC = ['ชวด', 'ฉลู', 'ขาล', 'เถาะ', 'มะโรง', 'มะเส็ง', 'มะเมีย', 'มะแม', 'วอก', 'ระกา', 'จอ', 'กุน'];
@@ -37,8 +37,11 @@ const RULE_HINT = [
   [/front3tod|3tod|top2tod|bottom2tod/, 'โต๊ด = ถูกแม้สลับลำดับเลข (ไม่รวมเต็ง)'],
   [/^first/, 'รางวัลที่ 1 — เลข 6 ตัวตรงเป๊ะ'],
   [/^num4|^last4/, 'เลขท้าย 4 ตัวตรงเป๊ะ'],
+  [/^2top/, '2 ตัวบน — ตรงกับ 2 ตัวท้ายของรางวัลที่ 1'],
+  [/^3top/, '3 ตัวบน — ตรงกับ 3 ตัวท้ายของรางวัลที่ 1'],
   [/^top4/, '4 ตัวบน — ตรงกับ 4 ตัวท้ายของรางวัลที่ 1'],
-  [/^front3|^top3/, '3 ตัวบน — ตรงกับ 3 ตัวท้ายของผล'],
+  [/^front3/, '3 ตัวล่างหน้า — 3 ตัวแรกของผลรางวัลที่ 1'],
+  [/^top3/, '3 ตัวล่างหลัง — 3 ตัวท้ายของผลรางวัลที่ 1'],
   [/^last3/, 'เลขท้าย 3 ตัวตรงเป๊ะ'],
   [/^top2|^bottom2|^last2/, '2 ตัว — ตรงกับ 2 ตัวท้ายของผล'],
   [/zodiac3top/, 'เลือก 3 ราศีให้ตรงกับ 3 ตัวท้าย (④⑤⑥) เรียงลำดับ'],
