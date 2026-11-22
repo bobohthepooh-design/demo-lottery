@@ -115,16 +115,16 @@ export default function Lotteries() {
     const ac = typeAccent(d.type_code);
     const isHR = d.type_code === 'HR';
     const cardCls = isHR
-      ? 'border-violet-400/70 animate-hr-glow bg-gradient-to-b from-indigo-950/80 to-navy-900'
+      ? 'border-violet-400/70 bg-gradient-to-b from-indigo-950/80 to-navy-900'
       : featured
-        ? 'border-green-500/60 animate-online-border bg-gradient-to-b from-navy-800 to-navy-900'
+        ? 'border-green-500/60 bg-gradient-to-b from-navy-800 to-navy-900'
         : soft
           ? 'border-navy-600/50 bg-gradient-to-b from-navy-800/50 to-navy-900/50'
           : 'border-navy-700 hover:border-navy-500 bg-gradient-to-b from-navy-800 to-navy-900';
     return (
     <div className={`${cardCls} border rounded-xl p-5 pt-4 hoverable flex flex-col`}>
       {isHR ? (
-        <div className="hr-shine h-1.5 w-full rounded-full mb-2" />
+        <div className="h-1.5 w-full rounded-full mb-2 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
       ) : (
         <div className={`h-1 w-10 rounded-full mb-2 ${featured ? 'bg-green-400' : soft ? `${ac.bar} opacity-40` : ac.bar}`} />
       )}
@@ -146,7 +146,7 @@ export default function Lotteries() {
           </button>
           <div className={detailOpen ? 'block' : 'hidden sm:block'}>
           {(() => { const s = annSummary(d.announce); return s ? (
-            <div className="ann-blink mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block bg-amber-500/20 border border-amber-400 text-amber-300">
+            <div className="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block bg-amber-500/20 border border-amber-400 text-amber-300">
               📣 เลขอั้น: {s}
             </div>
           ) : null; })()}
@@ -174,7 +174,7 @@ export default function Lotteries() {
               ✨ รับแทงอยู่
             </span>
           ) : (
-            <span className="animate-online inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-green-500/25 text-green-300 border border-green-400/60 shadow-lg shadow-green-500/30">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-green-500/25 text-green-300 border border-green-400/60 shadow-lg shadow-green-500/30">
               <span className="online-dot inline-block w-2.5 h-2.5 rounded-full bg-green-400" />
               🎯 รับแทงอยู่
             </span>
@@ -212,7 +212,7 @@ export default function Lotteries() {
       {/* ปุ่มแทงด่วนทุกการ์ด — ติดก้นกรอบเสมอ (mt-auto) • เปิดรับกดได้เลย, ปิด/ยังไม่เปิดแสดงสถานะเป็นปุ่ม disabled */}
       <div className="mt-auto pt-4">
       {live ? (
-        <Link to={`/bet/${d.id}`} className={`mt-4 block text-center ${isHR ? 'hr-shine text-white' : `bg-gradient-to-r ${featured ? ac.btnLive : ac.btn}`} font-bold py-2.5 rounded-lg hover:brightness-110 transition`}>
+        <Link to={`/bet/${d.id}`} className={`mt-4 block text-center ${isHR ? 'text-white' : `bg-gradient-to-r ${featured ? ac.btnLive : ac.btn}`} font-bold py-2.5 rounded-lg hover:brightness-110 transition`}>
           {isHR ? '🔮 แทงปีนักษัตรรอบนี้' : '🎯 แทงหวยรอบนี้'}
         </Link>
       ) : (

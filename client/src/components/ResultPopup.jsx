@@ -139,7 +139,7 @@ function MiniCard({ r, remaining, onClose, onNext }) {
         <div className="bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 text-center py-1.5">
           <span className="text-[11px] font-black tracking-[0.35em] text-navy-950 uppercase">🏆 ผลรางวัล</span>
         </div>
-        <div className="hr-shine h-1" />
+        <div className="h-1 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
         {/* head */}
         <div className="flex items-center gap-3 px-5 pt-3 pb-2">
           <FlagIcon code={r.type_code} className="w-10 h-7 text-[11px]" />

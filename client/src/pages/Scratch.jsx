@@ -137,11 +137,7 @@ export default function Scratch() {
     <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-gold-500/60 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 sm:p-8 text-center">
-        <div className="hr-shine absolute top-0 inset-x-0 h-1.5" />
-        <span className="casino-sparkle text-xl" style={{ top: '18%', left: '8%', animationDelay: '0.3s' }}>✦</span>
-        <span className="casino-sparkle text-sm" style={{ top: '30%', right: '10%', animationDelay: '1.4s' }}>✧</span>
-        <span className="casino-sparkle text-lg" style={{ bottom: '26%', left: '14%', animationDelay: '2.2s' }}>✦</span>
-        <span className="casino-sparkle text-sm" style={{ bottom: '34%', right: '8%', animationDelay: '0.9s' }}>✦</span>
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', right: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '1s' }} />
         <div className="text-5xl mb-2 animate-float">🎰</div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-gold-300">สล็อต</h1>

@@ -73,7 +73,7 @@ export default function ChatWidget() {
       {/* กล่องแชท */}
       {open && (
         <div className="fixed bottom-36 sm:bottom-20 right-4 z-40 w-[340px] max-w-[calc(100vw-2rem)] h-[460px] max-h-[calc(100vh-10rem)] flex flex-col rounded-2xl border border-gold-500/40 bg-navy-900 shadow-2xl shadow-black/60 overflow-hidden animate-result-pop">
-          <div className="hr-shine h-1 shrink-0" />
+          <div className="h-1 bg-gradient-to-r from-gold-500/50 to-gold-600/50 shrink-0" />
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-navy-700 bg-navy-800/80">
             <span className="w-8 h-8 rounded-full bg-gold-500/15 border border-gold-500/40 flex items-center justify-center text-gold-400">
               <Icon name="chat" className="w-4 h-4" />

@@ -214,11 +214,7 @@ export default function Hilo() {
     <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-orange-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 sm:p-8 text-center">
-        <div className="hr-shine absolute top-0 inset-x-0 h-1.5" />
-        <span className="casino-sparkle text-xl" style={{ top: '18%', left: '8%', animationDelay: '0.5s' }}>✦</span>
-        <span className="casino-sparkle text-sm" style={{ top: '28%', right: '10%', animationDelay: '1.7s' }}>✧</span>
-        <span className="casino-sparkle text-lg" style={{ bottom: '30%', left: '12%', animationDelay: '2.4s' }}>✦</span>
-        <span className="casino-sparkle text-sm" style={{ bottom: '36%', right: '9%', animationDelay: '1.1s' }}>✦</span>
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '0.6s' }} />
         <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
         <div className="flex justify-center gap-3 mb-4">
@@ -330,8 +326,7 @@ export default function Hilo() {
           </div>
 
           {/* ประกายไฟมุมตู้ */}
-          <span className="casino-sparkle text-lg absolute -top-2 -right-2 text-amber-300" style={{ animationDelay: '0.8s' }}>✦</span>
-          <span className="casino-sparkle text-sm absolute -bottom-1 -left-2 text-red-400" style={{ animationDelay: '1.9s' }}>✧</span>
+
         </div>
 
         {active?.status === 'revealed' && active.sum != null && (

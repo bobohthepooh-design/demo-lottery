@@ -370,7 +370,7 @@ export default function PlaceBet() {
                 <span className="text-navy-500 text-[10px] ml-1.5">{draw.draw_code}</span>
               </div>
               {(() => { const s = annSummary(draw.announce); return s ? (
-                <div className="ann-blink mt-1 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/20 border-2 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]">
+                <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/20 border-2 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]">
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
