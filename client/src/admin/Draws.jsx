@@ -4,6 +4,17 @@ import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { annSummary, annToInput, parseAnnInput } from '../ann.js';
 import { Button, Card, CardHeader, CardBody, Input, Select, Modal, Badge } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { Badge as SBadge } from '../components/shadcn/badge.jsx';
+import { cn } from '../lib/utils.js';
+
+const STATUS_BADGE = {
+  open: 'border-emerald-500/40 text-emerald-300',
+  settled: 'border-gold-500/50 text-gold-300',
+  closed: 'border-amber-500/40 text-amber-300',
+  scheduled: 'border-sky-500/40 text-sky-300',
+  cancelled: 'border-red-500/40 text-red-300',
+};
 
 const STATUS_TH = { scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ', settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก' };
 
@@ -229,39 +240,50 @@ export default function AdminDraws() {
         <span className="text-xs text-navy-400">ทั้งหมด {drawsTotal.toLocaleString()} รอบ — แสดง {draws.length.toLocaleString()} รอบ</span>
       </div>
 
-      <div className="bg-navy-800 border border-navy-700 rounded-xl overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-navy-900 text-navy-300 text-xs">
-            <tr><th className="text-left px-4 py-3">รอบ</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-left px-4 py-3">ออกรางวัล</th><th className="text-left px-4 py-3">ปิดรับ</th><th className="text-left px-4 py-3">สถานะ</th><th className="px-4 py-3">จัดการ</th></tr>
-          </thead>
-          <tbody className="divide-y divide-navy-700">
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-navy-700/60 hover:bg-transparent">
+              <TableHead className="text-navy-400">รอบ</TableHead>
+              <TableHead className="text-navy-400">ประเภท</TableHead>
+              <TableHead className="text-navy-400">ออกรางวัล</TableHead>
+              <TableHead className="text-navy-400">ปิดรับ</TableHead>
+              <TableHead className="text-navy-400">สถานะ</TableHead>
+              <TableHead className="text-navy-400">จัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {draws.map(d => (
-              <tr key={d.id} className="hover:bg-navy-700/40">
-                <td className="px-4 py-3 font-mono text-gold-300">
+              <TableRow key={d.id} className="border-navy-700/50">
+                <TableCell className="font-mono text-gold-300">
                   {d.draw_code}
                   {(() => { const s = annSummary(d.announce); return s ? (
                     <div className="text-[10px] text-amber-300 font-sans mt-0.5">เลขอั้น: {s}</div>
                   ) : null; })()}
-                </td>
-                <td className="px-4 py-3 text-white">{d.type_name_th}{d.category_name_th ? <span className="text-navy-300 text-xs"> — {d.category_name_th}</span> : null}</td>
-                <td className="px-4 py-3 text-navy-300 text-xs">{fmtDateTime(d.draw_at)}</td>
-                <td className="px-4 py-3 text-navy-300 text-xs">{fmtDateTime(d.close_at)}</td>
-                <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded ${d.status === 'open' ? 'bg-green-500/20 text-green-300' : d.status === 'settled' ? 'bg-gold-500/20 text-gold-300' : 'bg-navy-700 text-navy-300'}`}>{STATUS_TH[d.status]}</span></td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell className="text-white">{d.type_name_th}{d.category_name_th ? <span className="text-navy-300 text-xs"> — {d.category_name_th}</span> : null}</TableCell>
+                <TableCell className="text-navy-300 text-xs">{fmtDateTime(d.draw_at)}</TableCell>
+                <TableCell className="text-navy-300 text-xs">{fmtDateTime(d.close_at)}</TableCell>
+                <TableCell>
+                  <SBadge variant="outline" className={cn('text-[10px] font-semibold', STATUS_BADGE[d.status] || 'border-navy-500 text-navy-300')}>
+                    {STATUS_TH[d.status]}
+                  </SBadge>
+                </TableCell>
+                <TableCell>
                   {d.status !== 'settled' && d.status !== 'cancelled' && (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1.5">
                       {d.status !== 'open' && <button onClick={() => setStatus(d.id, 'open')} className="text-xs text-green-400 hover:underline">เปิด</button>}
                       {d.status === 'open' && <button onClick={() => setStatus(d.id, 'closed')} className="text-xs text-navy-300 hover:underline">ปิด</button>}
                       <button onClick={() => setStatus(d.id, 'cancelled')} className="text-xs text-red-400 hover:underline">ยกเลิก</button>
                       <button onClick={() => openEdit(d)} className="text-xs text-gold-400 hover:underline">แก้ไข</button>
                     </div>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
       {draws.length < drawsTotal && (
         <Button onClick={loadMoreDraws} disabled={loadingMoreDraws} variant="secondary"
           className="w-full py-3">
