@@ -28,17 +28,17 @@ export default function Home() {
   const hiddenSet = new Set(hiddenBetTypes);
   const drawVisible = d => isAdmin || !hiddenSet.has(d.type_code);
 
-  // ปุ่มลัดหลัก — portal-style: แทงหวย / เล่นเกม / ผลรางวัล / กระเป๋า (guest → เข้าสู่ระบบ)
+  // ปุ่มลัดหลัก — modern icon tiles with better colors
   const quickActions = user ? [
-    { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-600 to-rose-700', sub: 'เลือกรอบ' },
-    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-600 to-purple-700', sub: 'ด่วน' },
-    { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-600 to-yellow-700', sub: 'ล่าสุด' },
-    { to: '/wallet', icon: '💳', label: 'กระเป๋า', cls: 'from-emerald-600 to-teal-700', sub: satang(balance) },
+    { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-500 to-rose-600', sub: 'เลือกรอบ', shadow: 'shadow-red-500/20' },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-cyan-500 to-blue-600', sub: 'ด่วน', shadow: 'shadow-cyan-500/20' },
+    { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-500 to-yellow-600', sub: 'ล่าสุด', shadow: 'shadow-amber-500/20' },
+    { to: '/wallet', icon: '💳', label: 'กระเป๋า', cls: 'from-emerald-500 to-teal-600', sub: satang(balance), shadow: 'shadow-emerald-500/20' },
   ] : [
-    { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-600 to-rose-700', sub: 'เลือกรอบ' },
-    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-600 to-purple-700', sub: 'ด่วน' },
-    { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-600 to-yellow-700', sub: 'ล่าสุด' },
-    { to: '/register', icon: '👤', label: 'สมัครสมาชิก', cls: 'from-sky-600 to-blue-700', sub: 'เริ่มต้น' },
+    { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-500 to-rose-600', sub: 'เลือกรอบ', shadow: 'shadow-red-500/20' },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-cyan-500 to-blue-600', sub: 'ด่วน', shadow: 'shadow-cyan-500/20' },
+    { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-500 to-yellow-600', sub: 'ล่าสุด', shadow: 'shadow-amber-500/20' },
+    { to: '/register', icon: '👤', label: 'สมัครสมาชิก', cls: 'from-sky-500 to-blue-600', sub: 'เริ่มต้น', shadow: 'shadow-sky-500/20' },
   ];
 
   // Hero — หาตลาดที่เปิดรับแทงและใกล้ปิดที่สุด (live countdown)
@@ -131,14 +131,16 @@ export default function Home() {
         </div>
       )}
 
-      {/* ปุ่มลัดหลัก — portal-style icon tiles */}
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+      {/* ปุ่มลัดหลัก — modern icon tiles */}
+      <div className="grid grid-cols-4 gap-3 sm:gap-4">
         {quickActions.map(a => (
           <Link key={a.label} to={a.to}
-            className={`group relative rounded-xl bg-gradient-to-br ${a.cls} py-3 px-2 flex flex-col items-center gap-1 text-white transition-all duration-200 hover:brightness-110 active:scale-95 border border-white/10`}>
-            <span className="text-xl drop-shadow">{a.icon}</span>
-            <span className="text-xs font-bold tracking-wide">{a.label}</span>
-            <span className="text-[9px] opacity-80 font-mono truncate max-w-full px-1">{a.sub}</span>
+            className={`group relative rounded-2xl bg-gradient-to-br ${a.cls} py-4 px-2 flex flex-col items-center gap-2 text-white transition-all duration-300 hover:brightness-110 hover:shadow-lg ${a.shadow} active:scale-95 border border-white/10`}>
+            <span className="text-2xl drop-shadow-lg">{a.icon}</span>
+            <div className="text-center">
+              <div className="text-sm font-bold tracking-wide">{a.label}</div>
+              <div className="text-[10px] opacity-80 font-mono truncate max-w-full px-1 mt-0.5">{a.sub}</div>
+            </div>
           </Link>
         ))}
       </div>
