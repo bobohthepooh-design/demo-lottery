@@ -102,14 +102,9 @@ export default function ResultLine({ r, compact = false }) {
   const sourceChecks = r.source_checks || [];
   const hasMismatch = sourceChecks.some(c => c.verification_status === 'mismatch');
 
-  // compact mode: เลือกเฉพาะ field หลัก (รางวัลที่ 1, รางวัลที่ 2, 3 ตัวบน, 2 ตัวล่าง)
+  // compact mode: แสดง field หลักทั้งหมด (ไม่ filter keywords เพื่อให้ครบถ้วน)
   const isCompact = compact;
-  const compactFields = fields.filter(f => {
-    const k = f.key.toLowerCase();
-    return k.includes('first') || k.includes('p1') || k.includes('p2') ||
-           k.includes('top3') || k.includes('front3') || k.includes('last3') ||
-           k.includes('bottom2') || k.includes('last2') || k.includes('top2');
-  });
+  const compactFields = fields.slice(0, 6); // แสดง 6 field แรกเพื่อไม่ให้ล้น
 
   const displayFields = isCompact ? compactFields : fields;
   const displayExtras = isCompact ? [] : extras;
@@ -173,7 +168,7 @@ export default function ResultLine({ r, compact = false }) {
           ) : null}
         </div>
       ) : (
-      <div className={`flex gap-5 mt-1.5 overflow-x-auto pb-0.5 ${isCompact ? 'gap-3' : ''}`}>
+      <div className={`flex gap-4 mt-1.5 flex-wrap items-center ${isCompact ? 'gap-2' : ''}`}>
         {displayFields.map(f => cell(f.key, f.short || f.label, data?.[f.key]))}
         {displayExtras.map(([k, v]) => cell(k, k, v))}
       </div>
