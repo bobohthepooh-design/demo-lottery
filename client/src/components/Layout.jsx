@@ -17,7 +17,7 @@ import { t } from '../i18n.js';
 // เมนูจัดกลุ่ม: เล่นหวย | ผลรางวัล&ข้อมูล | บัญชีของฉัน | ผู้ดูแลระบบ
 const navGroups = [
   { label: 'navBet', items: [
-    { to: '/play', k: 'betMenu', icon: 'lotteries' },
+    { to: '/play', k: 'betMenu', icon: 'lotteries', betGate: true },
     { to: '/games', k: 'gamesHub', icon: 'chart' },
   ] },
   { label: 'navInfo', items: [

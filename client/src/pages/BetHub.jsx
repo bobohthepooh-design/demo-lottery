@@ -189,7 +189,7 @@ function MarketTile({ m, nowSql, nowMs, expanded, onToggle }) {
 
   const name = m.catName || m.typeName;
   return (
-    <button type="button" aria-expanded={expanded}
+    <button type="button" aria-expanded={liveRound ? undefined : expanded}
       onClick={() => liveRound ? navigate(`/bet/${liveRound.id}`) : onToggle()}
       className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition active:scale-95 ${state.cls} ${expanded ? 'ring-1 ring-cyan-400/60' : ''}`}>
       {blind && (

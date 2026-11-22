@@ -41,7 +41,7 @@ export default function Home() {
     const h = () => loadToday();
     window.addEventListener('sys:update', h);
     return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
-  }, [user]);
+  }, []);
 
   // admin ซ่อนเมนูแทงหวยรายประเภทได้ (blind mode) — admin เองเห็นทั้งหมดเสมอ
   const hiddenSet = new Set(hiddenBetTypes);
@@ -63,7 +63,7 @@ export default function Home() {
   // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด
   const resultCards = (() => {
     // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
-    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']); // รวมราศี — เกมด่วนมี popup ของตัวเอง
+    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']); // เกมด่วนไม่มีรอบ — ราศี (HR) เป็นหวยจริง แสดงผลได้
     const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code));
     const mk = new Map();
     for (const d of todays) {
@@ -151,7 +151,7 @@ export default function Home() {
               const srcB = last ? sourceBadge(last.result_source) : null;
               const mi = marketInfo(g.type_code, g.cat_code);
               return (
-                <Link key={g.label + g.type_code} to="/results"
+                <Link key={`${g.type_code}|${g.cat_code || ''}`} to="/results"
                   className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group flex flex-col">
                   <div className="flex items-center gap-2">
                     <FlagIcon code={g.type_code} className="w-6 h-6 text-[10px]" />
