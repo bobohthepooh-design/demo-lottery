@@ -125,7 +125,7 @@ export default function Layout() {
           <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-lg:order-3 max-lg:basis-full max-lg:mx-3 max-lg:mt-1 max-lg:mb-1.5">
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
-                className={({ isActive }) => `shrink-0 px-2 py-1.5 text-[12.5px] transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                className={({ isActive }) => `shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                 {t('home')}
               </NavLink>
               {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
@@ -133,7 +133,7 @@ export default function Layout() {
                   {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-lg:hidden" />}
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
-                      className={({ isActive }) => `shrink-0 px-2 py-1.5 text-[12.5px] transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                      className={({ isActive }) => `shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
                       {t(n.k)}
                     </NavLink>
                   ))}
@@ -145,7 +145,7 @@ export default function Layout() {
               {isAdmin && (
                 <div className="relative" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setAdminMenuOpen(v => !v)}
-                    className={`px-2 py-1.5 text-[12.5px] font-bold transition rounded-lg border inline-flex items-center gap-1 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
+                    className={`px-2.5 py-1.5 text-sm font-bold transition rounded-lg border inline-flex items-center gap-1 ${adminMenuOpen ? 'border-gold-300 bg-gold-500/20 text-gold-200' : 'border-gold-500/50 text-gold-300 hover:bg-gold-500/10 hover:border-gold-300'}`}>
                     <Icon name="dashboard" className="w-4.5 h-4.5" />{t('admin')}
                     <svg viewBox="0 0 24 24" className={`w-3 h-3 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
                   </button>
@@ -171,8 +171,8 @@ export default function Layout() {
               <div className="hidden lg:flex items-center gap-1.5 rounded-lg border border-navy-600/80 bg-navy-900/60 px-2 py-1" title="วันที่และเวลาปัจจุบัน">
                 <Icon name="clock" className="w-3.5 h-3.5 text-gold-400/80 shrink-0" />
                 <div className="leading-tight text-right">
-                  <div className="text-[9px] text-navy-300">{dateStr}</div>
-                  <div className="text-[11px] font-mono font-bold text-gold-300">{timeStr}</div>
+                  <div className="text-xs text-navy-300">{dateStr}</div>
+                  <div className="text-sm font-mono font-bold text-gold-300">{timeStr}</div>
                 </div>
               </div>
               {user ? (
@@ -180,7 +180,7 @@ export default function Layout() {
                   <NotificationBell />
                   <Link to="/wallet" className="flex items-center gap-1.5 rounded-full border border-gold-400/60 bg-gradient-to-r from-gold-500/25 to-gold-500/5 px-2.5 py-1 hover:border-gold-300 transition">
                     <Icon name="wallet" className="w-3.5 h-3.5 text-black" />
-                    <span className="text-[10px] font-black text-black tracking-wider">{t('credit')}</span>
+                    <span className="text-xs font-black text-black tracking-wider">{t('credit')}</span>
                     <span className="text-sm font-black text-black font-mono">{satang(balance)}</span>
                   </Link>
                   <button onClick={doLogout} title="ออกจากระบบ" aria-label="ออกจากระบบ"
@@ -190,8 +190,8 @@ export default function Layout() {
                 </>
               ) : (
                 <div className="flex gap-1.5">
-                  <Link to="/login" className="text-[13px] tracking-wide px-3 py-1.5 rounded-md border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition">{t('login')}</Link>
-                  <Link to="/register" className="text-[13px] tracking-wide px-3 py-1.5 rounded-md bg-gradient-to-b from-gold-400 to-gold-600 text-navy-950 font-bold hover:brightness-110 transition">{t('register')}</Link>
+                  <Link to="/login" className="text-sm tracking-wide px-3.5 py-2 rounded-md border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition">{t('login')}</Link>
+                  <Link to="/register" className="text-sm tracking-wide px-3.5 py-2 rounded-md bg-gradient-to-b from-gold-400 to-gold-600 text-navy-950 font-bold hover:brightness-110 transition">{t('register')}</Link>
                 </div>
               )}
               <button
@@ -233,19 +233,19 @@ export default function Layout() {
               </div>
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
               <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
               g.label === 'navAdmin' ? (
                 <div key={g.label}>
-                  <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-gold-400">{t(g.label)}</div>
+                  <div className="px-4 pt-4 pb-1.5 text-sm font-bold uppercase tracking-widest text-gold-400">{t(g.label)}</div>
                   {adminNavGroups.map(ag => (
                     <div key={ag.label}>
-                      <div className="px-4 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-500">{ag.label}</div>
+                      <div className="px-4 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-navy-500">{ag.label}</div>
                       {ag.items.map(i => (
                         <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setMenuOpen(false)}
-                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-[15px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-200 hover:bg-white/5'}`}>
+                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-base tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-200 hover:bg-white/5'}`}>
                           {i.icon && <Icon name={i.icon} className="w-6 h-6" />}
                           {i.label}
                         </NavLink>
@@ -255,10 +255,10 @@ export default function Layout() {
                 </div>
               ) : (
                 <div key={g.label}>
-                  <div className="px-4 pt-4 pb-1.5 text-[12px] font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
+                  <div className="px-4 pt-4 pb-1.5 text-sm font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-[16px] tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
                       {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
                       {t(n.k)}
                     </NavLink>
@@ -268,7 +268,7 @@ export default function Layout() {
             ))}
             {user && (
               <button onClick={() => { setMenuOpen(false); doLogout(); }}
-                className="w-full text-left px-4 py-3.5 text-[16px] tracking-wide text-gold-300 rounded-xl hover:bg-white/5 border-t border-gold-500/20 mt-2">
+                className="w-full text-left px-4 py-3.5 text-base tracking-wide text-gold-300 rounded-xl hover:bg-white/5 border-t border-gold-500/20 mt-2">
                 {t('logout')}
               </button>
             )}
@@ -316,7 +316,7 @@ export default function Layout() {
               ]),
             ].filter(i => i.show).map(i => (
               <NavLink key={i.to} to={i.to} end={i.end}
-                className="relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] transition-colors text-white/60 hover:text-white">
+                className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors text-white/60 hover:text-white">
                 {({ isActive }) => (
                   <>
                     {/* active: วงทองเรืองนุ่ม + ไอคอนโตกว่า (inactive = เทา) */}

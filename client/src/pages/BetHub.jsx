@@ -63,17 +63,17 @@ function RoundRow({ d, nowSql, nowMs }) {
     >
       <FlagIcon code={d.type_code} className="w-10 h-12 shrink-0 rounded-lg overflow-hidden" />
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-white truncate">{drawLabel(d)}</div>
-        <div className="text-xs text-navy-400 mt-0.5">
+        <div className="text-base font-semibold text-white truncate">{drawLabel(d)}</div>
+        <div className="text-sm text-navy-400 mt-0.5">
           {blind ? `ออกรางวัล ${thaiHM(d.draw_at)} น.` : `ออก ${fmtDateTime(d.draw_at)}`}
           {ann && <span className="ml-2 text-amber-300 font-medium">📣 {ann}</span>}
         </div>
       </div>
-      <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${badge.cls}`}>
+      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${badge.cls}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
         {badge.text}
       </span>
-      <span className="text-navy-500 text-sm shrink-0">›</span>
+      <span className="text-navy-500 text-base shrink-0">›</span>
     </button>
   );
 }
@@ -93,8 +93,8 @@ function TypeTile({ tg, expanded, onClick }) {
       }`}
     >
       <FlagIcon code={tg.typeCode} className="w-12 h-9 rounded-lg overflow-hidden" />
-      <div className="text-xs font-bold text-white leading-tight">{tg.typeName}</div>
-      <div className="flex items-center gap-1.5 text-[10px]">
+      <div className="text-sm font-bold text-white leading-tight">{tg.typeName}</div>
+      <div className="flex items-center gap-1.5 text-xs">
         {hasLive ? (
           <span className="inline-flex items-center gap-1 text-green-300 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -105,7 +105,7 @@ function TypeTile({ tg, expanded, onClick }) {
         )}
       </div>
       {tg.hasCategories && (
-        <div className="text-[9px] text-navy-400">{tg.catList.length} ตลาด</div>
+        <div className="text-xs text-navy-400">{tg.catList.length} ตลาด</div>
       )}
       {expanded && (
         <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gold-400 shadow shadow-gold-400/50" />
@@ -129,8 +129,8 @@ function CategoryTile({ cat, typeCode, expanded, onClick }) {
       }`}
     >
       <FlagIcon code={typeCode} className="w-9 h-7 rounded-md overflow-hidden" />
-      <div className="text-[11px] font-semibold text-white leading-tight truncate w-full">{cat.catName}</div>
-      <div className="flex items-center gap-1 text-[9px]">
+      <div className="text-xs font-semibold text-white leading-tight truncate w-full">{cat.catName}</div>
+      <div className="flex items-center gap-1 text-xs">
         {hasLive ? (
           <span className="inline-flex items-center gap-0.5 text-green-300 font-semibold">
             <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
@@ -282,15 +282,15 @@ export default function BetHub() {
               {/* Type Header */}
               <div className="flex items-center gap-3 mb-4">
                 <FlagIcon code={activeType.typeCode} className="w-8 h-6 rounded-md overflow-hidden" />
-                <h2 className="text-lg font-bold text-white">{activeType.typeName}</h2>
-                <span className="text-xs text-navy-300">
+                <h2 className="text-xl font-bold text-white">{activeType.typeName}</h2>
+                <span className="text-sm text-navy-300">
                   {activeType.hasCategories
                     ? `${activeType.totalRounds} รอบ • ${activeType.catList.length} ตลาด`
                     : `${activeType.totalRounds} รอบ`}
                 </span>
                 <button
                   onClick={() => { setOpenType(''); setOpenCat(''); }}
-                  className="ml-auto text-xs text-navy-400 hover:text-white transition-colors"
+                  className="ml-auto text-sm text-navy-400 hover:text-white transition-colors"
                 >
                   ✕ ปิด
                 </button>
@@ -325,11 +325,11 @@ export default function BetHub() {
                   {activeCat && (
                     <div className="mt-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-sm font-semibold text-navy-200">{activeCat.catName}</span>
-                        <span className="text-xs text-navy-400">{activeCat.roundCount} รอบ</span>
+                        <span className="text-base font-semibold text-navy-200">{activeCat.catName}</span>
+                        <span className="text-sm text-navy-400">{activeCat.roundCount} รอบ</span>
                         <button
                           onClick={() => setOpenCat('')}
-                          className="ml-auto text-xs text-navy-400 hover:text-white transition-colors"
+                          className="ml-auto text-sm text-navy-400 hover:text-white transition-colors"
                         >
                           ✕ ปิด
                         </button>
