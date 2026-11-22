@@ -87,7 +87,7 @@ docker compose restart app        # ไม่จำเป็นต้อง stop
    CF_ACCOUNT_ID=<account-id>
    ```
 6. รัน: `bash scripts/setup-https.sh` — ออก cert → mount เข้า Caddy → patch Caddyfile → reload
-7. **ให้ client resolve domain มาที่เครื่อง** — ตั้ง DNS ใน router ให้ `xxx.us.kg → 192.168.1.122`
+7. **ให้ client resolve domain มาที่เครื่อง** — ตั้ง DNS ใน router ให้ `xxx.us.kg → 192.168.1.44`
    (หรือจอง IP เครื่องไว้ก่อน) แล้วเข้า `https://xxx.us.kg` ได้เลย — cert trusted ทุก browser
 
 - renew: acme.sh cron ต่ออายุอัตโนมัติ + reload Caddy ผ่าน hook ที่ setup-https.sh ตั้งไว้
