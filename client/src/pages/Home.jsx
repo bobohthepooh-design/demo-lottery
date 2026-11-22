@@ -107,9 +107,10 @@ export default function Home() {
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {quickActions.map(a => (
           <Link key={a.label} to={a.to}
-            className={`rounded-2xl bg-gradient-to-br ${a.cls} py-4 px-2 flex flex-col items-center gap-1.5 text-white hover:brightness-110 active:scale-95 transition shadow-lg`}>
-            <span className="text-2xl">{a.icon}</span>
-            <span className="text-xs sm:text-sm font-bold">{a.label}</span>
+            className={`group relative rounded-2xl bg-gradient-to-br ${a.cls} py-4 px-2 flex flex-col items-center gap-1.5 text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl active:scale-95 border border-white/10`}>
+            <span className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent rounded-full" />
+            <span className="text-2xl drop-shadow">{a.icon}</span>
+            <span className="text-xs sm:text-sm font-bold tracking-wide">{a.label}</span>
             <span className="text-[9px] opacity-80 font-mono truncate max-w-full px-1">{a.sub}</span>
           </Link>
         ))}
@@ -137,6 +138,7 @@ export default function Home() {
         <section>
           <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
             <div>
+              <div className="kicker mb-1">Latest Results</div>
               <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
               <p className="text-xs text-navy-400 mt-0.5">ของแต่ละตลาด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
             </div>

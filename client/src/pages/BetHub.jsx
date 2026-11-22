@@ -25,8 +25,8 @@ const isBlind = (d, nowSql) => !isBettingOpen(d, nowSql)
   && ['scheduled', 'open'].includes(d.status) && d.close_at > nowSql;
 const isDrawing = (d, nowSql) => d.status === 'closed' && d.draw_at <= nowSql;
 
-// หน้า provider-style — ตลาดเป็นแถวเดียวต่อการ์ด แสดงสถานะรอบถัดไป (countdown/หมดรอบ/blind)
-// กดตลาดที่เปิดรับ → หน้าแทง / กดตลาดอื่น → กางรายการรอบย่อย
+// หน้า provider-style — ตลาดเป็น icon tiles แบ่งตามหมวด
+// กด tile → กางรอบย่อยเสมอ (live กดเข้า /bet จากแถวรอบด้านใน) — ไม่ซ่อนรอบล่วงหน้า
 export default function BetHub() {
   const { isAdmin } = useAuth();
   const [draws, setDraws] = useState([]);
@@ -97,22 +97,23 @@ export default function BetHub() {
   }, [draws, hiddenBetTypes, nowMs, isAdmin]);
 
   return (
-    <div className="space-y-4 pb-4">
-      <div className="text-center">
-        <h1 className="text-xl font-black text-white">🎯 เลือกหวย</h1>
-        <p className="text-xs text-navy-400 mt-1">เลือกรอบที่เปิดรับเพื่อแทง — รอบที่ล็อกจะเปิดให้อัตโนมัติเมื่อถึงเวลา</p>
+    <div className="max-w-3xl mx-auto space-y-4 pb-4">
+      <div className="text-center pt-1">
+        <div className="kicker mb-1">Choose Draw</div>
+        <h1 className="text-2xl font-black text-white tracking-wide">เลือกหวย</h1>
+        <p className="text-xs text-navy-400 mt-1">แตะตลาดเพื่อดูลิสต์รอบ — รอบที่ล็อกจะเปิดให้อัตโนมัติเมื่อถึงเวลา</p>
       </div>
 
       {/* quick nav — ผลรางวัล/เกม/โพย */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="grid grid-cols-3 gap-2">
         {[
-          { to: '/results', icon: '🏆', label: 'ผลรางวัล' },
-          { to: '/games', icon: '🎮', label: 'เกมด่วน' },
-          { to: '/my-bets', icon: '🧾', label: 'โพยของฉัน' },
+          { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'border-amber-500/30 hover:border-amber-400/60' },
+          { to: '/games', icon: '🎮', label: 'เกมด่วน', cls: 'border-violet-500/30 hover:border-violet-400/60' },
+          { to: '/my-bets', icon: '🧾', label: 'โพยของฉัน', cls: 'border-cyan-500/30 hover:border-cyan-400/60' },
         ].map(q => (
           <Link key={q.to} to={q.to}
-            className="shrink-0 text-xs px-3 py-1.5 rounded-full border border-navy-600 text-navy-300 font-semibold flex items-center gap-1.5 hover:border-cyan-500/50 hover:text-cyan-200">
-            {q.icon} {q.label}
+            className={`text-center text-xs px-3 py-2.5 rounded-xl border bg-navy-800/60 text-navy-200 font-semibold flex flex-col items-center gap-1 transition ${q.cls}`}>
+            <span className="text-base">{q.icon}</span>{q.label}
           </Link>
         ))}
       </div>
@@ -135,11 +136,13 @@ export default function BetHub() {
 
       {families.map(fam => (
         <section key={fam.key} className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
-          <header className="px-4 py-3 border-b border-navy-700 font-bold text-white text-sm flex items-center gap-2">
-            <span className="w-1.5 h-4 rounded-full bg-cyan-400" />{fam.title}
+          <header className="px-4 py-3 border-b border-navy-700 flex items-center gap-2">
+            <span className="w-1.5 h-4 rounded-full bg-cyan-400" />
+            <span className="font-bold text-white text-sm">{fam.title}</span>
+            <span className="ml-auto text-[10px] text-navy-500 font-mono">{fam.markets.length} ตลาด</span>
           </header>
-          {/* icon tiles — แบ่งตามหมวดตลาด เหมือน provider แต่เป็นไอคอนแทน list */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 p-3">
+          {/* icon tiles — แตะเพื่อกางรอบย่อยเสมอ */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-3">
             {fam.markets.map(m => (
               <MarketTile key={m.key} m={m} nowSql={nowSql} nowMs={nowMs}
                 expanded={openKey === m.key} onToggle={() => setOpenKey(openKey === m.key ? '' : m.key)} />
@@ -163,9 +166,8 @@ export default function BetHub() {
   );
 }
 
-// icon tile ของตลาด — ธง + ชื่อ + สถานะย่อ; live → เข้าหน้าแทง, อื่นๆ → กางรอบย่อย
+// icon tile ของตลาด — ธง + ชื่อ + สถานะย่อ; กด = กางรอบย่อยเสมอ (live เข้า /bet จากแถวรอบ)
 function MarketTile({ m, nowSql, nowMs, expanded, onToggle }) {
-  const navigate = useNavigate();
   const liveRound = m.liveRound;
   const next = m.next;
   const blind = !liveRound && next && isBlind(next, nowSql);
@@ -176,32 +178,39 @@ function MarketTile({ m, nowSql, nowMs, expanded, onToggle }) {
   const openAt = next ? bettingOpenAtSql(next.close_at, next.type_code) : null;
   const openMs = openAt ? Date.parse(String(openAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
 
+  // จำนวนรอบที่ยังไม่เปิดรับ — แสดงเป็น icon ทึบ ๆ บอก "ยังไม่เปิด"
+  const upcomingCount = m.rounds.filter(d => isBlind(d, nowSql)).length;
+
   // สี/ข้อความสถานะย่อบน tile
   const state = liveRound
-    ? { dot: 'bg-green-400', text: fmtHMS(closeMs), cls: 'border-green-500/50 bg-green-500/10', icon: '🎯' }
+    ? { dot: 'bg-green-400 animate-pulse', text: fmtHMS(closeMs), cls: 'border-green-500/60 bg-gradient-to-b from-green-500/15 to-green-500/5 shadow-[0_0_16px_rgba(34,197,94,0.15)]', icon: '🎯' }
     : drawing
       ? { dot: 'bg-gold-400 animate-pulse', text: 'ออกผล', cls: 'border-gold-500/50 bg-gold-500/10', icon: '🎰' }
       : awaiting
         ? { dot: 'bg-amber-400', text: 'รอผล', cls: 'border-amber-500/40 bg-amber-500/10', icon: '⏳' }
         : blind
-          ? { dot: 'bg-navy-500', text: openMs > 0 ? thaiHM(openAt) : 'เร็วๆ นี้', cls: 'border-navy-600 bg-navy-800/60 opacity-80', icon: '🔒' }
-          : { dot: 'bg-navy-600', text: 'หมดรอบ', cls: 'border-navy-700 bg-navy-800/40 opacity-60', icon: '🔒' };
+          ? { dot: 'bg-navy-500', text: openMs > 0 ? thaiHM(openAt) : 'เร็วๆ นี้', cls: 'border-navy-700 bg-navy-900/80 opacity-75 saturate-50', icon: '🂠' }
+          : { dot: 'bg-navy-600', text: 'หมดรอบ', cls: 'border-navy-700/60 bg-navy-900/40 opacity-50', icon: '🔒' };
 
   const name = m.catName || m.typeName;
   return (
-    <button type="button" aria-expanded={liveRound ? undefined : expanded}
-      onClick={() => liveRound ? navigate(`/bet/${liveRound.id}`) : onToggle()}
-      className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition active:scale-95 ${state.cls} ${expanded ? 'ring-1 ring-cyan-400/60' : ''}`}>
+    <button type="button" aria-expanded={expanded}
+      onClick={onToggle}
+      className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition hover:-translate-y-0.5 hover:border-cyan-400/50 active:scale-95 ${state.cls} ${expanded ? 'ring-1 ring-cyan-400/70 border-cyan-400/60' : ''}`}>
       {blind && (
-        <span className="absolute inset-0 rounded-xl pointer-events-none opacity-[0.06]"
-          style={{ background: 'repeating-linear-gradient(45deg,#fff,#fff 4px,transparent 4px,transparent 8px)' }} />
+        <span className="absolute inset-0 rounded-xl pointer-events-none opacity-[0.10]"
+          style={{ background: 'repeating-linear-gradient(45deg,#64748b,#64748b 5px,transparent 5px,transparent 10px)' }} />
       )}
-      <FlagIcon code={m.typeCode} className="w-10 h-7 text-[10px] rounded shadow" />
+      <FlagIcon code={m.typeCode} className={`w-10 h-7 text-[10px] rounded shadow ${blind ? 'opacity-60 saturate-50' : ''}`} />
       <span className="text-[11px] font-bold text-white leading-tight text-center line-clamp-2 min-h-[2rem]">{name}</span>
-      <span className={`inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${liveRound ? 'bg-green-500/20 text-green-300' : 'bg-navy-900/80 text-navy-300 border border-navy-700'}`}>
+      <span className={`inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${liveRound ? 'bg-green-500/20 text-green-300' : 'bg-navy-950/70 text-navy-300 border border-navy-700'}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${state.dot}`} />{state.text}
       </span>
-      {m.rounds.length > 1 && <span className="text-[8px] text-navy-500">{m.rounds.length} รอบ</span>}
+      {upcomingCount > 0 && (
+        <span className="inline-flex items-center gap-0.5 text-[9px] text-navy-400">
+          <span className="opacity-70">🂠</span>×{upcomingCount} รอบล่วงหน้า
+        </span>
+      )}
     </button>
   );
 }
