@@ -1,0 +1,80 @@
+import { Link } from 'react-router-dom';
+import { api, fmtDateTime } from '../api.js';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../auth.jsx';
+
+// หน้า games — ศูนย์รวมเกมด่วน (สล็อต/ไฮโล/ยี่กี) + ทางลัดหวยราศี
+export default function GamesHub() {
+  const { user } = useAuth();
+  const [cfg, setCfg] = useState(null);
+  const [zodiacDraw, setZodiacDraw] = useState(null);
+
+  useEffect(() => {
+    api('/lottery/public-config').then(r => setCfg(r)).catch(() => {});
+    api('/lottery/draws?upcoming=1').then(r => {
+      const d = (r.draws || []).find(x => x.type_code === 'HR' && x.status !== 'settled' && x.status !== 'cancelled');
+      setZodiacDraw(d || null);
+    }).catch(() => {});
+  }, []);
+
+  const baht = (satang) => `${(Number(satang || 0) / 100).toLocaleString('th-TH')} บาท`;
+  const sp = cfg?.instantGame?.scratchPrizes || [];
+  const prizeMax = sp.length ? Math.max(...sp.map(p => p.prize)) : null;
+  const hm = cfg?.instantGame?.hiloMult;
+
+  const games = [
+    {
+      to: '/scratch', icon: '🎰', name: 'สล็อต 5 รีล', tag: '20 เพย์ไลน์',
+      desc: `สปิน 5 รีล 3 แถว 20 เพย์ไลน์ — รางวัลสูงสุด ${prizeMax != null ? baht(prizeMax) : '120,000 บาท'}`,
+      price: cfg?.instantGame?.scratchPrice ? `แทง ${baht(cfg.instantGame.scratchPrice)}/สปิน` : '',
+      grad: 'from-red-700 to-rose-900', auth: true,
+    },
+    {
+      to: '/hilo', icon: '🎲', name: 'ไฮโล', tag: 'ทายเต๋า 3 ลูก',
+      desc: `ทาย สูง/ต่ำ/11 — ${hm ? `ต่ำ ×${hm.low} • สูง ×${hm.high} • 11 ×${hm.eleven}` : 'อัตราจ่ายตามกติกา'}`,
+      price: cfg?.instantGame?.hiloPrice ? `แทง ${baht(cfg.instantGame.hiloPrice)}/ครั้ง` : '',
+      grad: 'from-amber-700 to-orange-900', auth: true,
+    },
+    {
+      to: '/kiwi', icon: '🐯', name: 'ยี่กี', tag: 'เลือกเลขทายผลไว',
+      desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP',
+      price: '', grad: 'from-yellow-700 to-amber-900', auth: true,
+    },
+    {
+      to: zodiacDraw ? `/bet/${zodiacDraw.id}` : '/play', icon: '🔮', name: 'หวยยี่กี 12 ราศี', tag: 'ออกผลทุก 15 นาที',
+      desc: zodiacDraw ? `รอบถัดไปออก ${fmtDateTime(zodiacDraw.draw_at)}` : 'เลือกได้ 4 รูปแบบการแทง',
+      price: '', grad: 'from-violet-700 to-purple-900', auth: false,
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="text-center">
+        <h1 className="text-xl font-black text-white">🎮 เกมด่วน</h1>
+        <p className="text-xs text-navy-400 mt-1">เล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
+      </div>
+
+      {!user && (
+        <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl px-4 py-3 text-sm text-amber-200 text-center">
+          กรุณา <Link to="/login" className="font-bold underline">เข้าสู่ระบบ</Link> ก่อนเล่นเกม
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        {games.map(g => (
+          <Link key={g.to} to={g.to}
+            className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${g.grad} p-5 hover:scale-[1.02] transition-transform`}>
+            <div className="text-4xl mb-2">{g.icon}</div>
+            <div className="font-black text-white text-lg">{g.name}</div>
+            <div className="text-[11px] font-bold text-white/70">{g.tag}</div>
+            <p className="text-xs text-white/80 mt-2 leading-relaxed">{g.desc}</p>
+            {g.price && <div className="text-[11px] font-bold text-gold-300 mt-1">{g.price}</div>}
+            <div className="mt-3 inline-block text-xs font-black px-4 py-1.5 rounded-lg bg-white/15 text-white group-hover:bg-white/25 transition">
+              เล่นเลย →
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

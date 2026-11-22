@@ -50,6 +50,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8083:8083"   # bet portal (provider-style)
+      - "8084:8084"   # games portal (เกมด่วน)
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./certs:/etc/caddy/certs:ro   # cert จาก Let's Encrypt (acme.sh dns_cf) — scripts/setup-https.sh
