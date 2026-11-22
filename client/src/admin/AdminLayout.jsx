@@ -30,7 +30,7 @@ export const adminGroups = [
     label: 'เครดิต & ระบบ',
     items: [
       { to: '/admin/wallet', label: 'จัดการเครดิต', icon: 'wallet' },
-      { to: '/admin/payments', label: 'ชำระเงิน', icon: 'wallet' },
+      { to: '/admin/payments', label: 'เติม/ถอนเงิน', icon: 'wallet' },
       { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก', icon: 'banner' },
       { to: '/admin/audit', label: 'Audit Log', icon: 'audit', superOnly: true },
       { to: '/admin/security', label: 'Security Events', icon: 'security', superOnly: true },
@@ -44,6 +44,7 @@ export default function AdminLayout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [chatUnread, setChatUnread] = useState(0);
+  const [payPending, setPayPending] = useState(0); // คำขอเติม/ถอนที่รอตรวจสอบ
   const prevUnread = useRef(0);
 
   // badge จำนวนแชทที่ยังไม่อ่าน — poll 15 วิ + อัปเดตทันทีเมื่อ SSE แจ้ง 'chat'
@@ -60,6 +61,18 @@ export default function AdminLayout() {
     load();
     const t = setInterval(() => load(), 15000);
     const h = (e) => { if (e.detail?.kind === 'chat') load(true); };
+    window.addEventListener('sys:update', h);
+    return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
+  }, []);
+
+  // badge จำนวนคำขอเติม/ถอนที่รอตรวจสอบ — poll 30 วิ (SSE 'payments' ถ้ามีจะอัปเดตเร็วขึ้น)
+  useEffect(() => {
+    const load = () => api('/admin/payments?status=pending_review')
+      .then(r => setPayPending((r.requests || []).length))
+      .catch(() => {});
+    load();
+    const t = setInterval(load, 30000);
+    const h = (e) => { if (['payments', 'notify'].includes(e.detail?.kind)) load(); };
     window.addEventListener('sys:update', h);
     return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
   }, []);
@@ -113,6 +126,11 @@ export default function AdminLayout() {
                     {i.to === '/admin/chat' && chatUnread > 0 && (
                       <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">
                         {chatUnread > 99 ? '99+' : chatUnread}
+                      </span>
+                    )}
+                    {i.to === '/admin/payments' && payPending > 0 && (
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-navy-950 text-[9px] font-black flex items-center justify-center">
+                        {payPending > 99 ? '99+' : payPending}
                       </span>
                     )}
                   </NavLink>

@@ -38,6 +38,7 @@ export default function Wallet() {
   const [bankAccName, setBankAccName] = useState('');
   const [ppId, setPpId] = useState('');
   const [showAllPays, setShowAllPays] = useState(false);
+  const [showAllTxs, setShowAllTxs] = useState(false);
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
@@ -242,7 +243,7 @@ export default function Wallet() {
         <CardHeader title="ประวัติธุรกรรมเครดิต" />
         {/* มือถือ/แท็บเล็ต: การ์ดเรียงแนวตั้ง ไม่ล้นจอ */}
         <div className="md:hidden divide-y divide-navy-700">
-          {txs.map(t => (
+          {txs.slice(0, showAllTxs ? txs.length : 20).map(t => (
             <div key={t.id} className="px-4 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -277,7 +278,7 @@ export default function Wallet() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {txs.map(t => (
+              {txs.slice(0, showAllTxs ? txs.length : 20).map(t => (
                 <TableRow key={t.id} className="border-navy-700/50">
                   <TableCell className="font-mono text-xs text-navy-300">{t.reference}</TableCell>
                   <TableCell className="text-white">{TYPE_TH[t.type] || t.type}</TableCell>
@@ -294,6 +295,12 @@ export default function Wallet() {
             </TableBody>
           </Table>
         </div>
+        {txs.length > 20 && (
+          <button onClick={() => setShowAllTxs(!showAllTxs)}
+            className="w-full py-2.5 text-sm font-semibold text-gold-300 hover:text-gold-200 border-t border-navy-700/50">
+            {showAllTxs ? '▲ ย่อรายการ' : `▼ แสดงทั้งหมด (${txs.length - 20} รายการเพิ่มเติม)`}
+          </button>
+        )}
       </Card>
 
       {/* modal เติม/ถอนเงินจริง — PromptPay QR + สลิป / ถอนรออนุมัติ */}
@@ -415,38 +422,6 @@ export default function Wallet() {
               </Button>
             </div>
       </Modal>
-
-      {/* ประวัติคำขอชำระเงิน */}
-      {payReqs.length > 0 && (
-        <Card className="mt-4">
-          <CardHeader title="คำขอเติม/ถอนเงิน" />
-          <div className="divide-y divide-navy-700/50">
-            {payReqs.slice(0, 10).map(p => (
-              <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
-                <div className="min-w-0">
-                  <div className="font-semibold text-white">
-                    {p.kind === 'deposit' ? '💳 เติม' : '🏦 ถอน'} ฿{satang(p.amount)}
-                    <span className="ml-2 text-[11px] font-mono text-navy-400">{p.reference}</span>
-                  </div>
-                  <div className="text-[11px] text-navy-400 truncate">
-                    {fmtDateTime(p.created_at)}
-                    {p.slip_trans_ref ? ` • สลิป ${p.slip_trans_ref}` : ''}
-                    {p.bank_name ? ` • ${p.bank_name} ${p.bank_account_no}` : ''}
-                    {p.slip_error ? ` • ⚠️ ${p.slip_error}` : ''}
-                    {p.admin_note ? ` • หมายเหตุ: ${p.admin_note}` : ''}
-                  </div>
-                </div>
-                <span className={`shrink-0 text-[11px] font-bold px-2 py-1 rounded ${
-                  p.status === 'approved' ? 'bg-green-500/15 text-green-300'
-                  : p.status === 'rejected' ? 'bg-red-500/15 text-red-300'
-                  : 'bg-amber-500/15 text-amber-300'}`}>
-                  {p.status === 'approved' ? '✅ สำเร็จ' : p.status === 'rejected' ? '❌ ปฏิเสธ' : p.status === 'pending_slip' ? '📤 รอสลิป' : '⏳ รอตรวจสอบ'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
 
       {/* overlay ฉลอง/เสียใจผลโพยล่าสุด — portal ไปที่ body เพื่ออยู่บนสุดเสมอ
           (กัน ancestor ที่มี transform/animation ทำ fixed หลุดจาก viewport) */}

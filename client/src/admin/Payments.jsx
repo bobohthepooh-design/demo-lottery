@@ -17,12 +17,13 @@ const STATUS_BADGE = {
 export default function AdminPayments() {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState('pending_review');
+  const [kind, setKind] = useState(''); // '' | deposit | withdraw
   const [busy, setBusy] = useState(null);
   const [note, setNote] = useState({});
   const [msg, setMsg] = useState('');
 
-  const load = () => api(`/admin/payments?status=${status}`).then(r => setRows(r.requests || [])).catch(e => setMsg(e.message));
-  useEffect(() => { load(); }, [status]);
+  const load = () => api(`/admin/payments?status=${status}${kind ? `&kind=${kind}` : ''}`).then(r => setRows(r.requests || [])).catch(e => setMsg(e.message));
+  useEffect(() => { load(); }, [status, kind]);
 
   const review = async (id, action) => {
     setBusy(id); setMsg('');
@@ -38,7 +39,18 @@ export default function AdminPayments() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-bold text-white">ชำระเงิน (เติม/ถอน)</h1>
-        <Select value={status} onValueChange={setStatus}>
+        <div className="flex gap-2">
+          <Select value={kind || 'all'} onValueChange={v => setKind(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-32 bg-navy-800 border-navy-600 text-white text-xs">
+              <SelectValue placeholder="ทุกประเภท" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">ทุกประเภท</SelectItem>
+              <SelectItem value="deposit">เติมเงิน</SelectItem>
+              <SelectItem value="withdraw">ถอนเงิน</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-44 bg-navy-800 border-navy-600 text-white text-xs">
             <SelectValue />
           </SelectTrigger>
@@ -49,7 +61,8 @@ export default function AdminPayments() {
             <SelectItem value="rejected">ปฏิเสธ</SelectItem>
             <SelectItem value="all">ทั้งหมด</SelectItem>
           </SelectContent>
-        </Select>
+          </Select>
+        </div>
       </div>
       {msg && <div className="text-sm text-gold-300">{msg}</div>}
       <Card>
