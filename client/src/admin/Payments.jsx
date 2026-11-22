@@ -97,7 +97,8 @@ export default function AdminPayments() {
                       <div className="flex flex-col gap-1.5 items-end">
                         <Input value={note[p.id] || ''} onChange={e => setNote({ ...note, [p.id]: e.target.value })}
                           placeholder="หมายเหตุ (ไม่บังคับ)"
-                          className="h-8 w-44 text-xs bg-navy-900 border-navy-600" />
+                          className="h-8 w-44 text-xs bg-navy-900 border-navy-600"
+                          inputClassName="!h-8 !px-2 !py-1 !text-xs" />
                         <div className="flex gap-1.5">
                           <Button onClick={() => review(p.id, 'approve')} disabled={busy === p.id}
                             className="!py-1 !px-3 text-xs">✅ อนุมัติ</Button>

@@ -116,7 +116,7 @@ export default function AdminChat() {
                 <span className="font-bold text-white">{selThread?.displayName || selThread?.username || `User #${sel}`}</span>
                 <span className="text-xs text-navy-400">@{selThread?.username}</span>
               </div>
-              <ScrollArea className="flex-1 bg-navy-950/40 px-4 py-3">
+              <ScrollArea className="flex-1 min-h-0 bg-navy-950/40 px-4 py-3">
                 <div className="space-y-2 min-h-full flex flex-col">
                 {msgs.map(m => (
                   <div key={m.id} className={`flex ${m.isAdmin ? 'justify-end' : 'justify-start'}`}>
