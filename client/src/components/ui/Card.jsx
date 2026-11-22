@@ -1,7 +1,7 @@
 // Card มาตรฐาน — <Card> / <CardHeader title sub actions> / <CardBody>
 // variant: default(navy-800) subtle(navy-900/60) gold(กรอบทอง สำหรับยอดเงิน/สำคัญ)
 const VARIANTS = {
-  default: 'bg-navy-800 border border-navy-700/70',
+  default: 'bg-gradient-to-b from-navy-800/90 to-navy-900/90 border border-navy-600/60',
   subtle: 'bg-navy-900/60 border border-navy-700/60',
   gold: 'bg-gradient-to-br from-[#f7ecc4] via-[#efd78f] to-[#e3c05c] border border-gold-500/40',
   danger: 'bg-red-500/10 border border-red-500/40',

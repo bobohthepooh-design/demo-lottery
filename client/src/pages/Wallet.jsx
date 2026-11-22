@@ -15,7 +15,7 @@ const TYPE_TH = {
 const PRESETS = [100, 500, 1000, 5000, 10000];
 
 export default function Wallet() {
-  const { balance, setBalance } = useAuth();
+  const { balance, setBalance, user } = useAuth();
   const [txs, setTxs] = useState([]);
   const [wd, setWd] = useState(null); // { deposited, won, withdrawn, withdrawable, unlocked }
   const [loading, setLoading] = useState(true);
@@ -133,32 +133,55 @@ export default function Wallet() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Card variant="gold" className="p-8 text-center">
-        <div className="text-sm font-bold text-navy-950/80">ยอดเครดิตจำลองคงเหลือ</div>
-        <div className="text-5xl font-black text-black mt-2 drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">{satang(balance)} บาท</div>
-        <div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
-          <Button variant="dark" onClick={() => { setModal('deposit'); setAmount(''); setErr(''); }}>
-            ＋ เติมเครดิต
-          </Button>
-          <Button variant="dark" onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); }}>
-            － แลกเครดิต
-          </Button>
+      {/* กระเป๋า — portal-style: member card + balance + ฝาก/ถอน (อ้างอิง portal.ruayraew.vip/wallet) */}
+      <Card variant="gold" className="overflow-hidden">
+        {/* member strip — ชื่อ + ระดับสมาชิก + DEMO badge */}
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4">
+          <span className="w-12 h-12 rounded-full bg-gradient-to-br from-navy-800 to-navy-950 text-gold-300 font-black text-xl flex items-center justify-center border-2 border-gold-500/60 shadow-md shrink-0">
+            {(user?.displayName || user?.username || 'ล').slice(0, 1).toUpperCase()}
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="font-black text-navy-950 text-lg leading-tight truncate">{user?.displayName || user?.username || 'สมาชิก'}</div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full bg-navy-950/85 text-gold-300 border border-gold-500/40">MEMBER</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-600/90 text-white">DEMO</span>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="text-[10px] font-bold text-navy-950/70 uppercase tracking-wider">ยอดคงเหลือ</div>
+            <div className="text-3xl sm:text-4xl font-black text-navy-950 leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">{satang(balance)}</div>
+            <div className="text-[11px] font-bold text-navy-950/70">บาท</div>
+          </div>
         </div>
+        {/* action buttons — ฝากเงิน / ถอนเงิน */}
+        <div className="grid grid-cols-2 gap-3 px-6 pb-4">
+          <button onClick={() => { setModal('deposit'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
+            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black py-3.5 text-sm tracking-wide shadow-lg shadow-emerald-900/25 hover:brightness-110 active:scale-[0.98] transition border border-emerald-400/40">
+            ＋ ฝากเงิน
+          </button>
+          <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); }}
+            className="rounded-xl bg-gradient-to-r from-sky-700 to-blue-800 text-white font-black py-3.5 text-sm tracking-wide shadow-lg shadow-blue-900/25 hover:brightness-110 active:scale-[0.98] transition border border-sky-400/40">
+            🏦 ถอนเงิน
+          </button>
+        </div>
+        {/* withdrawable status */}
         {wd && (
-          <div className={`text-xs mt-3 font-semibold ${wd.pendingSlips > 0 ? 'text-amber-800' : wd.unlocked ? 'text-green-800' : 'text-amber-800'}`}>
+          <div className={`mx-6 mb-4 rounded-lg px-3 py-2 text-xs font-semibold text-center ${wd.pendingSlips > 0 ? 'bg-amber-100/80 text-amber-900' : wd.unlocked ? 'bg-emerald-100/80 text-emerald-900' : 'bg-amber-100/80 text-amber-900'}`}>
             {wd.pendingSlips > 0 && (
-              <div className="mb-1">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท) — สปิน/ทายหรือลงผล หรือยกเลิกโพย-บัตรเกมเพื่อคืนเครดิตก่อนแลกได้</div>
+              <div className="mb-0.5">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท)</div>
             )}
             {wd.unlocked
               ? wd.override
                 ? balance < 5000
-                  ? `✅ ได้รับอนุญาตให้แลกเครดิตจากแอดมิน — แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท แลกไม่ได้`
-                  : `✅ ได้รับอนุญาตให้แลกเครดิตจากแอดมิน — แลกได้ ${satang(wd.withdrawable)} บาท (ยอดสุทธิหักเครดิตแถม)`
-                : `✅ แลกได้ ${satang(wd.withdrawable)} บาท (ยอดคงเหลือหักเครดิตแถม)`
-              : `🔒 แลกเครดิตได้หลังเติมเครดิตครบ 100 บาท — เติมแล้ว ${satang(wd.deposited)} บาท`}
+                  ? `✅ ได้รับอนุญาตให้ถอนจากแอดมิน — แต่ยอดคงเหลือ ${satang(balance)} บาท ต่ำกว่า 50 บาท ถอนไม่ได้`
+                  : `✅ ถอนได้ ${satang(wd.withdrawable)} บาท (ยอดสุทธิหักเครดิตแถม)`
+                : `✅ ถอนได้ ${satang(wd.withdrawable)} บาท (ยอดคงเหลือหักเครดิตแถม)`
+              : `🔒 ถอนได้หลังมียอดฝาก/เล่นถึงเกณฑ์ — ฝากแล้ว ${satang(wd.deposited)} บาท`}
           </div>
         )}
-        <div className="text-xs text-navy-950/70 mt-2 font-semibold">⚠️ เครดิตเสมือนสำหรับ Demo เท่านั้น — ไม่ใช่เงินจริงและไม่สามารถแลกเป็นเงินจริงได้</div>
+        <div className="px-6 pb-5 text-center">
+          <div className="text-[10px] text-navy-950/60 font-semibold">เครดิตเสมือนสำหรับการศึกษา — โปรโมชันถอนไม่ได้ เฉพาะเงินฝาก/เงินรางวัล</div>
+        </div>
       </Card>
 
       {/* สรุปยอดเดิมพัน/รางวัล */}

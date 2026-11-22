@@ -87,7 +87,7 @@ export default function AdminLayout() {
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6">
       <aside className="lg:w-60 shrink-0">
-        <div className="bg-navy-900 border border-navy-700/70 rounded-2xl lg:sticky lg:top-24 shadow-lg shadow-black/20">
+        <div className="bg-gradient-to-b from-navy-800/95 to-navy-900/95 border border-navy-600/60 rounded-2xl lg:sticky lg:top-24 shadow-xl shadow-black/25 overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-navy-700/60">
             <span className="w-7 h-7 rounded-lg bg-gold-500/15 border border-gold-500/40 flex items-center justify-center text-gold-400">
               <Icon name="settings" className="w-4 h-4" />
