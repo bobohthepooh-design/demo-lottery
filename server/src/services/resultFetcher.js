@@ -56,6 +56,7 @@ export async function fetchThaiResult() {
       top2: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-2) || null,
       last1: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-1) || null,
       bottom2: vals(g.last2)[0] || null,
+      bottom1: (vals(g.last2)[0] || '').replace(/\D/g, '').slice(-1) || null,
     },
   };
 }
@@ -128,6 +129,7 @@ export function generateLaoDevResult(drawCode) {
       top2: base.slice(-2),
       last1: base.slice(-1),
       bottom2: base.slice(-5, -3),
+      bottom1: base.slice(-3, -2),
       last4: base.slice(-4),
       last3: base.slice(-3),
       last2: base.slice(-2),
@@ -236,7 +238,7 @@ function winningFor(kind, x) {
       w.front3 = a.slice(0, 3); w.top3 = a.slice(-3); w.top4 = a.slice(-4);
       w.top2 = a.slice(-2); w.last1 = a.slice(-1);
     }
-    if (b.length >= 2) w.bottom2 = b.slice(-2);
+    if (b.length >= 2) { w.bottom2 = b.slice(-2); w.bottom1 = b.slice(-1); }
     return w;
   }
   if (kind === 'thai-gov') {

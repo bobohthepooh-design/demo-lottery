@@ -15,6 +15,7 @@ const TH = {
     { key: 'top2',     label: 'เลข 2 ตัวบน',       short: '2บน',    digits: 2, optional: true },
     { key: 'top4',     label: 'เลข 4 ตัวบน',       short: '4บน',    digits: 4, optional: true },
     { key: 'last1',    label: 'เลขวิ่งบน',         short: 'วิ่งบน',  digits: 1, optional: true },
+    { key: 'bottom1', label: 'เลขวิ่งล่าง',       short: 'วิ่งล่าง', digits: 1, optional: true },
   ],
 };
 
@@ -80,6 +81,7 @@ const GS = {
     { key: 'front3', label: 'เลข 3 ตัวล่างหน้า', short: 'ล่างหน้า', digits: 3, optional: true },
     { key: 'bottom2',label: 'เลข 2 ตัวล่าง',   short: '2ล่าง', digits: 2, optional: true },
     { key: 'last1',  label: 'เลขวิ่งบน',       short: 'วิ่งบน', digits: 1, optional: true },
+    { key: 'bottom1', label: 'เลขวิ่งล่าง',     short: 'วิ่งล่าง', digits: 1, optional: true },
   ],
 };
 

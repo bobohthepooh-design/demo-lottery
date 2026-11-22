@@ -706,21 +706,28 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
 
   winningNumbers = { ...winningNumbers };
   mergeAnnounce(winningNumbers, draw.announce);
-  // derive เลขบน/ล่างจากรางวัลหลักอัตโนมัติ — first (หวยไทย) หรือ p1 (ออมสิน) ไม่ต้องกรอกแยก
+  // derive เฉพาะตลาด "บน" (ตัดหลักจากรางวัลหลัก) — ล่างเป็นผลรางวัลของตัวเอง ห้าม derive
   const mainRaw = winningNumbers.first ?? (Array.isArray(winningNumbers.p1) ? winningNumbers.p1[0] : winningNumbers.p1);
   const d = String(mainRaw ?? '').replace(/\D/g, '');
-  if (d.length >= 4) {
-    if (winningNumbers.top4 == null) winningNumbers.top4 = d.slice(-4);
-    if (winningNumbers.top3 == null) winningNumbers.top3 = d.slice(-3);
-    if (winningNumbers.front3 == null) winningNumbers.front3 = d.slice(0, 3);
-  }
+  if (d.length >= 4 && winningNumbers.top4 == null) winningNumbers.top4 = d.slice(-4);
   if (d.length >= 2 && winningNumbers.top2 == null) winningNumbers.top2 = d.slice(-2);
   if (d.length >= 1 && winningNumbers.last1 == null) winningNumbers.last1 = d.slice(-1);
-  // bottom2 ของออมสิน = 2 ตัวท้ายของอันดับ 5
+  // ออมสินไม่มีรางวัลหน้า/หลังแยก — derive front3/top3 จากอันดับ 1 เหมือน fetcher
+  if (winningNumbers.p1 != null) {
+    if (d.length >= 3 && winningNumbers.front3 == null) winningNumbers.front3 = d.slice(0, 3);
+    if (d.length >= 3 && winningNumbers.top3 == null) winningNumbers.top3 = d.slice(-3);
+  }
+  // bottom2 ของออมสิน = 2 ตัวท้ายของอันดับ 5 (ผลรางวัลของตัวเอง)
   if (winningNumbers.bottom2 == null) {
     const p5 = Array.isArray(winningNumbers.p5) ? winningNumbers.p5[0] : winningNumbers.p5;
     const b = String(p5 ?? '').replace(/\D/g, '');
     if (b.length >= 2) winningNumbers.bottom2 = b.slice(-2);
+  }
+  // bottom1 (เลขวิ่งล่าง) = ตัวสุดท้ายของเลข 2 ตัวล่าง
+  if (winningNumbers.bottom1 == null && winningNumbers.bottom2 != null) {
+    const b2 = Array.isArray(winningNumbers.bottom2) ? winningNumbers.bottom2[0] : winningNumbers.bottom2;
+    const bd = String(b2 ?? '').replace(/\D/g, '');
+    if (bd.length >= 1) winningNumbers.bottom1 = bd.slice(-1);
   }
   return winningNumbers;
 }
