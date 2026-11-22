@@ -55,13 +55,13 @@ function RoundRow({ d, nowSql, nowMs }) {
   return (
     <button
       onClick={go}
-      className={`flex items-center gap-4 px-5 py-3.5 w-full text-left rounded-2xl transition-all duration-200 border ${
+      className={`flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-3.5 w-full text-left rounded-2xl transition-all duration-200 border ${
         live
           ? 'bg-gradient-to-r from-green-900/20 to-navy-800/60 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10'
           : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60 hover:bg-navy-800/60'
       }`}
     >
-      <FlagIcon code={d.type_code} className="w-10 h-12 shrink-0 rounded-lg overflow-hidden" />
+      <FlagIcon code={d.type_code} className="w-8 h-10 sm:w-10 sm:h-12 shrink-0 rounded-lg overflow-hidden" />
       <div className="flex-1 min-w-0">
         <div className="text-base font-semibold text-white truncate">{drawLabel(d)}</div>
         <div className="text-sm text-navy-400 mt-0.5">
@@ -69,11 +69,11 @@ function RoundRow({ d, nowSql, nowMs }) {
           {ann && <span className="ml-2 text-amber-300 font-medium">📣 {ann}</span>}
         </div>
       </div>
-      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${badge.cls}`}>
+      <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 ${badge.cls}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
         {badge.text}
       </span>
-      <span className="text-navy-500 text-base shrink-0">›</span>
+      <span className="text-navy-500 text-base sm:text-lg shrink-0 hidden sm:inline">›</span>
     </button>
   );
 }
@@ -84,7 +84,7 @@ function TypeTile({ tg, expanded, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-200 text-center ${
+      className={`relative flex flex-col items-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-2xl border transition-all duration-200 text-center ${
         expanded
           ? 'bg-gradient-to-br from-gold-500/20 to-navy-800/80 border-gold-400/60 shadow-lg shadow-gold-500/10'
           : hasLive
@@ -93,7 +93,7 @@ function TypeTile({ tg, expanded, onClick }) {
       }`}
     >
       <FlagIcon code={tg.typeCode} className="w-12 h-9 rounded-lg overflow-hidden" />
-      <div className="text-sm font-bold text-white leading-tight">{tg.typeName}</div>
+      <div className="text-xs sm:text-sm font-bold text-white leading-tight text-center break-words w-full">{tg.typeName}</div>
       <div className="flex items-center gap-1.5 text-xs">
         {hasLive ? (
           <span className="inline-flex items-center gap-1 text-green-300 font-semibold">
@@ -120,7 +120,7 @@ function CategoryTile({ cat, typeCode, expanded, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 text-center ${
+      className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl border transition-all duration-200 text-center ${
         expanded
           ? 'bg-gradient-to-br from-cyan-500/20 to-navy-800/80 border-cyan-400/60 shadow-lg shadow-cyan-500/10'
           : hasLive
@@ -128,9 +128,9 @@ function CategoryTile({ cat, typeCode, expanded, onClick }) {
             : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60'
       }`}
     >
-      <FlagIcon code={typeCode} className="w-9 h-7 rounded-md overflow-hidden" />
-      <div className="text-xs font-semibold text-white leading-tight truncate w-full">{cat.catName}</div>
-      <div className="flex items-center gap-1 text-xs">
+      <FlagIcon code={typeCode} className="w-8 h-6 sm:w-9 sm:h-7 rounded-md overflow-hidden" />
+      <div className="text-[10px] sm:text-xs font-semibold text-white leading-tight truncate w-full">{cat.catName}</div>
+      <div className="flex items-center gap-1 text-[10px] sm:text-xs">
         {hasLive ? (
           <span className="inline-flex items-center gap-0.5 text-green-300 font-semibold">
             <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
@@ -246,10 +246,10 @@ export default function BetHub() {
     <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 pb-8">
       {/* Hero */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl sm:text-4xl font-black text-gold-300 tracking-wide">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gold-300 tracking-wide">
           เลือกหวยที่ต้องการแทง
         </h1>
-        <p className="text-sm text-navy-300 mt-1">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
+        <p className="text-xs sm:text-sm text-navy-300 mt-1">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
       </div>
 
       {!loaded ? (
@@ -259,7 +259,7 @@ export default function BetHub() {
       ) : (
         <>
           {/* Type Grid — 3 columns */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
             {typeGroups.map(tg => (
               <TypeTile
                 key={tg.typeCode}
@@ -280,17 +280,17 @@ export default function BetHub() {
           {activeType && (
             <div className="animate-fade-in">
               {/* Type Header */}
-              <div className="flex items-center gap-3 mb-4">
-                <FlagIcon code={activeType.typeCode} className="w-8 h-6 rounded-md overflow-hidden" />
-                <h2 className="text-xl font-bold text-white">{activeType.typeName}</h2>
-                <span className="text-sm text-navy-300">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 flex-wrap">
+                <FlagIcon code={activeType.typeCode} className="w-7 h-5 sm:w-8 sm:h-6 rounded-md overflow-hidden" />
+                <h2 className="text-base sm:text-xl font-bold text-white">{activeType.typeName}</h2>
+                <span className="text-xs sm:text-sm text-navy-300">
                   {activeType.hasCategories
                     ? `${activeType.totalRounds} รอบ • ${activeType.catList.length} ตลาด`
                     : `${activeType.totalRounds} รอบ`}
                 </span>
                 <button
                   onClick={() => { setOpenType(''); setOpenCat(''); }}
-                  className="ml-auto text-sm text-navy-400 hover:text-white transition-colors"
+                  className="ml-auto text-xs sm:text-sm text-navy-400 hover:text-white transition-colors"
                 >
                   ✕ ปิด
                 </button>
@@ -324,12 +324,12 @@ export default function BetHub() {
                   {/* Selected Category Rounds */}
                   {activeCat && (
                     <div className="mt-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base font-semibold text-navy-200">{activeCat.catName}</span>
-                        <span className="text-sm text-navy-400">{activeCat.roundCount} รอบ</span>
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        <span className="text-sm sm:text-base font-semibold text-navy-200">{activeCat.catName}</span>
+                        <span className="text-xs sm:text-sm text-navy-400">{activeCat.roundCount} รอบ</span>
                         <button
                           onClick={() => setOpenCat('')}
-                          className="ml-auto text-sm text-navy-400 hover:text-white transition-colors"
+                          className="ml-auto text-xs sm:text-sm text-navy-400 hover:text-white transition-colors"
                         >
                           ✕ ปิด
                         </button>
