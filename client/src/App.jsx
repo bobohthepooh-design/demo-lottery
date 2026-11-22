@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth.jsx';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
-import { appMode, MODE_HOME } from './appMode.js';
 // code splitting — หน้าอื่นโหลดเป็น chunk แยก (bundle หลักเล็กลง ~40%)
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
@@ -42,13 +41,6 @@ const AdminBroadcast = lazy(() => import('./admin/Broadcast.jsx'));
 const BetHub = lazy(() => import('./pages/BetHub.jsx'));
 const GamesHub = lazy(() => import('./pages/GamesHub.jsx'));
 
-// หน้าแรกตาม "โดเมน" (port): portal → Home, bet → /play, games → /games
-function ModeHome() {
-  const mode = appMode();
-  if (mode === 'portal') return <Home />;
-  return <Navigate to={MODE_HOME[mode]} replace />;
-}
-
 function Protected({ children, admin = false }) {
   const { user, loading, isAdmin } = useAuth();
   if (loading) return <div className="p-10"><div className="skeleton h-8 w-48 mx-auto mb-6" /><div className="skeleton h-64 w-full max-w-3xl mx-auto" /></div>;
@@ -82,7 +74,7 @@ export default function App() {
       <Suspense fallback={<div className="p-10"><div className="skeleton h-8 w-48 mx-auto mb-6" /><div className="skeleton h-64 w-full max-w-3xl mx-auto" /></div>}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<ModeHome />} />
+          <Route path="/" element={<Home />} />
           <Route path="/play" element={<BetHub />} />
           <Route path="/games" element={<GamesHub />} />
           <Route path="/login" element={<Login />} />

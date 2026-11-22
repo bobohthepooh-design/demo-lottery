@@ -41,30 +41,6 @@ http://localhost {
 	}
 }
 
-# Bet portal — http://<IP>:8083 (provider-style: เลือกหวย/รอบแทง + blind mode)
-http://:8083 {
-	reverse_proxy app:4000 {
-		flush_interval -1
-	}
-
-	header {
-		-Server
-		X-Powered-By
-	}
-}
-
-# Games portal — http://<IP>:8084 (เกมด่วน: สล็อต/ไฮโล/ยี่กี)
-http://:8084 {
-	reverse_proxy app:4000 {
-		flush_interval -1
-	}
-
-	header {
-		-Server
-		X-Powered-By
-	}
-}
-
 # LAN testing — http://<LAN-IP> (เช่น http://192.168.1.41)
 # HTTP ธรรมดาเพื่อให้ login/cookie ใช้ได้บนเครื่องในวง LAN โดยไม่ต้องจัดการ cert
 http://{$LAN_IP} {
