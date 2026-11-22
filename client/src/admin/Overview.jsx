@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { Icon } from '../components/icons.jsx';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 
 const fmt = (satangVal) => `${satang(satangVal)} บาท`;
 
@@ -130,30 +131,34 @@ export default function AdminOverview() {
               รอบเปิด {health.counts?.open ?? 0} • กำหนดการ {health.counts?.scheduled ?? 0} • ออกผลวันนี้ {health.counts?.settledToday ?? 0} • โพยรอผล {health.counts?.pendingBets ?? 0}
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[520px]">
-              <thead className="text-navy-400 text-xs">
-                <tr><th className="text-left py-1.5 pr-4">แหล่งผล</th><th className="text-left py-1.5 pr-4">ผลล่าสุด</th><th className="text-left py-1.5 pr-4">รอบ</th><th className="text-left py-1.5 pr-4">ตลาด</th><th className="text-right py-1.5">รวม</th></tr>
-              </thead>
-              <tbody className="divide-y divide-navy-700/60">
-                {health.sources.map(s => {
-                  const stale = s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3;
-                  return (
-                    <tr key={s.source}>
-                      <td className="py-2 pr-4 font-mono text-xs text-navy-200">{s.source}</td>
-                      <td className={`py-2 pr-4 text-xs ${stale ? 'text-amber-300' : 'text-green-300'}`}>
-                        {s.last_at ? fmtDateTime(s.last_at) : '—'}{stale ? ' ⚠️' : ''}
-                      </td>
-                      <td className="py-2 pr-4 text-xs text-navy-300">{s.last?.draw_code || '—'}</td>
-                      <td className="py-2 pr-4 text-xs text-navy-300">{s.last ? `${s.last.type_name_th}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}</td>
-                      <td className="py-2 text-right text-xs text-navy-300">{s.total}</td>
-                    </tr>
-                  );
-                })}
-                {!health.sources.length && <tr><td colSpan={5} className="py-3 text-navy-400 text-xs">ยังไม่มีผลรางวัลในระบบ</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-navy-700/60 hover:bg-transparent">
+                <TableHead className="text-navy-400">แหล่งผล</TableHead>
+                <TableHead className="text-navy-400">ผลล่าสุด</TableHead>
+                <TableHead className="text-navy-400">รอบ</TableHead>
+                <TableHead className="text-navy-400">ตลาด</TableHead>
+                <TableHead className="text-navy-400 text-right">รวม</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {health.sources.map(s => {
+                const stale = s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3;
+                return (
+                  <TableRow key={s.source} className="border-navy-700/50">
+                    <TableCell className="font-mono text-xs text-navy-200">{s.source}</TableCell>
+                    <TableCell className={`text-xs ${stale ? 'text-amber-300' : 'text-green-300'}`}>
+                      {s.last_at ? fmtDateTime(s.last_at) : '—'}{stale ? ' ⚠️' : ''}
+                    </TableCell>
+                    <TableCell className="text-xs text-navy-300">{s.last?.draw_code || '—'}</TableCell>
+                    <TableCell className="text-xs text-navy-300">{s.last ? `${s.last.type_name_th}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}</TableCell>
+                    <TableCell className="text-right text-xs text-navy-300">{s.total}</TableCell>
+                  </TableRow>
+                );
+              })}
+              {!health.sources.length && <TableRow><TableCell colSpan={5} className="text-navy-400 text-xs py-3">ยังไม่มีผลรางวัลในระบบ</TableCell></TableRow>}
+            </TableBody>
+          </Table>
           {health.overdue?.length > 0 && (
             <div className="mt-3 border-t border-navy-700/60 pt-3">
               <div className="text-xs font-bold text-red-300 mb-1.5">⚠️ รอบค้างออกผล ({health.overdue.length})</div>
