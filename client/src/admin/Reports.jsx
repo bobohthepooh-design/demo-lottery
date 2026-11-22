@@ -3,24 +3,25 @@ import { api, satang, fmtDateTime } from '../api.js';
 import { thaiDate } from '../time.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { StatCard } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { Badge } from '../components/shadcn/badge.jsx';
+import { cn } from '../lib/utils.js';
 
 const DRAW_STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ',
   settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก',
 };
 const DRAW_STATUS_CLS = {
-  scheduled: 'bg-navy-700 text-navy-200', open: 'bg-green-500/20 text-green-300',
-  closed: 'bg-yellow-500/20 text-yellow-300', settled: 'bg-blue-500/20 text-blue-300',
-  cancelled: 'bg-red-500/20 text-red-300',
+  scheduled: 'border-navy-500 text-navy-200', open: 'border-emerald-500/40 text-emerald-300',
+  closed: 'border-amber-500/40 text-amber-300', settled: 'border-sky-500/40 text-sky-300',
+  cancelled: 'border-red-500/40 text-red-300',
 };
+function DrawStatusBadge({ status }) {
+  return <Badge variant="outline" className={cn('text-[10px] font-semibold', DRAW_STATUS_CLS[status] || 'border-navy-500 text-navy-300')}>{DRAW_STATUS_TH[status] || status}</Badge>;
+}
 
 function Kpi({ label, value, sub, tone = 'text-white' }) {
   return <StatCard label={label} value={value} sub={sub} accent={tone} />;
-}
-
-function Th({ children, right, center }) {
-  const align = right ? 'text-right' : center ? 'text-center' : 'text-left';
-  return <th className={`text-xs text-navy-300 font-medium py-2 ${align}`}>{children}</th>;
 }
 
 export default function AdminReports() {
@@ -55,121 +56,147 @@ export default function AdminReports() {
       {/* ยอดแทงตามประเภทการแทง */}
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <h2 className="font-bold text-white mb-3">ยอดแทงตามประเภทการแทง</h2>
-          <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
-            <thead><tr className="border-b border-navy-700">
-              <Th>ประเทศ/ประเภทหวย</Th><Th>หมวด</Th><Th>ประเภทการแทง</Th><Th right>รายการ</Th><Th right>ถูก</Th><Th right>เรทถูก</Th><Th right>ยอดแทง</Th><Th right>จ่ายออก</Th>
-            </tr></thead>
-            <tbody className="divide-y divide-navy-700/60">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-navy-700 hover:bg-transparent">
+                <TableHead className="text-navy-400">ประเทศ/ประเภทหวย</TableHead>
+                <TableHead className="text-navy-400">หมวด</TableHead>
+                <TableHead className="text-navy-400">ประเภทการแทง</TableHead>
+                <TableHead className="text-navy-400 text-right">รายการ</TableHead>
+                <TableHead className="text-navy-400 text-right">ถูก</TableHead>
+                <TableHead className="text-navy-400 text-right">เรทถูก</TableHead>
+                <TableHead className="text-navy-400 text-right">ยอดแทง</TableHead>
+                <TableHead className="text-navy-400 text-right">จ่ายออก</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {d.betsByType.map((b, i) => {
                 const settled = (b.won || 0) + (b.lost || 0);
                 const rate = settled ? Math.round((b.won / settled) * 1000) / 10 : 0;
                 return (
-                  <tr key={`${b.rule_name}-${b.type_code}-${b.category_name_th}-${i}`}>
-                    <td className="py-2 text-white whitespace-nowrap">
+                  <TableRow key={`${b.rule_name}-${b.type_code}-${b.category_name_th}-${i}`} className="border-navy-700/50">
+                    <TableCell className="text-white whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
                         <FlagIcon code={b.type_code} className="w-5 h-3.5" />
                         {b.type_name_th}
                       </span>
-                    </td>
-                    <td className="text-navy-300 text-xs">{b.category_name_th || '—'}</td>
-                    <td className="text-navy-200">{b.rule_name}</td>
-                    <td className="text-right text-navy-300">{b.c}</td>
-                    <td className="text-right text-navy-300">{b.won}</td>
-                    <td className="text-right text-navy-300">{rate}%</td>
-                    <td className="text-right text-gold-300">{satang(b.stake)} บาท</td>
-                    <td className="text-right text-green-400">{satang(b.payout)} บาท</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-navy-300 text-xs">{b.category_name_th || '—'}</TableCell>
+                    <TableCell className="text-navy-200">{b.rule_name}</TableCell>
+                    <TableCell className="text-right text-navy-300">{b.c}</TableCell>
+                    <TableCell className="text-right text-navy-300">{b.won}</TableCell>
+                    <TableCell className="text-right text-navy-300">{rate}%</TableCell>
+                    <TableCell className="text-right text-gold-300">{satang(b.stake)} บาท</TableCell>
+                    <TableCell className="text-right text-green-400">{satang(b.payout)} บาท</TableCell>
+                  </TableRow>
                 );
               })}
-              {!d.betsByType.length && <tr><td colSpan="8" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
-            </tbody>
-          </table></div>
+              {!d.betsByType.length && <TableRow><TableCell colSpan="8" className="text-center text-navy-400 py-4">ไม่มีข้อมูล</TableCell></TableRow>}
+            </TableBody>
+          </Table>
         </div>
 
         {/* โพยรายวัน */}
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <h2 className="font-bold text-white mb-3">โพยรายวัน (30 วันล่าสุด)</h2>
-          <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
-            <thead><tr className="border-b border-navy-700">
-              <Th>วันที่</Th><Th right>โพย</Th><Th right>ยอดแทง</Th><Th right>จ่ายรางวัล</Th><Th right>กำไรวัน</Th>
-            </tr></thead>
-            <tbody className="divide-y divide-navy-700/60">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-navy-700 hover:bg-transparent">
+                <TableHead className="text-navy-400">วันที่</TableHead>
+                <TableHead className="text-navy-400 text-right">โพย</TableHead>
+                <TableHead className="text-navy-400 text-right">ยอดแทง</TableHead>
+                <TableHead className="text-navy-400 text-right">จ่ายรางวัล</TableHead>
+                <TableHead className="text-navy-400 text-right">กำไรวัน</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {d.betsByDay.map(b => {
                 const net = b.stake - b.payout;
                 return (
-                  <tr key={b.day}>
-                    <td className="py-2 text-white">{thaiDate(b.day + ' 00:00:00')}</td>
-                    <td className="text-right text-navy-300">{b.slips}</td>
-                    <td className="text-right text-gold-300">{satang(b.stake)} บาท</td>
-                    <td className="text-right text-green-400">{satang(b.payout)} บาท</td>
-                    <td className={`text-right font-semibold ${net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <TableRow key={b.day} className="border-navy-700/50">
+                    <TableCell className="text-white">{thaiDate(b.day + ' 00:00:00')}</TableCell>
+                    <TableCell className="text-right text-navy-300">{b.slips}</TableCell>
+                    <TableCell className="text-right text-gold-300">{satang(b.stake)} บาท</TableCell>
+                    <TableCell className="text-right text-green-400">{satang(b.payout)} บาท</TableCell>
+                    <TableCell className={cn('text-right font-semibold', net >= 0 ? 'text-green-400' : 'text-red-400')}>
                       {net >= 0 ? '+' : ''}{satang(net)} บาท
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-              {!d.betsByDay.length && <tr><td colSpan="5" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
-            </tbody>
-          </table></div>
+              {!d.betsByDay.length && <TableRow><TableCell colSpan="5" className="text-center text-navy-400 py-4">ไม่มีข้อมูล</TableCell></TableRow>}
+            </TableBody>
+          </Table>
         </div>
 
       {/* ผู้ชนะรางวัลสูงสุด */}
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
         <h2 className="font-bold text-white mb-3">🏆 ผู้ชนะรางวัลสูงสุด</h2>
-        <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
-          <thead><tr className="border-b border-navy-700">
-            <Th>สมาชิก</Th><Th>เลขโพย</Th><Th>รอบหวย</Th><Th right>รายการถูก</Th><Th right>เงินรางวัลรวม</Th>
-          </tr></thead>
-          <tbody className="divide-y divide-navy-700/60">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-navy-700 hover:bg-transparent">
+              <TableHead className="text-navy-400">สมาชิก</TableHead>
+              <TableHead className="text-navy-400">เลขโพย</TableHead>
+              <TableHead className="text-navy-400">รอบหวย</TableHead>
+              <TableHead className="text-navy-400 text-right">รายการถูก</TableHead>
+              <TableHead className="text-navy-400 text-right">เงินรางวัลรวม</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {d.topWinners.map(w => (
-              <tr key={w.slip_ref}>
-                <td className="py-2 text-white">{w.username}</td>
-                <td className="font-mono text-gold-300 text-xs">{w.slip_ref}</td>
-                <td className="text-navy-300 text-xs">
+              <TableRow key={w.slip_ref} className="border-navy-700/50">
+                <TableCell className="text-white">{w.username}</TableCell>
+                <TableCell className="font-mono text-gold-300 text-xs">{w.slip_ref}</TableCell>
+                <TableCell className="text-navy-300 text-xs">
                   {w.type_name_th}{w.draw_code && !w.draw_code.endsWith('-STANDING') ? ` • ${w.draw_code}` : ''}
-                </td>
-                <td className="text-right text-navy-300">{w.items} รายการ</td>
-                <td className="text-right text-green-400 font-bold">{satang(w.payout)} บาท</td>
-              </tr>
+                </TableCell>
+                <TableCell className="text-right text-navy-300">{w.items} รายการ</TableCell>
+                <TableCell className="text-right text-green-400 font-bold">{satang(w.payout)} บาท</TableCell>
+              </TableRow>
             ))}
-            {!d.topWinners.length && <tr><td colSpan="5" className="py-4 text-center text-navy-400">ยังไม่มีผู้ชนะ</td></tr>}
-          </tbody>
-        </table></div>
+            {!d.topWinners.length && <TableRow><TableCell colSpan="5" className="text-center text-navy-400 py-4">ยังไม่มีผู้ชนะ</TableCell></TableRow>}
+          </TableBody>
+        </Table>
       </div>
 
       {/* สถานะรอบหวยล่าสุด */}
       <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
         <h2 className="font-bold text-white mb-3">สถานะรอบหวยล่าสุด</h2>
-        <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
-          <thead><tr className="border-b border-navy-700">
-            <Th>รอบ</Th><Th>ประเภท</Th><Th>เวลาออกรางวัล</Th><Th center>สถานะ</Th><Th right>รายการ</Th><Th right>ยอดแทง</Th><Th right>จ่ายรวม</Th><Th right>กำไร</Th>
-          </tr></thead>
-          <tbody className="divide-y divide-navy-700/60">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-navy-700 hover:bg-transparent">
+              <TableHead className="text-navy-400">รอบ</TableHead>
+              <TableHead className="text-navy-400">ประเภท</TableHead>
+              <TableHead className="text-navy-400">เวลาออกรางวัล</TableHead>
+              <TableHead className="text-navy-400 text-center">สถานะ</TableHead>
+              <TableHead className="text-navy-400 text-right">รายการ</TableHead>
+              <TableHead className="text-navy-400 text-right">ยอดแทง</TableHead>
+              <TableHead className="text-navy-400 text-right">จ่ายรวม</TableHead>
+              <TableHead className="text-navy-400 text-right">กำไร</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {d.drawsSummary.map(x => {
               const net = x.stake - x.payout;
               const settled = ['settled', 'cancelled'].includes(x.status);
               return (
-                <tr key={x.draw_code}>
-                  <td className="py-2 font-mono text-gold-300 text-xs">{x.draw_code}</td>
-                  <td className="text-white">{x.name_th}</td>
-                  <td className="text-navy-300 text-xs">{fmtDateTime(x.draw_at)}</td>
-                  <td className="text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded ${DRAW_STATUS_CLS[x.status] || 'bg-navy-700 text-navy-300'}`}>
-                      {DRAW_STATUS_TH[x.status] || x.status}
-                    </span>
-                  </td>
-                  <td className="text-right text-navy-300">{x.items}</td>
-                  <td className="text-right text-gold-300">{satang(x.stake)} บาท</td>
-                  <td className="text-right text-green-400">{satang(x.payout)} บาท</td>
-                  <td className={`text-right font-semibold ${settled ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-navy-500'}`}>
+                <TableRow key={x.draw_code} className="border-navy-700/50">
+                  <TableCell className="font-mono text-gold-300 text-xs">{x.draw_code}</TableCell>
+                  <TableCell className="text-white">{x.name_th}</TableCell>
+                  <TableCell className="text-navy-300 text-xs">{fmtDateTime(x.draw_at)}</TableCell>
+                  <TableCell className="text-center"><DrawStatusBadge status={x.status} /></TableCell>
+                  <TableCell className="text-right text-navy-300">{x.items}</TableCell>
+                  <TableCell className="text-right text-gold-300">{satang(x.stake)} บาท</TableCell>
+                  <TableCell className="text-right text-green-400">{satang(x.payout)} บาท</TableCell>
+                  <TableCell className={cn('text-right font-semibold', settled ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-navy-500')}>
                     {settled ? `${net >= 0 ? '+' : ''}${satang(net)} บาท` : '—'}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-            {!d.drawsSummary.length && <tr><td colSpan="8" className="py-4 text-center text-navy-400">ไม่มีข้อมูล</td></tr>}
-          </tbody>
-        </table></div>
+            {!d.drawsSummary.length && <TableRow><TableCell colSpan="8" className="text-center text-navy-400 py-4">ไม่มีข้อมูล</TableCell></TableRow>}
+          </TableBody>
+        </Table>
       </div>
 
       {/* กำไรต่อรอบ — settled 30 วันล่าสุด */}
@@ -177,35 +204,40 @@ export default function AdminReports() {
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <h2 className="font-bold text-white mb-1">กำไรต่อรอบ (30 วันล่าสุด)</h2>
           <p className="text-xs text-navy-400 mb-3">vip = ยอดแทง − เงินรางวัล · ติดลบ = ระบบขาดทุนรอบนั้น</p>
-          <div className="overflow-x-auto"><table className="w-full text-sm whitespace-nowrap">
-            <thead><tr className="border-b border-navy-700">
-              <Th>รอบ</Th><Th>ตลาด</Th><Th>เวลาออกรางวัล</Th><Th center>สถานะ</Th><Th right>รายการ</Th><Th right>ยอดแทง</Th><Th right>จ่ายรางวัล</Th><Th right>Vip</Th>
-            </tr></thead>
-            <tbody className="divide-y divide-navy-700/60">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-navy-700 hover:bg-transparent">
+                <TableHead className="text-navy-400">รอบ</TableHead>
+                <TableHead className="text-navy-400">ตลาด</TableHead>
+                <TableHead className="text-navy-400">เวลาออกรางวัล</TableHead>
+                <TableHead className="text-navy-400 text-center">สถานะ</TableHead>
+                <TableHead className="text-navy-400 text-right">รายการ</TableHead>
+                <TableHead className="text-navy-400 text-right">ยอดแทง</TableHead>
+                <TableHead className="text-navy-400 text-right">จ่ายรางวัล</TableHead>
+                <TableHead className="text-navy-400 text-right">Vip</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {d.profitByDraw.map(x => {
                 const net = x.stake - x.payout;
                 const settled = ['settled', 'cancelled'].includes(x.status);
                 return (
-                  <tr key={x.draw_code}>
-                    <td className="py-2 font-mono text-gold-300 text-xs">{x.draw_code}</td>
-                    <td className="text-white text-xs">{x.type_name_th}{x.cat_name_th ? ` — ${x.cat_name_th}` : ''}</td>
-                    <td className="text-navy-300 text-xs">{fmtDateTime(x.draw_at)}</td>
-                    <td className="text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded ${DRAW_STATUS_CLS[x.status] || 'bg-navy-700 text-navy-300'}`}>
-                        {DRAW_STATUS_TH[x.status] || x.status}
-                      </span>
-                    </td>
-                    <td className="text-right text-navy-300">{x.items}</td>
-                    <td className="text-right text-gold-300">{satang(x.stake)} บาท</td>
-                    <td className="text-right text-green-400">{satang(x.payout)} บาท</td>
-                    <td className={`text-right font-semibold ${settled ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-navy-500'}`}>
+                  <TableRow key={x.draw_code} className="border-navy-700/50">
+                    <TableCell className="font-mono text-gold-300 text-xs">{x.draw_code}</TableCell>
+                    <TableCell className="text-white text-xs">{x.type_name_th}{x.cat_name_th ? ` — ${x.cat_name_th}` : ''}</TableCell>
+                    <TableCell className="text-navy-300 text-xs">{fmtDateTime(x.draw_at)}</TableCell>
+                    <TableCell className="text-center"><DrawStatusBadge status={x.status} /></TableCell>
+                    <TableCell className="text-right text-navy-300">{x.items}</TableCell>
+                    <TableCell className="text-right text-gold-300">{satang(x.stake)} บาท</TableCell>
+                    <TableCell className="text-right text-green-400">{satang(x.payout)} บาท</TableCell>
+                    <TableCell className={cn('text-right font-semibold', settled ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-navy-500')}>
                       {settled ? `${net >= 0 ? '+' : ''}${satang(net)} บาท` : '—'}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table></div>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
