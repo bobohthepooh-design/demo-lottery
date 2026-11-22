@@ -1,15 +1,16 @@
 // Card มาตรฐาน — <Card> / <CardHeader title sub actions> / <CardBody>
-// variant: default(navy-800) subtle(navy-900/60) gold(กรอบทอง สำหรับยอดเงิน/สำคัญ)
+// variant: default(navy) subtle(navy-900/60) gold(กรอบทอง สำหรับยอดเงิน/สำคัญ) danger(red)
 const VARIANTS = {
-  default: 'bg-gradient-to-b from-navy-800/90 to-navy-900/90 border border-navy-600/60',
-  subtle: 'bg-navy-900/60 border border-navy-700/60',
-  gold: 'bg-gradient-to-br from-[#f7ecc4] via-[#efd78f] to-[#e3c05c] border border-gold-500/40',
+  default: 'bg-gradient-to-b from-navy-800/95 to-navy-900/95 border border-navy-700/60 shadow-lg shadow-black/30',
+  subtle: 'bg-navy-900/70 border border-navy-700/50',
+  gold: 'bg-gradient-to-br from-gold-200 via-gold-300 to-gold-400 border border-gold-500/60 shadow-xl shadow-gold-500/20',
   danger: 'bg-red-500/10 border border-red-500/40',
+  success: 'bg-emerald-500/10 border border-emerald-500/40',
 };
 
 export function Card({ variant = 'default', className = '', children, ...rest }) {
   return (
-    <div className={`rounded-2xl shadow-lg shadow-black/20 ${VARIANTS[variant]} ${className}`} {...rest}>
+    <div className={`rounded-xl ${VARIANTS[variant]} ${className}`} {...rest}>
       {children}
     </div>
   );
