@@ -23,6 +23,28 @@
   --color-gold-600: #d9a520;
   --color-gold-700: #b8860b;
 
+  /* ===== shadcn/ui semantic tokens — map เข้า palette เดิม =====
+     component จาก src/components/shadcn ใช้ bg-primary/card/muted ฯลฯ */
+  --color-background: #040a14;
+  --color-foreground: #f2f8fd;
+  --color-card: #0f1e33;
+  --color-card-foreground: #f2f8fd;
+  --color-popover: #0f1e33;
+  --color-popover-foreground: #f2f8fd;
+  --color-primary: #f5c518;
+  --color-primary-foreground: #0a0a0d;
+  --color-secondary: #1e3a5f;
+  --color-secondary-foreground: #f2f8fd;
+  --color-muted: #0a1526;
+  --color-muted-foreground: #9db8d0;
+  --color-accent: #1e3a5f;
+  --color-accent-foreground: #f2f8fd;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #2f5580;
+  --color-input: #1e3a5f;
+  --color-ring: #f5c518;
+
   /* พาสเทลเสริม (dark-tinted) — ใช้ผ่าน class โดยตรง */
   --color-mint-100: #123528;
   --color-mint-300: #2fbf8f;
