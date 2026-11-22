@@ -200,6 +200,23 @@ export default function Home() {
           </span>
         </div>
       )}
+      {/* Quick actions แบบ portal — ฝาก/แทง/ถอน/เกม (member เท่านั้น) */}
+      {user && (
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { to: '/wallet', icon: '💳', label: 'ฝากเงิน', cls: 'from-emerald-600 to-teal-700' },
+            { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-600 to-rose-700' },
+            { to: '/wallet', icon: '🏦', label: 'ถอนเงิน', cls: 'from-sky-600 to-blue-700' },
+            { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-600 to-purple-700' },
+          ].map(a => (
+            <Link key={a.label} to={a.to}
+              className={`rounded-xl bg-gradient-to-br ${a.cls} py-3 flex flex-col items-center gap-1 text-white hover:brightness-110 active:scale-95 transition shadow-md`}>
+              <span className="text-xl">{a.icon}</span>
+              <span className="text-[11px] font-bold">{a.label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
       {/* โปร cashback — แสดงเมื่อ admin เปิดใช้ */}
       {cashbackPct > 0 && (
         <div className="rounded-xl border border-gold-500/40 bg-gradient-to-r from-gold-500/15 via-navy-800/60 to-gold-500/15 px-4 py-2.5 flex items-center gap-2 text-sm">

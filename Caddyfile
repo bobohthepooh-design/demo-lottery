@@ -43,6 +43,7 @@ http://localhost {
 
 # LAN testing — http://<LAN-IP> (เช่น http://192.168.1.41)
 # HTTP ธรรมดาเพื่อให้ login/cookie ใช้ได้บนเครื่องในวง LAN โดยไม่ต้องจัดการ cert
+# หมายเหตุ: DHCP เปลี่ยน IP บ่อย — block :80 ด้านล่างเป็น catch-all รองรับทุก IP อยู่แล้ว
 http://{$LAN_IP} {
 	reverse_proxy app:4000 {
 		flush_interval -1
@@ -56,6 +57,19 @@ http://{$LAN_IP} {
 	log {
 		output stdout
 		format console
+	}
+}
+
+# Catch-all HTTP :80 — รับทุก Host (IP เปลี่ยนบ่อยจาก DHCP ก็ยังเข้าได้)
+# host เฉพาะ (localhost/LAN_IP/DOMAIN) ข้างบนยัง match ก่อนตามปกติ
+:80 {
+	reverse_proxy app:4000 {
+		flush_interval -1
+	}
+
+	header {
+		-Server
+		X-Powered-By
 	}
 }
 

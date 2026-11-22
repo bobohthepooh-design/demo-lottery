@@ -307,11 +307,11 @@ export default function Layout() {
           <div className="flex h-16">
             {[
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
-              { to: '/lotteries', k: 'lottery', icon: 'lotteries', show: showBetMenu },
+              { to: '/play', k: 'betMenu', icon: 'lotteries', show: showBetMenu },
+              { to: '/games', k: 'gamesHub', icon: 'bets', show: true },
               ...(user ? [
-                { to: '/my-bets', k: 'mybets', icon: 'bets', show: true },
-                { to: '/performance', k: 'perf', icon: 'reports', show: !isAdmin },
                 { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
+                { to: '/profile', k: 'profile', icon: 'user', show: true },
               ] : [
                 { to: '/login', k: 'login', icon: 'roles', show: true },
               ]),
@@ -334,13 +334,6 @@ export default function Layout() {
                 )}
               </NavLink>
             ))}
-            <button onClick={() => setMenuOpen(true)}
-              className="relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] transition-colors text-white/60 hover:text-white">
-              <span className="relative opacity-70">
-                <CasinoIcon name="menu" tone="gray" className="w-6 h-6" />
-              </span>
-              <span className="relative">{t('more')}</span>
-            </button>
           </div>
         </div>
       </nav>
