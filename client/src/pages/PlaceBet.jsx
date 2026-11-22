@@ -383,16 +383,17 @@ export default function PlaceBet() {
               <span className={`text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300 border border-green-500/40'}`}>
                 {notYetOpen ? `⏳ เปิดรับ ${thaiHM(opensAt)} น.` : closed ? 'ปิดรับแล้ว' : '● รับแทงอยู่'}
               </span>
-              {!closed && (
-                <div className="text-center">
-                  <div className="text-[9px] sm:text-[10px] text-navy-400 font-medium mb-0.5 sm:mb-1">เหลือเวลา</div>
-                  <div className="text-gold-300 font-mono font-bold text-base sm:text-lg">
-                    {notYetOpen ? thaiHM(opensAt) : <Countdown closeAt={draw.close_at} />}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
+          {/* countdown — แถวเต็มความกว้างแยกจากหัวข้อ กันข้อความยาวดันชื่อรอบจนมองไม่เห็นบนมือถือ */}
+          {!closed && (
+            <div className="mt-3 pt-3 border-t border-navy-700/50 flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[10px] sm:text-xs text-navy-400 font-medium">เหลือเวลา</span>
+              <span className="text-gold-300 font-mono font-bold text-sm sm:text-lg">
+                <Countdown closeAt={draw.close_at} />
+              </span>
+            </div>
+          )}
         </div>
 
         {!closed && (
@@ -439,7 +440,7 @@ export default function PlaceBet() {
                   <label className="text-sm font-semibold text-navy-200 mb-2 block">
                     เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับ)` : '(1 ใน 12)'}
                   </label>
-                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
                     {ZODIAC.map(z => {
                       const idx = zodiacPicks.indexOf(z);
                       const sel = idx >= 0;
@@ -684,9 +685,9 @@ export default function PlaceBet() {
       {!closed && slip.length > 0 && !done && (
         <div className="sm:hidden fixed bottom-16 inset-x-0 z-30 px-3">
           <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
-            className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-4 disabled:opacity-50">
-            <span className="text-xs sm:text-sm">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
-            <span className="text-xs sm:text-sm">ตรวจสอบโพย →</span>
+            className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between gap-2 px-4 disabled:opacity-50">
+            <span className="text-xs sm:text-sm min-w-0 truncate">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
+            <span className="text-xs sm:text-sm shrink-0">ตรวจสอบโพย →</span>
           </button>
         </div>
       )}

@@ -66,7 +66,7 @@ function RoundRow({ d, nowSql, nowMs }) {
         <div className="text-base font-semibold text-white truncate">{drawLabel(d)}</div>
         <div className="text-sm text-navy-400 mt-0.5">
           {blind ? `ออกรางวัล ${thaiHM(d.draw_at)} น.` : `ออก ${fmtDateTime(d.draw_at)}`}
-          {ann && <span className="ml-2 text-amber-300 font-medium">📣 {ann}</span>}
+          {ann && <span className="ml-2 text-amber-300 font-medium">📣 {ann.length > 90 ? `${ann.slice(0, 90)}…` : ann}</span>}
         </div>
       </div>
       <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 ${badge.cls}`}>
