@@ -1,232 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, fmtDateTime, drawLabel } from '../api.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 import { SkeletonGrid } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
-import { annSummary } from '../ann.js';
 import { useAuth } from '../auth.jsx';
+import { annSummary } from '../ann.js';
 
-// เรียงกลุ่มตลาดแบบ provider — เกม → หวยรางวัล → หวยไทย → ลาว → ฮานอย
-const FAMILIES = [
-  { key: 'HR', title: 'หวยราศี' },
-  { key: 'TH', title: 'หวยไทย' },
-  { key: 'GS', title: 'สลากออมสิน / ธ.ก.ส.' },
-  { key: 'LA', title: 'หวยลาว' },
-  { key: 'HN', title: 'หวยฮานอย' },
-];
-const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']); // เกมด่วนไม่มีรอบ — อยู่ใน /games
+// Types ที่เป็นเกมด่วน/ยี่กี — ไม่ใช่หวยใน hub นี้ (อยู่หน้าเกมด่วน)
+const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
 
-// สถานะรอบที่ปิดรับแล้วแต่ยังไม่ถึงเวลาออกรางวัล — ต่างจาก blind (ยังไม่เปิด) และ drawing (ถึงเวลาออกแล้ว)
 const isAwaitingDraw = (d, nowSql) => d.status === 'closed' && d.draw_at > nowSql;
-// blind = ยังไม่เปิดรับจริง (status scheduled/open แต่ยังไม่ถึงเวลาเปิด หรือยังไม่ถึงเวลาปิด)
-const isBlind = (d, nowSql) => !isBettingOpen(d, nowSql)
-  && ['scheduled', 'open'].includes(d.status) && d.close_at > nowSql;
+const isBlind = (d, nowSql) => !isBettingOpen(d, nowSql) && ['scheduled', 'open'].includes(d.status) && d.close_at > nowSql;
 const isDrawing = (d, nowSql) => d.status === 'closed' && d.draw_at <= nowSql;
 
-// หน้า provider-style — ตลาดเป็น icon tiles แบ่งตามหมวด
-// กด tile → กางรอบย่อยเสมอ (live กดเข้า /bet จากแถวรอบด้านใน) — ไม่ซ่อนรอบล่วงหน้า
-export default function BetHub() {
-  const { isAdmin } = useAuth();
-  const [draws, setDraws] = useState([]);
-  const [loaded, setLoaded] = useState(false);
-  const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
-  const [openKey, setOpenKey] = useState(''); // key ตลาดที่กางรายการรอบอยู่
-  const [nowMs, setNowMs] = useState(Date.now());
-
-  const loadConfig = () => api('/lottery/public-config')
-    .then(r => setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []))
-    .catch(() => {});
-  const load = () => api('/lottery/draws?upcoming=1')
-    .then(r => { setDraws(r.draws || []); setLoaded(true); })
-    .catch(() => setLoaded(true));
-  const refresh = () => { load(); loadConfig(); };
-
-  useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 30000);
-    const tick = setInterval(() => setNowMs(Date.now()), 1000);
-    const h = () => refresh();
-    window.addEventListener('sys:update', h);
-    return () => { clearInterval(t); clearInterval(tick); window.removeEventListener('sys:update', h); };
-  }, []);
-
-  const hiddenSet = new Set(hiddenBetTypes);
-  const nowSql = new Date(nowMs).toISOString().slice(0, 19).replace('T', ' ');
-
-  // จัดกลุ่มตลาด: family > type+category
-  const families = useMemo(() => {
-    const map = new Map();
-    for (const d of draws) {
-      if (!isAdmin && hiddenSet.has(d.type_code)) continue; // admin เห็นทั้งหมดเหมือน /lotteries
-      if (INSTANT.has(d.type_code)) continue;
-      const key = `${d.type_code}:${d.category_code || d.category_id || ''}`;
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          typeCode: d.type_code,
-          typeName: d.type_name_th,
-          catName: d.category_name_th || '',
-          rounds: [],
-        });
-      }
-      map.get(key).rounds.push(d);
-    }
-    const actionable = d => !['settled', 'cancelled'].includes(d.status);
-    for (const m of map.values()) {
-      m.rounds.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
-      const pool = m.rounds.filter(actionable);
-      m.liveRound = pool.find(d => isBettingOpen(d, nowSql));
-      // รอบแสดงผล: live → ปิดรับรอผล → รอบอนาคตที่ใกล้สุด (กันรอบ closed ค้างจากเมื่อวานมาแทรก)
-      m.next = m.liveRound
-        || pool.find(d => isAwaitingDraw(d, nowSql))
-        || pool.find(d => d.draw_at > nowSql)
-        || pool[0];
-    }
-    const byPriority = (a, b) => (b.liveRound ? 1 : 0) - (a.liveRound ? 1 : 0)
-      || String(a.next?.draw_at || '9').localeCompare(String(b.next?.draw_at || '9'));
-    const fams = FAMILIES.map(f => ({
-      ...f,
-      markets: [...map.values()].filter(m => m.typeCode === f.key).sort(byPriority),
-    })).filter(f => f.markets.length);
-    const rest = [...map.values()].filter(m => !FAMILIES.some(f => f.key === m.typeCode)).sort(byPriority);
-    if (rest.length) fams.push({ key: 'OTHER', title: 'หวยอื่น ๆ', markets: rest });
-    return fams;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draws, hiddenBetTypes, nowMs, isAdmin]);
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-6">
-      {/* Hero Header */}
-      <div className="text-center pt-4 pb-2">
-        <div className="kicker mb-2 text-gold-400">Choose Draw</div>
-        <h1 className="text-4xl font-black text-white tracking-wide mb-2">เลือกหวย</h1>
-        <p className="text-sm text-navy-300 max-w-md mx-auto">แตะตลาดเพื่อดูลิสต์รอบ — รอบที่ล็อกจะเปิดให้อัตโนมัติเมื่อถึงเวลา</p>
-      </div>
-
-      {/* Quick Nav Cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { to: '/results', icon: '🏆', label: 'ผลรางวัล', desc: 'ดูผลล่าสุด', cls: 'border-amber-500/30 hover:border-amber-400/60 hover:bg-amber-500/5' },
-          { to: '/games', icon: '🎮', label: 'เกมด่วน', desc: 'เล่นทันที', cls: 'border-violet-500/30 hover:border-violet-400/60 hover:bg-violet-500/5' },
-          { to: '/my-bets', icon: '🧾', label: 'โพยของฉัน', desc: 'ตรวจสอบโพย', cls: 'border-cyan-500/30 hover:border-cyan-400/60 hover:bg-cyan-500/5' },
-        ].map(q => (
-          <Link key={q.to} to={q.to}
-            className={`text-center px-3 py-4 rounded-2xl border bg-navy-800/60 text-navy-200 font-semibold flex flex-col items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 ${q.cls}`}>
-            <span className="text-2xl">{q.icon}</span>
-            <div>
-              <div className="text-sm font-bold">{q.label}</div>
-              <div className="text-[10px] text-navy-400 font-normal">{q.desc}</div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {!loaded && <SkeletonGrid count={6} />}
-      {loaded && !families.length && <EmptyState emoji="🎟️" title="ไม่พบรอบหวย" hint="ยังไม่มีรอบที่เปิดรับ — กลับมาดูใหม่ภายหลัง" />}
-
-      {/* Instant Games Section */}
-      <section className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-2xl overflow-hidden shadow-xl shadow-black/20">
-        <header className="px-5 py-4 border-b border-navy-700/60 flex items-center gap-3">
-          <span className="text-xl">🎮</span>
-          <div>
-            <div className="font-bold text-white text-base">เกมด่วน</div>
-            <div className="text-[11px] text-navy-400">เกมทันที ไม่ต้องรอผล</div>
-          </div>
-        </header>
-        <Link to="/games" className="flex items-center gap-4 px-5 py-4 hover:bg-navy-700/40 transition-all duration-200 group">
-          <div className="w-12 h-14 rounded-xl shrink-0 flex items-center justify-center text-2xl bg-purple-500/15 border border-purple-500/40 group-hover:bg-purple-500/25 transition-colors">🎰</div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-white">สล็อต / ไฮโล / ยี่กี / ราศี</div>
-            <div className="text-xs text-navy-400 mt-0.5">เกมทันที ไม่ต้องรอผล — ยอดเงินใช้กระเป๋าเดียวกัน</div>
-          </div>
-          <span className="text-navy-500 text-xl group-hover:text-cyan-400 transition-colors">›</span>
-        </Link>
-      </section>
-
-      {/* Market Families */}
-      {families.map(fam => (
-        <section key={fam.key} className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-2xl overflow-hidden shadow-xl shadow-black/20">
-          <header className="px-5 py-4 border-b border-navy-700/60 flex items-center gap-3">
-            <span className="w-2 h-6 rounded-full bg-cyan-400" />
-            <div className="flex-1">
-              <span className="font-bold text-white text-base">{fam.title}</span>
-              <span className="ml-2 text-xs text-navy-400 font-mono">{fam.markets.length} ตลาด</span>
-            </div>
-          </header>
-          {/* Market Tiles */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 p-4">
-            {fam.markets.map(m => (
-              <MarketTile key={m.key} m={m} nowSql={nowSql} nowMs={nowMs}
-                expanded={openKey === m.key} onToggle={() => setOpenKey(openKey === m.key ? '' : m.key)} />
-            ))}
-          </div>
-          {/* Expanded Rounds */}
-          {fam.markets.filter(m => openKey === m.key).map(m => (
-            <div key={m.key} className="border-t border-navy-700/60 bg-navy-900/40 divide-y divide-navy-700/60">
-              {m.rounds.map(d => <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />)}
-            </div>
-          ))}
-        </section>
-      ))}
-
-      {/* Bottom Navigation */}
-      <div className="flex gap-3 pt-2">
-        <Link to="/" className="flex-1 text-center text-sm font-bold py-3 rounded-xl bg-navy-800 border border-navy-600 text-navy-200 hover:border-cyan-500/50 transition-all duration-200">‹ หน้าหลัก</Link>
-        <Link to="/my-bets" className="flex-1 text-center text-sm font-bold py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all duration-200">โพยของฉัน ›</Link>
-      </div>
-    </div>
-  );
-}
-
-// Market Tile — Modern card with better visual hierarchy
-function MarketTile({ m, nowSql, nowMs, expanded, onToggle }) {
-  const liveRound = m.liveRound;
-  const next = m.next;
-  const blind = !liveRound && next && isBlind(next, nowSql);
-  const awaiting = !liveRound && next && isAwaitingDraw(next, nowSql);
-  const drawing = !liveRound && !awaiting && next && isDrawing(next, nowSql);
-
-  const closeMs = liveRound ? Date.parse(String(liveRound.close_at).replace(' ', 'T') + 'Z') - nowMs : NaN;
-  const openAt = next ? bettingOpenAtSql(next.close_at, next.type_code) : null;
-  const openMs = openAt ? Date.parse(String(openAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
-
-  // Count upcoming rounds
-  const upcomingCount = m.rounds.filter(d => isBlind(d, nowSql)).length;
-
-  // State styling
-  const state = liveRound
-    ? { dot: 'bg-green-400', text: fmtHMS(closeMs), cls: 'border-green-500/60 bg-gradient-to-br from-green-500/15 to-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.2)]', icon: '🎯' }
-    : drawing
-      ? { dot: 'bg-gold-400', text: 'ออกผล', cls: 'border-gold-500/50 bg-gradient-to-br from-gold-500/10 to-gold-500/5', icon: '🎰' }
-      : awaiting
-        ? { dot: 'bg-amber-400', text: 'รอผล', cls: 'border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-amber-500/5', icon: '⏳' }
-        : blind
-          ? { dot: 'bg-navy-500', text: openMs > 0 ? thaiHM(openAt) : 'เร็วๆ นี้', cls: 'border-navy-700 bg-navy-900/80 opacity-75 saturate-50', icon: '🂠' }
-          : { dot: 'bg-navy-600', text: 'หมดรอบ', cls: 'border-navy-700/60 bg-navy-900/40 opacity-50', icon: '🔒' };
-
-  const name = m.catName || m.typeName;
-  return (
-    <button type="button" aria-expanded={expanded}
-      onClick={onToggle}
-      className={`relative flex flex-col items-center gap-2 rounded-2xl border px-3 py-4 transition-all duration-200 hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/10 active:scale-95 ${state.cls} ${expanded ? 'ring-2 ring-cyan-400/70 border-cyan-400/60' : ''}`}>
-      {blind && (
-        <span className="absolute inset-0 rounded-2xl pointer-events-none opacity-[0.10]"
-          style={{ background: 'repeating-linear-gradient(45deg,#64748b,#64748b 5px,transparent 5px,transparent 10px)' }} />
-      )}
-      <FlagIcon code={m.typeCode} className={`w-12 h-8 text-[11px] rounded-lg shadow-md ${blind ? 'opacity-60 saturate-50' : ''}`} />
-      <span className="text-xs font-bold text-white leading-tight text-center line-clamp-2 min-h-[2rem]">{name}</span>
-      <span className={`inline-flex items-center gap-1.5 text-[10px] font-mono font-bold px-2 py-1 rounded-full ${liveRound ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-navy-950/70 text-navy-300 border border-navy-700'}`}>
-        <span className={`w-2 h-2 rounded-full ${state.dot} ${liveRound ? 'animate-pulse' : ''}`} />{state.text}
-      </span>
-      {upcomingCount > 0 && (
-        <span className="inline-flex items-center gap-1 text-[10px] text-navy-400 font-medium">
-          <span className="opacity-70">🂠</span>×{upcomingCount} รอบล่วงหน้า
-        </span>
-      )}
-    </button>
-  );
+function fmtHMS(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return '--:--:--';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
 }
 
 function RoundRow({ d, nowSql, nowMs }) {
@@ -238,45 +31,322 @@ function RoundRow({ d, nowSql, nowMs }) {
   const opensAt = bettingOpenAtSql(d.close_at, d.type_code);
   const opensMs = opensAt ? Date.parse(String(opensAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const closeMs = live ? Date.parse(String(d.close_at).replace(' ', 'T') + 'Z') - nowMs : NaN;
-  const ann = annSummary(d.announce);
-
+  const ann = annSummary(d);
   const badge = live
-    ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-500/20 text-green-300 border-green-500/40' }
+    ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-600/20 text-green-300 border border-green-500/40', dot: 'bg-green-400' }
     : drawing
-      ? { text: 'กำลังออกรางวัล', cls: 'bg-gold-500/20 text-gold-300 border-gold-500/40' }
+      ? { text: 'กำลังออกรางวัล', cls: 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40', dot: 'bg-cyan-400 animate-pulse' }
       : awaiting
-        ? { text: '⏳ รอผล', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
+        ? { text: '⏳ รอผล', cls: 'bg-amber-600/20 text-amber-300 border border-amber-500/40', dot: 'bg-amber-400' }
         : blind
-          ? { text: opensMs > 0 ? `🔒 เปิด ${thaiHM(opensAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
-          : { text: d.status === 'settled' ? 'ออกผลแล้ว' : 'หมดรอบ', cls: 'bg-navy-700 text-navy-300 border-navy-600' };
+          ? { text: opensMs > 0 ? `🔒 เปิด ${thaiHM(opensAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-600/30 text-navy-200 border border-navy-500/30', dot: 'bg-navy-400' }
+          : { text: d.status === 'settled' ? 'ออกผลแล้ว' : 'หมดรอบ', cls: 'bg-navy-600/30 text-navy-300 border border-navy-500/30', dot: 'bg-navy-500' };
+
+  const go = () => {
+    // รอบที่ยังไม่ออกผล → ไปหน้าแทง (ดูรายละเอียด/กติกา/นับถอยหลังได้)
+    // รอบที่ออกผลแล้ว/ยกเลิก → ไปหน้าผลรางวัล
+    if (d.status === 'settled' || d.status === 'cancelled') {
+      navigate('/results');
+    } else {
+      navigate(`/bet/${d.id}`);
+    }
+  };
 
   return (
-    <button onClick={() => navigate(live ? `/bet/${d.id}` : '/results')}
-      className={`flex items-center gap-4 px-5 py-3.5 w-full text-left hover:bg-navy-700/40 transition-all duration-200 ${live ? '' : 'opacity-75'}`}>
-      {blind ? (
-        <div className="w-10 h-12 rounded-lg shrink-0 flex items-center justify-center text-base"
-          style={{ background: 'repeating-linear-gradient(45deg,#1e293b,#1e293b 5px,#334155 5px,#334155 10px)', border: '1px solid #475569' }}>🂠</div>
-      ) : (
-        <div className={`w-10 h-12 rounded-lg shrink-0 flex items-center justify-center text-base border ${live ? 'bg-green-500/15 border-green-500/40' : drawing ? 'bg-gold-500/15 border-gold-500/40' : 'bg-navy-700/60 border-navy-600'}`}>
-          {live ? '🎯' : drawing ? '🎰' : awaiting ? '⏳' : d.status === 'settled' ? '🏆' : '🔒'}
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-white">{drawLabel(d)}</div>
+    <button
+      onClick={go}
+      className={`flex items-center gap-4 px-5 py-3.5 w-full text-left rounded-2xl transition-all duration-200 border ${
+        live
+          ? 'bg-gradient-to-r from-green-900/20 to-navy-800/60 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10'
+          : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60 hover:bg-navy-800/60'
+      }`}
+    >
+      <FlagIcon code={d.type_code} className="w-10 h-12 shrink-0 rounded-lg overflow-hidden" />
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-white truncate">{drawLabel(d)}</div>
         <div className="text-xs text-navy-400 mt-0.5">
           {blind ? `ออกรางวัล ${thaiHM(d.draw_at)} น.` : `ออก ${fmtDateTime(d.draw_at)}`}
           {ann && <span className="ml-2 text-amber-300 font-medium">📣 {ann}</span>}
         </div>
       </div>
-      <span className={`text-xs font-bold px-3 py-1.5 rounded-lg border whitespace-nowrap ${badge.cls}`}>{badge.text}</span>
+      <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${badge.cls}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+        {badge.text}
+      </span>
+      <span className="text-navy-500 text-sm shrink-0">›</span>
     </button>
   );
 }
 
-// HH:MM:SS แบบ provider — tick ทุกวินาที
-function fmtHMS(ms) {
-  if (!Number.isFinite(ms) || ms <= 0) return '00:00:00';
-  const s = Math.floor(ms / 1000);
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+// Tile สำหรับประเภทหวยหลัก (level 1)
+function TypeTile({ tg, expanded, onClick }) {
+  const hasLive = tg.liveRounds > 0;
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-200 text-center ${
+        expanded
+          ? 'bg-gradient-to-br from-gold-500/20 to-navy-800/80 border-gold-400/60 shadow-lg shadow-gold-500/10'
+          : hasLive
+            ? 'bg-navy-800/60 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10'
+            : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60 hover:bg-navy-800/60'
+      }`}
+    >
+      <FlagIcon code={tg.typeCode} className="w-12 h-9 rounded-lg overflow-hidden" />
+      <div className="text-xs font-bold text-white leading-tight">{tg.typeName}</div>
+      <div className="flex items-center gap-1.5 text-[10px]">
+        {hasLive ? (
+          <span className="inline-flex items-center gap-1 text-green-300 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            {tg.liveRounds} รอบ
+          </span>
+        ) : (
+          <span className="text-navy-400">{tg.totalRounds} รอบ</span>
+        )}
+      </div>
+      {tg.hasCategories && (
+        <div className="text-[9px] text-navy-400">{tg.catList.length} ตลาด</div>
+      )}
+      {expanded && (
+        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gold-400 shadow shadow-gold-400/50" />
+      )}
+    </button>
+  );
+}
+
+// Tile สำหรับหมวด/ตลาดย่อย (level 2)
+function CategoryTile({ cat, typeCode, expanded, onClick }) {
+  const hasLive = cat.liveCount > 0;
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 text-center ${
+        expanded
+          ? 'bg-gradient-to-br from-cyan-500/20 to-navy-800/80 border-cyan-400/60 shadow-lg shadow-cyan-500/10'
+          : hasLive
+            ? 'bg-navy-800/60 border-green-500/25 hover:border-green-400/40'
+            : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60'
+      }`}
+    >
+      <FlagIcon code={typeCode} className="w-9 h-7 rounded-md overflow-hidden" />
+      <div className="text-[11px] font-semibold text-white leading-tight truncate w-full">{cat.catName}</div>
+      <div className="flex items-center gap-1 text-[9px]">
+        {hasLive ? (
+          <span className="inline-flex items-center gap-0.5 text-green-300 font-semibold">
+            <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
+            {cat.liveCount}
+          </span>
+        ) : (
+          <span className="text-navy-400">{cat.roundCount} รอบ</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+export default function BetHub() {
+  const { isAdmin } = useAuth();
+  const [draws, setDraws] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
+  const [openType, setOpenType] = useState('');
+  const [openCat, setOpenCat] = useState('');
+  const [nowMs, setNowMs] = useState(Date.now());
+
+  const load = useCallback(async () => {
+    try {
+      const [cfg, d] = await Promise.all([
+        api('/lottery/public-config').catch(() => null),
+        api('/lottery/draws?upcoming=1'),
+      ]);
+      setHiddenBetTypes(cfg?.hiddenBetTypes || []);
+      setDraws(d.draws || []);
+    } catch { setDraws([]); }
+    finally { setLoaded(true); }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 1000);
+    const onSys = () => load();
+    window.addEventListener('sys:update', onSys);
+    return () => { clearInterval(t); window.removeEventListener('sys:update', onSys); };
+  }, [load]);
+
+  const nowSql = new Date(nowMs).toISOString().slice(0, 19).replace('T', ' ');
+
+  // Group draws: type → category → rounds
+  const typeGroups = useMemo(() => {
+    if (!draws) return [];
+    const hiddenSet = new Set(hiddenBetTypes);
+    const byType = new Map();
+
+    for (const d of draws) {
+      if (!isAdmin && hiddenSet.has(d.type_code)) continue;
+      if (INSTANT.has(d.type_code)) continue;
+
+      const tc = d.type_code;
+      const cc = d.category_code || '';
+
+      if (!byType.has(tc)) {
+        byType.set(tc, { typeCode: tc, typeName: d.type_name_th, cats: new Map() });
+      }
+      const tg = byType.get(tc);
+      if (!tg.cats.has(cc)) {
+        tg.cats.set(cc, { catCode: cc, catName: d.category_name_th || d.type_name_th, rounds: [] });
+      }
+      tg.cats.get(cc).rounds.push(d);
+    }
+
+    return [...byType.values()].map(tg => {
+      const catList = [...tg.cats.values()].map(cat => {
+        cat.rounds.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
+        const pool = cat.rounds.filter(d => !['settled', 'cancelled'].includes(d.status));
+        cat.liveRound = pool.find(d => isBettingOpen(d, nowSql));
+        cat.next = cat.liveRound
+          || pool.find(d => isAwaitingDraw(d, nowSql))
+          || pool.find(d => d.draw_at > nowSql)
+          || pool[0];
+        cat.roundCount = cat.rounds.length;
+        cat.liveCount = cat.rounds.filter(d => isBettingOpen(d, nowSql)).length;
+        return cat;
+      });
+
+      catList.sort((a, b) => {
+        const aLive = a.liveRound ? 1 : 0;
+        const bLive = b.liveRound ? 1 : 0;
+        if (aLive !== bLive) return bLive - aLive;
+        return String(a.next?.draw_at || '9').localeCompare(String(b.next?.draw_at || '9'));
+      });
+
+      const totalRounds = catList.reduce((s, c) => s + c.roundCount, 0);
+      const liveRounds = catList.reduce((s, c) => s + c.liveCount, 0);
+      // มีหลายหมวด = ต้องกดเลือกหมวดย่อยก่อน
+      const hasCategories = catList.length > 1;
+
+      return { ...tg, catList, totalRounds, liveRounds, hasCategories };
+    }).sort((a, b) => {
+      const aLive = a.liveRounds > 0 ? 1 : 0;
+      const bLive = b.liveRounds > 0 ? 1 : 0;
+      if (aLive !== bLive) return bLive - aLive;
+      return a.typeName.localeCompare(b.typeName);
+    });
+  }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql]);
+
+  // หา type ที่เปิดอยู่ (เผื่อ data refresh แล้ว type หายไป)
+  const activeType = typeGroups.find(t => t.typeCode === openType) || null;
+  const activeCat = activeType?.catList.find(c => c.catCode === openCat) || null;
+
+  return (
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 pb-8">
+      {/* Hero */}
+      <div className="text-center mb-6">
+        <h1 className="text-3xl sm:text-4xl font-black text-gold-300 tracking-wide">
+          เลือกหวยที่ต้องการแทง
+        </h1>
+        <p className="text-sm text-navy-300 mt-1">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
+      </div>
+
+      {!loaded ? (
+        <SkeletonGrid count={6} />
+      ) : typeGroups.length === 0 ? (
+        <EmptyState title="ไม่มีรอบหวยที่เปิดรับในขณะนี้" sub="ลองตรวจสอบอีกครั้งภายหลัง" />
+      ) : (
+        <>
+          {/* Type Grid — 3 columns */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {typeGroups.map(tg => (
+              <TypeTile
+                key={tg.typeCode}
+                tg={tg}
+                expanded={openType === tg.typeCode}
+                onClick={() => {
+                  if (openType === tg.typeCode) {
+                    setOpenType(''); setOpenCat('');
+                  } else {
+                    setOpenType(tg.typeCode); setOpenCat('');
+                  }
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Expanded Type Content */}
+          {activeType && (
+            <div className="animate-fade-in">
+              {/* Type Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <FlagIcon code={activeType.typeCode} className="w-8 h-6 rounded-md overflow-hidden" />
+                <h2 className="text-lg font-bold text-white">{activeType.typeName}</h2>
+                <span className="text-xs text-navy-300">
+                  {activeType.hasCategories
+                    ? `${activeType.totalRounds} รอบ • ${activeType.catList.length} ตลาด`
+                    : `${activeType.totalRounds} รอบ`}
+                </span>
+                <button
+                  onClick={() => { setOpenType(''); setOpenCat(''); }}
+                  className="ml-auto text-xs text-navy-400 hover:text-white transition-colors"
+                >
+                  ✕ ปิด
+                </button>
+              </div>
+
+              {/* Type without categories — show rounds directly */}
+              {!activeType.hasCategories && activeType.catList[0] && (
+                <div className="space-y-2">
+                  {activeType.catList[0].rounds.map(d => (
+                    <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
+                  ))}
+                </div>
+              )}
+
+              {/* Type with categories — show category grid + selected category rounds */}
+              {activeType.hasCategories && (
+                <>
+                  {/* Category Grid — 3 columns */}
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {activeType.catList.map(cat => (
+                      <CategoryTile
+                        key={cat.catCode}
+                        cat={cat}
+                        typeCode={activeType.typeCode}
+                        expanded={openCat === cat.catCode}
+                        onClick={() => setOpenCat(openCat === cat.catCode ? '' : cat.catCode)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Selected Category Rounds */}
+                  {activeCat && (
+                    <div className="mt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm font-semibold text-navy-200">{activeCat.catName}</span>
+                        <span className="text-xs text-navy-400">{activeCat.roundCount} รอบ</span>
+                        <button
+                          onClick={() => setOpenCat('')}
+                          className="ml-auto text-xs text-navy-400 hover:text-white transition-colors"
+                        >
+                          ✕ ปิด
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {activeCat.rounds.map(d => (
+                          <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
