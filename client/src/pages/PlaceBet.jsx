@@ -50,6 +50,14 @@ const RULE_HINT = [
   [/^zodiac/, 'เลือกราศีที่ออกตัวแรกของผล 6 ตัว'],
   [/pattana/, 'เลือก 5 เลข 1-45 — ถูกตามลำดับที่ออก'],
 ];
+// DD เดือน YYYY พ.ศ. จากเวลา UTC 'YYYY-MM-DD HH:MM:SS' (+7 ชม.) — รูปแบบเดียวกับ provider
+const thaiDate = (sqlUtc) => {
+  const t = Date.parse(String(sqlUtc || '').replace(' ', 'T') + 'Z');
+  if (!Number.isFinite(t)) return '';
+  return new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(t + 7 * 3600e3));
+};
+
 const ruleHint = (r) => {
   if (!r) return '';
   const bt = r.bet_type || '';
@@ -267,6 +275,41 @@ export default function PlaceBet() {
     setNumber(''); setAmount('');
   };
 
+  // เลขตอง (หลักซ้ำกันหมด เช่น 00-99 / 000-999) และเลขเบิ้ล (3 หลัก มีตัวซ้ำ 2 ตัว)
+  // — pattern betting แบบ provider: เพิ่มทั้งชุดเป็นโพยเดียวผ่านการตรวจเดียว
+  const addPattern = (kind) => {
+    setErr('');
+    if (!rule || isZodiac || isPattana) return;
+    const d = rule.digits;
+    if (d < 2) return setErr('เลขตอง/เบิ้ลใช้ได้กับประเภท 2-3 หลัก');
+    const { stake, err: amtErr } = stakeFromAmount();
+    if (amtErr) return setErr(amtErr);
+    let nums;
+    if (kind === 'tod') { // เลขตอง — ทุกหลักเป็นเลขเดียวกัน (10 เลข)
+      nums = Array.from({ length: 10 }, (_, i) => String(i).repeat(d));
+    } else { // เลขเบิ้ล — เฉพาะ 3 หลัก: มีตัวเลขซ้ำกัน 2 ตัว (เช่น 112/121/211)
+      if (d !== 3) return setErr('เลขเบิ้ลใช้ได้กับประเภท 3 หลัก');
+      nums = [];
+      for (let p = 0; p <= 9; p++) for (let o = 0; o <= 9; o++) {
+        if (o === p) continue;
+        nums.push(`${p}${p}${o}`, `${p}${o}${p}`, `${o}${p}${p}`);
+      }
+    }
+    const need = nums.length * stake;
+    if (totalSatang + need > balance) {
+      return setErr(`เครดิตไม่พอ — ${kind === 'tod' ? 'เลขตอง' : 'เลขเบิ้ล'} = ${nums.length} รายการ รวม ${satang(need)} บาท (คงเหลือ ${satang(balance - totalSatang)} บาท)`);
+    }
+    const baseMult = Number(rule.payout_multiplier) || 0;
+    const digitsKey = d === 3 ? 'top' : 'bottom';
+    const annList = annEntries(draw.announce)[digitsKey] || [];
+    setSlip([...slip, ...nums.map(n => {
+      const entry = (n.length === 2 || n.length === 3) ? annList.find(e => e.num === n) || null : null;
+      return { ruleId: rule.id, betType: rule.bet_type, name: rule.name_th + (kind === 'tod' ? ' (ตอง)' : ' (เบิ้ล)'), number: n, stakeSatang: stake,
+        mult: entry ? (entry.mult ?? Math.floor(baseMult / 2)) : baseMult, isAnn: !!entry };
+    })]);
+    setNumber(''); setAmount('');
+  };
+
   const submit = async () => {
     setErr(''); setBusy(true); setConfirming(false);
     if (!idemKey.current) newIdemKey();
@@ -322,13 +365,21 @@ export default function PlaceBet() {
                 <FlagIcon code={draw.type_code} className="w-9 h-6 text-[10px]" />
                 <h1 className={`text-xl font-bold ${ac?.text || 'text-navy-950'}`}>{drawLabel(draw)}</h1>
               </div>
-              <div className="text-sm text-navy-300">{draw.draw_code} • ออก {fmtDateTime(draw.draw_at)}</div>
+              <div className="text-sm text-navy-300">
+                {thaiDate(draw.draw_at)} • ปิดรับทายผล {thaiHM(draw.close_at)} น.
+                <span className="text-navy-500 text-[10px] ml-1.5">{draw.draw_code}</span>
+              </div>
               {(() => { const s = annSummary(draw.announce); return s ? (
                 <div className="ann-blink mt-1 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/20 border-2 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]">
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
-              <div className="text-sm mt-1">⏱️ ปิดรับโพย: {notYetOpen ? <span className="text-amber-300 font-bold">เปิดรับ {thaiHM(opensAt)} น.</span> : !closed ? <Countdown closeAt={draw.close_at} /> : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}</div>
+              <div className="text-sm mt-1.5 flex items-center gap-2 flex-wrap">
+                <span className="text-navy-400">เหลือเวลารับทายผล</span>
+                {notYetOpen ? <span className="text-amber-300 font-bold">เปิดรับ {thaiHM(opensAt)} น.</span>
+                  : !closed ? <span className="text-gold-300 font-mono font-bold"><Countdown closeAt={draw.close_at} /></span>
+                  : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}
+              </div>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
               {kb && <span className={`text-[9px] px-2 py-0.5 rounded ${kb.cls}`}>{kb.label}</span>}
@@ -350,11 +401,14 @@ export default function PlaceBet() {
                 return (
                 <button key={r.id} onClick={() => setSelRule(String(r.id))}
                   className={`px-3 py-3 rounded-lg text-sm border transition text-left ${isAnn ? 'border-amber-500/60 bg-amber-500/5' : ''} ${selRule === String(r.id) ? 'border-gold-500 bg-navy-700 text-gold-300' : 'border-navy-600 text-navy-200 hover:border-navy-500'}`}>
-                  <div className="font-semibold flex items-center gap-1.5">
-                    {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">อั้น</span>}
-                    {r.name_th}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-semibold flex items-center gap-1.5 min-w-0">
+                      {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">อั้น</span>}
+                      <span className="truncate">{r.name_th}</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/25 text-gold-300 shrink-0">x{r.payout_multiplier}</span>
                   </div>
-                  <div className="text-xs text-navy-300">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `เลือก ${r.digits} ปีนักษัตรตามลำดับ` : 'เลือก 1 ใน 12 ปีนักษัตร') : `${r.digits} หลัก`} • จ่าย x{r.payout_multiplier}{isAnn ? ' (ครึ่งรางวัลหลัก)' : ''}</div>
+                  <div className="text-xs text-navy-300 mt-0.5">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `เลือก ${r.digits} ปีนักษัตรตามลำดับ` : 'เลือก 1 ใน 12 ปีนักษัตร') : `${r.digits} หลัก`}{isAnn ? ' • ครึ่งรางวัลหลัก' : ''}</div>
                 </button>
                 );
               })}
@@ -432,7 +486,20 @@ export default function PlaceBet() {
                     🎯 รูด 19 ประตู
                   </button>
                 )}
-                <span className="text-[10px] text-navy-500">* ปุ่มลัดช่วยกรอกเลขเท่านั้น — ต้องเพิ่มลงโพยและยืนยันอีกครั้ง</span>
+                {rule.digits >= 2 && (
+                  <>
+                    <button type="button" onClick={() => addPattern('tod')}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition">
+                      🔢 เลขตอง
+                    </button>
+                    {rule.digits === 3 && (
+                      <button type="button" onClick={() => addPattern('be')}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition">
+                        🔢 เลขเบิ้ล
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
             <div>
