@@ -183,9 +183,9 @@ function MarketTile({ m, nowSql, nowMs, expanded, onToggle }) {
 
   // สี/ข้อความสถานะย่อบน tile
   const state = liveRound
-    ? { dot: 'bg-green-400 animate-pulse', text: fmtHMS(closeMs), cls: 'border-green-500/60 bg-gradient-to-b from-green-500/15 to-green-500/5 shadow-[0_0_16px_rgba(34,197,94,0.15)]', icon: '🎯' }
+    ? { dot: 'bg-green-400', text: fmtHMS(closeMs), cls: 'border-green-500/60 bg-gradient-to-b from-green-500/15 to-green-500/5 shadow-[0_0_16px_rgba(34,197,94,0.15)]', icon: '🎯' }
     : drawing
-      ? { dot: 'bg-gold-400 animate-pulse', text: 'ออกผล', cls: 'border-gold-500/50 bg-gold-500/10', icon: '🎰' }
+      ? { dot: 'bg-gold-400', text: 'ออกผล', cls: 'border-gold-500/50 bg-gold-500/10', icon: '🎰' }
       : awaiting
         ? { dot: 'bg-amber-400', text: 'รอผล', cls: 'border-amber-500/40 bg-amber-500/10', icon: '⏳' }
         : blind
@@ -229,7 +229,7 @@ function RoundRow({ d, nowSql, nowMs }) {
   const badge = live
     ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-500/20 text-green-300 border-green-500/40' }
     : drawing
-      ? { text: 'กำลังออกรางวัล', cls: 'bg-gold-500/20 text-gold-300 border-gold-500/40 animate-pulse' }
+      ? { text: 'กำลังออกรางวัล', cls: 'bg-gold-500/20 text-gold-300 border-gold-500/40' }
       : awaiting
         ? { text: '⏳ รอผล', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
         : blind

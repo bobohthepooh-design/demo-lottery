@@ -28,11 +28,10 @@ const potential = (i) => Math.floor(i.amount * Number(i.payout_multiplier || 0))
 
 function ItemRow({ i }) {
   const emoji = ITEM_EMOJI[i.status] || '⏳';
-  const anim = i.status === 'won' ? 'animate-win' : i.status === 'lost' ? 'animate-lose' : '';
   return (
     <div className={`flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-green-500/10 border border-green-500/30' : 'bg-navy-900'}`}>
       <div className="flex items-center gap-2 min-w-0">
-        <span className={`text-lg ${anim}`}>{emoji}</span>
+        <span className="text-lg">{emoji}</span>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <code className="text-gold-300 font-mono">{i.number}</code>

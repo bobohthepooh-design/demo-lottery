@@ -90,7 +90,7 @@ export default function Home() {
               {demoNotice || 'โหมดทดลอง — ใช้เครดิตเสมือนเท่านั้น'}
             </div>
           </div>
-          <span className="animate-demo-badge shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-navy-950 border border-gold-400/60 shadow-sm tracking-wider">
+          <span className="shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-navy-950 border border-gold-400/60 shadow-sm tracking-wider">
             DEMO MODE
           </span>
         </div>
@@ -102,7 +102,7 @@ export default function Home() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-3xl" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs font-bold uppercase tracking-wider text-green-400">Live Draw</span>
               <span className="text-navy-400 text-xs ml-auto">{heroDraw.category_name_th || heroDraw.type_name_th}</span>
             </div>

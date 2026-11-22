@@ -424,18 +424,18 @@ export default function Wallet() {
             </>
           )}
           <div className="min-h-full flex">
-          <div className={`relative m-auto bg-navy-800 border rounded-3xl p-6 sm:p-8 max-w-sm w-full max-h-[92dvh] overflow-y-auto text-center animate-result-pop ${celebration.kind === 'win' ? 'border-gold-500/60 animate-win' : 'border-blue-500/40'}`}>
+          <div className={`relative m-auto bg-navy-800 border rounded-3xl p-6 sm:p-8 max-w-sm w-full max-h-[92dvh] overflow-y-auto text-center animate-result-pop ${celebration.kind === 'win' ? 'border-gold-500/60' : 'border-blue-500/40'}`}>
             {celebration.kind === 'win' ? (
               <>
-                <div className="text-6xl animate-coin mb-2">🎉🏆</div>
+                <div className="text-6xl mb-2">🎉🏆</div>
                 <h2 className="text-2xl font-bold text-gold-300 mb-1">ยินดีด้วย!</h2>
                 <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ถูกรางวัล</p>
-                <div className="text-3xl font-bold text-green-400 animate-coin mb-1">+{satang(celebration.slip.total_payout)} บาท</div>
+                <div className="text-3xl font-bold text-green-400 mb-1">+{satang(celebration.slip.total_payout)} บาท</div>
                 <p className="text-xs text-navy-400 mb-5">เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — แลกได้หลังปลดล็อก</p>
               </>
             ) : (
               <>
-                <div className="text-6xl mb-2 animate-lose">😢💧</div>
+                <div className="text-6xl mb-2">😢💧</div>
                 <h2 className="text-2xl font-bold text-blue-300 mb-1">เสียใจด้วย...</h2>
                 <p className="text-sm text-navy-300 mb-3">โพย <span className="font-mono text-gold-300">{celebration.slip.slip_ref}</span> ไม่ถูกรางวัลรอบนี้</p>
                 <div className="text-xl font-bold text-red-400 mb-1">เสีย {satang(celebration.slip.total_stake)} บาท</div>
