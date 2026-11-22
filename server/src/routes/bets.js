@@ -8,6 +8,7 @@ import { qGet } from '../db/pg.js';
 import { requireAuth, requireAgeConfirmed } from '../services/authService.js';
 import { requirePerm } from '../middleware/rbac.js';
 import { HttpError } from '../lib/audit.js';
+import { isPaymentsConfigured } from '../services/paymentService.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -130,6 +131,10 @@ const walletActionSchema = z.object({
 });
 router.post('/wallet/action', async (req, res, next) => {
   try {
+    // เมื่อตั้งค่า PromptPay แล้ว การเติม/ถอนต้องผ่าน /payments เท่านั้น
+    // (มี QR + สลิป + admin approve) — กัน member mint เครดิตเองแล้วขอถอนเงินจริง
+    if (isPaymentsConfigured())
+      throw new HttpError(403, 'ระบบเติม/ถอนเงินจริงเปิดใช้งานแล้ว — กรุณาใช้เมนูชำระเงินในหน้า Wallet', 'USE_PAYMENTS');
     const { direction, amount, paymentMethod, accountNo, idempotencyKey } = walletActionSchema.parse(req.body);
     const methodLabel = DEPOSIT_METHODS[paymentMethod] || 'ช่องทางอื่น';
     const result = await wallet.memberWalletAction(req.user.id, {
