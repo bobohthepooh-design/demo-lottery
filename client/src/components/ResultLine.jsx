@@ -93,7 +93,8 @@ export function FlagIcon({ code, className = '' }) {
 // การ์ดผลรางวัล 1 ประเทศ — หัวข้อ + คอลัมน์แยกตามประเภทรางวัล
 // compact = true สำหรับหน้าแรก (เล็กลง แสดง field หลักเท่านั้น ไม่แสดง sourceChecks/fairness)
 export default function ResultLine({ r, compact = false }) {
-  let data = r.winning_numbers;
+  // API ส่ง winning (ไม่ใช่ winning_numbers) — รองรับทั้งสองชื่อ
+  let data = r.winning_numbers || r.winning;
   if (typeof data === 'string') { try { data = JSON.parse(data); } catch { data = {}; } }
   const schema = resultSchema(r.type_code, r.category_code);
   const fields = (schema?.fields?.length ? schema.fields : []).filter(f => !f.optional);
