@@ -117,7 +117,7 @@ export default function ResultLine({ r, compact = false }) {
     return (
       <div key={key} className={`shrink-0 text-center ${isCompact ? 'min-w-[2.8rem]' : 'min-w-[3.4rem]'}`}>
         <div className={`leading-tight text-navy-400 ${isCompact ? 'text-[8px]' : 'text-[9px]'}`}>{label}</div>
-        <div className={`font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-0.5 ${isCompact ? 'text-[10px]' : 'text-xs'}`}>
+        <div className={`font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-0.5 ${isCompact ? 'text-[10px] max-w-[8rem] sm:max-w-[10rem]' : 'text-xs max-w-[11rem] sm:max-w-[13rem] lg:max-w-[15rem]'}`}>
           {tokens.map((t, ti) => /^\d/.test(t) ? (
             <span key={ti} className="lotto-ball" style={{ fontSize: isCompact ? '0.7em' : '0.8em' }}>{t}</span>
           ) : <span key={ti}>{t}</span>)}

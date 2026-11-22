@@ -271,10 +271,10 @@ export default function Lotteries() {
 
       {/* Filter Bar */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1 bg-navy-800/50 border border-navy-700 rounded-xl p-1">
+        <div className="flex items-center gap-1 flex-wrap bg-navy-800/50 border border-navy-700 rounded-xl p-1">
           {[['', 'ทั้งหมด'], ...countries.map(c => [c, c])].map(([v, label]) => (
             <button key={v} onClick={() => { setCountry(v); if (selType) navigate('/lotteries', { replace: true }); }}
-              className={`text-xs px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${country === v ? 'bg-gradient-to-r from-[#22d3ee]/30 to-[#22d3ee]/20 text-[#67e8f9] shadow-lg shadow-[#22d3ee]/10' : 'text-navy-300 hover:text-navy-200 hover:bg-navy-800/60'}`}>
+              className={`text-xs px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${country === v ? 'bg-gradient-to-r from-[#22d3ee]/30 to-[#22d3ee]/20 text-[#67e8f9] shadow-lg shadow-[#22d3ee]/10' : 'text-navy-300 hover:text-navy-200 hover:bg-navy-800/60'}`}>
               {label}
             </button>
           ))}

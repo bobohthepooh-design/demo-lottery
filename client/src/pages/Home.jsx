@@ -9,7 +9,8 @@ export default function Home() {
   const { user, demoNotice, isAdmin, balance } = useAuth();
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [cashbackPct, setCashbackPct] = useState(0); // โปรคืนยอดเสีย %/วัน — 0 = ปิด
-  const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ section ผลรางวัล
+  const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ ticker
+  const [latestResults, setLatestResults] = useState([]); // ผลล่าสุดข้ามตลาด (ไม่จำกัดวัน)
 
   useEffect(() => {
     api('/lottery/public-config').then(r => {
@@ -17,9 +18,11 @@ export default function Home() {
       setCashbackPct(Number(r.cashbackPercent) || 0);
     }).catch(() => {});
     const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-    loadToday();
-    const t = setInterval(loadToday, 30000); // refresh อัตโนมัติ — ผลใหม่ขึ้นเอง
-    const h = () => loadToday();
+    // ผลล่าสุด 4 รายการข้ามตลาด — server กรองเกมด่วน/ราศีออกแล้ว
+    const loadLatest = () => api('/lottery/latest-results?limit=4&exclude=SC,HL,KI,CF,HR').then(r => setLatestResults(r.draws || [])).catch(() => {});
+    loadToday(); loadLatest();
+    const t = setInterval(() => { loadToday(); loadLatest(); }, 30000); // refresh อัตโนมัติ — ผลใหม่ขึ้นเอง
+    const h = () => { loadToday(); loadLatest(); };
     window.addEventListener('sys:update', h);
     return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
   }, []);
@@ -61,11 +64,12 @@ export default function Home() {
       .sort((a, b) => String(b.settled[0].draw_at).localeCompare(String(a.settled[0].draw_at)));
   })();
 
-  // ผลรางวัล 4 รายการล่าสุด — เรียงตามเวลาจริงล่าสุด (เฉพาะหวย ไม่รวมหวยราศี/เกมด่วน)
+  // ผลรางวัล 4 รายการล่าสุด — จาก endpoint ข้ามตลาด (fallback todayDraws ถ้า endpoint ไม่มีข้อมูล)
   const recentResults = (() => {
+    const src = latestResults.length ? latestResults : todayDraws;
     const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']);
-    return todayDraws
-      .filter(d => drawVisible(d) && !INSTANT.has(d.type_code) && d.status === 'settled' && d.winning)
+    return src
+      .filter(d => drawVisible(d) && !INSTANT.has(d.type_code) && d.winning)
       .sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)))
       .slice(0, 4);
   })();

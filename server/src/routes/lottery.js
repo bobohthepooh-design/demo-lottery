@@ -326,6 +326,36 @@ router.get('/check', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ผลรางวัลล่าสุดข้ามตลาด — N รายการล่าสุดที่มีผลเผยแพร่แล้ว (ไม่จำกัดวันที่)
+// ?limit=4&exclude=SC,HL,KI,CF,HR — exclude = type_code ที่ไม่เอามาแสดง (เกมด่วน/ราศี ฯลฯ)
+router.get('/latest-results', async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 4, 1), 20);
+    const exclude = String(req.query.exclude || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    const rows = await getDb().prepare(`
+      SELECT d.id, d.draw_code, d.draw_at, d.status,
+             lt.code AS type_code, lt.name_th AS type_name_th,
+             c.code AS category_code, c.name_th AS category_name_th,
+             lr.winning_numbers, lr.source AS result_source, lr.published_at
+      FROM lottery_results lr
+      JOIN lottery_draws d ON d.id = lr.draw_id
+      JOIN lottery_types lt ON lt.id = d.lottery_type_id
+      LEFT JOIN lottery_categories c ON c.id = d.category_id
+      WHERE lt.is_active = 1 AND d.status <> 'cancelled'
+        AND lt.code <> ALL($1::text[])
+      ORDER BY d.draw_at DESC, lr.id DESC
+      LIMIT $2`).all(exclude, limit);
+    const sourceChecks = await fetcher.getResultSourceChecks(rows.map(d => d.id));
+    res.json({
+      draws: rows.map(d => {
+        let winning = null;
+        try { winning = d.winning_numbers ? JSON.parse(d.winning_numbers) : null; } catch {}
+        return { ...d, winning_numbers: undefined, winning, result_kind: d.result_source ? 'real' : null, source_checks: sourceChecks.get(Number(d.id)) || [] };
+      }),
+    });
+  } catch (e) { next(e); }
+});
+
 // ผลรางวัล + ตารางออกรางวัลของวันที่ระบุ (วันไทย) — ?date=YYYY-MM-DD (default: วันนี้)
 router.get('/today', async (req, res) => {
   const qd = String(req.query.date || '');
