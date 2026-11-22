@@ -433,7 +433,7 @@ router.get('/results/status', requirePerm('results.publish'), async (req, res) =
              d.lottery_type_id AS tid, COALESCE(d.category_id, 0) AS cid,
              ROW_NUMBER() OVER (
                PARTITION BY d.lottery_type_id, COALESCE(d.category_id, 0)
-               ORDER BY COALESCE(lr.published_at, d.draw_at) DESC, lr.id DESC
+               ORDER BY d.draw_at DESC, lr.id DESC
              ) AS rn
       FROM lottery_results lr
       JOIN lottery_draws d ON d.id = lr.draw_id

@@ -173,7 +173,7 @@ router.get('/results', async (req, res) => {
              c.code AS category_code, c.name_th AS category_name_th,
              ROW_NUMBER() OVER (
                PARTITION BY lt.id, COALESCE(c.id, 0)
-               ORDER BY COALESCE(lr.published_at, d.draw_at) DESC, lr.id DESC
+               ORDER BY d.draw_at DESC, lr.id DESC
              ) AS rn
       FROM lottery_results lr
       JOIN lottery_draws d ON d.id = lr.draw_id
@@ -181,7 +181,7 @@ router.get('/results', async (req, res) => {
       LEFT JOIN lottery_categories c ON c.id = d.category_id
     )
     SELECT * FROM ranked WHERE rn = 1
-    ORDER BY COALESCE(published_at, draw_at) DESC`).all();
+    ORDER BY draw_at DESC`).all();
   const sourceChecks = await fetcher.getResultSourceChecks(rows.map(r => r.draw_id));
   res.json({ results: rows.map(r => ({ ...r, source_checks: sourceChecks.get(Number(r.draw_id)) || [], fairness: fetcher.fairnessForSource(r.source, r.draw_code) })) });
 });
