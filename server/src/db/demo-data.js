@@ -3,17 +3,22 @@ import { q, qRun } from './pg.js';
 /**
  * สร้างรอบหวยตัวอย่างสำหรับ Demo — idempotent (เช็ค draw_code ก่อนสร้าง)
  *
- * ตารางออกผลรางวัลจริง (เวลาประเทศไทย):
+ * ตารางออกผลรางวัลจริง (เวลาประเทศไทย — ตรวจสอบกับ lotterychecks.com แล้ว):
  *  - หวยไทย:        วันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 (ปิดรับ 14:00)
- *  - หวยลาว:            จันทร์–ศุกร์ เวลา 20:00 (ปิดรับ 19:00) หยุดเสาร์-อาทิตย์
- *  - ลาวพัฒนา (ค่ำ):   จันทร์–ศุกร์ เวลา 20:30 (ปิดรับ 19:30)
- *  - ลาวพัฒนาเช้า:      ทุกวัน เวลา 09:00 (ปิดรับ 08:00) — ตลาดแยกต่างหาก
- *  - ฮานอยเฉพาะกิจ:  ทุกวัน เวลา 16:30 (ปิดรับ 15:30)
- *  - ฮานอยพิเศษ:     ทุกวัน เวลา 17:30 (ปิดรับ 16:30)
- *  - ฮานอยปกติ:      ทุกวัน เวลา 18:30 (ปิดรับ 17:30)
- *  - ฮานอย VIP:      ทุกวัน เวลา 19:30 (ปิดรับ 18:30)
- *  - หวยราศี:        ทุกชั่วโมงนาฬิกา (ปิดรับก่อนออกรางวัล 30 นาที) — ตลอด 24 ชม. ผลเป็นดวงราศี
- *  - ข้ามวันหยุดราชการไทย (ยกเว้นหวยไทยที่ออก 1/16 เสมอ)
+ *  - หวยลาวสามัคคี:    ทุกวัน เวลา 20:30 (ปิดรับ 19:30)
+ *  - หวยลาวพัฒนา:     จันทร์–ศุกร์ เวลา 20:35 (ปิดรับ 19:35)
+ *  - ลาวพัฒนาเช้า:      ทุกวัน เวลา 09:00 (ปิดรับ 08:00)
+ *  - หวยลาวเช้า:        ทุกวัน เวลา 08:30 (ปิดรับ 07:30)
+ *  - ลาวพัฒนาเที่ยง:     ทุกวัน เวลา 12:30 (ปิดรับ 11:30)
+ *  - ฮานอยเช้า:        ทุกวัน เวลา 08:30 (ปิดรับ 07:30)
+ *  - ฮานอยเฉพาะกิจ:    ทุกวัน เวลา 16:30 (ปิดรับ 15:30)
+ *  - ฮานอยพิเศษ:       ทุกวัน เวลา 17:30 (ปิดรับ 16:30)
+ *  - ฮานอยปกติ:        ทุกวัน เวลา 18:30 (ปิดรับ 17:30)
+ *  - ฮานอย VIP:        ทุกวัน เวลา 19:30 (ปิดรับ 18:30)
+ *  - ฮานอยทางการ:      จันทร์+พฤหัสบดี เวลา 18:15 (ปิดรับ 17:45)
+ *  - หวยราศี:        ทุก 15 นาที (ปิดรับก่อนออกรางวัล 5 นาที) — ตลอด 24 ชม. ผลเป็นดวงราศี
+ *  - หวยลาว/ฮานอย ออกทุกวันรวมเสาร์-อาทิตย์-วันหยุด (verified จากผลจริง lotterychecks)
+ *  - ข้ามวันหยุดราชการไทยเฉพาะหวยไทย/ออมสินที่อิงวันหลวง (LA/HN ไม่ข้าม)
  *
  * draw_at/close_at เป็นเวลา local ของ server → แปลงเป็น UTC ก่อนเก็บ
  */
@@ -61,22 +66,22 @@ export function scheduleFor(typeCode, catCode) {
   if (typeCode === 'TH') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false };
   if (typeCode === 'GS') return { kind: 'monthly', days: [1, 16], hour: 15, closeHour: 14, skipHoliday: false }; // government's Savings Bank Bond (ออก 1&16 — วัน/เวลาเดียวกับหวยไทย)
   if (typeCode === 'LA') {
-    if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 30, closeHour: 19, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // ค่ำ จ–ศ
-    if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0, skipHoliday: true, skipWeekend: true }; // เช้า ทุกวัน
-    if (catCode === 'LAM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // หวยลาวเช้า ออก 08:30 ทุกวัน
-    if (catCode === 'LADT') return { kind: 'daily', hour: 12, minute: 30, closeHour: 11, closeMinute: 30, skipHoliday: true, skipWeekend: true }; // ลาวพัฒนาเที่ยง ออก 12:30 ทุกวัน
-    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 0, closeHour: 19, closeMinute: 0, skipHoliday: true, skipWeekend: true }; // หวยลาวหลัก จ–ศ
+    // เวลาตามผลจริง lotterychecks.com — ตลาดลาว (ยกเว้นลาวพัฒนา) ออกทุกวันรวมเสาร์-อาทิตย์
+    if (catCode === 'LAD') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5], hour: 20, minute: 35, closeHour: 19, closeMinute: 35 }; // หวยลาวพัฒนา จ–ศ 20:35
+    if (catCode === 'LADAM') return { kind: 'daily', hour: 9, minute: 0, closeHour: 8, closeMinute: 0 }; // ลาวพัฒนาเช้า 09:00 ทุกวัน
+    if (catCode === 'LAM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30 }; // หวยลาวเช้า 08:30 ทุกวัน
+    if (catCode === 'LADT') return { kind: 'daily', hour: 12, minute: 30, closeHour: 11, closeMinute: 30 }; // ลาวพัฒนาเที่ยง 12:30 ทุกวัน
+    return { kind: 'daily', hour: 20, minute: 30, closeHour: 19, closeMinute: 30 }; // ลาวสามัคคี 20:30 ทุกวัน
   }
   if (typeCode === 'HN') {
-    // หวยฮานอยไม่ออกรางวัลเฉพาะวันอาทิตย์ (XSMB/lotterychecks ไม่มีข้อมูล) → จ.–ส. (เสาร์มีผลจริง)
-    const hnSkip = { skipHoliday: true, skipSunday: true };
-    if (catCode === 'HNM') return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: 8, minute: 30, closeHour: 7, closeMinute: 30, ...hnSkip }; // ฮานอยเช้า ออก 08:30 จ.–ส.
-    // ฮานอยทางการ (Xổ số kiến thiết Thủ đô): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15–18:30 (เวลาไทย)
-    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45, ...hnSkip };
-    // เวลาตามตลาดหวยฮานอยทั่วไป — เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
+    // หวยฮานอยออกทุกวันรวมวันอาทิตย์และวันหยุด (verified จากผลจริง) — เวลาไทยตามตลาดจริง
+    if (catCode === 'HNM') return { kind: 'daily', hour: 8, minute: 30, closeHour: 7, closeMinute: 30 }; // ฮานอยเช้า 08:30
+    // ฮานอยทางการ (Xổ số kiến thiết): ออกเฉพาะ จันทร์+พฤหัสบดี 18:15 (เวลาไทย)
+    if (catCode === 'HNST') return { kind: 'weekly', weekdays: [1, 4], hour: 18, minute: 15, closeHour: 17, closeMinute: 45 };
+    // เฉพาะกิจ 16:30 / พิเศษ 17:30 / ปกติ 18:30 / VIP 19:30 (เวลาไทย)
     const h = { HNS: 16, HNP: 17, HNN: 18, HNV: 19 }[catCode] || 18;
-    // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
-    return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, ...hnSkip };
+    // ปิดรับก่อนออกรางวัล 1 ชม. — ห้ามให้ close_at == draw_at
+    return { kind: 'daily', hour: h, minute: 30, closeHour: h - 1, closeMinute: 30 };
   }
   if (typeCode === 'HR') return { kind: 'quarter', closeBeforeMin: 5, skipHoliday: false }; // หวยราศี — ทายราศี ทุก 15 นาที
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true, skipWeekend: true };
@@ -91,9 +96,8 @@ function upcomingSpec(sch) {
   return { count: 2, horizonH: 24 * 14, minOne: true }; // daily/weekly (LA/HN): 2 รอบ — เสาร์-อาทิตย์เลื่อนเป็นจันทร์ (skipWeekend)
 }
 // หมวดที่ปิดให้บริการ — ไม่สร้างรอบใหม่
-// LAD: หวยลาวพัฒนา 5/45 (จ-ศ 20:00) ไม่มีแหล่งผลแยกจากหวยลาวหลัก
-// LADAM: "ลาวพัฒนาเช้า" ไม่มีอยู่ในหวยจริง — ผลเป็น generated ล้วน ไม่ใช่ตลาดจริง
-const DISABLED_CATS = new Set(['LADAM']);
+// (LADAM ลาวพัฒนาเช้า 09:00 มีอยู่จริงบน lotterychecks — เปิดให้บริการแล้ว)
+const DISABLED_CATS = new Set();
 // เกมด่วน (ขูด/ไฮโล) ใช้ standing draw ถาวรอยู่แล้ว — ไม่ต้องสร้างรอบตามตาราง
 const INSTANT_TYPES = new Set(['SC', 'HL', 'KI']);
 

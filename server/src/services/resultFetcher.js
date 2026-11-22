@@ -167,10 +167,11 @@ export function generateByKind(kind, drawCode) {
 //       lao6 = เลขพิเศษ 6 หลัก (ลาวพัฒนา — num4=4 ตัวท้าย, bottom2=2 ตัวแรก)
 //       hn   = โครงสร้างฮานอย (num4/top3/bottom2/db5)
 const LC_MARKET_MAP = {
-  LA:    { slug: 'lao-union',                kind: 'lao5' },
-  LAM:   { slug: 'lao-morning',              kind: 'lao5' },
-  LADAM: { slug: 'lao-development-morning',  kind: 'lao6' },
-  LADT:  { slug: 'lao-development-midday',   kind: 'lao6' },
+  LA:    { slug: 'lao-union',                kind: 'lao5' },   // ลาวสามัคคี 20:30 ทุกวัน
+  LAM:   { slug: 'lao-morning',              kind: 'lao5' },   // หวยลาวเช้า 08:30 ทุกวัน
+  LAD:   { slug: 'lao-lottery',              kind: 'lao-dev' },// หวยลาวพัฒนา จ–ศ 20:35 (ท้าย 4/3/2)
+  LADAM: { slug: 'lao-development-morning',  kind: 'lao6' },   // ลาวพัฒนาเช้า 09:00 ทุกวัน
+  LADT:  { slug: 'lao-development-midday',   kind: 'lao6' },   // ลาวพัฒนาเที่ยง 12:30 ทุกวัน
   HNS:   { slug: 'hanoi-adhoc',              kind: 'hn' },
   HNP:   { slug: 'hanoi-special',            kind: 'hn' },
   HNV:   { slug: 'hanoi-vip',                kind: 'hn' },
@@ -221,6 +222,13 @@ function winningFor(kind, x) {
       top3: lcNum(x, 'three-digit-top', 3), last3: lcNum(x, 'three-digit-top', 3),
       last2: lcNum(x, 'two-digit-bottom', 2), bottom2: lcNum(x, 'two-digit-bottom', 2),
     };
+  }
+  if (kind === 'lao-dev') {
+    // หวยลาวพัฒนา — ผลที่ประกาศคือ เลขท้าย 4/3/2 ตัวโดยตรง (ไม่ใช่ตัดจากเลขเต็ม)
+    const l4 = lcNum(x, 'last-four-digit', 4);
+    const l3 = lcNum(x, 'last-three-digit', 3);
+    const l2 = lcNum(x, 'last-two-digit', 2);
+    return { last4: l4, num4: l4, top3: l3, last3: l3, last2: l2, bottom2: l2 };
   }
   if (kind === 'gsb') {
     // สลากออมสินพิเศษ — อันดับ 1-5 (7 หลัก, อ.3=5 เลข อ.4=10 เลข อ.5=15 เลข) + เลขท้าย 4/3 ตัว

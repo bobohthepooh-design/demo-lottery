@@ -72,7 +72,7 @@ export async function seed() {
     // lottery types
     const types = [
       { code: 'TH', name_th: 'หวยไทย', name_en: 'Thailand Government Lottery', description: 'ออกวันที่ 1 และ 16 ของทุกเดือน เวลา 15:00 น.' },
-      { code: 'LA', name_th: 'หวยลาว', name_en: 'Laos Lottery', description: 'หวยลาว: จ–ศ 20:00 • ลาวพัฒนา: จ–ศ 20:30 • ลาวพัฒนาเช้า: ทุกวัน 09:00 น.' },
+      { code: 'LA', name_th: 'หวยลาว', name_en: 'Laos Lottery', description: 'ลาวสามัคคี: ทุกวัน 20:30 • ลาวพัฒนา: จ–ศ 20:35 • ลาวเช้า: ทุกวัน 08:30 • ลาวพัฒนาเช้า: ทุกวัน 09:00 • ลาวพัฒนาเที่ยง: ทุกวัน 12:30 น.' },
       { code: 'HN', name_th: 'หวยฮานอย', name_en: 'Hanoi Lottery', description: 'หวยเวียดนาม ออกทุกวัน 4 รอบ: เฉพาะกิจ 16:30 • พิเศษ 17:30 • ปกติ 18:30 • VIP 19:30 น. + ฮานอยทางการ (XSMB จริง) จันทร์/พฤหัสบดี 18:15 น. (เวลาไทย)' },
       { code: 'HR', name_th: 'หวยราศี', name_en: 'Zodiac Lottery', description: 'ทายดวงราศีแบบหวยไทย — ผลรางวัลเป็นราศี 6 ตัวเรียงลำดับ (รางวัลใหญ่/3 ราศีบน/2 ราศีล่าง/วิ่งราศี) ออกรางวัลทุก 15 นาที ตลอด 24 ชั่วโมง ตลอด 24 ชั่วโมง (DEMO)' },
       { code: 'GS', name_th: 'สลากออมสิน', name_en: 'GSB Savings Lottery', description: 'สลากออมสินพิเศษ — ออกวันที่ 1 และ 16 ของทุกเดือน ช่วงบ่าย ผลจริงจาก lotterychecks (gsb-lottery)' },

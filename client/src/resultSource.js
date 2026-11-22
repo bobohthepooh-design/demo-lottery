@@ -29,10 +29,10 @@ export function kindBadge(kind) {
 export const MARKET_INFO = {
   TH:          { kind: 'หวยจริง',    mode: 'auto',   official: true, src: 'GLO (glo.or.th)' },
   LA:          { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-union)' },
-  'LA:LAD':    { kind: 'หวยจริง',    mode: 'manual', src: 'admin กรอกผลจริง' },
-  'LA:LADAM':  { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-dev-morning)' },
+  'LA:LAD':    { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-lottery)' },
+  'LA:LADAM':  { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-development-morning)' },
   'LA:LAM':    { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-morning)' },
-  'LA:LADT':   { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-dev-midday)' },
+  'LA:LADT':   { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-development-midday)' },
   HN:          { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'XSMB / lotterychecks' },
   'HN:HNN':    { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'XSMB' },
   'HN:HNST':   { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'XSMB' },
