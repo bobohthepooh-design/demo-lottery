@@ -132,7 +132,7 @@ export default function Home() {
       )}
 
       {/* ปุ่มลัดหลัก — modern icon tiles */}
-      <div className="grid grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {quickActions.map(a => (
           <Link key={a.label} to={a.to}
             className={`group relative rounded-2xl bg-gradient-to-br ${a.cls} py-4 px-2 flex flex-col items-center gap-2 text-white transition-all duration-300 hover:brightness-110 hover:shadow-lg ${a.shadow} active:scale-95 border border-white/10`}>
