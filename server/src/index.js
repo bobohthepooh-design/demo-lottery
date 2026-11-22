@@ -97,12 +97,16 @@ if (config.env !== 'test') {
       const cutoff7 = `to_char((now() AT TIME ZONE 'UTC') - interval '7 days','YYYY-MM-DD HH24:MI:SS')`;
       const s = await d.prepare(`DELETE FROM user_sessions WHERE expires_at < ${cutoff1} OR revoked_at < ${cutoff7}`).run();
       const o = await d.prepare(`DELETE FROM otp_codes WHERE expires_at < ${cutoff1} OR (used = 1 AND created_at < ${cutoff1})`).run();
+      // retention: reset/verify tokens หมดอายุ/ใช้แล้วเก็บ 1 วัน; email_verifications เหมือนกัน
+      const pr = await d.prepare(`DELETE FROM password_reset_tokens WHERE expires_at < ${cutoff1} OR (used_at IS NOT NULL AND used_at < ${cutoff1})`).run();
+      const ev = await d.prepare(`DELETE FROM email_verifications WHERE expires_at < ${cutoff1} OR (used_at IS NOT NULL AND used_at < ${cutoff1})`).run();
       // data retention — notifications: อ่านแล้วเก็บ 30 วัน, ไม่อ่านเก็บ 180 วัน
       // (audit_logs/transactions/slips เก็บถาวร — เป็น ledger/audit trail ตามกฎหมาย)
       const cutoff30 = `to_char((now() AT TIME ZONE 'UTC') - interval '30 days','YYYY-MM-DD HH:MM:SS')`;
       const cutoff180 = `to_char((now() AT TIME ZONE 'UTC') - interval '180 days','YYYY-MM-DD HH:MM:SS')`;
       const n = await d.prepare(`DELETE FROM notifications WHERE (read_at IS NOT NULL AND read_at < ${cutoff30}) OR created_at < ${cutoff180}`).run();
-      if (s.changes || o.changes || n.changes) console.log(`[cleanup] sessions -${s.changes}, otp -${o.changes}, notifications -${n.changes}`);
+      if (s.changes || o.changes || n.changes || pr.changes || ev.changes)
+        console.log(`[cleanup] sessions -${s.changes}, otp -${o.changes}, reset_tokens -${pr.changes}, email_verify -${ev.changes}, notifications -${n.changes}`);
     } catch (e) { console.error('[cleanup] failed:', e.message); }
   };
   setTimeout(cleanup, 60000).unref();

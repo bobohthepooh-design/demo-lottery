@@ -31,29 +31,35 @@ const authFlowLimiter = rateLimit({
 const registerSchema = z.object({
   username: z.string().min(3).max(32),
   email: z.preprocess(v => (typeof v === 'string' && !v.trim() ? undefined : v), z.string().email().max(200).optional()),
-  password: z.string().min(8).max(128),
+  password: z.string().min(10).max(128),
   displayName: z.string().max(100).optional(),
   ageConfirmed: z.literal(true),
+  termsAccepted: z.literal(true),
+  turnstileToken: z.string().max(2048).optional(),
 });
 const loginSchema = z.object({
   username: z.string().min(1).max(200),
   password: z.string().min(1).max(128),
+  turnstileToken: z.string().max(2048).optional(),
 });
 const changePwSchema = z.object({
   oldPassword: z.string().min(1).max(128),
-  newPassword: z.string().min(8).max(128),
+  newPassword: z.string().min(10).max(128),
 });
 const forgotSchema = z.object({ email: z.string().email().max(200) });
 const resetPasswordSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/i),
-  newPassword: z.string().min(8).max(128),
+  newPassword: z.string().min(10).max(128),
 });
 const otpRequestSchema = z.object({
-  phone: z.string().min(9).max(15),
+  channel: z.enum(['phone', 'email']).default('phone'),
+  target: z.string().min(3).max(200),
   purpose: z.enum(['register', 'login']),
+  turnstileToken: z.string().max(2048).optional(),
 });
 const otpVerifySchema = z.object({
-  phone: z.string().min(9).max(15),
+  channel: z.enum(['phone', 'email']).default('phone'),
+  target: z.string().min(3).max(200),
   code: z.string().regex(/^\d{6}$/),
   purpose: z.enum(['register', 'login']),
   displayName: z.string().max(100).optional(),
@@ -61,9 +67,30 @@ const otpVerifySchema = z.object({
 });
 const mfaCodeSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 
+// Cloudflare Turnstile — verify ฝั่ง server เสมอ; ถ้าไม่ได้ตั้ง secret = ปิด (local/demo)
+async function verifyTurnstile(token, ip) {
+  if (!config.turnstile?.secretKey) return; // ปิดใช้
+  if (!token) throw new HttpError(400, 'กรุณายืนยันว่าคุณไม่ใช่บอท');
+  try {
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: config.turnstile.secretKey, response: token, remoteip: ip }),
+    });
+    const j = await r.json();
+    if (!j.success) {
+      audit({ action: 'security.turnstile_failed', entityType: 'ip', entityId: ip, detail: { codes: j['error-codes'] } });
+      throw new HttpError(403, 'การยืนยันบอทไม่ผ่าน กรุณาลองใหม่');
+    }
+  } catch (e) {
+    if (e instanceof HttpError) throw e;
+    throw new HttpError(503, 'ระบบยืนยันบอทไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง');
+  }
+}
+
 router.post('/register', authFlowLimiter, async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
+    await verifyTurnstile(data.turnstileToken, req.ip);
     const email = data.email || `${data.username.toLowerCase()}@demo.local`;
     const userId = await auth.register({ ...data, email, ip: req.ip, userAgent: req.headers['user-agent'] });
     await getDb().prepare('UPDATE users SET age_confirmed = 1 WHERE id = ?').run(userId);
@@ -74,6 +101,7 @@ router.post('/register', authFlowLimiter, async (req, res, next) => {
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
+    await verifyTurnstile(data.turnstileToken, req.ip);
     const result = await auth.login({ ...data, ip: req.ip, userAgent: req.headers['user-agent'] });
     auth.setSessionCookie(res, result.token);
     const needsMfa = result.requiresMfa;
@@ -97,7 +125,7 @@ router.get('/me', auth.requireAuth, async (req, res) => {
   const roles = (await getDb().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`)
     .all(req.user.id)).map(r => r.name);
   res.json({
-    user: { ...req.user, roles, mfaVerified: !!req.session.mfa_verified },
+    user: { ...req.user, roles, mfaVerified: !!req.session.mfa_verified, emailVerified: !!req.user.emailVerified },
     balance,
     currency: 'THB',
     demoNotice: await getSetting('demo_notice', ''),
@@ -192,6 +220,7 @@ router.post('/reset-password', authFlowLimiter, async (req, res, next) => {
 router.post('/otp/request', authFlowLimiter, async (req, res, next) => {
   try {
     const data = otpRequestSchema.parse(req.body);
+    await verifyTurnstile(data.turnstileToken, req.ip);
     const r = await auth.requestOtp({ ...data, ip: req.ip });
     res.json({ ok: true, ...r, message: r.devCode
       ? 'ส่งรหัส OTP แล้ว (Demo: รหัสแสดงด้านล่าง ไม่ได้ส่ง SMS จริง)'
@@ -234,6 +263,59 @@ router.post('/mfa/verify', loginLimiter, async (req, res, next) => {
     await auth.verifyMfa(sessionId, code);
     res.json({ ok: true });
   } catch (e) { next(e); }
+});
+
+router.post('/mfa/disable', auth.requireAuth, async (req, res, next) => {
+  try {
+    const { code } = mfaCodeSchema.parse(req.body);
+    await auth.disableMfa(req.user.id, code);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- session management (member) ----------
+router.get('/sessions', auth.requireAuth, async (req, res, next) => {
+  try {
+    const token = auth.getSessionToken(req);
+    res.json({ sessions: await auth.listSessions(req.user.id, token) });
+  } catch (e) { next(e); }
+});
+router.delete('/sessions/:id', auth.requireAuth, async (req, res, next) => {
+  try {
+    await auth.revokeSession(req.user.id, req.params.id, auth.getSessionToken(req));
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+router.post('/sessions/revoke-others', auth.requireAuth, async (req, res, next) => {
+  try {
+    const n = await auth.revokeOtherSessions(req.user.id, auth.getSessionToken(req));
+    res.json({ ok: true, revoked: n });
+  } catch (e) { next(e); }
+});
+
+// ---------- email verification ----------
+router.post('/email/verify/request', auth.requireAuth, async (req, res, next) => {
+  try {
+    const r = await auth.requestEmailVerification(req.user.id, req.ip);
+    res.json({ ok: true, ...r, message: r.mailed ? 'ส่งลิงก์ยืนยันไปยังอีเมลแล้ว' : 'ระบบยังไม่ได้ตั้งค่าอีเมล — ใช้ devToken บนเครื่อง local เท่านั้น' });
+  } catch (e) { next(e); }
+});
+router.post('/email/verify', async (req, res, next) => {
+  try {
+    const token = String(req.body?.token || '');
+    if (!/^[a-f0-9]{64}$/i.test(token)) throw new HttpError(400, 'token ไม่ถูกต้อง');
+    await auth.verifyEmailToken(token, req);
+    res.json({ ok: true, message: 'ยืนยันอีเมลสำเร็จ' });
+  } catch (e) { next(e); }
+});
+
+// ---------- public client config (turnstile site key ฯลฯ) ----------
+router.get('/client-config', async (req, res) => {
+  const { mailConfigured } = await import('../services/mailer.js');
+  res.json({
+    turnstileSiteKey: config.turnstile?.siteKey || '',
+    mailConfigured: mailConfigured(),
+  });
 });
 
 // ---------- LINE Login (OAuth2) — ใช้ได้เมื่อ config LINE_CHANNEL_ID/SECRET ----------

@@ -14,7 +14,7 @@ CREATE TABLE users (
   mfa_enabled BIGINT NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
   updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
-, withdraw_unlocked BIGINT NOT NULL DEFAULT 0, phone TEXT, self_excluded_until TEXT, daily_limit_satang BIGINT, monthly_limit_satang BIGINT, age_confirmed BIGINT DEFAULT 0, timezone TEXT, language TEXT);
+, withdraw_unlocked BIGINT NOT NULL DEFAULT 0, phone TEXT, self_excluded_until TEXT, daily_limit_satang BIGINT, monthly_limit_satang BIGINT, age_confirmed BIGINT DEFAULT 0, timezone TEXT, language TEXT, terms_accepted_at TEXT, terms_version TEXT, email_verified BIGINT NOT NULL DEFAULT 0, signup_ip TEXT);
 
 CREATE TABLE roles (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -231,6 +231,7 @@ CREATE TABLE otp_codes (
   used BIGINT NOT NULL DEFAULT 0,
   attempts BIGINT NOT NULL DEFAULT 0,
   ip TEXT,
+  channel TEXT NOT NULL DEFAULT 'phone',
   created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
 );
 
@@ -394,3 +395,13 @@ CREATE TABLE IF NOT EXISTS payment_requests (
 CREATE INDEX IF NOT EXISTS idx_payment_requests_user ON payment_requests(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status, kind);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_requests_slipref ON payment_requests(slip_trans_ref) WHERE slip_trans_ref IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS email_verifications (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+);
+CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verifications(user_id, created_at);

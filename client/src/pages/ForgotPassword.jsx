@@ -33,7 +33,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <AuthShell title="ลืมรหัสผ่าน" sub="Demo mode: ระบบสร้างลิงก์รีเซ็ตในเครื่อง โดยไม่ส่งอีเมลจริง">
+    <AuthShell title="ลืมรหัสผ่าน" sub="ระบบจะส่งลิงก์รีเซ็ตไปยังอีเมลที่ลงทะเบียน (ถ้าตั้งค่า SMTP แล้ว)">
       <form onSubmit={submit} className="space-y-4">
         <Input required type="email" value={email} onChange={e => setEmail(e.target.value)}
           placeholder="อีเมลที่ลงทะเบียน" autoComplete="email" />
@@ -44,7 +44,7 @@ export default function ForgotPassword() {
         <form onSubmit={reset} className="space-y-4 mt-5 border-t border-navy-700 pt-5">
           <div className="text-xs text-amber-300 break-all">ลิงก์ Demo สำหรับเครื่องนี้: {token}</div>
           <Input required value={newPassword} onChange={e => setNewPassword(e.target.value)}
-            type="password" minLength={8} maxLength={128} placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)" autoComplete="new-password" />
+            type="password" minLength={10} maxLength={128} placeholder="รหัสผ่านใหม่ (อย่างน้อย 10 ตัว)" autoComplete="new-password" />
           <Button disabled={busy} className="w-full">{busy ? 'กำลังดำเนินการ...' : 'ตั้งรหัสผ่านใหม่'}</Button>
         </form>
       )}

@@ -5,6 +5,7 @@ import { useAuth } from '../auth.jsx';
 import LineLoginButton from '../components/LineLoginButton.jsx';
 import PhoneOtpForm from '../components/PhoneOtpForm.jsx';
 import AuthShell from '../components/AuthShell.jsx';
+import Turnstile from '../components/Turnstile.jsx';
 import { Input, Button } from '../components/ui/index.js';
 
 export default function Register() {
@@ -14,6 +15,7 @@ export default function Register() {
   const [showPw, setShowPw] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [tsToken, setTsToken] = useState('');
   const navigate = useNavigate();
 
   const submit = async (e) => {
@@ -21,7 +23,8 @@ export default function Register() {
     setBusy(true); setErr('');
     try {
       // สมัครแล้วเข้าสู่ระบบให้อัตโนมัติ — ไม่ต้องกรอกซ้ำ
-      await api('/auth/register', { method: 'POST', body: form });
+      // checkbox เดียวครอบคลุมทั้งอายุ + ข้อตกลง → ส่ง termsAccepted ด้วย (server บันทึก terms_accepted_at)
+      await api('/auth/register', { method: 'POST', body: { ...form, termsAccepted: form.ageConfirmed, turnstileToken: tsToken || undefined } });
       await login(form.username, form.password);
       navigate('/');
     } catch (e2) { setErr(e2.message); }
@@ -54,8 +57,8 @@ export default function Register() {
           <Input value={form.displayName} onChange={e => setForm({...form, displayName: e.target.value})}
             placeholder="ชื่อที่แสดง (ไม่บังคับ)" autoComplete="nickname" />
           <div className="relative">
-            <Input required type={showPw ? 'text' : 'password'} minLength={8} value={form.password} onChange={e => setForm({...form, password: e.target.value})}
-              placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)" autoComplete="new-password" inputClassName="pr-16" />
+            <Input required type={showPw ? 'text' : 'password'} minLength={10} value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+              placeholder="รหัสผ่าน (อย่างน้อย 10 ตัว)" autoComplete="new-password" inputClassName="pr-16" />
             <button type="button" onClick={() => setShowPw(!showPw)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-navy-300 hover:text-gold-300">
               {showPw ? 'ซ่อน' : 'แสดง'}
@@ -67,6 +70,7 @@ export default function Register() {
               className="mt-0.5 accent-amber-500" />
             <span>ฉันยืนยันว่ามีอายุ <b className="text-amber-300">18 ปีขึ้นไป</b> ยอมรับ<a href="/legal" target="_blank" className="text-[#f5c518] underline">ข้อกำหนด</a> และ<a href="/legal" target="_blank" className="text-[#f5c518] underline">นโยบายความเป็นส่วนตัว (PDPA)</a> (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
           </label>
+          <Turnstile onVerify={setTsToken} />
           {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
           <Button disabled={busy} className="w-full">{busy ? 'กำลังสมัคร...' : 'สมัครและเข้าใช้งานเลย'}</Button>
         </form>

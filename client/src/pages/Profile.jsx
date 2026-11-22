@@ -134,6 +134,81 @@ function PrefsCard() {
   );
 }
 
+// Sessions — ดู/เพิกถอนอุปกรณ์ที่ล็อกอินอยู่
+function SessionsCard() {
+  const [sessions, setSessions] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    try { setSessions((await api('/auth/sessions')).sessions); } catch (e) { toast(e.message, 'error'); }
+  };
+  useEffect(() => { load(); }, []);
+  const revoke = async (id) => {
+    setBusy(true);
+    try { await api(`/auth/sessions/${id}`, { method: 'DELETE' }); await load(); toast('เพิกถอน session แล้ว'); }
+    catch (e) { toast(e.message, 'error'); }
+    finally { setBusy(false); }
+  };
+  const revokeOthers = async () => {
+    setBusy(true);
+    try { const r = await api('/auth/sessions/revoke-others', { method: 'POST' }); await load(); toast(`เพิกถอนอีก ${r.revoked} session แล้ว`); }
+    catch (e) { toast(e.message, 'error'); }
+    finally { setBusy(false); }
+  };
+  if (!sessions) return null;
+  return (
+    <Card>
+      <CardHeader title="อุปกรณ์ที่ล็อกอิน" sub="จัดการ session ที่ใช้งานอยู่ — เพิกถอนเครื่องที่ไม่รู้จัก" />
+      <CardBody>
+        <div className="space-y-2 mb-3">
+          {sessions.map(s => (
+            <div key={s.id} className="flex items-center justify-between bg-navy-900/60 border border-navy-700 rounded-lg px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <div className="text-white truncate">{s.user_agent || 'unknown device'} {s.current && <span className="text-[10px] bg-gold-500/20 text-gold-300 px-1.5 py-0.5 rounded ml-1">อุปกรณ์นี้</span>}</div>
+                <div className="text-[11px] text-navy-400">IP {s.ip || '-'} • {String(s.created_at || '').slice(0, 16).replace('T', ' ')}</div>
+              </div>
+              {!s.current && <Button variant="ghost" size="sm" disabled={busy} onClick={() => revoke(s.id)}>เพิกถอน</Button>}
+            </div>
+          ))}
+          {sessions.length === 0 && <div className="text-sm text-navy-400">ไม่มี session ที่ใช้งานอยู่</div>}
+        </div>
+        {sessions.length > 1 && <Button variant="ghost" size="sm" disabled={busy} onClick={revokeOthers}>ออกจากอุปกรณ์อื่นทั้งหมด</Button>}
+      </CardBody>
+    </Card>
+  );
+}
+
+// Email verification — ส่งลิงก์ยืนยันไปยังอีเมล (ต้องตั้งค่า SMTP)
+function EmailVerifyCard({ user, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState('');
+  if (user?.emailVerified) return null;
+  const isTemp = /@(member\.local|phone\.local|line\.local|demo\.local)$/.test(user?.email || '');
+  const request = async () => {
+    setBusy(true); setInfo('');
+    try {
+      const r = await api('/auth/email/verify/request', { method: 'POST' });
+      setInfo(r.mailed ? 'ส่งลิงก์ยืนยันไปยังอีเมลแล้ว — ตรวจสอบกล่องจดหมาย' : (r.devToken ? `Dev mode — เปิด /verify-email?token=${r.devToken}` : 'ระบบยังไม่ได้ตั้งค่า SMTP — ไม่สามารถส่งอีเมลได้'));
+    } catch (e) { setInfo(e.message); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Card>
+      <CardHeader title="ยืนยันอีเมล" sub="ยืนยันว่าอีเมลเป็นของคุณจริง เพื่อความปลอดภัยบัญชี" />
+      <CardBody>
+        {isTemp ? (
+          <p className="text-sm text-navy-300">บัญชีนี้ใช้อีเมลชั่วคราว ({user?.email}) — สมัครด้วยอีเมลจริง (แท็บ OTP → อีเมล) เพื่อรับการยืนยัน</p>
+        ) : (
+          <>
+            <p className="text-sm text-navy-300 mb-3">อีเมลปัจจุบัน: <span className="text-white">{user?.email}</span> — ยังไม่ได้ยืนยัน</p>
+            <Button variant="ghost" size="sm" onClick={request} disabled={busy}>{busy ? 'กำลังส่ง...' : 'ส่งลิงก์ยืนยันอีเมล'}</Button>
+            {info && <div className="text-xs text-gold-300 mt-2 break-all">{info}</div>}
+          </>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
 // PDPA — export ข้อมูลส่วนตัว + ลบบัญชี (anonymize)
 function PrivacyCard({ onDeleted }) {
   const [busy, setBusy] = useState(false);
@@ -189,6 +264,8 @@ export default function Profile() {
   const [busy, setBusy] = useState(false);
   const [mfa, setMfa] = useState(null); // {secret, uri}
   const [mfaCode, setMfaCode] = useState('');
+  const [disableCode, setDisableCode] = useState('');
+  const [showDisable, setShowDisable] = useState(false);
 
   const changePw = async (e) => {
     e.preventDefault(); setErr(''); setMsg('');
@@ -206,6 +283,10 @@ export default function Profile() {
   };
   const enableMfa = async () => {
     try { await api('/auth/mfa/enable', { method: 'POST', body: { code: mfaCode } }); setMfa(null); setMfaCode(''); await refresh(); setMsg('เปิดใช้งาน MFA สำเร็จ'); }
+    catch (e) { setErr(e.message); }
+  };
+  const disableMfa = async () => {
+    try { await api('/auth/mfa/disable', { method: 'POST', body: { code: disableCode } }); setShowDisable(false); setDisableCode(''); await refresh(); setMsg('ปิด MFA แล้ว'); }
     catch (e) { setErr(e.message); }
   };
 
@@ -228,7 +309,7 @@ export default function Profile() {
         <CardBody>
         <form onSubmit={changePw} className="space-y-3">
           <Input type="password" required placeholder="รหัสผ่านเดิม" value={pw.oldPassword} onChange={e => setPw({...pw, oldPassword: e.target.value})} inputClassName="py-2.5" />
-          <Input type="password" required minLength={8} placeholder="รหัสผ่านใหม่ (8+ ตัว)" value={pw.newPassword} onChange={e => setPw({...pw, newPassword: e.target.value})} inputClassName="py-2.5" />
+          <Input type="password" required minLength={10} placeholder="รหัสผ่านใหม่ (10+ ตัว)" value={pw.newPassword} onChange={e => setPw({...pw, newPassword: e.target.value})} inputClassName="py-2.5" />
           <Input type="password" required placeholder="ยืนยันรหัสผ่านใหม่" value={pw.confirm} onChange={e => setPw({...pw, confirm: e.target.value})} inputClassName="py-2.5" />
           {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
           {msg && <div className="text-green-400 text-sm" role="status">{msg}</div>}
@@ -240,17 +321,22 @@ export default function Profile() {
       {/* การตั้งค่าบัญชี — timezone/push */}
       <PrefsCard />
 
+      {/* Email verification */}
+      <EmailVerifyCard user={user} onDone={refresh} />
+
+      {/* Sessions — อุปกรณ์ที่ล็อกอินอยู่ */}
+      <SessionsCard />
+
       {/* Responsible gambling — วงเงินเดิมพัน + self-exclusion */}
       <RGCard user={user} onDone={refresh} />
 
       {/* PDPA — export + delete account */}
       <PrivacyCard onDeleted={async () => { await logout(); window.location.href = '/'; }} />
 
-      {isAdmin && (
       <Card>
-        <CardHeader title="การยืนยันตัวตน 2 ชั้น (MFA/TOTP)" sub="สำหรับบัญชี Admin" />
+        <CardHeader title="การยืนยันตัวตน 2 ชั้น (MFA/TOTP)" sub={isAdmin ? 'จำเป็นสำหรับบัญชี Admin — แนะนำสำหรับทุกคน' : 'เพิ่มความปลอดภัยบัญชีของคุณ'} />
         <CardBody>
-        <p className="text-sm text-navy-300 mb-4">{user?.mfaEnabled ? 'เปิดใช้งานแล้ว — ปลอดภัยยิ่งขึ้น' : 'ยังไม่ได้เปิดใช้งาน (แนะนำสำหรับบัญชี Admin)'}</p>
+        <p className="text-sm text-navy-300 mb-4">{user?.mfaEnabled ? 'เปิดใช้งานแล้ว — ปลอดภัยยิ่งขึ้น' : 'ยังไม่ได้เปิดใช้งาน — แนะนำให้เปิดใช้'}</p>
         {!mfa ? (
           <Button variant="ghost" onClick={setupMfa}>
             {user?.mfaEnabled ? 'สร้าง Secret ใหม่' : 'ตั้งค่า MFA'}
@@ -269,9 +355,22 @@ export default function Profile() {
             </div>
           </div>
         )}
+        {user?.mfaEnabled && !mfa && (
+          <div className="mt-4 pt-4 border-t border-navy-700">
+            {!showDisable ? (
+              <Button variant="ghost" size="sm" onClick={() => setShowDisable(true)}>ปิดใช้งาน MFA</Button>
+            ) : (
+              <div className="flex gap-2 items-center">
+                <Input value={disableCode} onChange={e => setDisableCode(e.target.value.replace(/\D/g,'').slice(0,6))}
+                  placeholder="รหัส MFA 6 หลักเพื่อยืนยัน" className="flex-1" inputClassName="text-center tracking-widest py-2" />
+                <Button variant="danger" size="sm" onClick={disableMfa} disabled={disableCode.length !== 6}>ยืนยันปิด</Button>
+                <Button variant="ghost" size="sm" onClick={() => { setShowDisable(false); setDisableCode(''); }}>ยกเลิก</Button>
+              </div>
+            )}
+          </div>
+        )}
         </CardBody>
       </Card>
-      )}
     </div>
   );
 }

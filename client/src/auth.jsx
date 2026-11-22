@@ -30,8 +30,8 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:expired', onExpired);
   }, [refresh]);
 
-  const login = async (username, password) => {
-    const r = await api('/auth/login', { method: 'POST', body: { username, password } });
+  const login = async (username, password, extra = {}) => {
+    const r = await api('/auth/login', { method: 'POST', body: { username, password, ...extra } });
     setMfaRequired(!!r.requiresMfa);
     if (!r.requiresMfa) await refresh();
     return r;

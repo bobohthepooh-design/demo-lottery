@@ -54,6 +54,23 @@ export const config = {
   otpDevEcho: process.env.OTP_DEV_ECHO !== undefined
     ? process.env.OTP_DEV_ECHO === 'true'
     : (process.env.NODE_ENV || 'development') !== 'production',
+  // Security hardening (ฟรี): Turnstile bot protection + SMTP email + terms version
+  // Turnstile: https://dash.cloudflare.com → Turnstile (ฟรีไม่จำกัด) — เว้นว่าง = ปิด
+  turnstile: {
+    siteKey: process.env.TURNSTILE_SITE_KEY || '',
+    secretKey: process.env.TURNSTILE_SECRET_KEY || '',
+  },
+  // SMTP สำหรับส่ง email verify / OTP ทางอีเมล / password reset — ฟรี: Brevo/Resend/Gmail app password
+  // เว้นว่าง SMTP_HOST = dev mode (เก็บ token ใน DB + devToken echo บน private IP เหมือน OTP)
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@demo.local',
+  },
+  termsVersion: process.env.TERMS_VERSION || '2026-01',
 };
 
 if (config.isProd && config.sessionSecret === 'dev-insecure-secret-change-me') {

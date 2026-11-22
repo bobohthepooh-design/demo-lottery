@@ -4,6 +4,7 @@ import { useAuth } from '../auth.jsx';
 import LineLoginButton from '../components/LineLoginButton.jsx';
 import PhoneOtpForm from '../components/PhoneOtpForm.jsx';
 import AuthShell from '../components/AuthShell.jsx';
+import Turnstile from '../components/Turnstile.jsx';
 import { Input, Button } from '../components/ui/index.js';
 
 export default function Login() {
@@ -14,13 +15,14 @@ export default function Login() {
   const [needsMfa, setNeedsMfa] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [tsToken, setTsToken] = useState('');
   const navigate = useNavigate();
 
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true); setErr('');
     try {
-      const r = await login(form.username, form.password);
+      const r = await login(form.username, form.password, { turnstileToken: tsToken || undefined });
       if (r.requiresMfa) { setNeedsMfa(true); return; }
       navigate('/');
     } catch (e2) { setErr(e2.message); }
@@ -68,6 +70,7 @@ export default function Login() {
                 placeholder="ชื่อผู้ใช้หรืออีเมล" autoComplete="username" />
               <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
                 placeholder="รหัสผ่าน" autoComplete="current-password" />
+              <Turnstile onVerify={setTsToken} />
               {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
               <Button disabled={busy} className="w-full">{busy ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</Button>
               <div className="flex justify-between text-sm">

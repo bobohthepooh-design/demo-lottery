@@ -7,6 +7,7 @@ import Home from './pages/Home.jsx';
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const Lotteries = lazy(() => import('./pages/Lotteries.jsx'));
 const PlaceBet = lazy(() => import('./pages/PlaceBet.jsx'));
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/lotteries" element={<Lotteries />} />
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/bet/:drawId" element={<Protected><PlaceBet /></Protected>} />

@@ -1,27 +1,34 @@
 import { useState } from 'react';
 import { api } from '../api.js';
+import Turnstile from './Turnstile.jsx';
 
-// ฟอร์มเบอร์โทร + OTP 2 ขั้น — ใช้ทั้งสมัคร (purpose=register) และเข้าสู่ระบบ (purpose=login)
-// DEMO: ระบบไม่ส่ง SMS จริง — รหัสแสดงในกรอบ "รหัส OTP (Demo)" ให้คัดลอกกรอกเอง
+// ฟอร์มเบอร์/อีเมล + OTP 2 ขั้น — ใช้ทั้งสมัคร (purpose=register) และเข้าสู่ระบบ (purpose=login)
+// channel='phone' → รหัสเดโมแสดงบนจอ (ไม่ส่ง SMS จริง) | channel='email' → ส่งรหัสเข้าทางอีเมลผ่าน SMTP
 export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
-  const [phone, setPhone] = useState('');
+  const [channel, setChannel] = useState('phone'); // 'phone' | 'email'
+  const [target, setTarget] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [code, setCode] = useState('');
   const [ageOk, setAgeOk] = useState(false);
   const [devCode, setDevCode] = useState('');
   const [expiresIn, setExpiresIn] = useState(0);
-  const [step, setStep] = useState('phone'); // 'phone' | 'code'
+  const [mailed, setMailed] = useState(false);
+  const [step, setStep] = useState('target'); // 'target' | 'code'
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [tsToken, setTsToken] = useState('');
 
   const digits = (v, max) => v.replace(/\D/g, '').slice(0, max);
+  const isEmail = channel === 'email';
+  const targetOk = isEmail ? /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target) : target.length >= 9;
 
   const request = async (e) => {
     e?.preventDefault();
     setBusy(true); setErr('');
     try {
-      const r = await api('/auth/otp/request', { method: 'POST', body: { phone, purpose } });
+      const r = await api('/auth/otp/request', { method: 'POST', body: { channel, target, purpose, turnstileToken: tsToken || undefined } });
       setDevCode(r.devCode || '');
+      setMailed(!!r.mailed);
       setExpiresIn(r.expiresInSec || 300);
       setStep('code');
     } catch (e2) { setErr(e2.message); }
@@ -34,7 +41,7 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
     try {
       const r = await api('/auth/otp/verify', {
         method: 'POST',
-        body: { phone, code, purpose, displayName: displayName || undefined, ageConfirmed: purpose === 'register' ? ageOk : undefined },
+        body: { channel, target, code, purpose, displayName: displayName || undefined, ageConfirmed: purpose === 'register' ? ageOk : undefined },
       });
       await onSuccess?.(r);
     } catch (e2) { setErr(e2.message); }
@@ -42,20 +49,34 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
   };
 
   const inputCls = 'w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 focus:outline-none focus:border-gold-500';
+  const chanBtn = (c, label) => `flex-1 py-2 text-sm font-bold rounded-lg transition ${channel === c ? 'bg-gold-500/15 text-gold-200 border border-gold-400/50' : 'text-navy-300 hover:text-white border border-transparent'}`;
 
-  if (step === 'phone') {
+  if (step === 'target') {
     return (
       <form onSubmit={request} className="space-y-4">
-        <div>
-          <label className="text-xs text-navy-300 block mb-1">เบอร์โทรศัพท์ (ไทย 10 หลัก)</label>
-          <div className="flex">
-            <span className="bg-navy-700 border border-r-0 border-navy-600 rounded-l-lg px-3 py-3 text-navy-300 text-sm flex items-center">+66</span>
-            <input required value={phone} onChange={e => setPhone(digits(e.target.value, 10))}
-              inputMode="numeric" placeholder="812345678" maxLength={10}
-              className={`${inputCls} rounded-l-none`} />
-          </div>
-          <div className="text-[10px] text-navy-500 mt-1">กรอกเฉพาะ 10 หลักหลัง +66 (เช่น 0812345678 → 812345678)</div>
+        <div className="flex gap-2 bg-navy-900 border border-navy-700 rounded-xl p-1">
+          <button type="button" onClick={() => { setChannel('phone'); setTarget(''); }} className={chanBtn('phone')}>📱 เบอร์โทร</button>
+          <button type="button" onClick={() => { setChannel('email'); setTarget(''); }} className={chanBtn('email')}>✉️ อีเมล</button>
         </div>
+        {isEmail ? (
+          <div>
+            <label className="text-xs text-navy-300 block mb-1">อีเมล</label>
+            <input required type="email" value={target} onChange={e => setTarget(e.target.value.trim())}
+              placeholder="you@example.com" autoComplete="email" className={inputCls} />
+            <div className="text-[10px] text-navy-500 mt-1">รหัส OTP 6 หลักจะถูกส่งเข้าทางอีเมล (ต้องตั้งค่า SMTP)</div>
+          </div>
+        ) : (
+          <div>
+            <label className="text-xs text-navy-300 block mb-1">เบอร์โทรศัพท์ (ไทย 10 หลัก)</label>
+            <div className="flex">
+              <span className="bg-navy-700 border border-r-0 border-navy-600 rounded-l-lg px-3 py-3 text-navy-300 text-sm flex items-center">+66</span>
+              <input required value={target} onChange={e => setTarget(digits(e.target.value, 10))}
+                inputMode="numeric" placeholder="812345678" maxLength={10}
+                className={`${inputCls} rounded-l-none`} />
+            </div>
+            <div className="text-[10px] text-navy-500 mt-1">กรอกเฉพาะ 10 หลักหลัง +66 (เช่น 0812345678 → 812345678)</div>
+          </div>
+        )}
         {purpose === 'register' && (
           <>
             <input value={displayName} onChange={e => setDisplayName(e.target.value)}
@@ -66,10 +87,11 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
             </label>
           </>
         )}
+        <Turnstile onVerify={setTsToken} />
         {err && <div className="text-red-400 text-sm">{err}</div>}
-        <button disabled={busy || phone.length < 9 || (purpose === 'register' && !ageOk)}
+        <button disabled={busy || !targetOk || (purpose === 'register' && !ageOk)}
           className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-50">
-          {busy ? 'กำลังส่งรหัส...' : '📱 ขอรหัส OTP'}
+          {busy ? 'กำลังส่งรหัส...' : isEmail ? '✉️ ขอรหัส OTP ทางอีเมล' : '📱 ขอรหัส OTP'}
         </button>
       </form>
     );
@@ -78,11 +100,13 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
   return (
     <form onSubmit={verify} className="space-y-4">
       <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2 text-xs text-green-300">
-        ขอรหัส OTP สำหรับ +66 {phone} แล้ว (ระบบ Demo — ไม่ได้ส่ง SMS จริง)
+        {isEmail
+          ? `ขอรหัส OTP สำหรับ ${target} แล้ว${mailed ? ' — ตรวจสอบกล่องอีเมลของคุณ' : ' (ระบบยังไม่ได้ตั้งค่า SMTP — รหัสแสดงด้านล่างบนเครื่อง local เท่านั้น)'}`
+          : `ขอรหัส OTP สำหรับ +66 {target} แล้ว (ระบบ Demo — ไม่ได้ส่ง SMS จริง)`}
       </div>
       {devCode && (
         <div className="bg-gold-500/10 border border-gold-500/40 rounded-lg px-3 py-2.5 text-center">
-          <div className="text-[10px] text-navy-400">รหัส OTP (Demo — ไม่ได้ส่ง SMS จริง)</div>
+          <div className="text-[10px] text-navy-400">รหัส OTP (Demo — ไม่ได้ส่งจริง)</div>
           <div className="font-mono text-2xl font-black text-gold-300 tracking-[0.4em]">{devCode}</div>
           <div className="text-[10px] text-navy-400 mt-0.5">หมดอายุใน {Math.floor(expiresIn / 60)} นาที</div>
         </div>
@@ -95,9 +119,9 @@ export default function PhoneOtpForm({ purpose, onSuccess, busy: outerBusy }) {
         className="w-full bg-gold-500 text-navy-950 font-bold py-3 rounded-lg hover:bg-gold-400 disabled:opacity-50">
         {busy ? 'กำลังตรวจสอบ...' : purpose === 'register' ? 'ยืนยันสมัครสมาชิก' : 'เข้าสู่ระบบ'}
       </button>
-      <button type="button" onClick={() => { setStep('phone'); setCode(''); setErr(''); }}
+      <button type="button" onClick={() => { setStep('target'); setCode(''); setErr(''); }}
         className="w-full text-sm text-navy-300 hover:text-gold-300">
-        ← เปลี่ยนเบอร์โทร / ขอรหัสใหม่
+        ← เปลี่ยน{isEmail ? 'อีเมล' : 'เบอร์โทร'} / ขอรหัสใหม่
       </button>
     </form>
   );
