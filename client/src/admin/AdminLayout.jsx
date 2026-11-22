@@ -67,7 +67,7 @@ export default function AdminLayout() {
 
   // badge จำนวนคำขอเติม/ถอนที่รอตรวจสอบ — poll 30 วิ (SSE 'payments' ถ้ามีจะอัปเดตเร็วขึ้น)
   useEffect(() => {
-    const load = () => api('/admin/payments?status=pending_review')
+    const load = () => api('/admin/payments?status=pending')
       .then(r => setPayPending((r.requests || []).length))
       .catch(() => {});
     load();

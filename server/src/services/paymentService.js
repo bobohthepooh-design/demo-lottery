@@ -156,7 +156,8 @@ export async function adminList({ status = 'pending_review', kind = null, limit 
   let sql = `SELECT pr.*, u.username, u.email, u.phone, u.display_name FROM payment_requests pr JOIN users u ON u.id=pr.user_id`;
   const params = [];
   const where = [];
-  if (status !== 'all') { where.push(`pr.status=?`); params.push(status); }
+  if (status === 'pending') where.push(`pr.status IN ('pending_slip','pending_review')`);
+  else if (status !== 'all') { where.push(`pr.status=?`); params.push(status); }
   if (kind) { where.push(`pr.kind=?`); params.push(kind); }
   if (where.length) sql += ' WHERE ' + where.join(' AND ');
   sql += ` ORDER BY pr.id DESC LIMIT ?`;

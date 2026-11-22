@@ -16,7 +16,7 @@ const STATUS_BADGE = {
 
 export default function AdminPayments() {
   const [rows, setRows] = useState([]);
-  const [status, setStatus] = useState('pending_review');
+  const [status, setStatus] = useState('pending');
   const [kind, setKind] = useState(''); // '' | deposit | withdraw
   const [busy, setBusy] = useState(null);
   const [note, setNote] = useState({});
@@ -55,6 +55,7 @@ export default function AdminPayments() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="pending">รอจัดการทั้งหมด</SelectItem>
             <SelectItem value="pending_review">รอตรวจสอบ</SelectItem>
             <SelectItem value="pending_slip">รอสลิป</SelectItem>
             <SelectItem value="approved">อนุมัติแล้ว</SelectItem>

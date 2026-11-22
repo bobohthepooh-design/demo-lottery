@@ -66,9 +66,24 @@ export default function Wallet() {
     }).catch(() => {});
   }, []);
 
+  // แปลงรูปสลิปเป็น base64 — ย่อขนาดอัตโนมัติ (max 1600px, JPEG 0.82)
+  // รูปจากมือถือมัก 3-8MB → base64 เกิน limit 7MB ของ API → บีบอัดก่อนส่ง
   const fileToB64 = (f) => new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload = () => res(String(r.result));
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1600;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        res(cv.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => res(String(r.result)); // ถ้า decode ไม่ได้ ส่งต้นฉบับ
+      img.src = String(r.result);
+    };
     r.onerror = rej;
     r.readAsDataURL(f);
   });
@@ -97,7 +112,7 @@ export default function Wallet() {
         setDepStep('qr');
         return;
       }
-      if (modal === 'deposit' && depStep === 'qr') {
+      if ((modal === 'deposit' && (depStep === 'qr' || depStep === 'slip'))) {
         if (!slipFile) return setErr('กรุณาแนบรูปสลิปการโอนเงินก่อน');
         const imageBase64 = await fileToB64(slipFile);
         const r = await api(`/payments/${depInfo.id}/slip`, { method: 'POST', body: { imageBase64 } });
@@ -213,12 +228,23 @@ export default function Wallet() {
                     {p.admin_note ? ` • หมายเหตุ: ${p.admin_note}` : ''}
                   </div>
                 </div>
-                <span className={`shrink-0 text-[11px] font-bold px-2 py-1 rounded ${
-                  p.status === 'approved' ? 'bg-green-500/15 text-green-300'
-                  : p.status === 'rejected' ? 'bg-red-500/15 text-red-300'
-                  : 'bg-amber-500/15 text-amber-300'}`}>
-                  {p.status === 'approved' ? '✅ สำเร็จ' : p.status === 'rejected' ? '❌ ปฏิเสธ' : p.status === 'pending_slip' ? '📤 รอสลิป' : '⏳ รอตรวจสอบ'}
-                </span>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`text-[11px] font-bold px-2 py-1 rounded ${
+                    p.status === 'approved' ? 'bg-green-500/15 text-green-300'
+                    : p.status === 'rejected' ? 'bg-red-500/15 text-red-300'
+                    : 'bg-amber-500/15 text-amber-300'}`}>
+                    {p.status === 'approved' ? '✅ สำเร็จ' : p.status === 'rejected' ? '❌ ปฏิเสธ' : p.status === 'pending_slip' ? '📤 รอสลิป' : '⏳ รอตรวจสอบ'}
+                  </span>
+                  {p.status === 'pending_slip' && p.kind === 'deposit' && (
+                    <button onClick={() => {
+                      setDepInfo({ id: p.id, reference: p.reference, amount: p.amount });
+                      setDepStep('slip'); setSlipFile(null); setErr(''); setModal('deposit');
+                    }}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded bg-gold-500/15 text-gold-300 hover:bg-gold-500/25">
+                      📎 แนบสลิป
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -319,7 +345,21 @@ export default function Wallet() {
                   : `ยังถอนไม่ได้ — ต้องมียอดฝาก/เล่นจนถอนได้ขั้นต่ำ (ฝากแล้ว ${satang(wd.deposited)} บาท)`}
               </div>
             )}
-            {modal === 'deposit' && depStep === 'qr' && depInfo ? (
+            {modal === 'deposit' && depStep === 'slip' && depInfo ? (
+              <div className="space-y-4">
+                <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-3 text-center text-sm">
+                  <div className="text-gold-300 font-bold text-lg">฿{(depInfo.amount / 100).toLocaleString('th-TH')}</div>
+                  <div className="text-[11px] text-navy-400 mt-1">Ref: <span className="font-mono text-gold-300">{depInfo.reference}</span> — แนบสลิปการโอนที่ทำไปแล้ว</div>
+                </div>
+                <div>
+                  <div className="text-xs text-navy-400 mb-1.5">แนบรูปสลิปการโอน (JPG/PNG):</div>
+                  <input type="file" accept="image/*" capture="environment"
+                    onChange={e => setSlipFile(e.target.files?.[0] || null)}
+                    className="w-full text-sm text-navy-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gold-500 file:text-navy-950 file:font-bold file:cursor-pointer" />
+                  {slipFile && <div className="text-xs text-green-400 mt-1">✓ {slipFile.name}</div>}
+                </div>
+              </div>
+            ) : modal === 'deposit' && depStep === 'qr' && depInfo ? (
               <div className="space-y-4">
                 <div className="bg-navy-900/60 border border-navy-700 rounded-lg p-4 text-center">
                   <img src={depInfo.qrDataUrl} alt="QR พร้อมเพย์" className="mx-auto rounded-lg bg-white p-2" />
@@ -405,7 +445,7 @@ export default function Wallet() {
             )}
             {err && <div className="text-red-400 text-sm mt-2">{err}</div>}
             <div className="flex gap-3 mt-5">
-              {modal === 'deposit' && depStep === 'qr' ? (
+              {(modal === 'deposit' && (depStep === 'qr' || depStep === 'slip')) ? (
                 <Button variant="ghost" onClick={() => { setDepStep('form'); setDepInfo(null); setSlipFile(null); setErr(''); }} disabled={busy} className="flex-1">
                   ← ย้อนกลับ
                 </Button>
@@ -417,7 +457,7 @@ export default function Wallet() {
               <Button onClick={doAction} disabled={busy}
                 variant={modal === 'deposit' ? 'primary' : 'danger'} className="flex-1">
                 {busy ? 'กำลังดำเนินการ...' : modal === 'deposit'
-                  ? (depStep === 'qr' ? 'ส่งสลิปยืนยัน' : 'สร้าง QR พร้อมเพย์')
+                  ? ((depStep === 'qr' || depStep === 'slip') ? 'ส่งสลิปยืนยัน' : 'สร้าง QR พร้อมเพย์')
                   : 'ส่งคำขอถอน'}
               </Button>
             </div>
