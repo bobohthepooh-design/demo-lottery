@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { toast } from '../components/toast.js';
 import { Button } from '../components/ui/index.js';
+import { ScrollArea } from '../components/shadcn/scroll-area.jsx';
 
 // หน้าแชทแอดมิน — รายการ thread สมาชิก + ตอบกลับ 1:1
 export default function AdminChat() {
@@ -115,7 +116,8 @@ export default function AdminChat() {
                 <span className="font-bold text-white">{selThread?.displayName || selThread?.username || `User #${sel}`}</span>
                 <span className="text-xs text-navy-400">@{selThread?.username}</span>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-navy-950/40">
+              <ScrollArea className="flex-1 bg-navy-950/40 px-4 py-3">
+                <div className="space-y-2 min-h-full flex flex-col">
                 {msgs.map(m => (
                   <div key={m.id} className={`flex ${m.isAdmin ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-[13px] leading-snug whitespace-pre-wrap break-words ${
@@ -129,7 +131,8 @@ export default function AdminChat() {
                   </div>
                 ))}
                 <div ref={bottomRef} />
-              </div>
+                </div>
+              </ScrollArea>
               <div className="p-3 border-t border-navy-700 bg-navy-900/60 flex gap-2">
                 <input value={input} onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
