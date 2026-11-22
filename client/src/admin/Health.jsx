@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { sourceBadge, marketInfo, MODE_BADGE, isOfficial } from '../resultSource.js';
 import { Card, CardBody } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 
 // หน้าสุขภาพระบบ — /api/admin/health (sources ผลล่าสุด, รอบค้าง, สถิติรวม)
 // refresh อัตโนมัติทุก 30 วิ
@@ -81,45 +82,43 @@ export default function AdminHealth() {
           <Card>
             <CardBody>
               <h2 className="font-bold text-white mb-3">📡 แหล่งผลรางวัล ({sources.length})</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[640px]">
-                  <thead className="text-navy-400 text-xs">
-                    <tr>
-                      <th className="text-left py-1.5 pr-4">Source</th>
-                      <th className="text-left py-1.5 pr-4">Badge</th>
-                      <th className="text-left py-1.5 pr-4">ผลล่าสุด</th>
-                      <th className="text-left py-1.5 pr-4">อายุผล</th>
-                      <th className="text-left py-1.5 pr-4">รอบล่าสุด</th>
-                      <th className="text-left py-1.5 pr-4">ตลาด</th>
-                      <th className="text-right py-1.5">จำนวนผล</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-navy-700/60">
-                    {sources.map(s => {
-                      const badge = sourceBadge(s.source);
-                      const a = age(s.last_at);
-                      const stale = a && /วัน|ชม/.test(a) && !a.startsWith('0') && (s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
-                      const mi = s.last ? marketInfo(s.last.type_code || '', s.last.cat_code || '') : null;
-                      return (
-                        <tr key={s.source}>
-                          <td className="py-2 pr-4 font-mono text-xs text-navy-200">{s.source}</td>
-                          <td className="py-2 pr-4"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badge?.cls || 'bg-navy-700 text-navy-300'}`}>{badge?.short || s.source}</span></td>
-                          <td className={`py-2 pr-4 text-xs ${stale ? 'text-amber-300' : 'text-green-300'}`}>{s.last_at ? fmtDateTime(s.last_at) : '—'}</td>
-                          <td className={`py-2 pr-4 text-xs ${stale ? 'text-amber-300 font-bold' : 'text-navy-400'}`}>{a || '—'}{stale ? ' ⚠️' : ''}</td>
-                          <td className="py-2 pr-4 text-xs text-navy-300">{s.last?.draw_code || '—'}</td>
-                          <td className="py-2 pr-4 text-xs text-navy-300">
-                            {s.last ? `${s.last.type_name_th || ''}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}
-                            {mi && <span className={`ml-1 text-[9px] px-1 py-0.5 rounded border ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label || mi.mode}</span>}
-                            {mi && isOfficial(mi) && <span className="ml-1 text-[9px] text-emerald-300">✓ทางการ</span>}
-                          </td>
-                          <td className="py-2 text-right text-xs text-navy-300">{s.total}</td>
-                        </tr>
-                      );
-                    })}
-                    {!sources.length && <tr><td colSpan={7} className="py-4 text-center text-navy-400 text-xs">ยังไม่มีผลรางวัลในระบบ</td></tr>}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-navy-700/60 hover:bg-transparent">
+                    <TableHead className="text-navy-400">Source</TableHead>
+                    <TableHead className="text-navy-400">Badge</TableHead>
+                    <TableHead className="text-navy-400">ผลล่าสุด</TableHead>
+                    <TableHead className="text-navy-400">อายุผล</TableHead>
+                    <TableHead className="text-navy-400">รอบล่าสุด</TableHead>
+                    <TableHead className="text-navy-400">ตลาด</TableHead>
+                    <TableHead className="text-navy-400 text-right">จำนวนผล</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sources.map(s => {
+                    const badge = sourceBadge(s.source);
+                    const a = age(s.last_at);
+                    const stale = a && /วัน|ชม/.test(a) && !a.startsWith('0') && (s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
+                    const mi = s.last ? marketInfo(s.last.type_code || '', s.last.cat_code || '') : null;
+                    return (
+                      <TableRow key={s.source} className="border-navy-700/50">
+                        <TableCell className="font-mono text-xs text-navy-200">{s.source}</TableCell>
+                        <TableCell><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badge?.cls || 'bg-navy-700 text-navy-300'}`}>{badge?.short || s.source}</span></TableCell>
+                        <TableCell className={`text-xs ${stale ? 'text-amber-300' : 'text-green-300'}`}>{s.last_at ? fmtDateTime(s.last_at) : '—'}</TableCell>
+                        <TableCell className={`text-xs ${stale ? 'text-amber-300 font-bold' : 'text-navy-400'}`}>{a || '—'}{stale ? ' ⚠️' : ''}</TableCell>
+                        <TableCell className="text-xs text-navy-300">{s.last?.draw_code || '—'}</TableCell>
+                        <TableCell className="text-xs text-navy-300">
+                          {s.last ? `${s.last.type_name_th || ''}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}
+                          {mi && <span className={`ml-1 text-[9px] px-1 py-0.5 rounded border ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label || mi.mode}</span>}
+                          {mi && isOfficial(mi) && <span className="ml-1 text-[9px] text-emerald-300">✓ทางการ</span>}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-navy-300">{s.total}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {!sources.length && <TableRow><TableCell colSpan={7} className="text-center text-navy-400 text-xs py-4">ยังไม่มีผลรางวัลในระบบ</TableCell></TableRow>}
+                </TableBody>
+              </Table>
               <div className="text-[11px] text-navy-500 mt-3">
                 ⚠️ = ผลเก่าเกิน 36 ชม. — แหล่งอาจหยุดอัปเดต • ✓ทางการ = ผลจากแหล่ง government เท่านั้น
               </div>
@@ -149,30 +148,33 @@ export default function AdminHealth() {
             <Card variant="danger">
               <CardBody>
                 <h2 className="font-bold text-red-300 mb-3">⚠️ รอบค้างออกผล ({overdue.length})</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[560px]">
-                    <thead className="text-navy-400 text-xs">
-                      <tr><th className="text-left py-1.5 pr-4">รอบ</th><th className="text-left py-1.5 pr-4">ตลาด</th><th className="text-left py-1.5 pr-4">เวลาที่ควรออก</th><th className="text-left py-1.5">สถานะ</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-navy-700/60">
-                      {overdue.map(drow => {
-                        const late = Date.now() - new Date(String(drow.draw_at).replace(' ', 'T') + 'Z').getTime();
-                        const lateH = Math.floor(late / 3600e3);
-                        return (
-                          <tr key={drow.id}>
-                            <td className="py-2 pr-4 font-mono text-xs text-navy-200">{drow.draw_code}</td>
-                            <td className="py-2 pr-4 text-xs text-navy-200">{drow.type_name_th}{drow.cat_name_th ? ` — ${drow.cat_name_th}` : ''}</td>
-                            <td className="py-2 pr-4 text-xs text-navy-300">{fmtDateTime(drow.draw_at)}</td>
-                            <td className="py-2 text-xs">
-                              <span className="text-red-300 font-bold">ค้างมา {lateH >= 24 ? `${Math.floor(lateH / 24)} วัน ` : ''}{lateH % 24} ชม.</span>
-                              <span className="text-navy-500 ml-1">({drow.status})</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-navy-700/60 hover:bg-transparent">
+                      <TableHead className="text-navy-400">รอบ</TableHead>
+                      <TableHead className="text-navy-400">ตลาด</TableHead>
+                      <TableHead className="text-navy-400">เวลาที่ควรออก</TableHead>
+                      <TableHead className="text-navy-400">สถานะ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overdue.map(drow => {
+                      const late = Date.now() - new Date(String(drow.draw_at).replace(' ', 'T') + 'Z').getTime();
+                      const lateH = Math.floor(late / 3600e3);
+                      return (
+                        <TableRow key={drow.id} className="border-navy-700/50">
+                          <TableCell className="font-mono text-xs text-navy-200">{drow.draw_code}</TableCell>
+                          <TableCell className="text-xs text-navy-200">{drow.type_name_th}{drow.cat_name_th ? ` — ${drow.cat_name_th}` : ''}</TableCell>
+                          <TableCell className="text-xs text-navy-300">{fmtDateTime(drow.draw_at)}</TableCell>
+                          <TableCell className="text-xs">
+                            <span className="text-red-300 font-bold">ค้างมา {lateH >= 24 ? `${Math.floor(lateH / 24)} วัน ` : ''}{lateH % 24} ชม.</span>
+                            <span className="text-navy-500 ml-1">({drow.status})</span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
                 <div className="text-[11px] text-navy-400 mt-3">
                   วิธีแก้: รอตัวดึงผลรอบถัดไป • ถ้าแหล่งภายนอกไม่มีผลจริง → admin กรอกผลเองที่ หน้ารอบหวย → ออกผล
                 </div>
