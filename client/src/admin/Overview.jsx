@@ -7,14 +7,14 @@ const fmt = (satangVal) => `${satang(satangVal)} บาท`;
 
 function StatCard({ icon, label, value, sub, tone = 'gold' }) {
   const tones = {
-    gold: 'from-gold-500/20 to-gold-600/5 border-red-500/40 text-red-300',
+    gold: 'from-gold-500/20 to-gold-600/5 border-gold-500/40 text-gold-300',
     green: 'from-green-500/20 to-green-600/5 border-green-500/40 text-green-300',
     red: 'from-red-500/20 to-red-600/5 border-red-500/40 text-red-300',
     blue: 'from-blue-500/20 to-blue-600/5 border-blue-500/40 text-blue-300',
     purple: 'from-purple-500/20 to-purple-600/5 border-purple-500/40 text-purple-300',
   };
   return (
-    <div className={`bg-gradient-to-br ${tones[tone]} border rounded-2xl p-4`}>
+    <div className={`bg-gradient-to-br ${tones[tone]} border rounded-xl p-4`}>
       <div className="flex items-center justify-between">
         <span className="w-8 h-8 rounded-lg bg-navy-950/40 border border-white/10 flex items-center justify-center">
           <Icon name={icon} className="w-4 h-4" />
@@ -67,11 +67,11 @@ export default function AdminOverview() {
         const toneCls = { red: 'border-red-500/50 bg-red-500/10', amber: 'border-amber-500/40 bg-amber-500/10' };
         const txtCls = { red: 'text-red-300', amber: 'text-amber-300' };
         return (
-          <div className="bg-navy-800/70 border border-navy-700 rounded-2xl p-4">
+          <div className="bg-navy-800/70 border border-navy-700 rounded-xl p-4">
             <h2 className="font-bold text-white mb-3">📋 สิ่งที่ต้องทำ ({items.length})</h2>
             <div className="space-y-2">
               {items.map((it, i) => (
-                <a key={i} href={it.to} className={`flex items-center gap-3 border rounded-xl px-4 py-3 hover:brightness-110 transition ${toneCls[it.tone]}`}>
+                <a key={i} href={it.to} className={`flex items-center gap-3 border rounded-lg px-4 py-3 hover:brightness-110 transition ${toneCls[it.tone]}`}>
                   <Icon name={it.icon} className={`w-5 h-5 shrink-0 ${txtCls[it.tone]}`} />
                   <div className="min-w-0">
                     <div className={`text-sm font-bold ${txtCls[it.tone]}`}>{it.text}</div>
@@ -87,7 +87,7 @@ export default function AdminOverview() {
 
       {/* รายรับ / รายจ่าย หลัก */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-green-500/25 to-emerald-700/10 border border-green-500/50 rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-green-500/25 to-emerald-700/10 border border-green-500/50 rounded-xl p-6 relative overflow-hidden">
           <Icon name="wallet" className="absolute -right-6 -top-6 w-36 h-36 opacity-10 text-green-300" />
           <div className="text-sm text-green-300 font-semibold">รายรับรวม (เครดิตเข้า)</div>
           <div className="text-3xl font-black text-green-300 mt-1">{fmt(m.totalIn || 0)}</div>
@@ -95,7 +95,7 @@ export default function AdminOverview() {
             เติมเครดิต {fmt(m.deposit || 0)} • admin จ่าย {fmt(m.adminCredit || 0)} • เริ่มต้น {fmt(m.initialCredit || 0)}
           </div>
         </div>
-        <div className="bg-gradient-to-br from-red-500/25 to-rose-700/10 border border-red-500/50 rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-red-500/25 to-rose-700/10 border border-red-500/50 rounded-xl p-6 relative overflow-hidden">
           <Icon name="reports" className="absolute -right-6 -top-6 w-36 h-36 opacity-10 text-gold-300" />
           <div className="text-sm text-gold-300 font-semibold">รายจ่ายรวม (เครดิตออก)</div>
           <div className="text-3xl font-black text-gold-300 mt-1">{fmt(m.totalOut || 0)}</div>
@@ -103,7 +103,7 @@ export default function AdminOverview() {
             ถอน {fmt(m.withdraw || 0)} • admin หัก {fmt(m.adminDebit || 0)} • รางวัล {fmt(m.winnings || 0)} • คืนเงิน {fmt(m.refunds || 0)}
           </div>
         </div>
-        <div className={`bg-gradient-to-br rounded-2xl p-6 relative overflow-hidden border ${m.houseNet >= 0 ? 'from-gold-500/25 to-amber-700/10 border-gold-500/50' : 'from-blue-500/25 to-indigo-700/10 border-blue-500/50'}`}>
+        <div className={`bg-gradient-to-br rounded-xl p-6 relative overflow-hidden border ${m.houseNet >= 0 ? 'from-gold-500/25 to-amber-700/10 border-gold-500/50' : 'from-blue-500/25 to-indigo-700/10 border-blue-500/50'}`}>
           <Icon name={m.houseNet >= 0 ? 'dashboard' : 'reports'} className={`absolute -right-6 -top-6 w-36 h-36 opacity-10 ${m.houseNet >= 0 ? 'text-gold-300' : 'text-blue-300'}`} />
           <div className={`text-sm font-semibold ${m.houseNet >= 0 ? 'text-gold-300' : 'text-blue-300'}`}>ส่วนต่างระบบ ( Stakes − รางวัล )</div>
           <div className={`text-3xl font-black mt-1 ${m.houseNet >= 0 ? 'text-gold-300' : 'text-blue-300'}`}>{fmt(m.houseNet || 0)}</div>
@@ -113,7 +113,7 @@ export default function AdminOverview() {
 
       {/* เตือนรอบค้างออกผล */}
       {(d.overdueDraws || 0) > 0 && (
-        <div className="bg-red-500/10 border border-red-500/50 rounded-2xl px-5 py-4 flex items-center gap-3">
+        <div className="bg-red-500/10 border border-red-500/50 rounded-xl px-5 py-4 flex items-center gap-3">
           <Icon name="security" className="w-6 h-6 text-red-400 shrink-0" />
           <div>
             <div className="font-bold text-gold-300">มี {d.overdueDraws} รอบที่เลยเวลาออกรางวัลแล้วยังไม่ออกผล</div>
@@ -124,7 +124,7 @@ export default function AdminOverview() {
 
       {/* สุขภาพระบบ — ผลล่าสุดแต่ละแหล่ง + รอบค้างออกผล */}
       {health && (
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl p-5">
+        <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-white">สุขภาพระบบ</h2>
             <span className="text-[11px] text-navy-400">
@@ -186,7 +186,7 @@ export default function AdminOverview() {
       </div>
 
       {/* กราฟเข้า-ออก 7 วัน */}
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-5">
+      <div className="bg-navy-800 border border-navy-700 rounded-xl p-5">
         <h2 className="font-bold text-white mb-1">กระแสเครดิตเข้า-ออก (7 วันล่าสุด)</h2>
         <p className="text-[11px] text-navy-400 mb-4">เขียว = เครดิตเข้า • แดง = เครดิตออก (ทุกประเภทธุรกรรม)</p>
         <div className="flex items-end gap-2 h-40">
@@ -209,7 +209,7 @@ export default function AdminOverview() {
 
       {/* Audit + Security */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl p-4">
+        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
           <h2 className="font-bold text-white mb-3">Audit ล่าสุด</h2>
           <div className="space-y-1 text-xs max-h-64 overflow-y-auto">
             {d.recentAudit.map(a => (
@@ -221,7 +221,7 @@ export default function AdminOverview() {
             {!d.recentAudit.length && <div className="text-navy-400">ไม่มีรายการ</div>}
           </div>
         </div>
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl p-4">
+        <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
           <h2 className="font-bold text-white mb-3">Security Events ล่าสุด</h2>
           <div className="space-y-1 text-xs max-h-64 overflow-y-auto">
             {d.recentSecurity.map(s => (
