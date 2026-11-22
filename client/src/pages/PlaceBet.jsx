@@ -358,35 +358,35 @@ export default function PlaceBet() {
       {/* left: entry form */}
       <div className="lg:col-span-3 space-y-4">
         {/* Header — Draw Info + Countdown */}
-        <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-xl p-5 shadow-lg shadow-black/20">
+        <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-xl p-4 sm:p-5 shadow-lg shadow-black/20">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <Link to="/play" className="text-sm text-gold-400 hover:text-gold-300 font-medium">← เลือกตลาด/รอบอื่น</Link>
-              <div className="flex items-center gap-3 mt-2">
-                <FlagIcon code={draw.type_code} className="w-10 h-7 text-[11px] rounded-md" />
-                <div>
-                  <h1 className={`text-2xl font-black ${ac?.text || 'text-white'}`}>{drawLabel(draw)}</h1>
-                  <div className="text-sm text-navy-300 font-medium">
+              <Link to="/play" className="text-xs sm:text-sm text-gold-400 hover:text-gold-300 font-medium">← เลือกตลาด/รอบอื่น</Link>
+              <div className="flex items-center gap-2 sm:gap-3 mt-2">
+                <FlagIcon code={draw.type_code} className="w-8 h-6 sm:w-10 sm:h-7 text-[10px] sm:text-[11px] rounded-md" />
+                <div className="min-w-0">
+                  <h1 className={`text-lg sm:text-2xl font-black ${ac?.text || 'text-white'} truncate`}>{drawLabel(draw)}</h1>
+                  <div className="text-xs sm:text-sm text-navy-300 font-medium">
                     {thaiDate(draw.draw_at)} • ปิดรับ {thaiHM(draw.close_at)} น.
                     <span className="text-navy-500 text-[10px] ml-2 font-mono">{draw.draw_code}</span>
                   </div>
                 </div>
               </div>
               {(() => { const s = annSummary(draw.announce); return s ? (
-                <div className="mt-3 inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg bg-amber-500/15 border border-amber-500/50 text-amber-300">
+                <div className="mt-2 sm:mt-3 inline-flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-amber-500/15 border border-amber-500/50 text-amber-300">
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
             </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              {kb && <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${kb.cls}`}>{kb.label}</span>}
-              <span className={`text-xs font-bold px-4 py-1.5 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300 border border-green-500/40'}`}>
+            <div className="flex flex-col items-end gap-1.5 sm:gap-2 shrink-0">
+              {kb && <span className={`text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-1 rounded-full font-bold ${kb.cls}`}>{kb.label}</span>}
+              <span className={`text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300 border border-green-500/40'}`}>
                 {notYetOpen ? `⏳ เปิดรับ ${thaiHM(opensAt)} น.` : closed ? 'ปิดรับแล้ว' : '● รับแทงอยู่'}
               </span>
               {!closed && (
                 <div className="text-center">
-                  <div className="text-[10px] text-navy-400 font-medium mb-1">เหลือเวลา</div>
-                  <div className="text-gold-300 font-mono font-bold text-lg">
+                  <div className="text-[9px] sm:text-[10px] text-navy-400 font-medium mb-0.5 sm:mb-1">เหลือเวลา</div>
+                  <div className="text-gold-300 font-mono font-bold text-base sm:text-lg">
                     {notYetOpen ? thaiHM(opensAt) : <Countdown closeAt={draw.close_at} />}
                   </div>
                 </div>
@@ -410,19 +410,19 @@ export default function PlaceBet() {
                   const isSel = selRule === String(r.id);
                   return (
                     <button key={r.id} onClick={() => setSelRule(String(r.id))}
-                      className={`px-3 py-2.5 rounded-xl border transition-all duration-200 text-left ${
+                      className={`px-2 py-2 rounded-xl border transition-all duration-200 text-left ${
                         isSel 
                           ? 'border-gold-500 bg-gold-500/10 text-gold-300 shadow-lg shadow-gold-500/10' 
                           : 'border-navy-600 bg-navy-800/50 text-navy-200 hover:border-navy-500 hover:bg-navy-800'
                       }`}>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="font-bold text-sm truncate flex items-center gap-1.5">
-                          {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">อั้น</span>}
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <div className="font-bold text-xs sm:text-sm truncate flex items-center gap-1 min-w-0">
+                          {isAnn && <span className="text-[8px] sm:text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">อั้น</span>}
                           <span className="truncate">{r.name_th}</span>
                         </div>
-                        <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${isSel ? 'bg-gold-500/20 text-gold-300' : 'bg-black/20 text-gold-400'}`}>x{r.payout_multiplier}</span>
+                        <span className={`text-[10px] sm:text-xs font-mono font-bold px-1 py-0.5 rounded shrink-0 ${isSel ? 'bg-gold-500/20 text-gold-300' : 'bg-black/20 text-gold-400'}`}>x{r.payout_multiplier}</span>
                       </div>
-                      <div className="text-[10px] text-navy-400">
+                      <div className="text-[9px] sm:text-[10px] text-navy-400 leading-tight">
                         {r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : '1 ราศี') : `${r.digits} หลัก`}
                         {isAnn && <span className="text-amber-400"> • ครึ่งรางวัล</span>}
                       </div>
@@ -505,32 +505,32 @@ export default function PlaceBet() {
                 <>
                   {/* Quick Actions */}
                   <div className="sm:col-span-2">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                       <span className="text-xs text-navy-400 font-medium">ปุ่มลัด:</span>
                       <button type="button" onClick={() => setNumber(randNum(rule.digits))}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                        className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
                         🎲 สุ่มเลข
                       </button>
                       <button type="button" disabled={number.length < 2}
                         onClick={() => setNumber(number.split('').reverse().join(''))}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all disabled:opacity-40">
+                        className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all disabled:opacity-40">
                         🔁 กลับเลข
                       </button>
                       {draw.type_code === 'TH' && rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
                         <button type="button" onClick={addRud19}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition-all">
+                          className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition-all">
                           🎯 รูด 19 ประตู
                         </button>
                       )}
                       {rule.digits >= 2 && (
                         <>
                           <button type="button" onClick={() => addPattern('tod')}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                            className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
                             🔢 เลขตอง
                           </button>
                           {rule.digits === 3 && (
                             <button type="button" onClick={() => addPattern('be')}
-                              className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                              className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
                               🔢 เลขเบิ้ล
                             </button>
                           )}
@@ -545,12 +545,12 @@ export default function PlaceBet() {
                     <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                       inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
-                      className="w-full bg-navy-900/80 border border-navy-600 rounded-xl px-4 py-4 text-3xl tracking-[0.5em] text-center text-gold-300 font-mono font-bold focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all" />
+                      className="w-full bg-navy-900/80 border border-navy-600 rounded-xl px-3 py-3 sm:px-4 sm:py-4 text-2xl sm:text-3xl tracking-[0.3em] sm:tracking-[0.5em] text-center text-gold-300 font-mono font-bold focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all" />
                     {favKey > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         {favList.map(f => (
                           <button key={f} type="button" onClick={() => pickFav(f)}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-navy-800/50 border border-gold-500/40 text-gold-300 font-mono hover:bg-navy-700 hover:border-gold-500/60 transition-all">{f}</button>
+                            className="text-xs px-2.5 py-1.5 rounded-lg bg-navy-800/50 border border-gold-500/40 text-gold-300 font-mono hover:bg-navy-700 hover:border-gold-500/60 transition-all">{f}</button>
                         ))}
                         {favList.length === 0 && recentList.length === 0 && <span className="text-[10px] text-navy-500">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
                         {new RegExp(`^\\d{${favKey}}$`).test(number) && !favList.includes(number) && (
@@ -576,11 +576,11 @@ export default function PlaceBet() {
                     <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                       inputMode="decimal" placeholder="0.00"
-                      className="w-full bg-navy-900/80 border border-navy-600 rounded-xl px-4 py-4 text-2xl text-center text-gold-300 font-mono font-bold focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all" />
+                      className="w-full bg-navy-900/80 border border-navy-600 rounded-xl px-3 py-3 sm:px-4 sm:py-4 text-2xl text-center text-gold-300 font-mono font-bold focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all" />
                     <div className="grid grid-cols-4 gap-1.5 mt-2">
                       {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
                         <button key={v} type="button" onClick={() => setAmount(String(v))}
-                          className={`text-xs py-2 rounded-lg border font-bold transition-all duration-200 ${Number(amount) === v ? 'border-gold-500 bg-gold-500/20 text-gold-300' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-gold-500/50 hover:text-gold-300'}`}>
+                          className={`text-xs py-1.5 sm:py-2 rounded-lg border font-bold transition-all duration-200 ${Number(amount) === v ? 'border-gold-500 bg-gold-500/20 text-gold-300' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-gold-500/50 hover:text-gold-300'}`}>
                           {v}
                         </button>
                       ))}
@@ -596,22 +596,22 @@ export default function PlaceBet() {
                 <div className="text-xs text-sky-400 font-medium">💡 โต๊ด = เลขครบทุกหลักไม่สนลำดับ (รวมตรงเป๊ะ) จ่าย x{todRate}</div>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setBetMode('teng')}
-                    className={`text-sm py-3 px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300 shadow-lg shadow-gold-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
+                    className={`text-xs sm:text-sm py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300 shadow-lg shadow-gold-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
                     <div className="font-bold">เต็งอย่างเดียว</div>
-                    <div className="text-[10px] font-normal mt-1 opacity-80">เฉพาะเลขตรงเป๊ะ • จ่าย x{rule.payout_multiplier}</div>
+                    <div className="text-[9px] sm:text-[10px] font-normal mt-1 opacity-80">เฉพาะเลขตรงเป๊ะ • จ่าย x{rule.payout_multiplier}</div>
                   </button>
                   <button type="button" onClick={() => setBetMode('tengtod')}
-                    className={`text-sm py-3 px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300 shadow-lg shadow-sky-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
+                    className={`text-xs sm:text-sm py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300 shadow-lg shadow-sky-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
                     <div className="font-bold">เต็ง + โต๊ด</div>
-                    <div className="text-[10px] font-normal mt-1 opacity-80">ตรงเป๊ะได้ x{Number(rule.payout_multiplier) + todRate} • สลับลำดับได้ x{todRate}</div>
+                    <div className="text-[9px] sm:text-[10px] font-normal mt-1 opacity-80">ตรงเป๊ะได้ x{Number(rule.payout_multiplier) + todRate} • สลับลำดับได้ x{todRate}</div>
                   </button>
                 </div>
                 {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">ซื้อทั้งเต็งและโต๊ด — เสียเงินรวม ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100) • ผลตรงได้ทั้งคู่ ผลสลับได้แค่โต๊ด</div>}
               </div>
             )}
 
-            {err && <div className="text-red-400 text-sm font-medium bg-red-500/10 rounded-lg px-3 py-2">{err}</div>}
-            <Button onClick={addItem} variant="secondary" className="w-full !py-4 text-lg font-bold border-gold-500/60 text-gold-300 hover:bg-navy-700">
+            {err && <div className="text-red-400 text-xs sm:text-sm font-medium bg-red-500/10 rounded-lg px-3 py-2">{err}</div>}
+            <Button onClick={addItem} variant="secondary" className="w-full !py-3 sm:!py-4 text-base sm:text-lg font-bold border-gold-500/60 text-gold-300 hover:bg-navy-700">
               + เพิ่มลงโพย
             </Button>
           </div>
@@ -620,9 +620,9 @@ export default function PlaceBet() {
 
       {/* right: bet slip */}
       <div className="lg:col-span-2">
-        <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-5 sticky top-24 shadow-xl shadow-gold-500/5">
+        <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-4 sm:p-5 sticky top-24 shadow-xl shadow-gold-500/5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className={`font-bold ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
+            <h2 className={`font-bold text-sm sm:text-base ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
             {slip.length > 0 && (
               <button onClick={() => { if (confirm('ล้างรายการทั้งหมดในโพย?')) setSlip([]); }}
                 className="text-[10px] text-navy-400 hover:text-red-400 transition">ล้างทั้งหมด</button>
@@ -638,16 +638,16 @@ export default function PlaceBet() {
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {slip.map((i, idx) => (
               <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm animate-slip-in">
-                <div>
-                  <span className="text-white font-mono text-lg">{i.number}</span>
-                  <span className="text-navy-300 ml-2">{i.name}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="text-white font-mono text-base sm:text-lg">{i.number}</span>
+                  <span className="text-navy-300 ml-2 text-xs sm:text-sm">{i.name}</span>
                   {i.isAnn && <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">เลขอั้น</span>}
                   {i.isTod && <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300">โต๊ด</span>}
-                  <div className="text-[10px] text-navy-500">ถ้าถูก ≈ {satang(itemPotential(i))} บาท (ไม่รวมทุน)</div>
+                  <div className="text-[10px] text-navy-500 mt-0.5">ถ้าถูก ≈ {satang(itemPotential(i))} บาท (ไม่รวมทุน)</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gold-300">{satang(i.stakeSatang)} บาท</span>
-                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} className="text-red-400 hover:text-gold-300">✕</button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-gold-300 text-sm sm:text-base">{satang(i.stakeSatang)} บาท</span>
+                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} className="text-red-400 hover:text-gold-300 text-sm sm:text-base">✕</button>
                 </div>
               </div>
             ))}
@@ -663,8 +663,8 @@ export default function PlaceBet() {
             </div>
           )}
           </div>
-          <div className="border-t border-navy-700 mt-4 pt-4 space-y-1 text-sm">
-            <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-lg">{satang(totalSatang)} บาท</span></div>
+          <div className="border-t border-navy-700 mt-4 pt-4 space-y-1.5 text-sm">
+            <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-base sm:text-lg">{satang(totalSatang)} บาท</span></div>
             {slip.length > 0 && (
               <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">{satang(totalPotential)} บาท</span></div>
             )}
@@ -673,7 +673,7 @@ export default function PlaceBet() {
           <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
             📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>
           <Button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
-            className="mt-4 w-full !py-3">
+            className="mt-4 w-full !py-3 sm:!py-3.5 text-sm sm:text-base font-bold">
             ตรวจสอบและยืนยันโพย
           </Button>
           {!user && <div className="text-center text-sm text-navy-300 mt-2"><Link to="/login" className="text-gold-400">เข้าสู่ระบบ</Link> เพื่อแทง</div>}
@@ -682,22 +682,22 @@ export default function PlaceBet() {
 
       {/* floating bet bar — มือถือ/แท็บเล็ต (slip panel อยู่ล่างจอ) */}
       {!closed && slip.length > 0 && !done && (
-        <div className="sm:hidden fixed bottom-16 inset-x-0 z-30 px-4">
+        <div className="sm:hidden fixed bottom-16 inset-x-0 z-30 px-3">
           <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
-            className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-5 disabled:opacity-50">
-            <span className="text-sm">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
-            <span className="text-sm">ตรวจสอบโพย →</span>
+            className="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold py-3 rounded-xl shadow-lg shadow-black/40 flex items-center justify-between px-4 disabled:opacity-50">
+            <span className="text-xs sm:text-sm">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
+            <span className="text-xs sm:text-sm">ตรวจสอบโพย →</span>
           </button>
         </div>
       )}
 
       {/* confirm modal — order ticket สไตล์กระดาษ */}
       {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !busy && setConfirming(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4" onClick={() => !busy && setConfirming(false)}>
           <div className="w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="text-center mb-3">
-              <h2 className="text-lg font-bold text-white">{headBar}ยืนยันโพยหวย</h2>
-              <p className="text-sm text-navy-300">{drawLabel(draw)}</p>
+              <h2 className="text-base sm:text-lg font-bold text-white">{headBar}ยืนยันโพยหวย</h2>
+              <p className="text-xs sm:text-sm text-navy-300">{drawLabel(draw)}</p>
             </div>
             <div className="paper-slip rounded-lg px-5 py-5 pt-6 pb-7">
               <div className="flex items-center justify-between mb-1">
@@ -732,11 +732,11 @@ export default function PlaceBet() {
             </div>
             <div className="flex gap-3 mt-4">
               <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}
-                className="flex-1 !py-3 backdrop-blur-sm">
+                className="flex-1 !py-2.5 sm:!py-3 text-sm sm:text-base backdrop-blur-sm">
                 ← แก้ไขต่อ
               </Button>
               <Button onClick={submit} disabled={busy}
-                className="flex-1 !py-3 shadow-lg shadow-gold-500/20">
+                className="flex-1 !py-2.5 sm:!py-3 text-sm sm:text-base shadow-lg shadow-gold-500/20">
                 {busy ? 'กำลังส่ง...' : '✓ ยืนยันส่งโพย'}
               </Button>
             </div>
