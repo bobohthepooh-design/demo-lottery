@@ -121,8 +121,8 @@ export default function Layout() {
           </Link>
 
           {/* เมนูหลัก — glass pill bar เดียวจบ: ลิงก์เลื่อนในตัว + เวลา/กระดิ่ง/เครดิต/ปุ่มทั้งหมดปักขวาสุด
-              ≥640px (tablet/desktop): แถวเดียวกับ logo • tablet = แถบเต็มแถวล่างของ header */}
-          <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-md:order-3 max-md:basis-full max-md:mx-3 max-md:mt-1 max-md:mb-1.5">
+              ≥1024px (desktop): แถวเดียวกับ logo • tablet = แถบเต็มแถวล่างของ header */}
+          <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-lg:order-3 max-lg:basis-full max-lg:mx-3 max-lg:mt-1 max-lg:mb-1.5">
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
                 className={({ isActive }) => `shrink-0 px-2 py-1.5 text-[12.5px] transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
@@ -130,7 +130,7 @@ export default function Layout() {
               </NavLink>
               {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
                 <Fragment key={g.label}>
-                  {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-md:hidden" />}
+                  {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-lg:hidden" />}
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
                       className={({ isActive }) => `shrink-0 px-2 py-1.5 text-[12.5px] transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
@@ -290,12 +290,12 @@ export default function Layout() {
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-24 lg:pb-6">
         <Outlet />
       </main>
 
-      {/* Bottom navigation — มือถือ/แท็บเล็ต (< xl) แถบติดขอบล่าง + ปุ่มเพิ่มเติมเปิดเมนูเต็ม */}
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40"
+      {/* Bottom navigation — มือถือ/แท็บเล็ต (< lg) แถบติดขอบล่าง + ปุ่มเพิ่มเติมเปิดเมนูเต็ม */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
         <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
@@ -337,7 +337,7 @@ export default function Layout() {
         </div>
       </nav>
 
-      <footer className="border-t border-navy-800 py-4 pb-20 sm:pb-4 text-center text-xs text-navy-300">
+      <footer className="border-t border-navy-800 py-4 pb-20 lg:pb-4 text-center text-xs text-navy-300">
         <span>{t('footer')}</span><div className="mt-1"><Link to="/legal" className="text-gold-400 hover:text-gold-300">ข้อกำหนด • ความเป็นส่วนตัว • เล่นอย่างรับผิดชอบ</Link></div>
       </footer>
 

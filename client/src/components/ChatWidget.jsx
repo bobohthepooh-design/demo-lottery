@@ -61,7 +61,7 @@ export default function ChatWidget() {
       {/* ปุ่มลอย — มุมขวาล่าง เหนือ bottom nav บนมือถือ */}
       <button onClick={() => { setOpen(o => !o); if (!open) { loadThread(); loadUnread(); setUnread(0); } }}
         aria-label="แชทกับแอดมิน"
-        className="fixed bottom-20 sm:bottom-6 right-4 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 shadow-lg shadow-gold-500/30 flex items-center justify-center hover:scale-105 transition border border-gold-200/60">
+        className="fixed bottom-20 lg:bottom-6 right-4 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 shadow-lg shadow-gold-500/30 flex items-center justify-center hover:scale-105 transition border border-gold-200/60">
         <Icon name="chat" className="w-6 h-6" />
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-navy-950">
@@ -72,7 +72,7 @@ export default function ChatWidget() {
 
       {/* กล่องแชท */}
       {open && (
-        <div className="fixed bottom-36 sm:bottom-20 right-4 z-40 w-[340px] max-w-[calc(100vw-2rem)] h-[460px] max-h-[calc(100vh-10rem)] flex flex-col rounded-2xl border border-gold-500/40 bg-navy-900 shadow-2xl shadow-black/60 overflow-hidden animate-result-pop">
+        <div className="fixed bottom-36 lg:bottom-20 right-4 z-40 w-[340px] max-w-[calc(100vw-2rem)] h-[460px] max-h-[calc(100vh-10rem)] flex flex-col rounded-2xl border border-gold-500/40 bg-navy-900 shadow-2xl shadow-black/60 overflow-hidden animate-result-pop">
           <div className="h-1 bg-gradient-to-r from-gold-500/50 to-gold-600/50 shrink-0" />
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-navy-700 bg-navy-800/80">
             <span className="w-8 h-8 rounded-full bg-gold-500/15 border border-gold-500/40 flex items-center justify-center text-gold-400">

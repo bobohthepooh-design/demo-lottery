@@ -28,7 +28,7 @@ export default function ToastHost() {
   if (!items.length) return null;
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 right-4 z-[60] space-y-2 max-w-xs w-full pointer-events-none">
+    <div className="fixed bottom-20 lg:bottom-6 right-4 z-[60] space-y-2 max-w-xs w-full pointer-events-none">
       {items.map(t => (
         <div key={t.id}
           className={`pointer-events-auto bg-navy-800/95 backdrop-blur border rounded-lg px-4 py-2.5 text-sm shadow-lg shadow-black/40 animate-toast ${KIND_STYLE[t.kind]}`}>
