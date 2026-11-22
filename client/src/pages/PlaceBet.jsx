@@ -336,7 +336,7 @@ export default function PlaceBet() {
       <p className="text-navy-200">ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
       <div className="mt-6 flex gap-3 justify-center">
         <Button to="/my-bets">ดูโพยของฉัน</Button>
-        <Button to={draw ? `/lotteries?type=${draw.lottery_type_id}` : '/lotteries'} variant="secondary">แทงรอบอื่น</Button>
+        <Button to="/play" variant="secondary">เลือกตลาด/รอบอื่น</Button>
       </div>
     </div>
   );
@@ -360,7 +360,7 @@ export default function PlaceBet() {
         <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 shadow-lg shadow-black/20">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Link to={`/lotteries?type=${draw.lottery_type_id}`} className="text-sm text-gold-400 hover:text-gold-300">← เลือกรอบอื่นในหมวดนี้</Link>
+              <Link to="/play" className="text-sm text-gold-400 hover:text-gold-300">← เลือกตลาด/รอบอื่น</Link>
               <div className="flex items-center gap-2 mt-1">
                 <FlagIcon code={draw.type_code} className="w-9 h-6 text-[10px]" />
                 <h1 className={`text-xl font-bold ${ac?.text || 'text-navy-950'}`}>{drawLabel(draw)}</h1>

@@ -1,17 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime } from '../api.js';
+import { api, fmtDateTime, satang } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
-import { SkeletonGrid } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
-import { GameArt } from '../components/GameArt.jsx';
-import { mergeBanner } from '../bannerConfig.js';
-import { kindBadge, marketInfo, MODE_BADGE, sourceBadge, isOfficial } from '../resultSource.js';
-import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
-import LuckyNumbers from '../components/LuckyNumbers.jsx';
+import { marketInfo, MODE_BADGE, sourceBadge, isOfficial } from '../resultSource.js';
 
-// ผลย่อกระชับสำหรับการ์ดหน้าแรก — เฉพาะเลขหลักที่คนดูบ่อย (รางวัล1/เลขหลัก/บน3/ล่าง2/ราศี)
+// ผลย่อกระชับสำหรับการ์ดผลรางวัล — เฉพาะเลขหลักที่คนดูบ่อย
 const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
 function compactResult(w) {
   if (!w) return null;
@@ -29,159 +24,66 @@ function compactResult(w) {
   return parts.length ? parts.join(' · ') : null;
 }
 
-// นับถอยหลังเวลา (วินาที) — tick ทุก 1 วิ
-function useNow() {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function msLeft(closeAtSql, now) {
-  return new Date(String(closeAtSql).replace(' ', 'T') + 'Z').getTime() - now;
-}
-
-function countdownText(closeAtSql, now) {
-  // close_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS'
-  const diff = msLeft(closeAtSql, now);
-  if (diff <= 0) return 'ปิดรับแล้ว';
-  const h = Math.floor(diff / 3600e3), m = Math.floor(diff % 3600e3 / 60e3), s = Math.floor(diff % 60e3 / 1000);
-  const p = n => String(n).padStart(2, '0');
-  return h >= 24 ? `อีก ${Math.floor(h / 24)} วัน ${p(h % 24)}:${p(m)}:${p(s)}` : `${p(h)}:${p(m)}:${p(s)}`;
-}
-
-// แถวรอบหวยของแต่ละประเทศ/หมวด — แสดงเวลาออกรางวัล + นับถอยหลังปิดรับ
-function DrawLine({ d, now }) {
-  const isOpen = isBettingOpen(d);
-  const isScheduled = d.status === 'scheduled' || (d.status === 'open' && !isOpen);
-  return (
-    <div className={`bg-navy-800/70 border rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-x-auto whitespace-nowrap ${isOpen ? 'border-navy-700/60' : 'border-navy-700/40 opacity-75'}`}>
-      <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
-      <span className={`text-[11px] font-semibold shrink-0 ${typeAccent(d.type_code).text}`}>
-        {d.category_name_th || d.type_name_th}
-      </span>
-      <span className="text-[10px] text-navy-400 shrink-0">ออก {fmtDateTime(d.draw_at)}</span>
-      {(() => { const b = kindBadge(d.result_kind); return b ? (
-        <span className={`text-[8px] px-1 py-0.5 rounded shrink-0 ${b.cls}`}>{b.short}</span>
-      ) : null; })()}
-      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ml-auto ${isOpen ? 'bg-gold-500/15 text-gold-600' : isScheduled ? 'bg-lav-100 text-lav-500 border border-lav-100' : 'bg-navy-100 text-navy-400'}`}>
-        {isOpen ? countdownText(d.close_at, now) : isScheduled ? (d.status === 'open' ? `เปิด ${thaiHM(bettingOpenAtSql(d.close_at, d.type_code))} น.` : 'กำหนดการ') : 'ปิดรับแล้ว'}
-      </span>
-    </div>
-  );
-}
-
 export default function Home() {
-  const { user, demoNotice, isAdmin } = useAuth();
-  const now = useNow();
-  const [types, setTypes] = useState([]);
-  const [markets, setMarkets] = useState([]);
-  const [draws, setDraws] = useState([]);
-  const [banner, setBanner] = useState(null);
+  const { user, demoNotice, isAdmin, balance } = useAuth();
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
-  const [gamePrices, setGamePrices] = useState({ scratch: 5000, hilo: 5000, scratchPrizes: [], hiloMult: null }); // สตางค์/ตัวคูณ — sync จาก server (admin ตั้งได้)
   const [cashbackPct, setCashbackPct] = useState(0); // โปรคืนยอดเสีย %/วัน — 0 = ปิด
   const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ section ผลรางวัล
 
   useEffect(() => {
-    api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
-    api('/lottery/markets').then(r => setMarkets(r.markets || [])).catch(() => {});
     api('/lottery/public-config').then(r => {
-      setBanner(mergeBanner(r.banner));
       setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
       setCashbackPct(Number(r.cashbackPercent) || 0);
-      if (r.instantGame) setGamePrices({
-        scratch: r.instantGame.scratchPrice || 5000,
-        hilo: r.instantGame.hiloPrice || 5000,
-        scratchPrizes: Array.isArray(r.instantGame.scratchPrizes) ? r.instantGame.scratchPrizes : [],
-        hiloMult: r.instantGame.hiloMult || null,
-      });
     }).catch(() => {});
-    const loadDraws = () => api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
     const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-    loadDraws(); loadToday();
-    const t = setInterval(() => { loadDraws(); loadToday(); }, 30000); // refresh อัตโนมัติ — สถานะรอบเปลี่ยนโดย admin จะขึ้นเอง
-    return () => clearInterval(t);
-  }, [user]);
-
-  // SSE — refetch ทันทีเมื่อ server แจ้งว่ามีการเปลี่ยนแปลง (ผลรางวัล/รอบ/การตั้งค่า)
-  useEffect(() => {
-    const h = () => {
-      api('/lottery/types').then(r => setTypes(r.types)).catch(() => {});
-      api('/lottery/markets').then(r => setMarkets(r.markets || [])).catch(() => {});
-      api('/lottery/public-config').then(r => {
-        setBanner(mergeBanner(r.banner));
-        setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
-        setCashbackPct(Number(r.cashbackPercent) || 0);
-        if (r.instantGame) setGamePrices({
-          scratch: r.instantGame.scratchPrice || 5000,
-          hilo: r.instantGame.hiloPrice || 5000,
-          scratchPrizes: Array.isArray(r.instantGame.scratchPrizes) ? r.instantGame.scratchPrizes : [],
-          hiloMult: r.instantGame.hiloMult || null,
-        });
-      }).catch(() => {});
-      api('/lottery/draws?upcoming=1').then(r => setDraws(r.draws)).catch(() => {});
-      api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-    };
+    loadToday();
+    const t = setInterval(loadToday, 30000); // refresh อัตโนมัติ — ผลใหม่ขึ้นเอง
+    const h = () => loadToday();
     window.addEventListener('sys:update', h);
-    return () => window.removeEventListener('sys:update', h);
-  }, []);
+    return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
+  }, [user]);
 
   // admin ซ่อนเมนูแทงหวยรายประเภทได้ (blind mode) — admin เองเห็นทั้งหมดเสมอ
   const hiddenSet = new Set(hiddenBetTypes);
-  const typeVisible = t => isAdmin || !hiddenSet.has(t.code);
   const drawVisible = d => isAdmin || !hiddenSet.has(d.type_code);
-  const visTypes = types.filter(typeVisible);
-  const visDraws = draws.filter(drawVisible);
-  // ประเภทหวยทั่วไป (ไม่รวมเกมด่วน/ราศีที่อยู่แถวบน) — แสดง 6 ใบแรก ที่เหลือไปที่ /lotteries
-  const marketTypes = visTypes.filter(t => !['SC', 'HL', 'HR', 'KI', 'CF'].includes(t.code));
 
-  // รอบเปิดรับที่ใกล้ปิดสุดของแต่ละประเทศ/หมวด
-  const openByCategory = [];
-  const seenDraw = new Set();
-  const sorted = [...visDraws]
-    .filter(d => d.status === 'open' || d.status === 'scheduled')
-    .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)));
-  for (const d of sorted) {
-    const key = `${d.type_code}:${d.category_code || ''}`;
-    if (seenDraw.has(key)) continue;
-    seenDraw.add(key);
-    openByCategory.push(d);
-  }
+  // ปุ่มลัดหลัก — portal-style: แทงหวย / เล่นเกม / ผลรางวัล / กระเป๋า (guest → เข้าสู่ระบบ)
+  const quickActions = user ? [
+    { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-600 to-rose-700', sub: 'เลือกรอบ' },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-600 to-purple-700', sub: 'ด่วน' },
+    { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-600 to-yellow-700', sub: 'ล่าสุด' },
+    { to: '/wallet', icon: '💳', label: 'กระเป๋า', cls: 'from-emerald-600 to-teal-700', sub: satang(balance) },
+  ] : [
+    { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-600 to-rose-700', sub: 'เลือกรอบ' },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-600 to-purple-700', sub: 'ด่วน' },
+    { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-600 to-yellow-700', sub: 'ล่าสุด' },
+    { to: '/register', icon: '👤', label: 'สมัครสมาชิก', cls: 'from-sky-600 to-blue-700', sub: 'เริ่มต้น' },
+  ];
 
-  // รอบหวยราศีที่เปิดรับอยู่ใกล้ปิดสุด — สำหรับการ์ดโปรโมชันพิเศษ
-  const zodiacDraw = visDraws
-    .filter(d => d.type_code === 'HR' && isBettingOpen(d))
-    .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)))[0];
-
-  // instant games (สล็อต/ไฮโล) + หวยราศี — แสดงการ์ดเด่นบนสุด แถวเดียวกันบน tablet/desktop
-  const instantTypes = visTypes.filter(t => ['SC', 'HL', 'KI'].includes(t.code));
-  const zodiacType = visTypes.find(t => t.code === 'HR');
-  const topRowTypes = [...instantTypes, ...(zodiacType ? [zodiacType] : [])];
-  const instantLink = t => ({ SC: '/scratch', HL: '/hilo', KI: '/kiwi' })[t.code] || `/lotteries?type=${t.id}`;
-  const baht = (satangVal) => `${(satangVal / 100).toLocaleString('th-TH')} บาท`;
-  // อัตราจ่าย/รางวัลจากข้อมูลหลังบ้าน (public-config) — admin เปลี่ยนใน /admin/settings มีผลทันที
-  const sp = gamePrices.scratchPrizes;
-  const prizeMin = sp.length ? Math.min(...sp.map(p => p.prize)) : null;
-  const prizeMax = sp.length ? Math.max(...sp.map(p => p.prize)) : null;
-  const scratchPrizeText = prizeMax != null ? `รางวัลสูงสุด ${baht(prizeMax)}` : 'รางวัลสูงสุด 120,000 บาท';
-  const hm = gamePrices.hiloMult;
-  const hiloOddsText = hm ? `ต่ำ ×${hm.low} • สูง ×${hm.high} • 11 ×${hm.eleven}` : '';
-  const instantMeta = {
-    SC: { code: 'SC', tag: 'สปินแล้วรู้ผลทันที', desc: `เล่นเกม ${baht(gamePrices.scratch)} → สปิน 5 รีล 3 แถว 20 เพย์ไลน์ → ${scratchPrizeText}`, cta: 'เล่นเกมเลย', grad: 'from-red-700 to-rose-900' },
-    HL: { code: 'HL', tag: 'ทอยเต๋า 3 ลูก รู้ผลทันที', desc: `ทาย สูง/ต่ำ/11 ไฮโล — ${hiloOddsText ? `${hiloOddsText} — ` : ''}แทง ${baht(gamePrices.hilo)}/ครั้ง ตลอด 24 ชม.`, cta: 'เล่นไฮโลเลย', grad: 'from-amber-700 to-orange-900' },
-    KI: { code: 'KI', tag: 'เลือกเลขทายผลไว', desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP', cta: 'เล่นยี่กีเลย', grad: 'from-yellow-700 to-amber-900' },
-    HR: { code: '✦', tag: 'ปีนักษัตรออกผลทุก 15 นาที', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — ตัวแรก/ท้าย 2-3 ตัว + วิ่ง', cta: 'ดูรอบปีนักษัตร', grad: 'from-violet-700 to-purple-900' },
-  };
-
-  const openCount = visDraws.filter(d => isBettingOpen(d)).length;
-  const b = mergeBanner(banner);
+  // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด
+  const resultCards = (() => {
+    // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
+    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']); // รวมราศี — เกมด่วนมี popup ของตัวเอง
+    const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code));
+    const mk = new Map();
+    for (const d of todays) {
+      const k = `${d.type_code}|${d.category_code || ''}`;
+      if (!mk.has(k)) mk.set(k, { label: d.category_name_th || d.type_name_th, type_code: d.type_code, cat_code: d.category_code, type_name_th: d.type_name_th, settled: [], pending: [] });
+      const g = mk.get(k);
+      if (d.status === 'settled' && d.winning) g.settled.push(d);
+      else if (d.status !== 'cancelled') g.pending.push(d);
+    }
+    return [...mk.values()].map(g => {
+      g.settled.sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)));
+      g.pending.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
+      return g;
+    }).filter(g => g.settled.length > 0)
+      .sort((a, b) => String(b.settled[0].draw_at).localeCompare(String(a.settled[0].draw_at)));
+  })();
 
   return (
     <div className="space-y-6">
-      {/* Welcome + DEMO badge — member เท่านั้น */}
+      {/* welcome — member เท่านั้น */}
       {user && (
         <div className="flex items-center gap-3 bg-navy-800/80 border border-navy-700 rounded-2xl px-4 py-3">
           <span className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-300 to-gold-600 text-navy-950 font-display font-black text-lg flex items-center justify-center shadow-md shadow-gold-500/20 shrink-0">
@@ -200,23 +102,19 @@ export default function Home() {
           </span>
         </div>
       )}
-      {/* Quick actions แบบ portal — ฝาก/แทง/ถอน/เกม (member เท่านั้น) */}
-      {user && (
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { to: '/wallet', icon: '💳', label: 'ฝากเงิน', cls: 'from-emerald-600 to-teal-700' },
-            { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-600 to-rose-700' },
-            { to: '/wallet', icon: '🏦', label: 'ถอนเงิน', cls: 'from-sky-600 to-blue-700' },
-            { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-600 to-purple-700' },
-          ].map(a => (
-            <Link key={a.label} to={a.to}
-              className={`rounded-xl bg-gradient-to-br ${a.cls} py-3 flex flex-col items-center gap-1 text-white hover:brightness-110 active:scale-95 transition shadow-md`}>
-              <span className="text-xl">{a.icon}</span>
-              <span className="text-[11px] font-bold">{a.label}</span>
-            </Link>
-          ))}
-        </div>
-      )}
+
+      {/* ปุ่มลัดหลัก — portal-style icon tiles */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        {quickActions.map(a => (
+          <Link key={a.label} to={a.to}
+            className={`rounded-2xl bg-gradient-to-br ${a.cls} py-4 px-2 flex flex-col items-center gap-1.5 text-white hover:brightness-110 active:scale-95 transition shadow-lg`}>
+            <span className="text-2xl">{a.icon}</span>
+            <span className="text-xs sm:text-sm font-bold">{a.label}</span>
+            <span className="text-[9px] opacity-80 font-mono truncate max-w-full px-1">{a.sub}</span>
+          </Link>
+        ))}
+      </div>
+
       {/* โปร cashback — แสดงเมื่อ admin เปิดใช้ */}
       {cashbackPct > 0 && (
         <div className="rounded-xl border border-gold-500/40 bg-gradient-to-r from-gold-500/15 via-navy-800/60 to-gold-500/15 px-4 py-2.5 flex items-center gap-2 text-sm">
@@ -224,6 +122,7 @@ export default function Home() {
           <span className="text-gold-200">โปรโมชั่น: <b className="text-gold-300">คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
         </div>
       )}
+
       {/* Responsible gambling — เตือนเบาๆ + ลิงก์เอกสาร */}
       {user && (
         <div className="rounded-xl border border-navy-700 bg-navy-800/50 px-4 py-2.5 flex items-center gap-2 text-xs text-navy-400">
@@ -232,291 +131,65 @@ export default function Home() {
           <Link to="/legal" className="text-gold-400 hover:text-gold-300 font-semibold shrink-0">ข้อกำหนด/PDPA →</Link>
         </div>
       )}
-      {/* Hero — ดึงดูดให้เข้ามาแทง (ข้อความแก้ไขได้ที่ /admin/banner) */}
-      {b.enabled && (
-      <section className="casino-frame casino-hero-felt casino-rail relative overflow-hidden rounded-2xl border border-gold-500/50 px-5 py-10 sm:px-12 sm:py-14 text-center">
-        <div className="absolute -top-20 left-1/4 w-72 h-72 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 right-1/4 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl pointer-events-none" />
-        {/* ลูกเล่นคาสิโน — ประกายทอง + ชิปโป๊กเกอร์ลอย (decorative) */}
-        <span className="casino-sparkle text-xl" style={{ top: '14%', left: '7%', animationDelay: '0.2s' }}>✦</span>
-        <span className="casino-sparkle text-sm" style={{ top: '22%', right: '9%', animationDelay: '1.1s' }}>✦</span>
-        <span className="casino-sparkle text-lg" style={{ bottom: '24%', left: '12%', animationDelay: '2s' }}>✧</span>
-        <span className="casino-sparkle text-sm" style={{ bottom: '30%', right: '14%', animationDelay: '0.7s' }}>✦</span>
-        <span className="casino-sparkle text-base hidden sm:block" style={{ top: '55%', left: '4%', animationDelay: '1.6s' }}>✧</span>
-        <span className="casino-sparkle text-base hidden sm:block" style={{ top: '60%', right: '5%', animationDelay: '2.6s' }}>✦</span>
-        <div className="casino-chip w-12 h-12 sm:w-16 sm:h-16" style={{ bottom: '-6%', left: '5%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.4s' }} />
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ top: '-4%', right: '7%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '1.8s' }} />
-        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ bottom: '12%', right: '3%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '3s' }} />
-        <div className="relative">
-          <div className="kicker mb-3">Premier Lottery Lounge · Demo</div>
-          {/* ตราสัญลักษณ์โรงเตี๊ยม — emoji ที่ตั้งค่าได้อยู่ในกรอบทอง */}
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full border border-gold-400/60 bg-navy-950/60 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(244,201,78,0.25)]">
-            {b.emoji}
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-black leading-tight tracking-wide">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-200 via-gold-400 to-gold-500">
-              {b.title}
-            </span>
-          </h1>
-          <p className="text-navy-200 text-sm sm:text-base mt-2 tracking-wide">
-            {b.markets}
-          </p>
-          <p className="text-gold-300/90 text-xs sm:text-sm mt-2 font-semibold tracking-wider">
-            {b.promo}
-          </p>
-          <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
-            <Link to="/lotteries"
-              className="bg-gradient-to-r from-gold-400 to-gold-600 text-navy-950 font-bold px-8 py-3 rounded-lg text-sm sm:text-base tracking-wide shadow-lg shadow-gold-500/25 hover:brightness-110 transition border border-gold-300/50">
-              {b.cta_bet}
-            </Link>
-            {!user && (
-              <Link to="/register"
-                className="border border-gold-500/50 text-gold-300 font-semibold px-6 py-3 rounded-lg text-sm sm:text-base tracking-wide hover:bg-navy-800/60 transition">
-                {b.cta_register}
-              </Link>
-            )}
-          </div>
-          {/* สถิติสด */}
-          {b.show_stats && (
-          <div className="flex items-center justify-center gap-4 sm:gap-8 mt-7 pt-5 border-t border-gold-500/20 text-xs sm:text-sm flex-wrap">
-            <div><span className="text-gold-300 font-bold text-lg">{openCount}</span> <span className="text-navy-300">รอบเปิดรับ</span></div>
-            <div className="w-px h-6 bg-gold-500/30 hidden sm:block" />
-            <div><span className="text-gold-300 font-bold text-lg">{visTypes.filter(t => t.code !== 'SC' && t.code !== 'HL').length}</span> <span className="text-navy-300">ตลาดหวย</span></div>
-            <div className="w-px h-6 bg-gold-500/30 hidden sm:block" />
-            <div><span className="text-gold-300 font-bold text-lg">x1,000</span> <span className="text-navy-300">อัตราจ่ายสูงสุด</span></div>
-          </div>
-          )}
-        </div>
-      </section>
-      )}
 
-      {/* ผลรางวัลวันนี้ — โครงข้อมูลแบบเว็บผลรางวัล: ล่าสุดต่อ ตลาด + รอบถัดไป */}
-      {(() => {
-        // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
-        const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']); // รวมราศี — เกมด่วนมี popup ของตัวเอง
-        const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code));
-        if (!todays.length) return null;
-        // แยก settled/pending ต่อ market — ล่าสุดต่อ ตลาด + รอบถัดไป
-        const mk = new Map();
-        for (const d of todays) {
-          const k = `${d.type_code}|${d.category_code || ''}`;
-          if (!mk.has(k)) mk.set(k, { label: d.category_name_th || d.type_name_th, type_code: d.type_code, cat_code: d.category_code, type_name_th: d.type_name_th, settled: [], pending: [] });
-          const g = mk.get(k);
-          if (d.status === 'settled' && d.winning) g.settled.push(d);
-          else if (d.status !== 'cancelled') g.pending.push(d);
-        }
-        const cards = [...mk.values()].map(g => {
-          g.settled.sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)));
-          g.pending.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
-          return g;
-        }).filter(g => g.settled.length > 0) // เฉพาะตลาดที่มีผลรางวัลจริงแล้ว — ไม่เอารอบที่ยังไม่ออกรางวัลมาแสดง
-          .sort((a, b) => String(b.settled[0].draw_at).localeCompare(String(a.settled[0].draw_at))); // ล่าสุดที่ออกรางวัลก่อน
-        if (!cards.length) return null; // วันนี้ยังไม่มีผลรางวัลหวยเลย — ซ่อน section
-        return (
-          <section>
-            <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
-              <div>
-                <div className="kicker mb-1">Today's Results</div>
-                <h2 className="text-xl font-bold text-white">ผลรางวัลวันนี้</h2>
-                <p className="text-xs text-navy-400 mt-0.5">ล่าสุดของแต่ละตลาด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
-              </div>
-              <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {cards.slice(0, 4).map(g => {
-                const ac = typeAccent(g.type_code);
-                const last = g.settled[0];
-                const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
-                const txt = last ? compactResult(last.winning) : null;
-                const srcB = last ? sourceBadge(last.result_source) : null;
-                const mi = marketInfo(g.type_code, g.cat_code);
-                return (
-                  <Link key={g.label + g.type_code} to="/results"
-                    className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group flex flex-col">
-                    {/* header: ตลาด + badge ที่มาผล */}
-                    <div className="flex items-center gap-2">
-                      <FlagIcon code={g.type_code} className="w-6 h-6 text-[10px]" />
-                      <div className="min-w-0 flex-1">
-                        <div className={`text-sm font-bold ${ac.text} truncate group-hover:text-gold-300 transition`}>{g.label}</div>
-                        <div className="text-[10px] text-navy-500 font-mono truncate">{last?.draw_code || g.type_name_th}</div>
-                      </div>
-                      {last
-                        ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}${mi.mode === 'auto' && !isOfficial(mi) ? ' — ไม่ใช่ผลทางการ' : ''}` : ''}>{srcB.short}</span>)
-                        : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`} title={mi.mode === 'auto' && !isOfficial(mi) ? 'ผลจากเว็บภายนอก — ไม่ใช่ผลทางการ' : ''}>{mi.mode === 'auto' && !isOfficial(mi) ? '⚠️ ' : ''}{MODE_BADGE[mi.mode]?.label}</span>)}
-                    </div>
-                    {/* body: ผลย่อบรรทัดเดียว หรือรอบถัดไป */}
-                    <div className="mt-2 flex-1 min-h-[1.25rem]">
-                      {last ? (
-                        <div className="text-xs font-mono tabular-nums text-slate-100 truncate" title={txt}>{txt}</div>
-                      ) : (
-                        <div className="text-[11px] text-navy-400 truncate">
-                          {nxt ? `⏳ ถัดไป ${fmtDateTime(nxt.draw_at)}` : 'ไม่มีรอบวันนี้'}
-                        </div>
-                      )}
-                    </div>
-                    {/* footer: เวลาออก + ที่มา + จำนวนงวดวันนี้ */}
-                    <div className="mt-3 pt-2 border-t border-navy-700/60 flex items-center justify-between text-[10px] text-navy-400">
-                      <span>
-                        {last ? `ออก ${fmtDateTime(last.draw_at)}` : nxt ? `ถัดไป ${fmtDateTime(nxt.draw_at)}` : '—'}
-                        {g.settled.length > 1 && <span className="text-navy-500"> • วันนี้ ${g.settled.length} งวด</span>}
-                      </span>
-                      <span className="truncate max-w-[45%]" title={mi?.src || ''}>{mi?.src || ''}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-            {cards.length > 4 && (
-              <Link to="/results" className="mt-3 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
-                + อีก {cards.length - 4} ตลาด — ดูผลรางวัลทั้งหมด →
-              </Link>
-            )}
-          </section>
-        );
-      })()}
-
-      {/* ตรวจเลข ย้ายไปเป็นหน้า /check ในเมนูหลักแล้ว */}
-
-      {/* เกมด่วน — สล็อต/ไฮโล แสดงก่อนเสมอ เล่นได้ทันทีไม่ต้องรอผลออกรางวัล */}
-      {topRowTypes.length > 0 && (
+      {/* ผลรางวัลวันนี้ — ล่าสุดของแต่ละตลาด */}
+      {resultCards.length > 0 && (
         <section>
           <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
             <div>
-              <div className="kicker mb-1">Live Games</div>
-              <h2 className="text-xl font-bold text-white">
-                เกมด่วน
-              </h2>
-              <p className="text-xs text-navy-400 mt-0.5">เกมด่วนเล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
+              <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
+              <p className="text-xs text-navy-400 mt-0.5">ของแต่ละตลาด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
             </div>
+            <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
           </div>
-          {/* icon-grid แบบทางรัฐ — tile uniform: icon กลาง + ชื่อ + badge สถานะ */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {topRowTypes.map((t, i) => {
-              const m = instantMeta[t.code] || {};
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+            {resultCards.slice(0, 8).map(g => {
+              const ac = typeAccent(g.type_code);
+              const last = g.settled[0];
+              const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
+              const txt = last ? compactResult(last.winning) : null;
+              const srcB = last ? sourceBadge(last.result_source) : null;
+              const mi = marketInfo(g.type_code, g.cat_code);
               return (
-                <div key={t.id} className="flex flex-col items-center text-center">
-                  <Link to={user ? instantLink(t) : '/login'}
-                    className={`casino-table rounded-2xl p-4 pb-3 flex flex-col items-center text-center gap-2 w-full hoverable deal-in hover:border-gold-500/50 transition`} style={{ animationDelay: `${i * 90}ms` }}>
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-navy-950/60 border border-gold-500/30 flex items-center justify-center shadow-inner`}>
-                      <GameArt code={t.code} className="w-12 h-12 sm:w-14 sm:h-14" />
+                <Link key={g.label + g.type_code} to="/results"
+                  className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <FlagIcon code={g.type_code} className="w-6 h-6 text-[10px]" />
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-sm font-bold ${ac.text} truncate group-hover:text-gold-300 transition`}>{g.label}</div>
+                      <div className="text-[10px] text-navy-500 font-mono truncate">{last?.draw_code || g.type_name_th}</div>
                     </div>
-                    <div className="font-bold text-sm text-white leading-tight">{t.name_th}</div>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${t.code === 'HR' ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-green-500/20 text-green-300 border-green-500/40 animate-online'}`}>
-                      {t.code === 'HR' ? '✦ ทุก 15 นาที' : '● 24 ชม.'}
+                    {last
+                      ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}${mi.mode === 'auto' && !isOfficial(mi) ? ' — ไม่ใช่ผลทางการ' : ''}` : ''}>{srcB.short}</span>)
+                      : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`} title={mi.mode === 'auto' && !isOfficial(mi) ? 'ผลจากเว็บภายนอก — ไม่ใช่ผลทางการ' : ''}>{mi.mode === 'auto' && !isOfficial(mi) ? '⚠️ ' : ''}{MODE_BADGE[mi.mode]?.label}</span>)}
+                  </div>
+                  <div className="mt-2 flex-1 min-h-[1.25rem]">
+                    {last ? (
+                      <div className="text-xs font-mono tabular-nums text-slate-100 truncate" title={txt}>{txt}</div>
+                    ) : (
+                      <div className="text-[11px] text-navy-400 truncate">
+                        {nxt ? `⏳ ถัดไป ${fmtDateTime(nxt.draw_at)}` : 'ไม่มีรอบวันนี้'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-navy-700/60 flex items-center justify-between text-[10px] text-navy-400">
+                    <span>
+                      {last ? `ออก ${fmtDateTime(last.draw_at)}` : nxt ? `ถัดไป ${fmtDateTime(nxt.draw_at)}` : '—'}
+                      {g.settled.length > 1 && <span className="text-navy-500"> • วันนี้ {g.settled.length} งวด</span>}
                     </span>
-                  </Link>
-                  <div className="text-[10px] text-navy-400 leading-tight mt-1.5 px-1">{m.tag}</div>
-                </div>
+                    <span className="truncate max-w-[45%]" title={mi?.src || ''}>{mi?.src || ''}</span>
+                  </div>
+                </Link>
               );
             })}
           </div>
-          <p className="text-[11px] text-navy-400 mt-3 text-center">
-            แตะที่ไอคอนเพื่อเข้าเล่นเกม — เปิดตลอด 24 ชม.
-          </p>
+          {resultCards.length > 8 && (
+            <Link to="/results" className="mt-3 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
+              + อีก {resultCards.length - 8} ตลาด — ดูผลรางวัลทั้งหมด →
+            </Link>
+          )}
         </section>
       )}
-
-      {/* หมายเหตุ: เคยมีการ์ดโปรโมชันหวยราศีแยก — ตอนนี้ราศีอยู่ในการ์ดแถวเกมด่วนด้านบนแล้ว ไม่ซ้ำ */}
-
-      {/* ประเภทหวยที่รองรับ + รอบที่เปิดรับ/นับถอยหลังของแต่ละประเทศ */}
-      <section>
-        <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
-          <div>
-            <div className="kicker mb-1">Lottery Markets</div>
-            <h2 className="text-xl font-bold text-white">
-              ประเภทหวยที่รองรับ
-            </h2>
-            <p className="text-xs text-navy-400 mt-0.5">เลือกประเภทเพื่อดูรอบที่เปิดรับและเวลาออกรางวัล</p>
-          </div>
-          <Link to="/lotteries" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ดูรอบทั้งหมด →</Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {/* exclude เกมบนแถวแรก (SC/HL/HR) — แสดงใน section เกมด่วนด้านบนแล้ว */}
-          {marketTypes.slice(0, 6).map((t, i) => {
-            const typeDraws = openByCategory.filter(d => d.type_code === t.code);
-            const ac = typeAccent(t.code);
-            const openN = typeDraws.filter(d => isBettingOpen(d)).length;
-            const isHR = t.code === 'HR';
-            const cardLink = `/lotteries?type=${t.id}`;
-            return (
-              <div key={t.id} className={`rounded-2xl overflow-hidden flex flex-col hoverable deal-in ${isHR ? 'border border-violet-400/60 animate-hr-glow bg-navy-800/60' : 'casino-table'}`} style={{ animationDelay: `${i * 90}ms` }}>
-                {/* header การ์ด — gradient ตามสีประเภท */}
-                <Link to={cardLink} className={`relative block px-4 pt-4 pb-3 bg-gradient-to-br ${isHR ? 'from-violet-900/70' : ac.head} to-transparent group`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-navy-900/80 border border-navy-600/60 flex items-center justify-center shadow-inner shrink-0 group-hover:scale-105 transition">
-                      <FlagIcon code={t.code} className="w-8 h-8 text-[10px]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-navy-400">หวย {t.code}</div>
-                      <div className="font-display font-bold text-white text-lg leading-tight truncate group-hover:text-gold-300 transition">{t.name_th}</div>
-                    </div>
-                    {openN > 0 && (
-                      <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-green-500/20 text-green-300 border border-green-500/40">
-                        ● {openN} รอบ
-                      </span>
-                    )}
-                  </div>
-                </Link>
-                {/* body */}
-                <div className="px-4 pb-4 pt-2 flex-1 flex flex-col">
-                  <div className="text-[11px] text-navy-400 mb-2">{t.description}</div>
-                  {/* หมวดย่อยของประเภทนี้ + สถานะว่าเป็นผลจริงหรือเกม/สุ่ม */}
-                  {(() => {
-                    const ms = markets.filter(m => m.type_id === t.id);
-                    if (!ms.length) return null;
-                    const SHORT = { auto: '🌐 ผลจริง', manual: '✏️ ผลจริง(กรอกเอง)', game: '🎮 เกม', demo: '🎲 สุ่ม', off: '⛔ ปิด' };
-                    return (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {ms.map(m => {
-                          const info = marketInfo(m.type_code, m.category_code);
-                          const label = info ? SHORT[info.mode] || '' : '';
-                          return (
-                            <span key={m.key} title={info ? `${info.kind} • ${info.src}` : m.name_th}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-navy-900/70 border border-navy-700/60 text-navy-300 whitespace-nowrap">
-                              {m.name_th}{label ? ` · ${label}` : ''}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                  {isHR && (
-                    <div className="flex justify-between text-base leading-none mb-2 select-none" aria-hidden="true">
-                      {['🐭','🐂','🐯','🐰','🐉','🐍','🐴','🐐','🐵','🐓','🐕','🐷'].map((g, i) => (
-                        <span key={g} className="zodiac-float text-violet-300/80" style={{ animationDelay: `${i * 0.22}s` }}>{g}</span>
-                      ))}
-                    </div>
-                  )}
-                  {typeDraws.length > 0 ? (
-                    <div className="space-y-1 flex-1">
-                      {typeDraws.slice(0, 4).map(d => <DrawLine key={d.id} d={d} now={now} />)}
-                      {typeDraws.length > 4 && (
-                        <div className="text-[10px] text-navy-500 text-center">+อีก {typeDraws.length - 4} รอบ</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-[11px] text-navy-500 py-3">ไม่มีรอบที่เปิดรับ</div>
-                  )}
-                  <Link to={cardLink}
-                    className={`mt-3 block text-center text-xs font-bold bg-gradient-to-r ${ac.btn} rounded-md py-2 tracking-wide hover:brightness-110 transition shadow-md`}>
-                    แทงรอบนี้เลย
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-          {!types.length && <SkeletonGrid count={3} />}
-        </div>
-        {marketTypes.length > 6 && (
-          <Link to="/lotteries" className="mt-4 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
-            + อีก {marketTypes.length - 6} ประเภท — ดูประเภทหวยทั้งหมด →
-          </Link>
-        )}
-      </section>
-
-      {/* เลขเด็ด/เลขดัง — สถิติจากผลจริงภายนอก */}
-      <LuckyNumbers />
-
     </div>
   );
 }

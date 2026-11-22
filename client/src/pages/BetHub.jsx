@@ -135,26 +135,36 @@ export default function BetHub() {
 
       {families.map(fam => (
         <section key={fam.key} className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
-          <header className="px-4 py-3 border-b border-navy-700 font-bold text-white text-sm">{fam.title}</header>
-          <div className="divide-y divide-navy-700/60">
+          <header className="px-4 py-3 border-b border-navy-700 font-bold text-white text-sm flex items-center gap-2">
+            <span className="w-1.5 h-4 rounded-full bg-cyan-400" />{fam.title}
+          </header>
+          {/* icon tiles — แบ่งตามหมวดตลาด เหมือน provider แต่เป็นไอคอนแทน list */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 p-3">
             {fam.markets.map(m => (
-              <MarketRow key={m.key} m={m} nowSql={nowSql} nowMs={nowMs}
+              <MarketTile key={m.key} m={m} nowSql={nowSql} nowMs={nowMs}
                 expanded={openKey === m.key} onToggle={() => setOpenKey(openKey === m.key ? '' : m.key)} />
             ))}
           </div>
+          {/* รอบย่อยของตลาดที่กางอยู่ */}
+          {fam.markets.filter(m => openKey === m.key).map(m => (
+            <div key={m.key} className="border-t border-navy-700/60 bg-navy-900/40 divide-y divide-navy-700/60">
+              {m.rounds.map(d => <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />)}
+            </div>
+          ))}
         </section>
       ))}
 
-      {/* bottom bar แบบ provider — กลับ / โพย */}
+      {/* bottom bar — หน้าหลัก / โพย */}
       <div className="flex gap-3 pt-1">
-        <Link to="/lotteries" className="flex-1 text-center text-sm font-bold py-2.5 rounded-xl bg-navy-800 border border-navy-600 text-navy-200 hover:border-cyan-500/50">‹ เลือกรอบแบบการ์ด</Link>
+        <Link to="/" className="flex-1 text-center text-sm font-bold py-2.5 rounded-xl bg-navy-800 border border-navy-600 text-navy-200 hover:border-cyan-500/50">‹ หน้าหลัก</Link>
         <Link to="/my-bets" className="flex-1 text-center text-sm font-bold py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white">โพยของฉัน ›</Link>
       </div>
     </div>
   );
 }
 
-function MarketRow({ m, nowSql, nowMs, expanded, onToggle }) {
+// icon tile ของตลาด — ธง + ชื่อ + สถานะย่อ; live → เข้าหน้าแทง, อื่นๆ → กางรอบย่อย
+function MarketTile({ m, nowSql, nowMs, expanded, onToggle }) {
   const navigate = useNavigate();
   const liveRound = m.liveRound;
   const next = m.next;
@@ -166,48 +176,33 @@ function MarketRow({ m, nowSql, nowMs, expanded, onToggle }) {
   const openAt = next ? bettingOpenAtSql(next.close_at, next.type_code) : null;
   const openMs = openAt ? Date.parse(String(openAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
 
-  const status = liveRound
-    ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-500/20 text-green-300 border-green-500/40' }
+  // สี/ข้อความสถานะย่อบน tile
+  const state = liveRound
+    ? { dot: 'bg-green-400', text: fmtHMS(closeMs), cls: 'border-green-500/50 bg-green-500/10', icon: '🎯' }
     : drawing
-      ? { text: 'กำลังออกรางวัล', cls: 'bg-gold-500/20 text-gold-300 border-gold-500/40 animate-pulse' }
+      ? { dot: 'bg-gold-400 animate-pulse', text: 'ออกผล', cls: 'border-gold-500/50 bg-gold-500/10', icon: '🎰' }
       : awaiting
-        ? { text: '⏳ รอผล', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
+        ? { dot: 'bg-amber-400', text: 'รอผล', cls: 'border-amber-500/40 bg-amber-500/10', icon: '⏳' }
         : blind
-          ? { text: openMs > 0 ? `🔒 เปิด ${thaiHM(openAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
-          : next
-            ? { text: 'หมดรอบ', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
-            : { text: '—', cls: 'bg-navy-700 text-navy-300 border-navy-600' };
+          ? { dot: 'bg-navy-500', text: openMs > 0 ? thaiHM(openAt) : 'เร็วๆ นี้', cls: 'border-navy-600 bg-navy-800/60 opacity-80', icon: '🔒' }
+          : { dot: 'bg-navy-600', text: 'หมดรอบ', cls: 'border-navy-700 bg-navy-800/40 opacity-60', icon: '🔒' };
 
-  const sub = liveRound
-    ? `ออกรางวัล ${thaiHM(liveRound.draw_at)} น.`
-    : next
-      ? `${blind ? 'ออกรางวัล' : awaiting ? 'ปิดรับแล้ว ออก' : drawing ? 'ออก' : 'รอบถัดไป'} ${thaiHM(next.draw_at)} น.`
-      : '';
-
+  const name = m.catName || m.typeName;
   return (
-    <div>
-      <button type="button" aria-expanded={expanded}
-        onClick={() => liveRound ? navigate(`/bet/${liveRound.id}`) : onToggle()}
-        className={`flex items-center gap-3 px-4 py-3 transition w-full text-left ${liveRound ? 'hover:bg-green-500/10' : 'hover:bg-navy-700/40'}`}>
-        <FlagIcon code={m.typeCode} className="w-9 h-6 shrink-0 text-[9px] rounded" />
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-white truncate">
-            {m.catName || m.typeName}
-            {m.rounds.length > 1 && <span className="ml-1.5 text-[10px] font-normal text-navy-400">{m.rounds.length} รอบ</span>}
-          </div>
-          {sub && <div className="text-[11px] text-navy-400 truncate">{sub}</div>}
-        </div>
-        <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border whitespace-nowrap ${status.cls}`}>
-          {status.text}
-        </span>
-        <span className={`text-navy-500 text-sm transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
-      </button>
-      {expanded && (
-        <div className="divide-y divide-navy-700/60 border-t border-navy-700/60 bg-navy-900/40">
-          {m.rounds.map(d => <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />)}
-        </div>
+    <button type="button" aria-expanded={expanded}
+      onClick={() => liveRound ? navigate(`/bet/${liveRound.id}`) : onToggle()}
+      className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition active:scale-95 ${state.cls} ${expanded ? 'ring-1 ring-cyan-400/60' : ''}`}>
+      {blind && (
+        <span className="absolute inset-0 rounded-xl pointer-events-none opacity-[0.06]"
+          style={{ background: 'repeating-linear-gradient(45deg,#fff,#fff 4px,transparent 4px,transparent 8px)' }} />
       )}
-    </div>
+      <FlagIcon code={m.typeCode} className="w-10 h-7 text-[10px] rounded shadow" />
+      <span className="text-[11px] font-bold text-white leading-tight text-center line-clamp-2 min-h-[2rem]">{name}</span>
+      <span className={`inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${liveRound ? 'bg-green-500/20 text-green-300' : 'bg-navy-900/80 text-navy-300 border border-navy-700'}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${state.dot}`} />{state.text}
+      </span>
+      {m.rounds.length > 1 && <span className="text-[8px] text-navy-500">{m.rounds.length} รอบ</span>}
+    </button>
   );
 }
 
