@@ -260,9 +260,11 @@ function winningFor(kind, x) {
   }
   // hn
   const s5 = lcNum(x, 'special-prize', 5);
+  const h3 = lcNum(x, 'three-digit-top', 3);
   return {
     num4: s5.slice(0, 4),
-    top3: lcNum(x, 'three-digit-top', 3),
+    top3: h3,
+    top2: (h3 || s5).slice(-2),
     bottom2: lcNum(x, 'two-digit-bottom', 2),
     db5: s5,
   };

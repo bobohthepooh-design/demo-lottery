@@ -209,8 +209,30 @@ function MiniCard({ r, remaining, onClose, onNext }) {
 }
 
 const LS_KEY = 'lp:resultsSeenAt';
-// DB เก็บเวลาเป็น UTC 'YYYY-MM-DD HH:MM:SS' — ต้องใส่ Z ไม่งั้น parse เป็น local time คลาด 7 ชม.
-const pubTs = (x) => Date.parse(String(x.published_at || x.draw_at || '').replace(' ', 'T') + 'Z');
+// DB เก็บเวลาเป็น UTC 'YYYY-MM-DD HH:MM:SS' (text) — parse ให้เป็น UTC เสมอ
+// (กันเวลาไทย/ISO ที่มี Z อยู่แล้ว parse คลาด) — คืน NaN ถ้า parse ไม่ได้
+const tsOf = (s) => {
+  if (!s) return NaN;
+  const str = String(s).trim();
+  const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(str);
+  const norm = str.includes('T') ? str : str.replace(' ', 'T');
+  return Date.parse(hasTz ? norm : `${norm}Z`);
+};
+// published_at ใน DB เสียได้ (เวลาไทย/อนาคต) — ถ้าใช้ไม่ได้หรืออยู่ไกลในอนาคต ให้ fallback เป็น draw_at
+const pubTs = (x) => {
+  const pub = tsOf(x.published_at);
+  const draw = tsOf(x.draw_at);
+  const now = Date.now();
+  if (Number.isFinite(pub) && pub <= now + 30 * 60e3) return pub;
+  return Number.isFinite(draw) ? draw : (Number.isFinite(pub) ? pub : NaN);
+};
+// ผลถือว่า "ใหม่" ถ้าเพิ่ง publish <10 นาที หรือรอบเพิ่งออก <30 นาที (กัน published_at เสียแล้ว popup ไม่เด้ง)
+const isFresh = (x, now) => {
+  const pt = pubTs(x);
+  if (Number.isFinite(pt) && now - pt < 10 * 60e3) return true;
+  const dt = tsOf(x.draw_at);
+  return Number.isFinite(dt) && now - dt < 30 * 60e3;
+};
 
 export default function ResultPopup() {
   const [queue, setQueue] = useState([]);
@@ -245,6 +267,7 @@ export default function ResultPopup() {
           .filter(({ ts }) => Number.isFinite(ts))
           .sort((p, q) => q.ts - p.ts)[0];
         if (latest && Date.now() - latest.ts < 30 * 60e3) enqueue([latest.x]);
+        // first load — เด้งเฉพาะผลที่เพิ่งออกจริง (กัน backfill/ผลเก่าเด้งรัว)
         localStorage.setItem(LS_KEY, String(Date.now()));
         return;
       }
@@ -252,12 +275,9 @@ export default function ResultPopup() {
       if (!unseen.length) return;
       unseen.forEach(x => seenRef.current.add(x.id));
 
-      // กันแจ้งเตือนรัว: เด้งเฉพาะผลที่เพิ่งประกาศ <10 นาที (ข้ามผลย้อนหลัง/backfill)
+      // กันแจ้งเตือนรัว: เด้งเฉพาะผลที่เพิ่งประกาศ/ออกรอบ <10-30 นาที (ข้ามผลย้อนหลัง/backfill)
       const now = Date.now();
-      const fresh = unseen.filter(x => {
-        const ts = pubTs(x);
-        return Number.isFinite(ts) && now - ts < 10 * 60 * 1000;
-      });
+      const fresh = unseen.filter(x => isFresh(x, now));
       if (!fresh.length) return;
       // ผลที่ออกตอนแท็บเบื้องหลังยังเข้าคิว — จะเด้งให้ทันทีที่ผู้ใช้กลับมาดูหน้า
       enqueue(fresh);

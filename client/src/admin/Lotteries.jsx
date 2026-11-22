@@ -13,7 +13,7 @@ import { Button, Card, Input, Select, Modal } from '../components/ui/index.js';
 const SOURCE_TH = {
   first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน', top4: 'เลขท้าย 4 ตัวบน', top2: 'เลขท้าย 2 ตัวบน', last1: 'เลขตัวสุดท้าย รางวัล 1',
   bottom2: 'เลขท้าย 2 ตัว', last4: 'เลขท้าย 4 ตัว', last3: 'เลขท้าย 3 ตัว',
-  last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', top2: 'เลข 2 ตัวบน', main: 'เลขหลัก',
+  last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', main: 'เลขหลัก',
   zodiac: 'ปีนักษัตรรางวัลใหญ่', seq: 'เลขรางวัล 6 ปีนักษัตร', hilo: 'เต๋าไฮโล',
 };
 const MODE_TH = {
