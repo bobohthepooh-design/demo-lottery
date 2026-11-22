@@ -58,7 +58,7 @@ export default function AdminOverview() {
       {(() => {
         const items = [];
         const od = health?.overdue || [];
-        if (od.length) items.push({ tone: 'red', icon: 'security', text: `${od.length} รอบค้างออกผลเกินเวลา`, sub: od.slice(0, 3).map(x => x.draw_code).join(', ') + (od.length > 3 ? ' …' : ''), to: '/admin/settle' });
+        if (od.length) items.push({ tone: 'red', icon: 'security', text: `${od.length} รอบค้างออกผลเกินเวลา`, sub: od.slice(0, 3).map(x => x.draw_code).join(', ') + (od.length > 3 ? ' …' : ''), to: '/admin/lotteries?tab=settle' });
         const stale = (health?.fetchHealth || []).filter(h => h.ok === false);
         if (stale.length) items.push({ tone: 'amber', icon: 'reports', text: `แหล่งผลมีปัญหา ${stale.length} แห่ง`, sub: stale.map(h => h.label).join(', '), to: '/admin/health' });
         const srcStale = (health?.sources || []).filter(s => s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);

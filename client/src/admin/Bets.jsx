@@ -42,9 +42,9 @@ function ItemRow({ i }) {
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
-          <div className={`font-bold text-green-400 ${anim}`}>💰 จ่าย {satang(i.payout)} บาท</div>
+          <div className="font-bold text-green-400">💰 จ่าย {satang(i.payout)} บาท</div>
         )}
-        {i.status === 'lost' && <div className={`text-navy-300 text-xs font-medium ${anim}`}>ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร</div>}
+        {i.status === 'lost' && <div className="text-navy-300 text-xs font-medium">ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
             <div className="text-blue-300">รอผล</div>
