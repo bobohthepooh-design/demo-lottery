@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { toast } from '../components/toast.js';
-import { Card, Input, Select, Button } from '../components/ui/index.js';
+import { Card, Input, Button } from '../components/ui/index.js';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/shadcn/select.jsx';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 
 const ACTION_TH = {
   'user.login': 'เข้าสู่ระบบ', 'user.login_line': 'เข้าสู่ระบบ (LINE)',
@@ -66,9 +68,14 @@ export default function AdminAudit() {
           <Input value={q} onChange={e => { setQ(e.target.value); setPage(0); }}
             placeholder="ค้นหา ผู้ใช้ / entity / IP / รายละเอียด..."
             inputClassName="w-64 py-2 text-sm" />
-          <Select value={action} onChange={e => { setAction(e.target.value); setPage(0); }} inputClassName="py-2 text-sm">
-            <option value="">ทุก action</option>
-            {actionKeys.map(k => <option key={k} value={k}>{ACTION_TH[k] || k}</option>)}
+          <Select value={action || 'all'} onValueChange={v => { setAction(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-44 py-2 text-sm bg-navy-800 border-navy-600 text-white">
+              <SelectValue placeholder="ทุก action" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">ทุก action</SelectItem>
+              {actionKeys.map(k => <SelectItem key={k} value={k}>{ACTION_TH[k] || k}</SelectItem>)}
+            </SelectContent>
           </Select>
           <Button variant="ghost" size="sm" onClick={() => exportCsv(filtered, `audit-${new Date().toISOString().slice(0, 10)}.csv`)}
             title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่เป็น CSV">
@@ -76,27 +83,34 @@ export default function AdminAudit() {
           </Button>
         </div>
       </div>
-      <Card className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-xs">
-          <thead className="bg-navy-900 text-navy-300">
-            <tr><th className="text-left px-3 py-3">เวลา</th><th className="text-left px-3 py-3">ผู้ใช้</th><th className="text-left px-3 py-3">Action</th><th className="text-left px-3 py-3">Entity</th><th className="text-left px-3 py-3">IP</th><th className="text-left px-3 py-3">รายละเอียด</th></tr>
-          </thead>
-          <tbody className="divide-y divide-navy-700">
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-navy-700/60 hover:bg-transparent">
+              <TableHead className="text-navy-400">เวลา</TableHead>
+              <TableHead className="text-navy-400">ผู้ใช้</TableHead>
+              <TableHead className="text-navy-400">Action</TableHead>
+              <TableHead className="text-navy-400">Entity</TableHead>
+              <TableHead className="text-navy-400">IP</TableHead>
+              <TableHead className="text-navy-400">รายละเอียด</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {paged.map(l => (
-              <tr key={l.id} className="hover:bg-navy-700/40">
-                <td className="px-3 py-2 text-navy-300 whitespace-nowrap">{fmtDateTime(l.created_at)}</td>
-                <td className="px-3 py-2 text-white">{l.username || `#${l.user_id}`}</td>
-                <td className="px-3 py-2">
+              <TableRow key={l.id} className="border-navy-700/50">
+                <TableCell className="text-navy-300 whitespace-nowrap">{fmtDateTime(l.created_at)}</TableCell>
+                <TableCell className="text-white">{l.username || `#${l.user_id}`}</TableCell>
+                <TableCell>
                   <div className="text-white">{ACTION_TH[l.action] || l.action}</div>
                   {ACTION_TH[l.action] && <code className="text-navy-500 text-[10px]">{l.action}</code>}
-                </td>
-                <td className="px-3 py-2 text-navy-300">{l.entity_type} {l.entity_id}</td>
-                <td className="px-3 py-2 text-navy-300">{l.ip}</td>
-                <td className="px-3 py-2 text-navy-300 max-w-[300px] truncate font-mono">{l.detail || '—'}</td>
-              </tr>
+                </TableCell>
+                <TableCell className="text-navy-300">{l.entity_type} {l.entity_id}</TableCell>
+                <TableCell className="text-navy-300">{l.ip}</TableCell>
+                <TableCell className="text-navy-300 max-w-[300px] truncate font-mono">{l.detail || '—'}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         {!filtered.length && <div className="text-center text-navy-400 py-8 text-sm">{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
       </Card>
       {pageCount > 1 && (
