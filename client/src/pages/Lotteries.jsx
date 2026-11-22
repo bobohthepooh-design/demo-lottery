@@ -161,7 +161,7 @@ export default function Lotteries() {
           {isHR && (
             <div className="mt-1.5">
               <span className="animate-hr-badge inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-200 border border-violet-400/40">
-                ✨ ออกผลทุกชั่วโมง • ทายปีนักษัตร 1 ใน 12
+                ✨ ออกผลทุก 15 นาที • ทายปีนักษัตร 1 ใน 12
               </span>
             </div>
           )}

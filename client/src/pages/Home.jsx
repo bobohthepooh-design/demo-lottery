@@ -173,7 +173,7 @@ export default function Home() {
     SC: { code: 'SC', tag: 'สปินแล้วรู้ผลทันที', desc: `เล่นเกม ${baht(gamePrices.scratch)} → สปิน 5 รีล 3 แถว 20 เพย์ไลน์ → ${scratchPrizeText}`, cta: 'เล่นเกมเลย', grad: 'from-red-700 to-rose-900' },
     HL: { code: 'HL', tag: 'ทอยเต๋า 3 ลูก รู้ผลทันที', desc: `ทาย สูง/ต่ำ/11 ไฮโล — ${hiloOddsText ? `${hiloOddsText} — ` : ''}แทง ${baht(gamePrices.hilo)}/ครั้ง ตลอด 24 ชม.`, cta: 'เล่นไฮโลเลย', grad: 'from-amber-700 to-orange-900' },
     KI: { code: 'KI', tag: 'เลือกเลขทายผลไว', desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP', cta: 'เล่นยี่กีเลย', grad: 'from-yellow-700 to-amber-900' },
-    HR: { code: '✦', tag: 'ปีนักษัตรออกผลทุกชั่วโมง', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — ตัวแรก/ท้าย 2-3 ตัว + วิ่ง', cta: 'ดูรอบปีนักษัตร', grad: 'from-violet-700 to-purple-900' },
+    HR: { code: '✦', tag: 'ปีนักษัตรออกผลทุก 15 นาที', desc: zodiacDraw ? `รอบถัดไปปิดรับ ${fmtDateTime(zodiacDraw.close_at)}` : 'เลือกได้ 4 รูปแบบการแทง — ตัวแรก/ท้าย 2-3 ตัว + วิ่ง', cta: 'ดูรอบปีนักษัตร', grad: 'from-violet-700 to-purple-900' },
   };
 
   const openCount = visDraws.filter(d => isBettingOpen(d)).length;
@@ -385,7 +385,7 @@ export default function Home() {
                     </div>
                     <div className="font-bold text-sm text-white leading-tight">{t.name_th}</div>
                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${t.code === 'HR' ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-green-500/20 text-green-300 border-green-500/40 animate-online'}`}>
-                      {t.code === 'HR' ? '✦ รายชั่วโมง' : '● 24 ชม.'}
+                      {t.code === 'HR' ? '✦ ทุก 15 นาที' : '● 24 ชม.'}
                     </span>
                   </Link>
                   <div className="text-[10px] text-navy-400 leading-tight mt-1.5 px-1">{m.tag}</div>

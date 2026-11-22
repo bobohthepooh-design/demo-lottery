@@ -78,7 +78,7 @@ export function scheduleFor(typeCode, catCode) {
     // ปิดรับก่อนออกรางวัล 1 ชม. (เช่น ออก 18:30 → ปิด 17:30) — ห้ามให้ close_at == draw_at
     return { kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6], hour: h, minute: 30, closeHour: h - 1, closeMinute: 30, ...hnSkip };
   }
-  if (typeCode === 'HR') return { kind: 'hourly', closeBeforeMin: 30, skipHoliday: false }; // หวยราศี — ทายราศี ทุกชั่วโมง
+  if (typeCode === 'HR') return { kind: 'quarter', closeBeforeMin: 5, skipHoliday: false }; // หวยราศี — ทายราศี ทุก 15 นาที
   return { kind: 'daily', hour: 20, closeHour: 19, skipHoliday: true, skipWeekend: true };
 }
 
@@ -86,6 +86,7 @@ export function scheduleFor(typeCode, catCode) {
 // ทุกตลาด: ปัจจุบัน + ล่วงหน้าอีก 1 รอบ (count=2) — hourly 2 รอบ (~2 ชม.), daily/weekly LA-HN 2 รอบ (เสาร์-อาทิตย์เลื่อนเป็นจันทร์), monthly TH/GS 2 ครั้งถัดไป
 function upcomingSpec(sch) {
   if (sch.kind === 'hourly') return { count: 2, horizonH: 3 };
+  if (sch.kind === 'quarter') return { count: 8, horizonH: 3 }; // 15 นาที/รอบ — ล่วงหน้า ~2 ชม.
   if (sch.kind === 'monthly') return { count: 2, horizonH: 24 * 60 };
   return { count: 2, horizonH: 24 * 14, minOne: true }; // daily/weekly (LA/HN): 2 รอบ — เสาร์-อาทิตย์เลื่อนเป็นจันทร์ (skipWeekend)
 }
@@ -109,6 +110,19 @@ function occurrences(sch, { count, horizonH, minOne }) {
     for (let i = 0; i < 24 * 40 && out.length < count; i++) {
       const draw = new Date(first); draw.setHours(first.getHours() + i);
       const close = new Date(draw); close.setMinutes(close.getMinutes() - (sch.closeBeforeMin || 30));
+      if (close <= now) continue;
+      out.push({ draw, close });
+    }
+    return out.filter(within);
+  }
+  if (sch.kind === 'quarter') {
+    // ออกรางวัลทุก 15 นาที (นาที 00/15/30/45) — ปิดรับก่อนเวลาออกรางวัล closeBeforeMin นาที
+    const first = new Date(now);
+    first.setMinutes(Math.ceil(first.getMinutes() / 15) * 15, 0, 0);
+    if (first.getTime() <= now.getTime()) first.setMinutes(first.getMinutes() + 15);
+    for (let i = 0; i < 24 * 16 && out.length < count; i++) {
+      const draw = new Date(first); draw.setMinutes(first.getMinutes() + i * 15);
+      const close = new Date(draw); close.setMinutes(close.getMinutes() - (sch.closeBeforeMin || 5));
       if (close <= now) continue;
       out.push({ draw, close });
     }
@@ -138,7 +152,7 @@ function drawCodeFor(typeCode, catCode, dt) {
     const yyyymm = `${dt.getFullYear()}${p(dt.getMonth() + 1)}`;
     return `TH-DEMO-${yyyymm}-${p(dt.getDate())}`; // รูปแบบเดิม TH-DEMO-202611-16
   }
-  if (typeCode === 'HR') return `HR-DEMO-${yyyymmdd}-${p(dt.getHours())}`; // รายชั่วโมง — แยกตามชั่วโมง
+  if (typeCode === 'HR') return `HR-DEMO-${yyyymmdd}-${p(dt.getHours())}${p(dt.getMinutes())}`; // ทุก 15 นาที — แยกตาม HHMM
   return `${catCode}-DEMO-${yyyymmdd}`;
 }
 
