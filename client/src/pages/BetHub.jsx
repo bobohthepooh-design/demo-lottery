@@ -7,8 +7,6 @@ import { SkeletonGrid } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { useAuth } from '../auth.jsx';
 import { annSummary } from '../ann.js';
-import { typeAccent } from '../typeAccent.js';
-
 // Types ที่เป็นเกมด่วน/ยี่กี — ไม่ใช่หวยใน hub นี้ (อยู่หน้าเกมด่วน)
 const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
 
@@ -58,7 +56,7 @@ function RoundRow({ d, nowSql, nowMs }) {
       onClick={go}
       className={`flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-3.5 w-full text-left rounded-2xl transition-all duration-200 border ${
         live
-          ? 'bg-gradient-to-r from-green-900/20 to-navy-800/60 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10'
+          ? 'bg-navy-800/60 border-green-500/40 hover:border-green-400/60'
           : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60 hover:bg-navy-800/60'
       }`}
     >
@@ -79,15 +77,14 @@ function RoundRow({ d, nowSql, nowMs }) {
   );
 }
 
-// Tile สำหรับประเภทหวยหลัก (level 1) — พื้นสีตาม accent ของประเภทนั้น template เดียวกันทุกประเภท
+// Tile สำหรับประเภทหวยหลัก (level 1) — พื้นเรียบ template เดียวกันทุกประเภท
 function TypeTile({ tg, expanded, onClick }) {
-  const ac = typeAccent(tg.typeCode);
   const hasLive = tg.liveRounds > 0;
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-2xl border bg-gradient-to-br ${ac.btn} ${ac.border} hover:brightness-110 ${ac.glow} transition-all duration-200 text-center shadow-lg shadow-black/20 ${
-        expanded ? 'ring-2 ring-gold-300/80 brightness-125 shadow-gold-500/20' : ''
+      className={`relative flex flex-col items-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-2xl border border-navy-600 bg-navy-800/60 hover:bg-navy-700/70 hover:border-gold-400/50 transition-all duration-200 text-center shadow-lg shadow-black/20 ${
+        expanded ? 'ring-2 ring-gold-300/80 bg-navy-700/70' : ''
       }`}
     >
       <FlagIcon code={tg.typeCode} className="w-12 h-9 rounded-lg overflow-hidden" />
@@ -112,15 +109,14 @@ function TypeTile({ tg, expanded, onClick }) {
   );
 }
 
-// Tile สำหรับหมวด/ตลาดย่อย (level 2) — พื้นสี accent เดียวกับประเภท แม่แบบเดียวกัน
+// Tile สำหรับหมวด/ตลาดย่อย (level 2) — พื้นเรียบ แม่แบบเดียวกัน
 function CategoryTile({ cat, typeCode, expanded, onClick }) {
-  const ac = typeAccent(typeCode);
   const hasLive = cat.liveCount > 0;
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl border bg-gradient-to-br ${ac.btn} ${ac.border} hover:brightness-110 ${ac.glow} transition-all duration-200 text-center shadow-md shadow-black/20 ${
-        expanded ? 'ring-2 ring-gold-300/80 brightness-125' : ''
+      className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl border border-navy-600 bg-navy-800/60 hover:bg-navy-700/70 hover:border-gold-400/50 transition-all duration-200 text-center shadow-md shadow-black/20 ${
+        expanded ? 'ring-2 ring-gold-300/80 bg-navy-700/70' : ''
       }`}
     >
       <FlagIcon code={typeCode} className="w-8 h-6 sm:w-9 sm:h-7 rounded-md overflow-hidden" />

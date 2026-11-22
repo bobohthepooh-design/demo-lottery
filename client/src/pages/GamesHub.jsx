@@ -27,23 +27,23 @@ export default function GamesHub() {
       to: '/scratch', icon: '🎰', name: 'สล็อต 5 รีล', tag: '20 เพย์ไลน์',
       desc: `สปิน 5 รีล 3 แถว 20 เพย์ไลน์ — รางวัลสูงสุด ${prizeMax != null ? baht(prizeMax) : '120,000 บาท'}`,
       price: cfg?.instantGame?.scratchPrice ? `แทง ${baht(cfg.instantGame.scratchPrice)}/สปิน` : '',
-      grad: 'from-red-700 to-rose-900', auth: true,
+      auth: true,
     },
     {
       to: '/hilo', icon: '🎲', name: 'ไฮโล', tag: 'ทายเต๋า 3 ลูก',
       desc: `ทาย สูง/ต่ำ/11 — ${hm ? `ต่ำ ×${hm.low} • สูง ×${hm.high} • 11 ×${hm.eleven}` : 'อัตราจ่ายตามกติกา'}`,
       price: cfg?.instantGame?.hiloPrice ? `แทง ${baht(cfg.instantGame.hiloPrice)}/ครั้ง` : '',
-      grad: 'from-amber-700 to-orange-900', auth: true,
+      auth: true,
     },
     {
       to: '/kiwi', icon: '🐯', name: 'ยี่กี', tag: 'เลือกเลขทายผลไว',
       desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP',
-      price: '', grad: 'from-yellow-700 to-amber-900', auth: true,
+      price: '', auth: true,
     },
     {
       to: zodiacDraw ? `/bet/${zodiacDraw.id}` : '/play', icon: '🔮', name: 'หวยยี่กี 12 ราศี', tag: 'ออกผลทุก 15 นาที',
       desc: zodiacDraw ? `รอบถัดไปออก ${fmtDateTime(zodiacDraw.draw_at)}` : 'เลือกได้ 4 รูปแบบการแทง',
-      price: '', grad: 'from-violet-700 to-purple-900', auth: false,
+      price: '', auth: false,
     },
   ];
 
@@ -63,7 +63,7 @@ export default function GamesHub() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {games.map(g => (
           <Link key={g.to} to={g.to}
-            className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${g.grad} p-5 hover:scale-[1.02] transition-transform`}>
+            className="group relative overflow-hidden rounded-2xl border border-navy-600 bg-navy-800/70 p-5 hover:bg-navy-700/70 hover:border-gold-400/50 hover:shadow-lg hover:shadow-gold-500/10 transition">
             <div className="text-4xl mb-2">{g.icon}</div>
             <div className="font-black text-white text-lg">{g.name}</div>
             <div className="text-[11px] font-bold text-white/70">{g.tag}</div>
