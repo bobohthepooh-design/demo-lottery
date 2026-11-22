@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { Badge } from '../components/shadcn/badge.jsx';
+import { cn } from '../lib/utils.js';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
   bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
-  deposit: 'สมาชิกเติมเครดิต', withdraw: 'สมาชิกถอนเครดิต',
+  deposit: 'สมาชิกเติมเครดิต', withdraw: 'สมาชิกถอนเครดิต', promo_cashback: 'คืนยอดเสีย',
 };
 
 const newKey = () => `adj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -150,24 +153,39 @@ export default function AdminWallet() {
         <CardHeader title="ประวัติธุรกรรมทั้งหมด" actions={
           <Button variant="ghost" size="sm" onClick={exportCsv}>⬇️ Export CSV</Button>
         } />
-        <table className="w-full text-sm">
-          <thead className="bg-navy-900 text-navy-300 text-xs">
-            <tr><th className="text-left px-4 py-3">Ref</th><th className="text-left px-4 py-3">สมาชิก</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-right px-4 py-3">จำนวน</th><th className="text-right px-4 py-3">คงเหลือ</th><th className="text-left px-4 py-3">เวลา</th><th className="text-left px-4 py-3">รายละเอียด</th></tr>
-          </thead>
-          <tbody className="divide-y divide-navy-700">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-navy-700/60 hover:bg-transparent">
+              <TableHead className="text-navy-400">Ref</TableHead>
+              <TableHead className="text-navy-400">สมาชิก</TableHead>
+              <TableHead className="text-navy-400">ประเภท</TableHead>
+              <TableHead className="text-navy-400 text-right">จำนวน</TableHead>
+              <TableHead className="text-navy-400 text-right">คงเหลือ</TableHead>
+              <TableHead className="text-navy-400">เวลา</TableHead>
+              <TableHead className="text-navy-400">รายละเอียด</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {txs.map(t => (
-              <tr key={t.id} className="hover:bg-navy-700/40">
-                <td className="px-4 py-2 font-mono text-xs text-navy-300">{t.reference}</td>
-                <td className="px-4 py-2 text-white">{t.username}</td>
-                <td className="px-4 py-2 text-xs text-navy-300">{TYPE_TH[t.type] || t.type}</td>
-                <td className={`px-4 py-2 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>{t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท</td>
-                <td className="px-4 py-2 text-right text-gold-300">{satang(t.balance_after)} บาท</td>
-                <td className="px-4 py-2 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
-                <td className="px-4 py-2 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
-              </tr>
+              <TableRow key={t.id} className="border-navy-700/50">
+                <TableCell className="font-mono text-xs text-navy-300">{t.reference}</TableCell>
+                <TableCell className="text-white">{t.username}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={cn('text-[10px] font-semibold',
+                    t.direction === 'credit' ? 'border-emerald-500/40 text-emerald-300' : 'border-red-500/40 text-red-300')}>
+                    {TYPE_TH[t.type] || t.type}
+                  </Badge>
+                </TableCell>
+                <TableCell className={cn('text-right font-bold', t.direction === 'credit' ? 'text-green-400' : 'text-red-400')}>
+                  {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
+                </TableCell>
+                <TableCell className="text-right text-gold-300">{satang(t.balance_after)} บาท</TableCell>
+                <TableCell className="text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</TableCell>
+                <TableCell className="text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );
