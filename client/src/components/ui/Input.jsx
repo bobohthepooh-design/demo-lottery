@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 
 // Input มาตรฐาน — label + input + hint/error ในตัว, focus ring เดียวทั้งเว็บ
-const baseCls = 'w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-white placeholder:text-navy-500 focus:outline-none focus:border-cyan-400/70 transition';
+const baseCls = 'w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-white placeholder:text-navy-500 focus:outline-none focus:border-gold-400/70 transition';
 
 export const Input = forwardRef(function Input({ label, hint, error, className = '', inputClassName = '', id, ...rest }, ref) {
   const inputId = id || rest.name;

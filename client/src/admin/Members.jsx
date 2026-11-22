@@ -79,7 +79,7 @@ export default function AdminMembers() {
                   {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
                 </TableCell>
                 <TableCell className="whitespace-nowrap sticky right-0 bg-navy-800 group-hover:bg-navy-700/40 z-10">
-                  <button onClick={() => setEdit({ ...m })} className="text-[#67e8f9] text-xs hover:underline mr-3">แก้ไข</button>
+                  <button onClick={() => setEdit({ ...m })} className="text-gold-300 text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
                 </TableCell>
               </TableRow>

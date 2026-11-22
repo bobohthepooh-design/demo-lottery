@@ -446,8 +446,8 @@ export default function Kiwi() {
         {games.map(x => (
           <button key={x.game} onClick={() => pickGame(x.game)}
             className={`rounded-xl border px-2 py-2.5 text-center transition ${game === x.game
-              ? 'border-[#22d3ee]/70 bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/5 shadow-[0_0_18px_rgba(34,211,238,0.3)]'
-              : 'border-navy-700 bg-navy-800/60 hover:border-[#22d3ee]/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]'}`}>
+              ? 'border-gold-400/70 bg-gradient-to-b from-gold-500/20 to-gold-500/5 shadow-[0_0_18px_rgba(244,201,78,0.3)]'
+              : 'border-navy-700 bg-navy-800/60 hover:border-gold-400/50 hover:shadow-[0_0_12px_rgba(244,201,78,0.18)]'}`}>
             <div className="text-xs font-bold text-white leading-tight">{x.label}</div>
             <div className="text-[10px] text-navy-400 mt-0.5">{satang(x.price)} บาท</div>
             <div className="text-[9px] text-gold-300/80 mt-0.5 leading-tight">

@@ -141,7 +141,7 @@ export default function Lotteries() {
           ); })()}
           {/* มือถือ: ปุ่มกาง/ย่อรายละเอียด — desktop แสดงตลอด (sm:block) */}
           <button type="button" onClick={() => setDetailOpen(o => !o)}
-            className="sm:hidden mt-2 text-[11px] font-bold text-[#67e8f9] flex items-center gap-1">
+            className="sm:hidden mt-2 text-[11px] font-bold text-gold-300 flex items-center gap-1">
             {detailOpen ? '▾ ย่อรายละเอียด' : '▸ ดูรายละเอียด'}
           </button>
           <div className={detailOpen ? 'block' : 'hidden sm:block'}>
@@ -238,13 +238,13 @@ export default function Lotteries() {
         <div className="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 space-y-1">
           <div className="kicker px-2 pt-1 pb-3 text-sm font-bold text-gold-400">ประเภทหวย</div>
           <Link to="/lotteries" onClick={() => setCountry('')}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${!selType ? 'bg-gradient-to-r from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#67e8f9] border border-[#22d3ee]/50 shadow-lg shadow-[#22d3ee]/10' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent hover:border-navy-600'}`}>
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${!selType ? 'bg-gradient-to-r from-gold-500/20 to-gold-400/10 text-gold-200 border border-gold-400/50 shadow-lg shadow-gold-500/10' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent hover:border-navy-600'}`}>
             <span className="text-lg">🌐</span>
             <span>ทั้งหมด</span>
           </Link>
           {visibleTypes.map(t => (
             <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setCountry('')}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${selType === String(t.id) ? 'bg-gradient-to-r from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#67e8f9] border border-[#22d3ee]/50 shadow-lg shadow-[#22d3ee]/10' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent hover:border-navy-600'}`}>
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${selType === String(t.id) ? 'bg-gradient-to-r from-gold-500/20 to-gold-400/10 text-gold-200 border border-gold-400/50 shadow-lg shadow-gold-500/10' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent hover:border-navy-600'}`}>
               <FlagIcon code={t.code} className="w-7 h-5 text-[9px] shrink-0" />
               <span className="truncate">{t.name_th}</span>
             </Link>
@@ -274,7 +274,7 @@ export default function Lotteries() {
         <div className="flex items-center gap-1 flex-wrap bg-navy-800/50 border border-navy-700 rounded-xl p-1">
           {[['', 'ทั้งหมด'], ...countries.map(c => [c, c])].map(([v, label]) => (
             <button key={v} onClick={() => { setCountry(v); if (selType) navigate('/lotteries', { replace: true }); }}
-              className={`text-xs px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${country === v ? 'bg-gradient-to-r from-[#22d3ee]/30 to-[#22d3ee]/20 text-[#67e8f9] shadow-lg shadow-[#22d3ee]/10' : 'text-navy-300 hover:text-navy-200 hover:bg-navy-800/60'}`}>
+              className={`text-xs px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${country === v ? 'bg-gradient-to-r from-gold-500/30 to-gold-400/20 text-gold-200 shadow-lg shadow-gold-500/10' : 'text-navy-300 hover:text-navy-200 hover:bg-navy-800/60'}`}>
               {label}
             </button>
           ))}

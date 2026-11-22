@@ -122,7 +122,7 @@ function CategoryTile({ cat, typeCode, expanded, onClick }) {
       onClick={onClick}
       className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl border transition-all duration-200 text-center ${
         expanded
-          ? 'bg-gradient-to-br from-cyan-500/20 to-navy-800/80 border-cyan-400/60 shadow-lg shadow-cyan-500/10'
+          ? 'bg-gradient-to-br from-gold-500/20 to-navy-800/80 border-gold-400/60 shadow-lg shadow-gold-500/10'
           : hasLive
             ? 'bg-navy-800/60 border-green-500/25 hover:border-green-400/40'
             : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60'
@@ -246,10 +246,11 @@ export default function BetHub() {
     <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 pb-8">
       {/* Hero */}
       <div className="text-center mb-6">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gold-300 tracking-wide">
+        <div className="kicker mb-2">Lottery Hall</div>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-wide bg-gradient-to-r from-gold-200 via-gold-400 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(244,201,78,0.35)]">
           เลือกหวยที่ต้องการแทง
         </h1>
-        <p className="text-xs sm:text-sm text-navy-300 mt-1">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
+        <p className="text-xs sm:text-sm text-navy-300 mt-1.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
       </div>
 
       {!loaded ? (

@@ -27,9 +27,9 @@ export default function EmbedResults() {
         {!data && !err && <div className="text-slate-400 text-xs text-center py-4">กำลังโหลด…</div>}
         <div className="space-y-2">
           {(data || []).map(d => (
-            <div key={d.drawCode} className="bg-[#0f1e33] border border-cyan-500/20 rounded-lg p-2.5">
+            <div key={d.drawCode} className="bg-[#0f1e33] border border-gold-500/25 rounded-lg p-2.5">
               <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="font-bold text-cyan-300">{d.lotteryName}</span>
+                <span className="font-bold text-gold-300">{d.lotteryName}</span>
                 <span className="text-slate-400">{d.displayName}</span>
               </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">

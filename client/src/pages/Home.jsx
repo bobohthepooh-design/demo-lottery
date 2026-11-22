@@ -34,12 +34,12 @@ export default function Home() {
   // ปุ่มลัดหลัก — modern icon tiles with better colors
   const quickActions = user ? [
     { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-500 to-rose-600', sub: 'เลือกรอบ', shadow: 'shadow-red-500/20' },
-    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-cyan-500 to-blue-600', sub: 'ด่วน', shadow: 'shadow-cyan-500/20' },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-500 to-purple-700', sub: 'ด่วน', shadow: 'shadow-violet-500/20' },
     { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-500 to-yellow-600', sub: 'ล่าสุด', shadow: 'shadow-amber-500/20' },
     { to: '/wallet', icon: '💳', label: 'กระเป๋า', cls: 'from-emerald-500 to-teal-600', sub: satang(balance), shadow: 'shadow-emerald-500/20' },
   ] : [
     { to: '/play', icon: '🎯', label: 'แทงหวย', cls: 'from-red-500 to-rose-600', sub: 'เลือกรอบ', shadow: 'shadow-red-500/20' },
-    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-cyan-500 to-blue-600', sub: 'ด่วน', shadow: 'shadow-cyan-500/20' },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', cls: 'from-violet-500 to-purple-700', sub: 'ด่วน', shadow: 'shadow-violet-500/20' },
     { to: '/results', icon: '🏆', label: 'ผลรางวัล', cls: 'from-amber-500 to-yellow-600', sub: 'ล่าสุด', shadow: 'shadow-amber-500/20' },
     { to: '/register', icon: '👤', label: 'สมัครสมาชิก', cls: 'from-sky-500 to-blue-600', sub: 'เริ่มต้น', shadow: 'shadow-sky-500/20' },
   ];
@@ -78,7 +78,7 @@ export default function Home() {
     <div className="space-y-6">
       {/* welcome — member เท่านั้น */}
       {user && (
-        <div className="flex items-center gap-3 bg-navy-800/80 border border-navy-700 rounded-2xl px-4 py-3">
+        <div className="suit-pattern flex items-center gap-3 bg-navy-800/80 border border-gold-500/40 rounded-2xl px-4 py-3 shadow-[0_0_20px_rgba(244,201,78,0.08)]">
           <span className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-300 to-gold-600 text-navy-950 font-display font-black text-lg flex items-center justify-center shadow-md shadow-gold-500/20 shrink-0">
             {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
           </span>

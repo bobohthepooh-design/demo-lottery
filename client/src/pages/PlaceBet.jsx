@@ -565,7 +565,7 @@ export default function PlaceBet() {
                         <span className="text-[10px] text-navy-500 font-medium">เพิ่งแทง:</span>
                         {recentList.map(f => (
                           <button key={f} type="button" onClick={() => pickFav(f)}
-                            className="text-[10px] px-2 py-1 rounded bg-navy-800/50 border border-navy-700 text-navy-300 font-mono hover:border-cyan-500/50 hover:text-cyan-300 transition-all">{f}</button>
+                            className="text-[10px] px-2 py-1 rounded bg-navy-800/50 border border-navy-700 text-navy-300 font-mono hover:border-gold-500/50 hover:text-gold-300 transition-all">{f}</button>
                         ))}
                       </div>
                     )}

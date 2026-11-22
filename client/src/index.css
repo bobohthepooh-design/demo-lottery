@@ -8,11 +8,22 @@
   --color-navy-800: #121824;   /* การ์ดหลัก — warm dark, less contrast strain */
   --color-navy-700: #1e3a5f;   /* เส้นขอบ/active */
   --color-navy-600: #2f5580;   /* เส้นขอบเข้ม */
-  --color-navy-500: #6b8aa8;   /* ข้อความจาง */
-  --color-navy-400: #9db8d0;   /* secondary text */
-  --color-navy-300: #c8dcec;   /* body text */
-  --color-navy-200: #e2eef8;   /* text สว่าง */
-  --color-navy-100: #f2f8fd;   /* text สว่างสุด (rare) */
+  --color-navy-500: #7d9ab5;   /* ข้อความจาง */
+  --color-navy-400: #a9c2d8;   /* secondary text — สว่างขึ้นอ่านง่ายบนมือถือ */
+  --color-navy-300: #d8e6f3;   /* body text — เกือบขาว อ่านชัด */
+  --color-navy-200: #eaf2fa;   /* text สว่าง */
+  --color-navy-100: #f6fafd;   /* text สว่างสุด (rare) */
+
+  /* Casino red — สีแดงเปอร์เซ็นต์ของเว็บพนันไทย (red+gold) ใช้กับ brand/interactive accent
+     gold-* = ทอง conducts เงิน/เครดิต/CTA, casino-* = แดง brand/สถานะสำคัญ */
+  --color-casino-100: #ffe4e6;
+  --color-casino-200: #fecdd3;
+  --color-casino-300: #fda4af;
+  --color-casino-400: #fb7185;
+  --color-casino-500: #f43f5e;
+  --color-casino-600: #e11d48;
+  --color-casino-700: #be123c;
+  --color-casino-800: #9f1239;
 
   /* โทนทองคาสิโน — jackpot gold */
   --color-gold-100: #fdf3d0;
@@ -117,13 +128,13 @@
 
 body {
   background-color: #02060d;
-  /* glows ฟ้า neon/ทอง — บรรยากาศ ocean tech */
+  /* glowsทอง/แดงcasino/ฟ้า — บรรยากาศ wagering hall */
   background-image:
-    radial-gradient(700px 420px at 85% -5%, rgba(226, 168, 18, 0.10), transparent 60%),
-    radial-gradient(560px 420px at -10% 30%, rgba(34, 211, 238, 0.14), transparent 60%),
+    radial-gradient(700px 420px at 85% -5%, rgba(225, 29, 72, 0.12), transparent 60%),
+    radial-gradient(560px 420px at -10% 30%, rgba(34, 211, 238, 0.12), transparent 60%),
     radial-gradient(540px 440px at 60% 110%, rgba(14, 165, 233, 0.10), transparent 60%);
   background-attachment: fixed;
-  color: #c8dcec;
+  color: #d8e6f3;
   font-family: var(--font-sans);
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
@@ -151,7 +162,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0.
 /* การ์ด — มุมมน + ขอบทองจาง + เงา dark */
 .rounded-2xl, .rounded-xl { border-radius: 1.375rem; }
 [class*="bg-navy-800"], [class*="bg-navy-900"] {
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(226, 168, 18, 0.05);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(226, 168, 18, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 /* เส้นขอบการ์ด — แดงจางให้ความรู้สึกพรีเมียม */
 .border-navy-700 { border-color: #1e3a5f; }
@@ -573,10 +584,10 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 12% -8%, rgba(34, 211, 238, 0.16), transparent 60%),
-    radial-gradient(820px 540px at 92% 18%, rgba(14, 165, 233, 0.20), transparent 62%),
+    radial-gradient(900px 520px at 12% -8%, rgba(225, 29, 72, 0.14), transparent 60%),
+    radial-gradient(820px 540px at 92% 18%, rgba(14, 165, 233, 0.16), transparent 62%),
     radial-gradient(760px 620px at 55% 115%, rgba(226, 168, 18, 0.10), transparent 60%),
-    radial-gradient(600px 400px at 80% 60%, rgba(34, 211, 238, 0.08), transparent 60%);
+    radial-gradient(600px 400px at 80% 60%, rgba(34, 211, 238, 0.07), transparent 60%);
 }
 
 body::after {
@@ -680,8 +691,12 @@ body::after {
   font-weight: 800;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #67e8f9;
-  text-shadow: 0 0 12px rgba(34,211,238,0.45);
+  background: linear-gradient(90deg, #ffe08a, #f4c94e 60%, #e2a812);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 8px rgba(244, 201, 78, 0.35));
 }
 /* เส้นคั่นหลัง kicker */
 .kicker::after {
@@ -691,7 +706,7 @@ body::after {
   height: 1px;
   margin-left: 8px;
   vertical-align: middle;
-  background: linear-gradient(90deg, rgba(34,211,238,0.7), transparent);
+  background: linear-gradient(90deg, rgba(244, 201, 78, 0.8), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -780,7 +795,7 @@ main a.text-gold-400:hover, main a.text-gold-300:hover { color: #a5f3fc !importa
 
 /* ================= Phase A: Accessibility — focus ring ชัดทุก interactive element ================= */
 :focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #f4c94e;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -844,7 +859,7 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 
 /* focus ring สำหรับ element ที่เป็น div role=button */
 [role="button"]:focus-visible, [tabindex]:focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #f4c94e;
   outline-offset: 2px;
 }
 

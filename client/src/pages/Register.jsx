@@ -33,7 +33,7 @@ export default function Register() {
     navigate('/');
   };
 
-  const tabCls = (t) => `flex-1 py-2.5 text-sm font-bold rounded-lg transition ${tab === t ? 'bg-[#22d3ee]/20 text-[#a5f3fc] border border-[#22d3ee]/40' : 'text-navy-300 hover:text-white border border-transparent'}`;
+  const tabCls = (t) => `flex-1 py-2.5 text-sm font-bold rounded-lg transition ${tab === t ? 'bg-gold-500/15 text-gold-200 border border-gold-400/50' : 'text-navy-300 hover:text-white border border-transparent'}`;
 
   return (
     <AuthShell title="สมัครสมาชิก" sub="สมัครง่ายๆ รับเครดิตฟรี 50 บาท ทันที">
@@ -57,7 +57,7 @@ export default function Register() {
             <Input required type={showPw ? 'text' : 'password'} minLength={8} value={form.password} onChange={e => setForm({...form, password: e.target.value})}
               placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)" autoComplete="new-password" inputClassName="pr-16" />
             <button type="button" onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-navy-300 hover:text-[#a5f3fc]">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-navy-300 hover:text-gold-300">
               {showPw ? 'ซ่อน' : 'แสดง'}
             </button>
           </div>
@@ -72,7 +72,7 @@ export default function Register() {
         </form>
       )}
 
-      <div className="text-center text-sm text-navy-300 mt-5">มีบัญชีแล้ว? <Link to="/login" className="text-[#67e8f9]">เข้าสู่ระบบ</Link></div>
+      <div className="text-center text-sm text-navy-300 mt-5">มีบัญชีแล้ว? <Link to="/login" className="text-gold-300">เข้าสู่ระบบ</Link></div>
       <div className="mt-5">
         <div className="flex items-center gap-3 text-xs text-navy-400 mb-3">
           <div className="flex-1 h-px bg-navy-700" />หรือ<div className="flex-1 h-px bg-navy-700" />

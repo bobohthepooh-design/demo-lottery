@@ -478,7 +478,7 @@ export default function Results() {
                         <div key={d} className="flex-1 text-center">
                           <div className="text-[9px] text-navy-400">{d}</div>
                           <div className="bg-navy-900 rounded h-16 flex items-end overflow-hidden">
-                            <div className="w-full bg-gradient-to-t from-gold-500 to-cyan-400" style={{ height: `${(c / max) * 100}%` }} />
+                            <div className="w-full bg-gradient-to-t from-gold-500 to-red-500" style={{ height: `${(c / max) * 100}%` }} />
                           </div>
                           <div className="text-[9px] text-navy-300">{c}</div>
                         </div>

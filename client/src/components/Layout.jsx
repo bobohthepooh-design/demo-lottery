@@ -3,6 +3,8 @@ import { useAuth } from '../auth.jsx';
 import { api, satang } from '../api.js';
 import MfaModal from './MfaModal.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
+import ResultsTicker from './ResultsTicker.jsx';
+import WinTicker from './WinTicker.jsx';
 import ResultPopup from './ResultPopup.jsx';
 import ChatWidget from './ChatWidget.jsx';
 import NotificationBell from './NotificationBell.jsx';
@@ -114,10 +116,10 @@ export default function Layout() {
         <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 rounded-xl border border-gold-500/60 bg-navy-950 flex items-center justify-center shadow-[0_0_14px_rgba(34,211,238,0.25)] overflow-hidden">
+            <div className="w-9 h-9 rounded-xl border border-gold-400/70 bg-navy-950 flex items-center justify-center shadow-[0_0_16px_rgba(244,201,78,0.35)] overflow-hidden">
               <img src="/devin.svg" alt="Devin" className="w-9 h-9 object-contain" />
             </div>
-            <div className="font-display font-bold text-cyan-300 leading-none tracking-[0.22em] text-base hidden min-[420px]:block">DEVIN</div>
+            <div className="font-display font-bold leading-none tracking-[0.22em] text-base hidden min-[420px]:block bg-gradient-to-r from-gold-200 via-gold-400 to-gold-500 bg-clip-text text-transparent">DEVIN</div>
           </Link>
 
           {/* เมนูหลัก — glass pill bar เดียวจบ: ลิงก์เลื่อนในตัว + เวลา/กระดิ่ง/เครดิต/ปุ่มทั้งหมดปักขวาสุด
@@ -125,7 +127,7 @@ export default function Layout() {
           <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl border border-navy-700/60 bg-navy-900/50 backdrop-blur pl-1.5 py-1 max-lg:order-3 max-lg:basis-full max-lg:mx-3 max-lg:mt-1 max-lg:mb-1.5">
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
-                className={({ isActive }) => `topnav-link shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                className={({ isActive }) => `topnav-link shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-gold-400/20 to-gold-500/10 text-gold-200 font-semibold shadow-[inset_0_0_0_1px_rgba(244,201,78,0.4),0_0_14px_rgba(244,201,78,0.22)]' : 'text-navy-300 hover:text-gold-300 hover:bg-white/5'}`}>
                 {t('home')}
               </NavLink>
               {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
@@ -133,7 +135,7 @@ export default function Layout() {
                   {gi > 0 && <span className="w-px h-4 bg-navy-700/70 mx-1 shrink-0 max-xl:hidden" />}
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
-                      className={({ isActive }) => `topnav-link shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]' : 'text-navy-300 hover:text-[#67e8f9] hover:bg-white/5'}`}>
+                      className={({ isActive }) => `topnav-link shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'bg-gradient-to-b from-gold-400/20 to-gold-500/10 text-gold-200 font-semibold shadow-[inset_0_0_0_1px_rgba(244,201,78,0.4),0_0_14px_rgba(244,201,78,0.22)]' : 'text-navy-300 hover:text-gold-300 hover:bg-white/5'}`}>
                       {t(n.k)}
                     </NavLink>
                   ))}
@@ -157,7 +159,7 @@ export default function Layout() {
                           <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-navy-400">{g.label}</div>
                           {g.items.map(i => (
                             <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
-                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
+                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'text-gold-200 font-semibold bg-gold-500/10 border border-gold-400/40' : 'text-navy-200 hover:bg-white/5 hover:text-white'}`}>
                               {i.icon && <Icon name={i.icon} className="w-5 h-5 shrink-0" />}
                               {i.label}
                             </NavLink>
@@ -233,7 +235,7 @@ export default function Layout() {
               </div>
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'text-gold-200 font-semibold bg-gold-500/10 border border-gold-400/40' : 'text-navy-100 hover:bg-white/5'}`}>
               <Icon name="home" className="w-7 h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
@@ -245,7 +247,7 @@ export default function Layout() {
                       <div className="px-4 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-navy-500">{ag.label}</div>
                       {ag.items.map(i => (
                         <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setMenuOpen(false)}
-                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-base tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-200 hover:bg-white/5'}`}>
+                          className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-base tracking-wide rounded-xl ${isActive ? 'text-gold-200 font-semibold bg-gold-500/10 border border-gold-400/40' : 'text-navy-200 hover:bg-white/5'}`}>
                           {i.icon && <Icon name={i.icon} className="w-6 h-6" />}
                           {i.label}
                         </NavLink>
@@ -258,7 +260,7 @@ export default function Layout() {
                   <div className="px-4 pt-4 pb-1.5 text-sm font-bold uppercase tracking-widest text-navy-400">{t(g.label)}</div>
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'text-[#67e8f9] font-semibold bg-[#22d3ee]/10 border border-[#22d3ee]/30' : 'text-navy-100 hover:bg-white/5'}`}>
+                      className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'text-gold-200 font-semibold bg-gold-500/10 border border-gold-400/40' : 'text-navy-100 hover:bg-white/5'}`}>
                       {n.icon && <Icon name={n.icon} className="w-7 h-7" />}
                       {t(n.k)}
                     </NavLink>
@@ -277,6 +279,9 @@ export default function Layout() {
       )}
 
       <AnnouncementBar />
+      {/* ผลรางวัล + ผู้ชนะ ล่าสุด — แถบ LED ทองสไตล์ตารางประกาศผล ทุกหน้า */}
+      <ResultsTicker />
+      <WinTicker />
       {/* banner บังคับยืนยันอายุ 18+ สำหรับบัญชีที่ยังไม่ได้ยืนยัน (สมัครเก่า/LINE) */}
       {user && !user.ageConfirmed && (
         <div className="bg-amber-500/15 border-b border-amber-500/40">
@@ -298,11 +303,11 @@ export default function Layout() {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
-        <div className="relative border-t border-[#22d3ee]/30 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
-          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-[#22d3ee]/40 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+        <div className="relative border-t border-gold-400/40 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
+          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-gold-400/50 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
           {/* เส้นเรืองทองด้านบน */}
           <div className="absolute top-0 inset-x-8 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent)' }} />
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(244,201,78,0.9), transparent)' }} />
           <div className="flex h-16">
             {[
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
@@ -321,11 +326,11 @@ export default function Layout() {
                   <>
                     {/* active: วงทองเรืองนุ่ม + ไอคอนโตกว่า (inactive = เทา) */}
                     {isActive && (
-                      <span className="absolute top-1.5 h-10 w-12 rounded-full border border-[#22d3ee]/40"
-                        style={{ background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.28), rgba(34,211,238,0.05) 70%)', boxShadow: '0 0 16px rgba(34,211,238,0.35)' }} />
+                      <span className="absolute top-1.5 h-10 w-12 rounded-full border border-gold-400/50"
+                        style={{ background: 'radial-gradient(ellipse at center, rgba(244,201,78,0.30), rgba(244,201,78,0.06) 70%)', boxShadow: '0 0 18px rgba(244,201,78,0.4)' }} />
                     )}
                     <span className={`relative transition-transform duration-200 ${isActive ? 'scale-110 -translate-y-0.5' : 'opacity-70'}`}
-                      style={isActive ? { filter: 'drop-shadow(0 0 8px rgba(34,211,238,0.7))' } : undefined}>
+                      style={isActive ? { filter: 'drop-shadow(0 0 8px rgba(244,201,78,0.8))' } : undefined}>
                       <CasinoIcon name={i.icon} tone={isActive ? 'green' : 'gray'} className="w-6 h-6" />
                     </span>
                     <span className={`relative ${isActive ? 'text-white font-bold' : ''}`}>{t(i.k)}</span>

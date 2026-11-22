@@ -197,7 +197,7 @@ function MiniCard({ r, remaining, onClose, onNext }) {
           ) : null}
           {remaining > 1 && <span className="text-[11px] text-navy-400">อีก {remaining - 1} ผล</span>}
           <a href="/results" onClick={onClose}
-            className="text-[11px] font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-2">
+            className="text-[11px] font-semibold text-gold-300 hover:text-gold-200 underline underline-offset-2">
             ดูผลทั้งหมด →
           </a>
           <span className="ml-auto"><CountdownText seconds={11} /></span>
