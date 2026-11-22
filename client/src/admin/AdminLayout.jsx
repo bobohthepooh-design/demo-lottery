@@ -87,16 +87,16 @@ export default function AdminLayout() {
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6">
       <aside className="lg:w-60 shrink-0">
-        <div className="bg-gradient-to-b from-navy-800/95 to-navy-900/95 border border-navy-600/60 rounded-2xl lg:sticky lg:top-24 shadow-xl shadow-black/25 overflow-hidden">
+        <div className="bg-gradient-to-b from-navy-800/95 to-navy-900/95 border border-navy-700/60 rounded-xl lg:sticky lg:top-24 shadow-xl shadow-black/30 overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-navy-700/60">
-            <span className="w-7 h-7 rounded-lg bg-gold-500/15 border border-gold-500/40 flex items-center justify-center text-gold-400">
+            <span className="w-7 h-7 rounded-lg bg-gold-500/20 border border-gold-500/50 flex items-center justify-center text-gold-400">
               <Icon name="settings" className="w-4 h-4" />
             </span>
             <div className="leading-tight">
               <div className="font-display font-bold text-white text-sm">Admin Panel</div>
               <div className="text-[10px] text-navy-400">ระบบจัดการหลังบ้าน</div>
             </div>
-            <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-gold-500/40 bg-gold-500/10 text-gold-400">STAFF</span>
+            <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-gold-500/50 bg-gold-500/15 text-gold-300">STAFF</span>
           </div>
           <nav className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:max-h-[calc(100vh-15rem)] p-2">
             {visibleGroups.map(g => (
@@ -107,8 +107,8 @@ export default function AdminLayout() {
                 {g.items.map(i => (
                   <NavLink key={i.to} to={i.to} end={i.end}
                     className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors ${isActive
-                      ? 'bg-gradient-to-b from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#a5f3fc] font-semibold shadow-[inset_0_0_0_1px_rgba(34,211,238,0.35),0_0_12px_rgba(34,211,238,0.15)]'
-                      : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800/70'}`}>
+                      ? 'bg-gradient-to-r from-gold-500/20 to-gold-500/10 text-gold-300 font-semibold border border-gold-500/30'
+                      : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800/70 border border-transparent'}`}>
                     <Icon name={i.icon} className="w-4 h-4 shrink-0" />
                     {i.label}
                     {i.to === '/admin/chat' && chatUnread > 0 && (
