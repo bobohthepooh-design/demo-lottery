@@ -52,6 +52,7 @@ export async function fetchThaiResult() {
       first: vals(g.first)[0] || null,
       front3: vals(g.last3f),
       top3: vals(g.last3b),
+      top4: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-4) || null,
       bottom2: vals(g.last2)[0] || null,
     },
   };
@@ -90,6 +91,7 @@ export function generateHanoiResult(drawCode) {
     winning: {
       num4: s5.slice(0, 4),
       top3: pad(p1, 5).slice(-3),
+      top4: pad(p1, 5).slice(-4),
       top2: pad(p2, 5).slice(-2),
       bottom2: pad(p7, 2),
       db5: s5,
@@ -120,6 +122,7 @@ export function generateLaoDevResult(drawCode) {
       main: base,
       num4: base.slice(0, 4),
       top3: base.slice(-3),
+      top4: base.slice(-4),
       bottom2: base.slice(-5, -3),
       last4: base.slice(-4),
       last3: base.slice(-3),

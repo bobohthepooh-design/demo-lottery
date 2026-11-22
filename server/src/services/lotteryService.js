@@ -6,7 +6,7 @@ import { getSetting } from './settingsService.js';
 import { normalizeZodiac, ZODIAC_SIGNS } from '../lib/zodiac.js';
 import { q, qGet, qRun, qInsert } from '../db/pg.js';
 
-export const BET_TYPES = ['2top', '2bottom', '3top', '3tod', 'run_top', 'run_bottom'];
+export const BET_TYPES = ['2top', '2bottom', '3top', '3tod', 'top4', 'run_top', 'run_bottom'];
 
 // ---------- syntax ของ winning_numbers ----------
 // field → รูปแบบที่ยอมรับ (string หรือ array ของ string ก็ได้ — engine แบนทั้งคู่)
@@ -706,6 +706,12 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
 
   winningNumbers = { ...winningNumbers };
   mergeAnnounce(winningNumbers, draw.announce);
+  // top4 (เลข 4 ตัวบน) derive จากรางวัลที่ 1 อัตโนมัติ — ไม่ต้องกรอกแยก
+  if (winningNumbers.top4 == null) {
+    const firstRaw = Array.isArray(winningNumbers.first) ? winningNumbers.first[0] : winningNumbers.first;
+    const d = String(firstRaw ?? '').replace(/\D/g, '');
+    if (d.length >= 4) winningNumbers.top4 = d.slice(-4);
+  }
   return winningNumbers;
 }
 

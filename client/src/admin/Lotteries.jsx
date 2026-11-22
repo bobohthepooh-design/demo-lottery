@@ -11,7 +11,7 @@ import { Button, Card, Input, Select, Modal } from '../components/ui/index.js';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
-  first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน',
+  first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน', top4: 'เลขท้าย 4 ตัวบน',
   bottom2: 'เลขท้าย 2 ตัว', last4: 'เลขท้าย 4 ตัว', last3: 'เลขท้าย 3 ตัว',
   last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', top2: 'เลข 2 ตัวบน', main: 'เลขหลัก',
   zodiac: 'ปีนักษัตรรางวัลใหญ่', seq: 'เลขรางวัล 6 ปีนักษัตร', hilo: 'เต๋าไฮโล',
@@ -50,7 +50,7 @@ const parseCfg = (s) => { try { return JSON.parse(s || '{}') || {}; } catch { re
 
 // แหล่งผล (source) ที่ใช้ได้จริงต่อประเภทหวย — ตรงกับ winning_numbers ที่ resultFetcher สร้าง
 const CFG_SOURCES = {
-  TH:  ['first', 'front3', 'top3', 'bottom2'],
+  TH:  ['first', 'front3', 'top4', 'top3', 'bottom2'],
   LA:  ['last4', 'last3', 'last2', 'bottom2', 'num4', 'top3'],
   HN:  ['num4', 'top3', 'top2', 'bottom2'],
   GS:  ['p1', 'p2', 'p3', 'p4', 'p5', 'last4', 'last3'],
