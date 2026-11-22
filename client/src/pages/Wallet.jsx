@@ -5,7 +5,7 @@ import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
-import { Card, CardHeader, StatCard, Modal, Button, BorderBeam } from '../components/ui/index.js';
+import { Card, CardHeader, StatCard, Modal, Button } from '../components/ui/index.js';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -135,8 +135,7 @@ export default function Wallet() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* กระเป๋า — portal-style: member card + balance + ฝาก/ถอน (อ้างอิง portal.ruayraew.vip/wallet) */}
-      <Card variant="gold" className="overflow-hidden relative">
-        <BorderBeam duration={7} />
+      <Card variant="gold" className="overflow-hidden">
         {/* member strip — ชื่อ + ระดับสมาชิก + DEMO badge */}
         <div className="flex items-center gap-3 px-6 pt-6 pb-4">
           <span className="w-12 h-12 rounded-full bg-gradient-to-br from-navy-800 to-navy-950 text-gold-300 font-black text-xl flex items-center justify-center border-2 border-gold-500/60 shadow-md shrink-0">
