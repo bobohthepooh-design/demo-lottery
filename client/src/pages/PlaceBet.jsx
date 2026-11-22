@@ -357,235 +357,258 @@ export default function PlaceBet() {
     <div className="grid lg:grid-cols-5 gap-6">
       {/* left: entry form */}
       <div className="lg:col-span-3 space-y-4">
-        <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 shadow-lg shadow-black/20">
+        {/* Header — Draw Info + Countdown */}
+        <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-xl p-5 shadow-lg shadow-black/20">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <Link to="/play" className="text-sm text-gold-400 hover:text-gold-300">← เลือกตลาด/รอบอื่น</Link>
-              <div className="flex items-center gap-2 mt-1">
-                <FlagIcon code={draw.type_code} className="w-9 h-6 text-[10px]" />
-                <h1 className={`text-xl font-bold ${ac?.text || 'text-navy-950'}`}>{drawLabel(draw)}</h1>
-              </div>
-              <div className="text-sm text-navy-300">
-                {thaiDate(draw.draw_at)} • ปิดรับทายผล {thaiHM(draw.close_at)} น.
-                <span className="text-navy-500 text-[10px] ml-1.5">{draw.draw_code}</span>
+            <div className="flex-1 min-w-0">
+              <Link to="/play" className="text-sm text-gold-400 hover:text-gold-300 font-medium">← เลือกตลาด/รอบอื่น</Link>
+              <div className="flex items-center gap-3 mt-2">
+                <FlagIcon code={draw.type_code} className="w-10 h-7 text-[11px] rounded-md" />
+                <div>
+                  <h1 className={`text-2xl font-black ${ac?.text || 'text-white'}`}>{drawLabel(draw)}</h1>
+                  <div className="text-sm text-navy-300 font-medium">
+                    {thaiDate(draw.draw_at)} • ปิดรับ {thaiHM(draw.close_at)} น.
+                    <span className="text-navy-500 text-[10px] ml-2 font-mono">{draw.draw_code}</span>
+                  </div>
+                </div>
               </div>
               {(() => { const s = annSummary(draw.announce); return s ? (
-                <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/20 border-2 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]">
+                <div className="mt-3 inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg bg-amber-500/15 border border-amber-500/50 text-amber-300">
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
-              <div className="text-sm mt-1.5 flex items-center gap-2 flex-wrap">
-                <span className="text-navy-400">เหลือเวลารับทายผล</span>
-                {notYetOpen ? <span className="text-amber-300 font-bold">เปิดรับ {thaiHM(opensAt)} น.</span>
-                  : !closed ? <span className="text-gold-300 font-mono font-bold"><Countdown closeAt={draw.close_at} /></span>
-                  : <span className="text-red-400 font-bold">ปิดรับแล้ว</span>}
-              </div>
             </div>
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
-              {kb && <span className={`text-[9px] px-2 py-0.5 rounded ${kb.cls}`}>{kb.label}</span>}
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300'}`}>
-                {notYetOpen ? `⏳ เปิดรับ ${thaiHM(opensAt)} น.` : closed ? 'ปิดรับแล้ว' : 'รับแทงอยู่'}
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              {kb && <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${kb.cls}`}>{kb.label}</span>}
+              <span className={`text-xs font-bold px-4 py-1.5 rounded-full ${closed ? 'bg-navy-700 text-navy-300' : 'bg-green-500/20 text-green-300 border border-green-500/40'}`}>
+                {notYetOpen ? `⏳ เปิดรับ ${thaiHM(opensAt)} น.` : closed ? 'ปิดรับแล้ว' : '● รับแทงอยู่'}
               </span>
+              {!closed && (
+                <div className="text-center">
+                  <div className="text-[10px] text-navy-400 font-medium mb-1">เหลือเวลา</div>
+                  <div className="text-gold-300 font-mono font-bold text-lg">
+                    {notYetOpen ? thaiHM(opensAt) : <Countdown closeAt={draw.close_at} />}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {!closed && (
-          <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-navy-700 rounded-xl p-5 space-y-4 shadow-lg shadow-black/20">
-            <h2 className="font-bold text-navy-950">{headBar}เลือกประเภทการแทง</h2>
-            {/* คำอธิบายสั้นๆ ของประเภทที่เลือกอยู่ */}
-            {rule && <div className="text-[11px] text-navy-400 -mt-1">💡 {ruleHint(rule)}</div>}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {rules.map(r => {
-                const isAnn = r.bet_type?.startsWith('ann_');
-                return (
-                <button key={r.id} onClick={() => setSelRule(String(r.id))}
-                  className={`px-3 py-3 rounded-lg text-sm border transition text-left ${isAnn ? 'border-amber-500/60 bg-amber-500/5' : ''} ${selRule === String(r.id) ? 'border-gold-500 bg-navy-700 text-gold-300' : 'border-navy-600 text-navy-200 hover:border-navy-500'}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold flex items-center gap-1.5 min-w-0">
-                      {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">อั้น</span>}
-                      <span className="truncate">{r.name_th}</span>
-                    </div>
-                    <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/25 text-gold-300 shrink-0">x{r.payout_multiplier}</span>
-                  </div>
-                  <div className="text-xs text-navy-300 mt-0.5">{r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `เลือก ${r.digits} ปีนักษัตรตามลำดับ` : 'เลือก 1 ใน 12 ปีนักษัตร') : `${r.digits} หลัก`}{isAnn ? ' • ครึ่งรางวัลหลัก' : ''}</div>
-                </button>
-                );
-              })}
+          <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20">
+            {/* Bet Type Selector — Horizontal scroll chips */}
+            <div>
+              <h2 className="font-bold text-white text-lg mb-1 flex items-center gap-2">
+                <span className="w-1 h-5 bg-gold-500 rounded-full" />
+                เลือกประเภทการแทง
+              </h2>
+              {rule && <div className="text-xs text-navy-400 mb-3 ml-3">💡 {ruleHint(rule)}</div>}
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                {rules.map(r => {
+                  const isAnn = r.bet_type?.startsWith('ann_');
+                  const isSel = selRule === String(r.id);
+                  return (
+                    <button key={r.id} onClick={() => setSelRule(String(r.id))}
+                      className={`shrink-0 px-4 py-3 rounded-xl border transition-all duration-200 text-left min-w-[120px] ${
+                        isSel 
+                          ? 'border-gold-500 bg-gold-500/10 text-gold-300 shadow-lg shadow-gold-500/10' 
+                          : 'border-navy-600 bg-navy-800/50 text-navy-200 hover:border-navy-500 hover:bg-navy-800'
+                      }`}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">อั้น</span>}
+                        <span className="font-bold text-sm truncate">{r.name_th}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-navy-400">{r.digits} หลัก</span>
+                        <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${isSel ? 'bg-gold-500/20 text-gold-300' : 'bg-black/20 text-gold-400'}`}>x{r.payout_multiplier}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
+            {/* Number Input Area */}
+            <div className="grid sm:grid-cols-2 gap-4">
               {isZodiac ? (
-              <div className="sm:col-span-2">
-                <label className="text-sm text-navy-300">เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับที่คาดว่าออก)` : '(1 ใน 12)'}</label>
-                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 mt-2">
-                  {ZODIAC.map(z => {
-                    const idx = zodiacPicks.indexOf(z);
-                    const sel = idx >= 0;
-                    const full = !sel && zodiacPicks.length >= zodiacDigits;
-                    return (
-                      <button key={z} type="button" onClick={() => toggleZodiac(z)} disabled={full}
-                        className={`py-1.5 rounded-lg border transition flex flex-col items-center ${sel ? 'bg-violet-500 text-white border-violet-400 font-bold' : 'bg-navy-900 border-navy-600 text-navy-200 hover:border-violet-400'} disabled:opacity-40`}>
-                        <span className="text-xl leading-none">{ZODIAC_EMOJI[z]}</span>
-                        <span className={`text-[9px] leading-tight mt-0.5 ${sel ? 'text-white' : 'text-navy-400'}`}>{sel ? `${idx + 1}. ${z}` : z}</span>
-                      </button>
-                    );
-                  })}
+                <div className="sm:col-span-2">
+                  <label className="text-sm font-semibold text-navy-200 mb-2 block">
+                    เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับ)` : '(1 ใน 12)'}
+                  </label>
+                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
+                    {ZODIAC.map(z => {
+                      const idx = zodiacPicks.indexOf(z);
+                      const sel = idx >= 0;
+                      const full = !sel && zodiacPicks.length >= zodiacDigits;
+                      return (
+                        <button key={z} type="button" onClick={() => toggleZodiac(z)} disabled={full}
+                          className={`py-3 rounded-xl border transition-all duration-200 flex flex-col items-center gap-1 ${
+                            sel 
+                              ? 'bg-violet-500 text-white border-violet-400 font-bold shadow-lg shadow-violet-500/20' 
+                              : 'bg-navy-800/50 border-navy-600 text-navy-200 hover:border-violet-400 hover:bg-navy-800'
+                          } disabled:opacity-40`}>
+                          <span className="text-2xl leading-none">{ZODIAC_EMOJI[z]}</span>
+                          <span className={`text-[10px] leading-tight ${sel ? 'text-white' : 'text-navy-400'}`}>{sel ? `${idx + 1}. ${z}` : z}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {zodiacPicks.length > 0 && (
+                    <div className="mt-3 text-sm font-mono text-violet-300 flex items-center gap-2 flex-wrap bg-violet-500/10 rounded-lg px-3 py-2">
+                      ผล: {zodiacPicks.map((z, i) => (
+                        <span key={i} className="inline-flex items-center gap-1">
+                          {i > 0 && <span className="text-navy-500">→</span>}
+                          <span className="text-lg leading-none">{ZODIAC_EMOJI[z]}</span>{z}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-3 rounded-lg bg-violet-500/10 border border-violet-500/30 p-4 text-xs text-navy-200 space-y-1">
+                    <div className="font-semibold text-violet-300">📖 ผลรางวัล = ปีนักษัตร 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
+                    <div>เช่น <span className="font-mono text-gold-300">ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม</span></div>
+                    <div>① ตัวแรก = รางวัลใหญ่ • ④⑤⑥ สามตัวท้าย = 3 บน • ⑤⑥ สองตัวท้าย = 2 ล่าง • ปีนักษัตรไหนก็ได้ = วิ่ง</div>
+                    {rule?.bet_type && ZODIAC_HINT[rule.bet_type] && (
+                      <div className="text-violet-300 font-medium">→ {ZODIAC_HINT[rule.bet_type]}</div>
+                    )}
+                  </div>
                 </div>
-                {zodiacPicks.length > 0 && (
-                  <div className="mt-2 text-sm font-mono text-violet-300 flex items-center gap-1 flex-wrap">
-                    ผล: {zodiacPicks.map((z, i) => (
-                      <span key={i} className="inline-flex items-center gap-0.5">
-                        {i > 0 && <span className="text-navy-500">→</span>}
-                        <span className="text-base leading-none">{ZODIAC_EMOJI[z]}</span>{z}
-                      </span>
+              ) : isPattana ? (
+                <div className="sm:col-span-2">
+                  <label className="text-sm font-semibold text-navy-200 mb-2 block">
+                    เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)
+                  </label>
+                  <div className="grid grid-cols-5 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5">
+                    {Array.from({ length: 45 }, (_, i) => i + 1).map(n => (
+                      <button key={n} type="button" onClick={() => togglePick(n)}
+                        className={`py-2.5 rounded-lg text-sm font-mono font-bold border transition-all duration-200 ${
+                          picks.includes(n) 
+                            ? 'bg-gold-500 text-navy-950 border-gold-400 shadow-lg shadow-gold-500/20' 
+                            : 'bg-navy-800/50 border-navy-600 text-navy-200 hover:border-navy-500 hover:bg-navy-800'
+                        }`}>
+                        {n}
+                      </button>
                     ))}
                   </div>
-                )}
-                <div className="mt-3 rounded-lg bg-violet-500/10 border border-violet-500/30 p-3 text-xs text-navy-200 space-y-1">
-                  <div className="font-semibold text-violet-300">📖 ผลรางวัล = ปีนักษัตร 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
-                  <div>เช่น <span className="font-mono text-gold-300">ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม</span></div>
-                  <div>① ตัวแรก = รางวัลใหญ่ • ④⑤⑥ สามตัวท้าย = 3 บน • ⑤⑥ สองตัวท้าย = 2 ล่าง • ปีนักษัตรไหนก็ได้ = วิ่ง</div>
-                  {rule?.bet_type && ZODIAC_HINT[rule.bet_type] && (
-                    <div className="text-violet-300 font-medium">→ {ZODIAC_HINT[rule.bet_type]}</div>
+                  {picks.length > 0 && (
+                    <div className="mt-3 text-sm font-mono text-gold-300 bg-gold-500/10 rounded-lg px-3 py-2">
+                      เลือก: {[...picks].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('-')}
+                    </div>
                   )}
                 </div>
-              </div>
-              ) : isPattana ? (
-              <div className="sm:col-span-2">
-                <label className="text-sm text-navy-300">เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)</label>
-                <div className="grid grid-cols-5 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5 mt-2">
-                  {Array.from({ length: 45 }, (_, i) => i + 1).map(n => (
-                    <button key={n} type="button" onClick={() => togglePick(n)}
-                      className={`py-1.5 rounded text-xs font-mono font-bold border transition ${picks.includes(n) ? 'bg-gold-500 text-navy-950 border-gold-400' : 'bg-navy-900 border-navy-600 text-navy-200 hover:border-navy-400'}`}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-                {picks.length > 0 && <div className="mt-2 text-sm font-mono text-gold-300">เลือก: {[...picks].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('-')}</div>}
-              </div>
-            ) : !rule ? (
-            <div className="sm:col-span-2 text-navy-400 text-sm py-4 text-center">กำลังโหลดประเภทการแทง...</div>
-            ) : (
-            <>
-            <div className="sm:col-span-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-navy-400">ปุ่มลัด:</span>
-                <button type="button" onClick={() => setNumber(randNum(rule.digits))}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition">
-                  🎲 สุ่มเลข
-                </button>
-                <button type="button" disabled={number.length < 2}
-                  onClick={() => setNumber(number.split('').reverse().join(''))}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition disabled:opacity-40">
-                  🔁 กลับเลข
-                </button>
-                {draw.type_code === 'TH' && rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
-                  <button type="button" onClick={addRud19}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition">
-                    🎯 รูด 19 ประตู
-                  </button>
-                )}
-                {rule.digits >= 2 && (
-                  <>
-                    <button type="button" onClick={() => addPattern('tod')}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition">
-                      🔢 เลขตอง
-                    </button>
-                    {rule.digits === 3 && (
-                      <button type="button" onClick={() => addPattern('be')}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-navy-700 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition">
-                        🔢 เลขเบิ้ล
+              ) : !rule ? (
+                <div className="sm:col-span-2 text-navy-400 text-sm py-8 text-center">กำลังโหลดประเภทการแทง...</div>
+              ) : (
+                <>
+                  {/* Quick Actions */}
+                  <div className="sm:col-span-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-navy-400 font-medium">ปุ่มลัด:</span>
+                      <button type="button" onClick={() => setNumber(randNum(rule.digits))}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                        🎲 สุ่มเลข
                       </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <div>
-                <label className="text-sm text-navy-300">หมายเลข ({rule?.digits || '?'} หลัก)</label>
-                <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
-                  inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
-                  className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl tracking-[0.4em] text-center text-gold-300 font-mono focus:outline-none focus:border-gold-500" />
-                {favKey > 0 && (
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {favList.map(f => (
-                      <button key={f} type="button" onClick={() => pickFav(f)}
-                        className="text-xs px-2.5 py-1 rounded-lg bg-navy-900 border border-gold-500/40 text-gold-300 font-mono hover:bg-navy-700">{f}</button>
-                    ))}
-                    {favList.length === 0 && recentList.length === 0 && <span className="text-[10px] text-navy-500">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
-                    {new RegExp(`^\\d{${favKey}}$`).test(number) && !favList.includes(number) && (
-                      <button type="button" onClick={() => saveFav(number)}
-                        className="text-[10px] px-2 py-1 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300">⭐ บันทึกเลขนี้</button>
-                    )}
-                  </div>
-                )}
-                {/* เลขที่เพิ่งแทง — กดเพื่อใส่เลขเดิมได้เลย */}
-                {favKey > 0 && recentList.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span className="text-[10px] text-navy-500">เพิ่งแทง:</span>
-                    {recentList.map(f => (
-                      <button key={f} type="button" onClick={() => pickFav(f)}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-navy-900/60 border border-navy-700 text-navy-300 font-mono hover:border-cyan-500/50 hover:text-cyan-300">{f}</button>
-                    ))}
-                  </div>
-                )}
-                {/* NumPad — กดเลขบนหน้าจอ เหมาะกับมือถือ (desktop พิมพ์เองได้เหมือนเดิม) */}
-                {favKey > 0 && (
-                  <div className="mt-3 grid grid-cols-3 gap-1.5 select-none">
-                    {[1,2,3,4,5,6,7,8,9].map(d => (
-                      <button key={d} type="button" onClick={() => setNumber(n => (n + d).slice(0, favKey))}
-                        className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-gold-300 font-mono text-lg font-bold hover:border-gold-500/50 active:bg-navy-700 transition">{d}</button>
-                    ))}
-                    <button type="button" onClick={() => setNumber('')}
-                      className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-navy-300 text-xs font-bold hover:border-red-400/50 active:bg-navy-700 transition">ล้าง</button>
-                    <button type="button" onClick={() => setNumber(n => (n + '0').slice(0, favKey))}
-                      className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-gold-300 font-mono text-lg font-bold hover:border-gold-500/50 active:bg-navy-700 transition">0</button>
-                    <button type="button" onClick={() => setNumber(n => n.slice(0, -1))}
-                      className="py-2.5 rounded-lg bg-navy-900 border border-navy-600 text-red-300 text-lg font-bold hover:border-red-400/50 active:bg-navy-700 transition">⌫</button>
-                  </div>
-                )}
-                {showTodHint && (
-                  <div className="mt-2 space-y-1.5">
-                    <div className="text-[10px] text-sky-400/80">💡 โต๊ด = เลขครบทุกหลักไม่สนลำดับ (รวมตรงเป๊ะ) จ่าย x{todRate}</div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button type="button" onClick={() => setBetMode('teng')}
-                        className={`text-xs py-2 px-2 rounded-lg border font-semibold transition text-center ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
-                        <div>เต็งอย่างเดียว</div>
-                        <div className="text-[9px] font-normal mt-0.5 opacity-80">เฉพาะเลขตรงเป๊ะ • จ่าย x{rule.payout_multiplier}</div>
+                      <button type="button" disabled={number.length < 2}
+                        onClick={() => setNumber(number.split('').reverse().join(''))}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all disabled:opacity-40">
+                        🔁 กลับเลข
                       </button>
-                      <button type="button" onClick={() => setBetMode('tengtod')}
-                        className={`text-xs py-2 px-2 rounded-lg border font-semibold transition text-center ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
-                        <div>เต็ง + โต๊ด</div>
-                        <div className="text-[9px] font-normal mt-0.5 opacity-80">ตรงเป๊ะได้ x{Number(rule.payout_multiplier) + todRate} • สลับลำดับได้ x{todRate}</div>
-                      </button>
+                      {draw.type_code === 'TH' && rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
+                        <button type="button" onClick={addRud19}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition-all">
+                          🎯 รูด 19 ประตู
+                        </button>
+                      )}
+                      {rule.digits >= 2 && (
+                        <>
+                          <button type="button" onClick={() => addPattern('tod')}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                            🔢 เลขตอง
+                          </button>
+                          {rule.digits === 3 && (
+                            <button type="button" onClick={() => addPattern('be')}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                              🔢 เลขเบิ้ล
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
-                    {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">ซื้อทั้งเต็งและโต๊ด — เสียเงินรวม ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100) • ผลตรงได้ทั้งคู่ ผลสลับได้แค่โต๊ด</div>}
                   </div>
-                )}
-              </div>
-            </>
-            )}
-              <div>
-                <label className="text-sm text-navy-300">จำนวนเงิน (บาท)</label>
-                <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
-                  inputMode="decimal" placeholder="0.00"
-                  className="mt-1 w-full bg-navy-900 border border-navy-600 rounded-lg px-4 py-3 text-2xl text-center text-gold-300 focus:outline-none focus:border-gold-500" />
-                {/* ปุ่มเงินด่วน — แตะครั้งเดียวกรอกยอด ไม่ต้องพิมพ์ (คงไว้ใช้กับเลขถัดๆ ไปได้) */}
-                <div className="grid grid-cols-4 gap-1.5 mt-2">
-                  {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
-                    <button key={v} type="button" onClick={() => setAmount(String(v))}
-                      className={`text-xs py-1.5 rounded-lg border font-bold transition ${Number(amount) === v ? 'border-gold-500 bg-gold-500/20 text-gold-300' : 'border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300'}`}>
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
+                  {/* Number Input */}
+                  <div>
+                    <label className="text-sm font-semibold text-navy-200 mb-2 block">หมายเลข ({rule?.digits || '?'} หลัก)</label>
+                    <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
+                      inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
+                      className="w-full bg-navy-900/80 border border-navy-600 rounded-xl px-4 py-4 text-3xl tracking-[0.5em] text-center text-gold-300 font-mono font-bold focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all" />
+                    {favKey > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {favList.map(f => (
+                          <button key={f} type="button" onClick={() => pickFav(f)}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-navy-800/50 border border-gold-500/40 text-gold-300 font-mono hover:bg-navy-700 hover:border-gold-500/60 transition-all">{f}</button>
+                        ))}
+                        {favList.length === 0 && recentList.length === 0 && <span className="text-[10px] text-navy-500">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
+                        {new RegExp(`^\\d{${favKey}}$`).test(number) && !favList.includes(number) && (
+                          <button type="button" onClick={() => saveFav(number)}
+                            className="text-[10px] px-2 py-1 rounded-lg border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300 transition-all">⭐ บันทึกเลขนี้</button>
+                        )}
+                      </div>
+                    )}
+                    {favKey > 0 && recentList.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        <span className="text-[10px] text-navy-500 font-medium">เพิ่งแทง:</span>
+                        {recentList.map(f => (
+                          <button key={f} type="button" onClick={() => pickFav(f)}
+                            className="text-[10px] px-2 py-1 rounded bg-navy-800/50 border border-navy-700 text-navy-300 font-mono hover:border-cyan-500/50 hover:text-cyan-300 transition-all">{f}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Amount Input */}
+                  <div>
+                    <label className="text-sm font-semibold text-navy-200 mb-2 block">จำนวนเงิน (บาท)</label>
+                    <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
+                      inputMode="decimal" placeholder="0.00"
+                      className="w-full bg-navy-900/80 border border-navy-600 rounded-xl px-4 py-4 text-2xl text-center text-gold-300 font-mono font-bold focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all" />
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
+                      {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
+                        <button key={v} type="button" onClick={() => setAmount(String(v))}
+                          className={`text-xs py-2 rounded-lg border font-bold transition-all duration-200 ${Number(amount) === v ? 'border-gold-500 bg-gold-500/20 text-gold-300' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-gold-500/50 hover:text-gold-300'}`}>
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            {err && <div className="text-red-400 text-sm">{err}</div>}
-            <Button onClick={addItem} variant="secondary" className="w-full !py-3 border-gold-500/60 text-gold-300 hover:bg-navy-700">
+
+            {/* Tod Mode Selector */}
+            {showTodHint && !isZodiac && !isPattana && (
+              <div className="space-y-2">
+                <div className="text-xs text-sky-400 font-medium">💡 โต๊ด = เลขครบทุกหลักไม่สนลำดับ (รวมตรงเป๊ะ) จ่าย x{todRate}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setBetMode('teng')}
+                    className={`text-sm py-3 px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300 shadow-lg shadow-gold-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
+                    <div className="font-bold">เต็งอย่างเดียว</div>
+                    <div className="text-[10px] font-normal mt-1 opacity-80">เฉพาะเลขตรงเป๊ะ • จ่าย x{rule.payout_multiplier}</div>
+                  </button>
+                  <button type="button" onClick={() => setBetMode('tengtod')}
+                    className={`text-sm py-3 px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300 shadow-lg shadow-sky-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
+                    <div className="font-bold">เต็ง + โต๊ด</div>
+                    <div className="text-[10px] font-normal mt-1 opacity-80">ตรงเป๊ะได้ x{Number(rule.payout_multiplier) + todRate} • สลับลำดับได้ x{todRate}</div>
+                  </button>
+                </div>
+                {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">ซื้อทั้งเต็งและโต๊ด — เสียเงินรวม ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100) • ผลตรงได้ทั้งคู่ ผลสลับได้แค่โต๊ด</div>}
+              </div>
+            )}
+
+            {err && <div className="text-red-400 text-sm font-medium bg-red-500/10 rounded-lg px-3 py-2">{err}</div>}
+            <Button onClick={addItem} variant="secondary" className="w-full !py-4 text-lg font-bold border-gold-500/60 text-gold-300 hover:bg-navy-700">
               + เพิ่มลงโพย
             </Button>
           </div>
