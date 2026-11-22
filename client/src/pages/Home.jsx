@@ -141,7 +141,7 @@ export default function Home() {
             </div>
             <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
           </div>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {resultCards.slice(0, 8).map(g => {
               const last = g.settled[0];
               const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');

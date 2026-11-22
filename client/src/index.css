@@ -162,23 +162,7 @@ button.bg-gold-500, a.bg-gold-500 {
   position: relative;
   overflow: hidden;
 }
-button[class*="from-gold-500"]::after,
-a[class*="from-gold-500"]::after {
-  content: '';
-  position: absolute;
-  top: -20%;
-  left: -70%;
-  width: 45%;
-  height: 140%;
-  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-  transform: skewX(-18deg);
-  animation: gold-shine 3.2s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes gold-shine {
-  0% { left: -70%; }
-  45%, 100% { left: 130%; }
-}
+
 
 /* การ์ดยกขึ้นตอน hover + เงาทอง */
 .hoverable { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
