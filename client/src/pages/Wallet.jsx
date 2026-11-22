@@ -6,6 +6,7 @@ import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
 import { Card, CardHeader, StatCard, Modal, Button, BorderBeam } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
   bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
@@ -219,28 +220,35 @@ export default function Wallet() {
           {loading && <div className="p-4 space-y-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-14 w-full" />)}</div>}
         </div>
         {/* Desktop: ตารางเต็ม */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-navy-900 text-navy-300 text-xs">
-              <tr><th className="text-left px-4 py-3">อ้างอิง</th><th className="text-left px-4 py-3">ประเภท</th><th className="text-right px-4 py-3">จำนวน</th><th className="text-right px-4 py-3">คงเหลือหลังรายการ</th><th className="text-left px-4 py-3">เวลา</th><th className="text-left px-4 py-3">รายละเอียด</th></tr>
-            </thead>
-            <tbody className="divide-y divide-navy-700">
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-navy-700/60 hover:bg-transparent">
+                <TableHead className="text-navy-400">อ้างอิง</TableHead>
+                <TableHead className="text-navy-400">ประเภท</TableHead>
+                <TableHead className="text-navy-400 text-right">จำนวน</TableHead>
+                <TableHead className="text-navy-400 text-right">คงเหลือหลังรายการ</TableHead>
+                <TableHead className="text-navy-400">เวลา</TableHead>
+                <TableHead className="text-navy-400">รายละเอียด</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {txs.map(t => (
-                <tr key={t.id} className="hover:bg-navy-700/40">
-                  <td className="px-4 py-3 font-mono text-xs text-navy-300">{t.reference}</td>
-                  <td className="px-4 py-3 text-white">{TYPE_TH[t.type] || t.type}</td>
-                  <td className={`px-4 py-3 text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
+                <TableRow key={t.id} className="border-navy-700/50">
+                  <TableCell className="font-mono text-xs text-navy-300">{t.reference}</TableCell>
+                  <TableCell className="text-white">{TYPE_TH[t.type] || t.type}</TableCell>
+                  <TableCell className={`text-right font-bold ${t.direction === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
                     {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
-                  </td>
-                  <td className="px-4 py-3 text-right text-gold-300">{satang(t.balance_after)} บาท</td>
-                  <td className="px-4 py-3 text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</td>
-                  <td className="px-4 py-3 text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-right text-gold-300">{satang(t.balance_after)} บาท</TableCell>
+                  <TableCell className="text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</TableCell>
+                  <TableCell className="text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</TableCell>
+                </TableRow>
               ))}
-              {!loading && !txs.length && <tr><td colSpan="6" className="p-4"><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน" /></td></tr>}
-              {loading && <tr><td colSpan="6" className="px-4 py-4"><div className="space-y-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-8 w-full" />)}</div></td></tr>}
-            </tbody>
-          </table>
+              {!loading && !txs.length && <TableRow><TableCell colSpan="6"><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน" /></TableCell></TableRow>}
+              {loading && <TableRow><TableCell colSpan="6"><div className="space-y-2 py-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-8 w-full" />)}</div></TableCell></TableRow>}
+            </TableBody>
+          </Table>
         </div>
       </Card>
 

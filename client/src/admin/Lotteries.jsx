@@ -8,6 +8,7 @@ import { FlagIcon } from '../components/ResultLine.jsx';
 import AdminSettle from './Settle.jsx';
 import { toast } from '../components/toast.js';
 import { Button, Card, Input, Select, Modal } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
@@ -393,29 +394,28 @@ export default function AdminLotteries() {
                     );
                   })()}
                 </div>
-                <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[560px]">
-                  <thead className="bg-navy-900/40 text-navy-400 text-xs">
-                    <tr>
-                      <th className="text-left px-5 py-2">ประเภทการแทง</th>
-                      <th className="text-center px-3 py-2">หลัก</th>
-                      <th className="text-left px-3 py-2">เทียบกับผลรางวัล</th>
-                      <th className="text-right px-3 py-2">จ่าย (เท่า)</th>
-                      <th className="text-center px-3 py-2">สถานะ</th>
-                      <th className="px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-navy-700/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-navy-700/60 hover:bg-transparent">
+                      <TableHead className="text-navy-400">ประเภทการแทง</TableHead>
+                      <TableHead className="text-navy-400 text-center">หลัก</TableHead>
+                      <TableHead className="text-navy-400">เทียบกับผลรางวัล</TableHead>
+                      <TableHead className="text-navy-400 text-right">จ่าย (เท่า)</TableHead>
+                      <TableHead className="text-navy-400 text-center">สถานะ</TableHead>
+                      <TableHead className="text-navy-400"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {g.rows.map(r => (
-                      <tr key={r.id} className={`hover:bg-navy-700/30 ${r.is_active ? '' : 'opacity-50'}`}>
-                        <td className="px-5 py-2.5">
+                      <TableRow key={r.id} className={`border-navy-700/50 hover:bg-navy-700/30 ${r.is_active ? '' : 'opacity-50'}`}>
+                        <TableCell>
                           <div className="text-white font-medium">{r.name_th}</div>
                           <code className="text-[10px] text-navy-500">{r.bet_type}</code>
-                        </td>
-                        <td className="px-3 py-2.5 text-center text-navy-200">{r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : 'ราศี') : `${r.digits} หลัก`}</td>
-                        <td className="px-3 py-2.5 text-navy-300 text-xs" title={r.match_config}>{matchLabel(r.match_config)}</td>
-                        <td className="px-3 py-2.5 text-right text-gold-300 font-semibold">{STRUCTURED_CFG_TYPES.includes(r.bet_type) ? <span className="text-navy-400 text-xs font-normal">ดูในแก้ไข</span> : r.bet_type === 'hilo' ? 'ราคาต่อครั้ง' : `x${r.payout_multiplier}`}</td>
-                        <td className="px-3 py-2.5 text-center">
+                        </TableCell>
+                        <TableCell className="text-center text-navy-200">{r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : 'ราศี') : `${r.digits} หลัก`}</TableCell>
+                        <TableCell className="text-navy-300 text-xs" title={r.match_config}>{matchLabel(r.match_config)}</TableCell>
+                        <TableCell className="text-right text-gold-300 font-semibold">{STRUCTURED_CFG_TYPES.includes(r.bet_type) ? <span className="text-navy-400 text-xs font-normal">ดูในแก้ไข</span> : r.bet_type === 'hilo' ? 'ราคาต่อครั้ง' : `x${r.payout_multiplier}`}</TableCell>
+                        <TableCell className="text-center">
                           <button onClick={async () => {
                             const enabling = !r.is_active;
                             if (!(await confirmAction({
@@ -428,17 +428,16 @@ export default function AdminLotteries() {
                             className={`text-xs px-2 py-1 rounded ${r.is_active ? 'bg-green-500/20 text-green-300' : 'bg-navy-700 text-navy-400'}`}>
                             {r.is_active ? 'ใช้งาน' : 'ปิด'}
                           </button>
-                        </td>
-                        <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <button onClick={() => setEditRule({ ...r })} className="text-gold-400 text-xs hover:underline">แก้ไข</button>
                           <button onClick={() => setEditRule({ ...r, id: null, bet_type: `${r.bet_type}_copy`, name_th: `${r.name_th} (สำเนา)` })}
                             className="text-sky-400 text-xs hover:underline ml-2" title="คัดลอกกติกานี้เป็นกติกาใหม่ (เปลี่ยน bet_type ก่อนบันทึก)">⧉ คัดลอก</button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-                </div>
+                  </TableBody>
+                </Table>
               </div>
             ))}
           </div>
