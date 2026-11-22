@@ -37,6 +37,7 @@ export default function Wallet() {
   const [bankName, setBankName] = useState('');
   const [bankAccName, setBankAccName] = useState('');
   const [ppId, setPpId] = useState('');
+  const [showAllPays, setShowAllPays] = useState(false);
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
@@ -191,20 +192,12 @@ export default function Wallet() {
         </div>
       </Card>
 
-      {/* สรุปยอดเดิมพัน/รางวัล */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="แทงวันนี้" value={`${satang(sumToday.stake)} ฿`} accent="text-lose-300" />
-        <StatCard label="รางวัลวันนี้" value={`${satang(sumToday.win)} ฿`} accent="text-win-300" />
-        <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-lose-300" />
-        <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-win-300" />
-      </div>
-
-      {/* ประวัติคำขอชำระเงิน */}
+      {/* ประวัติคำขอชำระเงิน — ไว้ด้านบนสุด แสดง 30 รายการ ที่เหลือซ่อนไว้ */}
       {payReqs.length > 0 && (
-        <Card className="mt-4">
-          <CardHeader title="คำขอเติม/ถอนเงิน" />
+        <Card>
+          <CardHeader title={`คำขอเติม/ถอนเงิน (${payReqs.length})`} />
           <div className="divide-y divide-navy-700/50">
-            {payReqs.slice(0, 10).map(p => (
+            {payReqs.slice(0, showAllPays ? payReqs.length : 30).map(p => (
               <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
                 <div className="min-w-0">
                   <div className="font-semibold text-white">
@@ -228,8 +221,22 @@ export default function Wallet() {
               </div>
             ))}
           </div>
+          {payReqs.length > 30 && (
+            <button onClick={() => setShowAllPays(!showAllPays)}
+              className="w-full py-2.5 text-sm font-semibold text-gold-300 hover:text-gold-200 border-t border-navy-700/50">
+              {showAllPays ? '▲ ย่อรายการ' : `▼ แสดงทั้งหมด (${payReqs.length - 30} รายการเพิ่มเติม)`}
+            </button>
+          )}
         </Card>
       )}
+
+      {/* สรุปยอดเดิมพัน/รางวัล */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="แทงวันนี้" value={`${satang(sumToday.stake)} ฿`} accent="text-lose-300" />
+        <StatCard label="รางวัลวันนี้" value={`${satang(sumToday.win)} ฿`} accent="text-win-300" />
+        <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-lose-300" />
+        <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-win-300" />
+      </div>
 
       <Card className="overflow-hidden">
         <CardHeader title="ประวัติธุรกรรมเครดิต" />
