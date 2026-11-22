@@ -235,96 +235,124 @@ export default function Lotteries() {
     <div className="lg:flex lg:gap-6 lg:items-start">
       {/* Sidebar ประเภทหวย — desktop only (มือถือใช้ bottom nav/hamburger) */}
       <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
-        <div className="bg-navy-800/70 border border-navy-700 rounded-2xl p-3 space-y-1">
-          <div className="kicker px-2 pt-1 pb-2">ประเภทหวย</div>
+        <div className="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 space-y-1">
+          <div className="kicker px-2 pt-1 pb-3 text-sm font-bold text-gold-400">ประเภทหวย</div>
           <Link to="/lotteries" onClick={() => setCountry('')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${!selType ? 'bg-[#22d3ee]/15 text-[#67e8f9] border border-[#22d3ee]/40' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent'}`}>
-            🌐 ทั้งหมด
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${!selType ? 'bg-gradient-to-r from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#67e8f9] border border-[#22d3ee]/50 shadow-lg shadow-[#22d3ee]/10' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent hover:border-navy-600'}`}>
+            <span className="text-lg">🌐</span>
+            <span>ทั้งหมด</span>
           </Link>
           {visibleTypes.map(t => (
             <Link key={t.id} to={`/lotteries?type=${t.id}`} onClick={() => setCountry('')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${selType === String(t.id) ? 'bg-[#22d3ee]/15 text-[#67e8f9] border border-[#22d3ee]/40' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent'}`}>
-              <FlagIcon code={t.code} className="w-6 h-4 text-[8px] shrink-0" />
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${selType === String(t.id) ? 'bg-gradient-to-r from-[#22d3ee]/20 to-[#22d3ee]/10 text-[#67e8f9] border border-[#22d3ee]/50 shadow-lg shadow-[#22d3ee]/10' : 'text-navy-200 hover:bg-navy-800/60 border border-transparent hover:border-navy-600'}`}>
+              <FlagIcon code={t.code} className="w-7 h-5 text-[9px] shrink-0" />
               <span className="truncate">{t.name_th}</span>
             </Link>
           ))}
         </div>
       </aside>
 
-    <div className="flex-1 min-w-0 space-y-6">
-      {/* ตัวกรองประเทศ + เฉพาะที่เปิดรับ — ใช้ได้ทั้งมือถือ/desktop */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {[['', 'ทั้งหมด'], ...countries.map(c => [c, c])].map(([v, label]) => (
-          <button key={v} onClick={() => { setCountry(v); if (selType) navigate('/lotteries', { replace: true }); }}
-            className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition ${country === v ? 'bg-[#22d3ee]/15 text-[#67e8f9] border-[#22d3ee]/50' : 'border-navy-600 text-navy-300 hover:border-navy-500'}`}>
-            {label}
-          </button>
-        ))}
-        <label className="ml-auto text-xs text-navy-300 flex items-center gap-1.5 cursor-pointer">
-          <input type="checkbox" checked={openOnly} onChange={e => setOpenOnly(e.target.checked)} className="accent-green-500" />
-          เฉพาะที่เปิดรับ
+    <div className="flex-1 min-w-0 space-y-8">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-2xl p-6 shadow-xl shadow-black/20">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-white mb-2">เลือกหวยที่ต้องการแทง</h1>
+            <p className="text-navy-300 text-sm">เลือกตลาดและรอบที่ต้องการ แล้วกดปุ่มแทงเพื่อเริ่ม</p>
+          </div>
+          {liveDraws.length > 0 && (
+            <div className="text-right shrink-0">
+              <div className="text-4xl font-black text-green-400">{liveDraws.length}</div>
+              <div className="text-xs text-navy-400 font-medium">รอบที่เปิดรับ</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1 bg-navy-800/50 border border-navy-700 rounded-xl p-1">
+          {[['', 'ทั้งหมด'], ...countries.map(c => [c, c])].map(([v, label]) => (
+            <button key={v} onClick={() => { setCountry(v); if (selType) navigate('/lotteries', { replace: true }); }}
+              className={`text-xs px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${country === v ? 'bg-gradient-to-r from-[#22d3ee]/30 to-[#22d3ee]/20 text-[#67e8f9] shadow-lg shadow-[#22d3ee]/10' : 'text-navy-300 hover:text-navy-200 hover:bg-navy-800/60'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="ml-auto text-xs text-navy-300 flex items-center gap-2 cursor-pointer bg-navy-800/50 border border-navy-700 rounded-xl px-4 py-2">
+          <input type="checkbox" checked={openOnly} onChange={e => setOpenOnly(e.target.checked)} className="accent-green-500 w-4 h-4" />
+          <span className="font-medium">เฉพาะที่เปิดรับ</span>
         </label>
       </div>
 
-      {/* รอบที่เปิดรับตอนนี้ — แสดงก่อนเสมอพร้อม badge ONLINE */}
+      {/* Live Draws Section */}
       {liveDraws.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-green-400 mb-2 flex items-center gap-2">
-            <span className="online-dot inline-block w-2.5 h-2.5 rounded-full bg-green-400" />
-            ออนไลน์ตอนนี้ — กำลังรับแทง ({liveDraws.length})
+          <h2 className="text-lg font-bold text-green-400 mb-4 flex items-center gap-2.5">
+            <span className="online-dot inline-block w-3 h-3 rounded-full bg-green-400" />
+            <span>ออนไลน์ตอนนี้ — กำลังรับแทง</span>
+            <span className="text-sm font-semibold text-green-400/70 bg-green-500/10 px-2 py-0.5 rounded-full">{liveDraws.length} รอบ</span>
           </h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-5">
             {liveDraws.map(d => <DrawCard key={d.id} d={d} featured />)}
           </div>
         </section>
       )}
 
-      {/* Outras rodadas abertas p/ aposta — não são a "rodada atual" em destaque */}
+      {/* Open Others Section */}
       {openOthers.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-blue-300 mb-2 flex items-center gap-2">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-400" />
-            อื่นๆ ที่ยังเปิดรับ ({openOthers.length})
+          <h2 className="text-lg font-bold text-blue-300 mb-4 flex items-center gap-2.5">
+            <span className="inline-block w-3 h-3 rounded-full bg-blue-400" />
+            <span>อื่นๆ ที่ยังเปิดรับ</span>
+            <span className="text-sm font-semibold text-blue-400/70 bg-blue-500/10 px-2 py-0.5 rounded-full">{openOthers.length} รอบ</span>
           </h2>
-          <p className="text-xs text-navy-400 mb-3">รอบเหล่านี้ยังรับแทงได้ แต่ไม่ใช่รอบหลักด้านบน</p>
-          <div className="grid md:grid-cols-2 gap-4">
+          <p className="text-xs text-navy-400 mb-4 ml-1">รอบเหล่านี้ยังรับแทงได้ แต่ไม่ใช่รอบหลักด้านบน</p>
+          <div className="grid md:grid-cols-2 gap-5">
             {openOthers.map(d => <DrawCard key={d.id} d={d} soft />)}
           </div>
         </section>
       )}
 
-      {/* ปิดรับแล้ว รอผลรางวัล — ช่วง "ดูก่อนออก" */}
+      {/* Drawing Draws Section */}
       {drawingDraws.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-gold-300 mb-2 flex items-center gap-2">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-gold-400 animate-pulse" />
-            🎰 กำลังออกรางวัล ({drawingDraws.length})
+          <h2 className="text-lg font-bold text-gold-300 mb-4 flex items-center gap-2.5">
+            <span className="inline-block w-3 h-3 rounded-full bg-gold-400 animate-pulse" />
+            <span>🎰 กำลังออกรางวัล</span>
+            <span className="text-sm font-semibold text-gold-300/70 bg-gold-500/10 px-2 py-0.5 rounded-full">{drawingDraws.length} รอบ</span>
           </h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-5">
             {drawingDraws.map(d => <DrawCard key={d.id} d={d} />)}
           </div>
         </section>
       )}
 
-      {/* Rodadas futuras / já encerradas */}
+      {/* Upcoming Draws Section */}
       {upcomingOthers.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-navy-300 mb-2">รอบถัดไป / รอบที่ผ่านมา</h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <h2 className="text-lg font-bold text-navy-300 mb-4 flex items-center gap-2.5">
+            <span className="inline-block w-3 h-3 rounded-full bg-navy-400" />
+            <span>รอบถัดไป / รอบที่ผ่านมา</span>
+            <span className="text-sm font-semibold text-navy-400/70 bg-navy-700/50 px-2 py-0.5 rounded-full">{upcomingOthers.length} รอบ</span>
+          </h2>
+          <div className="grid md:grid-cols-2 gap-5">
             {upcomingOthers.map(d => <DrawCard key={d.id} d={d} />)}
           </div>
         </section>
       )}
-      {/* รอบที่ผ่านมา — ซ่อนโดย default, กด (+) เพื่อดูย้อนหลัง 2 รอบล่าสุด */}
+
+      {/* Past Draws Section */}
       {pastDraws.length > 0 && (
         <section>
           <button onClick={() => setShowPast(v => !v)}
-            className="text-sm font-bold text-navy-300 hover:text-gold-300 flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-navy-500 text-gold-300">{showPast ? '–' : '+'}</span>
-            รอบที่ผ่านมา ({pastDraws.length})
+            className="text-base font-bold text-navy-300 hover:text-gold-300 flex items-center gap-2.5 mb-4 transition-colors">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-navy-500 text-gold-300 text-sm">{showPast ? '–' : '+'}</span>
+            <span>รอบที่ผ่านมา</span>
+            <span className="text-sm font-semibold text-navy-400/70 bg-navy-700/50 px-2 py-0.5 rounded-full">{pastDraws.length} รอบ</span>
           </button>
           {showPast && (
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-5">
               {pastDraws.slice(0, 2).map(d => <DrawCard key={d.id} d={d} />)}
             </div>
           )}
@@ -334,7 +362,7 @@ export default function Lotteries() {
       {!loaded && <SkeletonGrid count={6} />}
       {loaded && !draws.length && <EmptyState emoji="🎟️" title="ไม่พบรอบหวย" hint="ลองเปลี่ยนตัวกรองประเทศ หรือกลับมาดูใหม่ภายหลัง" to="/lotteries" cta="ดูทั้งหมด" />}
 
-      {/* เลขเด็ด/เลขดัง — สถิติจากผลจริงภายนอก */}
+      {/* Lucky Numbers */}
       <LuckyNumbers />
     </div>
     </div>
