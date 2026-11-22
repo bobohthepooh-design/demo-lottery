@@ -2,40 +2,52 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, fmtDateTime, drawLabel } from '../api.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
-import { typeAccent } from '../typeAccent.js';
 import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 import { SkeletonGrid } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { annSummary } from '../ann.js';
+import { useAuth } from '../auth.jsx';
 
 // เรียงกลุ่มตลาดแบบ provider — เกม → หวยรางวัล → หวยไทย → ลาว → ฮานอย
 const FAMILIES = [
-  { key: 'HR', title: '🎴 หวยราศี' },
-  { key: 'TH', title: '🇹🇭 หวยไทย' },
+  { key: 'HR', title: 'หวยราศี' },
+  { key: 'TH', title: 'หวยไทย' },
   { key: 'GS', title: 'สลากออมสิน / ธ.ก.ส.' },
-  { key: 'LA', title: '🇱🇦 หวยลาว' },
-  { key: 'HN', title: '🇻🇳 หวยฮานอย' },
+  { key: 'LA', title: 'หวยลาว' },
+  { key: 'HN', title: 'หวยฮานอย' },
 ];
+const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']); // เกมด่วนไม่มีรอบ — อยู่ใน /games
+
+// สถานะรอบที่ปิดรับแล้วแต่ยังไม่ถึงเวลาออกรางวัล — ต่างจาก blind (ยังไม่เปิด) และ drawing (ถึงเวลาออกแล้ว)
+const isAwaitingDraw = (d, nowSql) => d.status === 'closed' && d.draw_at > nowSql;
+// blind = ยังไม่เปิดรับจริง (status scheduled/open แต่ยังไม่ถึงเวลาเปิด หรือยังไม่ถึงเวลาปิด)
+const isBlind = (d, nowSql) => !isBettingOpen(d, nowSql)
+  && ['scheduled', 'open'].includes(d.status) && d.close_at > nowSql;
+const isDrawing = (d, nowSql) => d.status === 'closed' && d.draw_at <= nowSql;
 
 // หน้า provider-style — ตลาดเป็นแถวเดียวต่อการ์ด แสดงสถานะรอบถัดไป (countdown/หมดรอบ/blind)
 // กดตลาดที่เปิดรับ → หน้าแทง / กดตลาดอื่น → กางรายการรอบย่อย
 export default function BetHub() {
+  const { isAdmin } = useAuth();
   const [draws, setDraws] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [openKey, setOpenKey] = useState(''); // key ตลาดที่กางรายการรอบอยู่
   const [nowMs, setNowMs] = useState(Date.now());
 
+  const loadConfig = () => api('/lottery/public-config')
+    .then(r => setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []))
+    .catch(() => {});
   const load = () => api('/lottery/draws?upcoming=1')
     .then(r => { setDraws(r.draws || []); setLoaded(true); })
     .catch(() => setLoaded(true));
+  const refresh = () => { load(); loadConfig(); };
 
   useEffect(() => {
-    load();
-    const t = setInterval(load, 30000);
+    refresh();
+    const t = setInterval(refresh, 30000);
     const tick = setInterval(() => setNowMs(Date.now()), 1000);
-    api('/lottery/public-config').then(r => setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : [])).catch(() => {});
-    const h = () => load();
+    const h = () => refresh();
     window.addEventListener('sys:update', h);
     return () => { clearInterval(t); clearInterval(tick); window.removeEventListener('sys:update', h); };
   }, []);
@@ -44,11 +56,11 @@ export default function BetHub() {
   const nowSql = new Date(nowMs).toISOString().slice(0, 19).replace('T', ' ');
 
   // จัดกลุ่มตลาด: family > type+category
-  const { families } = useMemo(() => {
+  const families = useMemo(() => {
     const map = new Map();
     for (const d of draws) {
-      if (hiddenSet.has(d.type_code)) continue;
-      if (['SC', 'HL', 'KI', 'CF'].includes(d.type_code)) continue; // เกมด่วนไม่มีรอบ
+      if (!isAdmin && hiddenSet.has(d.type_code)) continue; // admin เห็นทั้งหมดเหมือน /lotteries
+      if (INSTANT.has(d.type_code)) continue;
       const key = `${d.type_code}:${d.category_code || d.category_id || ''}`;
       if (!map.has(key)) {
         map.set(key, {
@@ -56,28 +68,33 @@ export default function BetHub() {
           typeCode: d.type_code,
           typeName: d.type_name_th,
           catName: d.category_name_th || '',
-          name: d.category_name_th ? `${d.type_name_th} — ${d.category_name_th}` : d.type_name_th,
           rounds: [],
         });
       }
       map.get(key).rounds.push(d);
     }
+    const actionable = d => !['settled', 'cancelled'].includes(d.status);
     for (const m of map.values()) {
       m.rounds.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
-      m.live = m.rounds.some(d => isBettingOpen(d, nowSql));
-      m.next = m.rounds.find(d => !['settled', 'cancelled'].includes(d.status));
+      const pool = m.rounds.filter(actionable);
+      m.liveRound = pool.find(d => isBettingOpen(d, nowSql));
+      // รอบแสดงผล: live → ปิดรับรอผล → รอบอนาคตที่ใกล้สุด (กันรอบ closed ค้างจากเมื่อวานมาแทรก)
+      m.next = m.liveRound
+        || pool.find(d => isAwaitingDraw(d, nowSql))
+        || pool.find(d => d.draw_at > nowSql)
+        || pool[0];
     }
+    const byPriority = (a, b) => (b.liveRound ? 1 : 0) - (a.liveRound ? 1 : 0)
+      || String(a.next?.draw_at || '9').localeCompare(String(b.next?.draw_at || '9'));
     const fams = FAMILIES.map(f => ({
       ...f,
-      markets: [...map.values()].filter(m => m.typeCode === f.key)
-        .sort((a, b) => (b.live - a.live) || String(a.next?.draw_at || '9').localeCompare(String(b.next?.draw_at || '9'))),
+      markets: [...map.values()].filter(m => m.typeCode === f.key).sort(byPriority),
     })).filter(f => f.markets.length);
-    // type code ที่ไม่อยู่ใน FAMILY — ต่อท้ายตามชื่อ
-    const rest = [...map.values()].filter(m => !FAMILIES.some(f => f.key === m.typeCode));
+    const rest = [...map.values()].filter(m => !FAMILIES.some(f => f.key === m.typeCode)).sort(byPriority);
     if (rest.length) fams.push({ key: 'OTHER', title: 'หวยอื่น ๆ', markets: rest });
-    return { families: fams };
+    return fams;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draws, hiddenBetTypes, nowMs]);
+  }, [draws, hiddenBetTypes, nowMs, isAdmin]);
 
   return (
     <div className="space-y-4 pb-4">
@@ -121,7 +138,7 @@ export default function BetHub() {
           <header className="px-4 py-3 border-b border-navy-700 font-bold text-white text-sm">{fam.title}</header>
           <div className="divide-y divide-navy-700/60">
             {fam.markets.map(m => (
-              <MarketRow key={m.key} m={m} accent={typeAccent(m.typeCode)} nowSql={nowSql} nowMs={nowMs}
+              <MarketRow key={m.key} m={m} nowSql={nowSql} nowMs={nowMs}
                 expanded={openKey === m.key} onToggle={() => setOpenKey(openKey === m.key ? '' : m.key)} />
             ))}
           </div>
@@ -137,15 +154,13 @@ export default function BetHub() {
   );
 }
 
-function MarketRow({ m, accent, nowSql, nowMs, expanded, onToggle }) {
+function MarketRow({ m, nowSql, nowMs, expanded, onToggle }) {
   const navigate = useNavigate();
-  // รอบที่กำลังเปิดรับ (ใกล้สุด)
-  const liveRound = m.rounds.find(d => isBettingOpen(d, nowSql));
-  // รอบถัดไปที่ยังไม่ออกผล
-  const next = m.rounds.find(d => !['settled', 'cancelled'].includes(d.status));
-  const blind = !liveRound && next && !['closed', 'settled', 'cancelled'].includes(next.status)
-    && next.draw_at > nowSql;
-  const drawing = !liveRound && next && next.status === 'closed' && next.draw_at <= nowSql;
+  const liveRound = m.liveRound;
+  const next = m.next;
+  const blind = !liveRound && next && isBlind(next, nowSql);
+  const awaiting = !liveRound && next && isAwaitingDraw(next, nowSql);
+  const drawing = !liveRound && !awaiting && next && isDrawing(next, nowSql);
 
   const closeMs = liveRound ? Date.parse(String(liveRound.close_at).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const openAt = next ? bettingOpenAtSql(next.close_at, next.type_code) : null;
@@ -155,24 +170,25 @@ function MarketRow({ m, accent, nowSql, nowMs, expanded, onToggle }) {
     ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-500/20 text-green-300 border-green-500/40' }
     : drawing
       ? { text: 'กำลังออกรางวัล', cls: 'bg-gold-500/20 text-gold-300 border-gold-500/40 animate-pulse' }
-      : blind
-        ? { text: openMs > 0 ? `🔒 เปิด ${thaiHM(openAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
-        : next
-          ? { text: 'หมดรอบ', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
-          : { text: '—', cls: 'bg-navy-700 text-navy-300 border-navy-600' };
+      : awaiting
+        ? { text: '⏳ รอผล', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
+        : blind
+          ? { text: openMs > 0 ? `🔒 เปิด ${thaiHM(openAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
+          : next
+            ? { text: 'หมดรอบ', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
+            : { text: '—', cls: 'bg-navy-700 text-navy-300 border-navy-600' };
 
   const sub = liveRound
     ? `ออกรางวัล ${thaiHM(liveRound.draw_at)} น.`
     : next
-      ? `${blind ? 'ออกรางวัล' : drawing ? 'ออก' : 'รอบถัดไป'} ${thaiHM(next.draw_at)} น.`
+      ? `${blind ? 'ออกรางวัล' : awaiting ? 'ปิดรับแล้ว ออก' : drawing ? 'ออก' : 'รอบถัดไป'} ${thaiHM(next.draw_at)} น.`
       : '';
 
   return (
     <div>
-      <div role="button" tabIndex={0}
+      <button type="button" aria-expanded={expanded}
         onClick={() => liveRound ? navigate(`/bet/${liveRound.id}`) : onToggle()}
-        onKeyDown={e => { if (e.key === 'Enter') liveRound ? navigate(`/bet/${liveRound.id}`) : onToggle(); }}
-        className={`flex items-center gap-3 px-4 py-3 transition w-full text-left ${liveRound ? 'hover:bg-green-500/10 cursor-pointer' : 'hover:bg-navy-700/40 cursor-pointer'}`}>
+        className={`flex items-center gap-3 px-4 py-3 transition w-full text-left ${liveRound ? 'hover:bg-green-500/10' : 'hover:bg-navy-700/40'}`}>
         <FlagIcon code={m.typeCode} className="w-9 h-6 shrink-0 text-[9px] rounded" />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-white truncate">
@@ -185,22 +201,23 @@ function MarketRow({ m, accent, nowSql, nowMs, expanded, onToggle }) {
           {status.text}
         </span>
         <span className={`text-navy-500 text-sm transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
-      </div>
+      </button>
       {expanded && (
         <div className="divide-y divide-navy-700/60 border-t border-navy-700/60 bg-navy-900/40">
-          {m.rounds.map(d => <RoundRow key={d.id} d={d} accent={accent} nowSql={nowSql} nowMs={nowMs} />)}
+          {m.rounds.map(d => <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />)}
         </div>
       )}
     </div>
   );
 }
 
-function RoundRow({ d, accent, nowSql, nowMs }) {
+function RoundRow({ d, nowSql, nowMs }) {
   const navigate = useNavigate();
   const live = isBettingOpen(d, nowSql);
+  const blind = isBlind(d, nowSql);
+  const awaiting = isAwaitingDraw(d, nowSql);
+  const drawing = isDrawing(d, nowSql);
   const opensAt = bettingOpenAtSql(d.close_at, d.type_code);
-  const blind = !live && !['settled', 'cancelled'].includes(d.status) && d.draw_at > nowSql;
-  const drawing = d.status === 'closed' && d.draw_at <= nowSql;
   const opensMs = opensAt ? Date.parse(String(opensAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const closeMs = live ? Date.parse(String(d.close_at).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const ann = annSummary(d.announce);
@@ -209,19 +226,21 @@ function RoundRow({ d, accent, nowSql, nowMs }) {
     ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-500/20 text-green-300 border-green-500/40' }
     : drawing
       ? { text: 'กำลังออกรางวัล', cls: 'bg-gold-500/20 text-gold-300 border-gold-500/40 animate-pulse' }
-      : blind
-        ? { text: opensMs > 0 ? `🔒 เปิด ${thaiHM(opensAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
-        : { text: d.status === 'settled' ? 'ออกผลแล้ว' : 'หมดรอบ', cls: 'bg-navy-700 text-navy-300 border-navy-600' };
+      : awaiting
+        ? { text: '⏳ รอผล', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
+        : blind
+          ? { text: opensMs > 0 ? `🔒 เปิด ${thaiHM(opensAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-700 text-navy-300 border-navy-600' }
+          : { text: d.status === 'settled' ? 'ออกผลแล้ว' : 'หมดรอบ', cls: 'bg-navy-700 text-navy-300 border-navy-600' };
 
   return (
-    <button onClick={() => live ? navigate(`/bet/${d.id}`) : navigate(`/results?draw=${d.id}`)}
+    <button onClick={() => navigate(live ? `/bet/${d.id}` : '/results')}
       className={`flex items-center gap-3 px-4 py-2.5 w-full text-left hover:bg-navy-700/40 transition ${live ? '' : 'opacity-75'}`}>
       {blind ? (
         <div className="w-8 h-10 rounded-md shrink-0 flex items-center justify-center text-sm"
           style={{ background: 'repeating-linear-gradient(45deg,#1e293b,#1e293b 5px,#334155 5px,#334155 10px)', border: '1px solid #475569' }}>🂠</div>
       ) : (
         <div className={`w-8 h-10 rounded-md shrink-0 flex items-center justify-center text-sm border ${live ? 'bg-green-500/15 border-green-500/40' : drawing ? 'bg-gold-500/15 border-gold-500/40' : 'bg-navy-700/60 border-navy-600'}`}>
-          {live ? '🎯' : drawing ? '🎰' : d.status === 'settled' ? '🏆' : '🔒'}
+          {live ? '🎯' : drawing ? '🎰' : awaiting ? '⏳' : d.status === 'settled' ? '🏆' : '🔒'}
         </div>
       )}
       <div className="min-w-0 flex-1">
