@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, satang, drawLabel, fmtDateTime } from '../api.js';
-import { Input, Select, Button } from '../components/ui/index.js';
+import { Input, Button } from '../components/ui/index.js';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/shadcn/select.jsx';
+import { Badge } from '../components/shadcn/badge.jsx';
+import { cn } from '../lib/utils.js';
 
 const STATUS_TH = {
   pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก',
@@ -135,9 +138,14 @@ export default function AdminBets() {
           <Input value={q} onChange={e => setQ(e.target.value)}
             placeholder="ค้นหา username / เลขโพย / รอบหวย..."
             inputClassName="w-64 py-2 text-sm" />
-          <Select value={status} onChange={e => setStatus(e.target.value)} inputClassName="py-2 text-sm">
-            <option value="">ทุกสถานะ</option>
-            {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          <Select value={status || 'all'} onValueChange={v => setStatus(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-36 py-2 text-sm bg-navy-800 border-navy-600 text-white">
+              <SelectValue placeholder="ทุกสถานะ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">ทุกสถานะ</SelectItem>
+              {Object.entries(STATUS_TH).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
           </Select>
           <Button variant="ghost" size="sm" onClick={exportAll}
             title="ดาวน์โหลดโพยทั้งหมดที่ตรงเงื่อนไขเป็น CSV">
@@ -171,7 +179,15 @@ export default function AdminBets() {
                       ระบบ {houseNet >= 0 ? '+' : ''}{satang(houseNet)} บาท
                     </span>
                   )}
-                  <div className="text-xs text-navy-400">{STATUS_TH[s.status] || s.status} • {fmtDateTime(s.created_at)}</div>
+                  <Badge variant="outline" className={cn('text-[10px] font-semibold shrink-0',
+                    s.status === 'won' ? 'border-emerald-500/40 text-emerald-300'
+                    : s.status === 'partial' ? 'border-gold-500/50 text-gold-300'
+                    : s.status === 'pending' ? 'border-sky-500/40 text-sky-300'
+                    : s.status === 'cancelled' || s.status === 'refunded' ? 'border-navy-500 text-navy-400'
+                    : 'border-red-500/40 text-red-300')}>
+                    {STATUS_TH[s.status] || s.status}
+                  </Badge>
+                  <div className="text-[11px] text-navy-400">{fmtDateTime(s.created_at)}</div>
                 </div>
               </button>
               {open === s.id && (
