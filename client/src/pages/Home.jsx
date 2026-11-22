@@ -41,22 +41,9 @@ export default function Home() {
     { to: '/register', icon: '👤', label: 'สมัครสมาชิก', cls: 'from-sky-500 to-blue-600', sub: 'เริ่มต้น', shadow: 'shadow-sky-500/20' },
   ];
 
-  // Hero — หาตลาดที่เปิดรับแทงและใกล้ปิดที่สุด (live countdown)
-  const heroDraw = (() => {
-    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
-    const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code) && (d.status === 'open' || d.status === 'scheduled'));
-    const now = Date.now();
-    const upcoming = todays
-      .map(d => ({ ...d, closeTime: new Date(d.betting_close_at || d.draw_at).getTime() }))
-      .filter(d => d.closeTime > now)
-      .sort((a, b) => a.closeTime - b.closeTime);
-    return upcoming[0] || null;
-  })();
-
-  // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด
+  // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด (เฉพาะหวย ไม่รวมหวยราศี HR/เกมด่วน)
   const resultCards = (() => {
-    // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
-    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']); // เกมด่วนไม่มีรอบ — ราศี (HR) เป็นหวยจริง แสดงผลได้
+    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']); // เกมด่วน+ราศี ไม่แสดงในผลรางวัล
     const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code));
     const mk = new Map();
     for (const d of todays) {
@@ -72,6 +59,15 @@ export default function Home() {
       return g;
     }).filter(g => g.settled.length > 0)
       .sort((a, b) => String(b.settled[0].draw_at).localeCompare(String(a.settled[0].draw_at)));
+  })();
+
+  // ผลรางวัล 4 รายการล่าสุด — เรียงตามเวลาจริงล่าสุด (เฉพาะหวย ไม่รวมหวยราศี/เกมด่วน)
+  const recentResults = (() => {
+    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']);
+    return todayDraws
+      .filter(d => drawVisible(d) && !INSTANT.has(d.type_code) && d.status === 'settled' && d.winning)
+      .sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)))
+      .slice(0, 4);
   })();
 
   return (
@@ -93,41 +89,6 @@ export default function Home() {
           <span className="shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-navy-950 border border-gold-400/60 shadow-sm tracking-wider">
             DEMO MODE
           </span>
-        </div>
-      )}
-
-      {/* Hero — Live Draw Highlight */}
-      {heroDraw && (
-        <div className="rounded-xl border border-gold-500/40 bg-gradient-to-br from-gold-500/10 via-navy-800/80 to-navy-900/90 p-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-3xl" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs font-bold uppercase tracking-wider text-green-400">Live Draw</span>
-              <span className="text-navy-400 text-xs ml-auto">{heroDraw.category_name_th || heroDraw.type_name_th}</span>
-            </div>
-            <div className="mb-3">
-              <div className="text-2xl font-display font-bold text-white mb-1">{heroDraw.type_name_th}</div>
-              <div className="text-xs text-navy-400">ปิดรับ {fmtDateTime(heroDraw.betting_close_at || heroDraw.draw_at)}</div>
-            </div>
-            <div className="flex items-center gap-4 text-navy-300 text-sm mb-4">
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
-                3 ตัวบน
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
-                2 ตัวล่าง
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
-                ท้าย 2 ตัว
-              </span>
-            </div>
-            <Link to={`/bet/${heroDraw.id}`} className="inline-flex items-center gap-2 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95">
-              แทงรอบนี้ →
-            </Link>
-          </div>
         </div>
       )}
 
@@ -178,48 +139,25 @@ export default function Home() {
         </div>
       )}
 
-      {/* ผลรางวัลวันนี้ — ล่าสุดของแต่ละตลาด */}
-      {resultCards.length > 0 && (
+      {/* ผลรางวัล 4 รายการล่าสุด — เรียงตามเวลาจริง */}
+      {recentResults.length > 0 && (
         <section>
           <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
             <div>
               <div className="kicker mb-1">Latest Results</div>
               <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
-              <p className="text-xs text-navy-400 mt-0.5">ของแต่ละตลาด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
+              <p className="text-xs text-navy-400 mt-0.5">4 รายการล่าสุด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
             </div>
             <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
           </div>
-          <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {resultCards.slice(0, 8).map(g => {
-              const last = g.settled[0];
-              const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
-              // สร้าง object แบบ result สำหรับ ResultLine
-              const resultObj = last ? {
-                ...last,
-                category_name_th: g.label,
-                type_name_th: g.type_name_th,
-                type_code: g.type_code,
-                category_code: g.cat_code,
-              } : null;
-              return (
-                <Link key={`${g.type_code}|${g.cat_code || ''}`} to="/results"
-                  className="group transition hover:-translate-y-0.5">
-                  {resultObj ? (
-                    <ResultLine r={resultObj} compact />
-                  ) : (
-                    <div className="bg-navy-800/70 border border-navy-700 rounded-xl p-3 text-center text-navy-400 text-sm">
-                      {nxt ? `⏳ ถัดไป ${fmtDateTime(nxt.draw_at)}` : 'ไม่มีรอบวันนี้'}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {recentResults.map(d => (
+              <Link key={d.id} to="/results"
+                className="group transition hover:-translate-y-0.5">
+                <ResultLine r={d} compact />
+              </Link>
+            ))}
           </div>
-          {resultCards.length > 8 && (
-            <Link to="/results" className="mt-3 block text-center text-sm text-navy-300 hover:text-gold-300 transition">
-              + อีก {resultCards.length - 8} ตลาด — ดูผลรางวัลทั้งหมด →
-            </Link>
-          )}
         </section>
       )}
     </div>

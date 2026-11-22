@@ -866,3 +866,12 @@ button, [role="button"], a { transition: transform var(--duration-fast, 120ms) e
 /* Magic UI-inspired animations */
 @keyframes magic-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes magic-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ================= Top nav — ให้ทุกเมนูอยู่บรรทัดเดียว ไม่ต้องเลื่อน =================
+   ย่อ font/padding ของลิงก์เมนูหลักบนจอ <1536px (ยังอ่านง่าย ไม่เล็กเกิน) */
+@media (max-width: 1535px) {
+  .topnav-link { font-size: 13px; padding-left: 7px; padding-right: 7px; }
+}
+@media (max-width: 1023px) {
+  .topnav-link { font-size: 12px; padding-left: 5px; padding-right: 5px; }
+}
