@@ -3,6 +3,9 @@ import { api, satang } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { Card, Input, Button, Modal, Select } from '../components/ui/index.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { Badge } from '../components/shadcn/badge.jsx';
+import { cn } from '../lib/utils.js';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([]);
@@ -38,36 +41,51 @@ export default function AdminMembers() {
         <Input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
           placeholder="ค้นหา username/email..." inputClassName="w-64 py-2 text-sm" />
       </div>
-      <Card className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-navy-900 text-navy-300 text-xs">
-            <tr><th className="text-left px-4 py-3">ID</th><th className="text-left px-4 py-3">ผู้ใช้</th><th className="text-left px-4 py-3">อีเมล</th><th className="text-left px-4 py-3">บทบาท</th><th className="text-right px-4 py-3">เครดิต</th><th className="text-left px-4 py-3">สถานะ</th><th className="text-left px-4 py-3">MFA</th><th className="text-left px-4 py-3">18+/RG</th><th className="px-4 py-3 sticky right-0 bg-navy-900 z-10"></th></tr>
-          </thead>
-          <tbody className="divide-y divide-navy-700">
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-navy-700/60 hover:bg-transparent">
+              <TableHead className="text-navy-400">ID</TableHead>
+              <TableHead className="text-navy-400">ผู้ใช้</TableHead>
+              <TableHead className="text-navy-400">อีเมล</TableHead>
+              <TableHead className="text-navy-400">บทบาท</TableHead>
+              <TableHead className="text-navy-400 text-right">เครดิต</TableHead>
+              <TableHead className="text-navy-400">สถานะ</TableHead>
+              <TableHead className="text-navy-400">MFA</TableHead>
+              <TableHead className="text-navy-400">18+/RG</TableHead>
+              <TableHead className="text-navy-400 sticky right-0 bg-navy-900 z-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {members.map(m => (
-              <tr key={m.id} className="group hover:bg-navy-700/40">
-                <td className="px-4 py-3 text-navy-300">{m.id}</td>
-                <td className="px-4 py-3"><div className="text-white font-semibold">{m.username}</div><div className="text-xs text-navy-300">{m.displayName}</div></td>
-                <td className="px-4 py-3 text-navy-300">{m.email}</td>
-                <td className="px-4 py-3 text-xs text-gold-300">{m.roles.join(', ')}</td>
-                <td className="px-4 py-3 text-right text-gold-300 font-bold">{satang(m.balance)} บาท</td>
-                <td className="px-4 py-3"><span className={m.status === 'active' ? 'text-green-400' : 'text-red-400'}>{m.status}</span></td>
-                <td className="px-4 py-3 text-xs">{m.mfaEnabled ? '✅' : '—'}{m.withdrawUnlocked ? ' 💸' : ''}</td>
-                <td className="px-4 py-3 text-xs whitespace-nowrap">
+              <TableRow key={m.id} className="group border-navy-700/50 hover:bg-navy-700/40">
+                <TableCell className="text-navy-300">{m.id}</TableCell>
+                <TableCell><div className="text-white font-semibold">{m.username}</div><div className="text-xs text-navy-300">{m.displayName}</div></TableCell>
+                <TableCell className="text-navy-300">{m.email}</TableCell>
+                <TableCell className="text-xs text-gold-300">{m.roles.join(', ')}</TableCell>
+                <TableCell className="text-right text-gold-300 font-bold">{satang(m.balance)} บาท</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={cn('text-[10px] font-semibold',
+                    m.status === 'active' ? 'border-emerald-500/40 text-emerald-300' : 'border-red-500/40 text-red-300')}>
+                    {m.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs">{m.mfaEnabled ? '✅' : '—'}{m.withdrawUnlocked ? ' 💸' : ''}</TableCell>
+                <TableCell className="text-xs whitespace-nowrap">
                   {m.selfExcludedUntil ? <span className="text-red-400 font-bold" title={m.selfExcludedUntil === 'permanent' ? 'ระงับถาวร' : `ระงับถึง ${m.selfExcludedUntil}`}>⛔{m.selfExcludedUntil === 'permanent' ? 'ถาวร' : ''}</span>
                     : m.dailyLimitSatang || m.monthlyLimitSatang
                       ? <span className="text-amber-300" title={`วัน ${satang(m.dailyLimitSatang || 0)} บาท / เดือน ${satang(m.monthlyLimitSatang || 0)} บาท`}>⚠️จำกัด</span>
                       : <span className="text-navy-400">—</span>}
                   {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap sticky right-0 bg-navy-800 group-hover:bg-navy-700/40 z-10">
+                </TableCell>
+                <TableCell className="whitespace-nowrap sticky right-0 bg-navy-800 group-hover:bg-navy-700/40 z-10">
                   <button onClick={() => setEdit({ ...m })} className="text-[#67e8f9] text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </Card>
 
       {/* modal แก้ไขสมาชิก — Modal กลาง (ESC + backdrop ปิด) */}
