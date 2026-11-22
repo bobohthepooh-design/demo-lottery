@@ -25,7 +25,7 @@ export function parseCookies(req) {
 // ---------- session ----------
 
 const SESSION_SELECT = `SELECT s.*, u.username, u.email, u.display_name, u.status AS user_status, u.mfa_enabled,
-                        u.age_confirmed, u.self_excluded_until, u.daily_limit_satang, u.monthly_limit_satang, u.email_verified
+                        u.age_confirmed, u.self_excluded_until, u.daily_limit_satang, u.monthly_limit_satang, u.email_verified, u.phone
                  FROM user_sessions s JOIN users u ON u.id = s.user_id
                  WHERE s.id = $1 AND s.revoked_at IS NULL
                    AND s.expires_at > to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')`;
@@ -50,7 +50,7 @@ export async function requireAuth(req, res, next) {
     req.session = s;
     req.user = { id: s.user_id, username: s.username, email: s.email, displayName: s.display_name, mfaEnabled: s.mfa_enabled,
       ageConfirmed: !!s.age_confirmed, selfExcludedUntil: s.self_excluded_until,
-      dailyLimitSatang: s.daily_limit_satang, monthlyLimitSatang: s.monthly_limit_satang, emailVerified: !!s.email_verified };
+      dailyLimitSatang: s.daily_limit_satang, monthlyLimitSatang: s.monthly_limit_satang, emailVerified: !!s.email_verified, phone: s.phone };
     next();
   } catch (e) { next(e); }
 }
@@ -321,7 +321,7 @@ async function createSessionToken(userId, ip, userAgent) {
 
 async function userPayload(user) {
   const roles = (await q(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = $1`, [user.id])).map(r => r.name);
-  return { id: user.id, username: user.username, email: user.email, displayName: user.display_name, roles, mfaEnabled: !!user.mfa_enabled, emailVerified: !!user.email_verified };
+  return { id: user.id, username: user.username, email: user.email, displayName: user.display_name, roles, mfaEnabled: !!user.mfa_enabled, emailVerified: !!user.email_verified, phone: user.phone || null };
 }
 
 export function normalizeEmail(raw) {

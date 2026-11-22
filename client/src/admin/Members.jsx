@@ -115,7 +115,7 @@ export default function AdminMembers() {
             </div>
           )}
           <Input label="รีเซ็ตรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)" type="password" value={edit?.password || ''}
-            onChange={e => setEdit({ ...edit, password: e.target.value })} placeholder="อย่างน้อย 8 ตัว" inputClassName="py-2" />
+            onChange={e => setEdit({ ...edit, password: e.target.value })} placeholder="อย่างน้อย 10 ตัว" inputClassName="py-2" />
           <div className="flex gap-2 pt-2">
             <Button onClick={save} className="flex-1">บันทึก</Button>
             <Button variant="ghost" onClick={() => setEdit(null)}>ยกเลิก</Button>

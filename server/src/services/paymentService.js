@@ -66,7 +66,7 @@ async function verifySlipWithSlipOk(imageBase64, branchId, apiKey) {
 
 // ================= Deposit =================
 export async function createDeposit(userId, { amount, method = 'promptpay' }) {
-  if (!Number.isInteger(amount) || amount < 10000) throw new HttpError(400, 'ขั้นต่ำเติม 100 บาท');
+  if (!Number.isInteger(amount) || amount < 100) throw new HttpError(400, 'ขั้นต่ำเติม 1 บาท');
   if (amount > 100000000) throw new HttpError(400, 'สูงสุด 1,000,000 บาทต่อรายการ');
   const promptPayId = config.promptPayId;
   if (!promptPayId) throw new HttpError(503, 'ระบบชำระเงินยังไม่พร้อมใช้งาน (ยังไม่ได้ตั้ง PROMPTPAY_ID)');
@@ -128,9 +128,12 @@ export async function submitDepositSlip(userId, paymentId, { imageBase64 }) {
 }
 
 // ================= Withdraw =================
-export async function createWithdraw(userId, { amount, bankName, accountNo, accountName }) {
+export async function createWithdraw(userId, { amount, bankName, accountNo, accountName, promptpayId }) {
   if (!Number.isInteger(amount) || amount < 10000) throw new HttpError(400, 'ขั้นต่ำถอน 100 บาท');
   if (!bankName || !accountNo || !accountName) throw new HttpError(400, 'กรุณากรอกข้อมูลบัญชีธนาคารให้ครบ');
+  // PromptPay ID ของผู้ใช้ (ถ้าระบุ) — normalize เหลือ digits; admin ใช้เทียบกับเบอร์ที่ verify OTP
+  const ppId = promptpayId ? String(promptpayId).replace(/\D/g, '') : null;
+  if (ppId && ppId.length < 9) throw new HttpError(400, 'PromptPay ID ไม่ถูกต้อง');
   // กันคำขอถอนค้างหลายรายการ
   const pend = await qGet(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM payment_requests WHERE user_id=? AND kind='withdraw' AND status='pending_review'`, [userId]);
   if (pend.c >= 2) throw new HttpError(400, 'มีคำขอถอนเงินรออนุมัติอยู่แล้ว', 'TOO_MANY_PENDING');
@@ -139,18 +142,18 @@ export async function createWithdraw(userId, { amount, bankName, accountNo, acco
   if (amount + pendingSum > wd.withdrawable) throw new HttpError(400,
     `ถอนได้สูงสุด ฿${((wd.withdrawable - pendingSum) / 100).toFixed(2)} (รวมคำขอที่รออนุมัติแล้ว)`, 'WITHDRAW_LIMIT');
   const ref = makeReference('WDR');
-  const row = await q(`INSERT INTO payment_requests (reference,user_id,kind,amount,method,status,bank_name,bank_account_no,bank_account_name) VALUES (?,?, 'withdraw',?,'bank_transfer','pending_review',?,?,?) RETURNING id,reference,created_at`,
-    [ref, userId, amount, bankName, accountNo, accountName]);
+  const row = await q(`INSERT INTO payment_requests (reference,user_id,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id) VALUES (?,?, 'withdraw',?,'bank_transfer','pending_review',?,?,?,?,?) RETURNING id,reference,created_at`,
+    [ref, userId, amount, bankName, accountNo, accountName, ppId]);
   await notify(userId, { type: 'withdraw', title: `ส่งคำขอถอน ฿${(amount / 100).toLocaleString('th-TH')} แล้ว`, body: `รอแอดมินอนุมัติ — ${bankName} ${accountNo}`, link: '/wallet' });
   return { id: row[0].id, reference: ref, amount, status: 'pending_review' };
 }
 
 // ================= Queries =================
 export async function listMine(userId) {
-  return q(`SELECT id,reference,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,slip_trans_ref,slip_error,admin_note,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY id DESC LIMIT 50`, [userId]);
+  return q(`SELECT id,reference,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id,slip_trans_ref,slip_error,admin_note,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY id DESC LIMIT 50`, [userId]);
 }
 export async function adminList({ status = 'pending_review', kind = null, limit = 100 } = {}) {
-  let sql = `SELECT pr.*, u.username, u.email FROM payment_requests pr JOIN users u ON u.id=pr.user_id`;
+  let sql = `SELECT pr.*, u.username, u.email, u.phone, u.display_name FROM payment_requests pr JOIN users u ON u.id=pr.user_id`;
   const params = [];
   const where = [];
   if (status !== 'all') { where.push(`pr.status=?`); params.push(status); }

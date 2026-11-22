@@ -36,6 +36,7 @@ export default function Wallet() {
   const [slipFile, setSlipFile] = useState(null);
   const [bankName, setBankName] = useState('');
   const [bankAccName, setBankAccName] = useState('');
+  const [ppId, setPpId] = useState('');
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
@@ -108,8 +109,8 @@ export default function Wallet() {
         if (!bankName || !bankAccName || !accountNo) return setErr('กรุณากรอกข้อมูลบัญชีธนาคารให้ครบ (ธนาคาร/เลขบัญชี/ชื่อบัญชี)');
         if (wd && !wd.unlocked) return setErr('ต้องเติมเครดิตขั้นต่ำ 100 บาท ก่อนจึงจะสามารถถอนเงินได้');
         if (wd && satangAmt > wd.withdrawable) return setErr(`ถอนได้สูงสุด ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล)`);
-        const r = await api('/payments/withdraw', { method: 'POST', body: { amount: satangAmt, bankName, accountNo, accountName: bankAccName } });
-        setModal(null); setAmount(''); setBankName(''); setBankAccName(''); setAccountNo('');
+        const r = await api('/payments/withdraw', { method: 'POST', body: { amount: satangAmt, bankName, accountNo, accountName: bankAccName, promptpayId: ppId || undefined } });
+        setModal(null); setAmount(''); setBankName(''); setBankAccName(''); setAccountNo(''); setPpId('');
         load(); loadPays();
         alert(`📨 ส่งคำขอถอน ฿${(r.amount / 100).toLocaleString('th-TH')} แล้ว — รอแอดมินอนุมัติ`);
         return;
@@ -163,7 +164,7 @@ export default function Wallet() {
             className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black py-3 text-sm tracking-wide shadow-lg shadow-emerald-900/25 hover:brightness-110 active:scale-[0.98] transition border border-emerald-400/40">
             ＋ ฝากเงิน
           </button>
-          <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
+          <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); setPpId(''); }}
             className="w-full rounded-xl bg-gradient-to-r from-sky-700 to-blue-800 text-white font-black py-3 text-sm tracking-wide shadow-lg shadow-blue-900/25 hover:brightness-110 active:scale-[0.98] transition border border-sky-400/40">
             🏦 ถอนเงิน
           </button>
@@ -359,12 +360,21 @@ export default function Wallet() {
                 <input value={bankAccName} onChange={e => setBankAccName(e.target.value)}
                   placeholder="ชื่อบัญชี (ตามบัญชีธนาคาร)"
                   className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
+                <input value={ppId} onChange={e => setPpId(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder={user?.phone ? `PromptPay ID (แนะนำ: ${user.phone} — ตรงเบอร์ที่ยืนยัน OTP)` : 'PromptPay ID (เบอร์/เลข ปชช. — ช่วยยืนยันตัวตน)'}
+                  inputMode="numeric"
+                  className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" />
+                {ppId && user?.phone && (
+                  <div className={`text-[11px] ${ppId === user.phone ? 'text-green-400' : 'text-amber-300'}`}>
+                    {ppId === user.phone ? '✓ PromptPay ตรงกับเบอร์ที่ยืนยัน OTP แล้ว — เร็วต่อการอนุมัติ' : '⚠️ PromptPay ไม่ตรงเบอร์สมาชิก — แอดมินจะตรวจสอบเพิ่มเติม'}
+                  </div>
+                )}
                 <div className="text-[11px] text-navy-400">⚠️ คำขอถอนจะรอแอดมินตรวจสอบและโอนเงินจริงให้ — ระยะเวลา 1-3 วันทำการ</div>
               </div>
             )}
             {modal && depStep === 'form' && (
               <>
-                <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'} (ขั้นต่ำ 100 บาท):</div>
+                <div className="text-xs text-navy-400 mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'} (ขั้นต่ำ {modal === 'deposit' ? '1' : '100'} บาท):</div>
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {PRESETS.map(p => (
                     <button key={p} type="button" onClick={() => setAmount(String(p))}

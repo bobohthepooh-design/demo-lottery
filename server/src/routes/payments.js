@@ -20,6 +20,7 @@ const withdrawSchema = z.object({
   bankName: z.string().min(1).max(100),
   accountNo: z.string().min(5).max(30),
   accountName: z.string().min(1).max(150),
+  promptpayId: z.string().max(20).optional(), // พร้อมเพย์ที่ผู้ใช้ระบุ — admin เทียบกับเบอร์ OTP ที่ verify แล้ว
 });
 
 // GET /payments — รายการคำขอของฉัน + สถานะระบบชำระเงิน

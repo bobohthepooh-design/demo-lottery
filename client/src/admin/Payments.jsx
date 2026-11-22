@@ -85,6 +85,12 @@ export default function AdminPayments() {
                     {p.slip_amount != null && <div>ยอดสลิป ฿{satang(p.slip_amount)}</div>}
                     {p.slip_error && <div className="text-red-400">⚠️ {p.slip_error}</div>}
                     {p.kind === 'withdraw' && <div>ปลายทาง: {p.bank_name} {p.bank_account_no} — {p.bank_account_name}</div>}
+                    {p.kind === 'withdraw' && p.promptpay_id && (() => {
+                      const match = p.phone && String(p.promptpay_id).replace(/\D/g, '') === String(p.phone).replace(/\D/g, '');
+                      return <div className={match ? 'text-green-400' : 'text-amber-300'}>
+                        พร้อมเพย์: {p.promptpay_id} {match ? '✓ ตรงเบอร์ OTP' : p.phone ? '⚠️ ไม่ตรงเบอร์สมาชิก' : ''}
+                      </div>;
+                    })()}
                     {p.slip_payer && <div className="text-navy-400">ผู้โอน: {p.slip_payer}</div>}
                   </TableCell>
                   <TableCell className="align-top">
