@@ -954,3 +954,7 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 /* Press feedback — ปุ่ม/การ์ดยุบตัวเบาๆ ตอนกด (haptic-like บน touch) */
 button:active, [role="button"]:active, a:active { transform: scale(0.97); transition: transform 80ms ease; }
 button, [role="button"], a { transition: transform var(--duration-fast, 120ms) ease; }
+
+/* Magic UI-inspired animations */
+@keyframes magic-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes magic-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

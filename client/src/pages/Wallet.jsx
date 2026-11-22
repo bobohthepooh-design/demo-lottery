@@ -5,7 +5,7 @@ import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
-import { Card, CardHeader, StatCard, Modal, Button } from '../components/ui/index.js';
+import { Card, CardHeader, StatCard, Modal, Button, BorderBeam } from '../components/ui/index.js';
 const TYPE_TH = {
   initial_credit: 'เครดิตฟรี', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
   bet_debit: 'หักเครดิตแทง', bet_refund: 'คืนเครดิต', win_credit: 'เงินรางวัล',
@@ -134,14 +134,15 @@ export default function Wallet() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* กระเป๋า — portal-style: member card + balance + ฝาก/ถอน (อ้างอิง portal.ruayraew.vip/wallet) */}
-      <Card variant="gold" className="overflow-hidden">
+      <Card variant="gold" className="overflow-hidden relative">
+        <BorderBeam duration={7} />
         {/* member strip — ชื่อ + ระดับสมาชิก + DEMO badge */}
         <div className="flex items-center gap-3 px-6 pt-6 pb-4">
           <span className="w-12 h-12 rounded-full bg-gradient-to-br from-navy-800 to-navy-950 text-gold-300 font-black text-xl flex items-center justify-center border-2 border-gold-500/60 shadow-md shrink-0">
             {(user?.displayName || user?.username || 'ล').slice(0, 1).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <div className="font-black text-navy-950 text-lg leading-tight truncate">{user?.displayName || user?.username || 'สมาชิก'}</div>
+            <div className="font-black text-[#241a04] text-lg leading-tight truncate">{user?.displayName || user?.username || 'สมาชิก'}</div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full bg-navy-950/85 text-gold-300 border border-gold-500/40">MEMBER</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-600/90 text-white">DEMO</span>
@@ -149,7 +150,7 @@ export default function Wallet() {
           </div>
           <div className="text-right shrink-0">
             <div className="text-[10px] font-bold text-navy-950/70 uppercase tracking-wider">ยอดคงเหลือ</div>
-            <div className="text-3xl sm:text-4xl font-black text-navy-950 leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">{satang(balance)}</div>
+            <div className="text-3xl sm:text-4xl font-black text-[#241a04] leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">{satang(balance)}</div>
             <div className="text-[11px] font-bold text-navy-950/70">บาท</div>
           </div>
         </div>
@@ -159,7 +160,7 @@ export default function Wallet() {
             className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black py-3.5 text-sm tracking-wide shadow-lg shadow-emerald-900/25 hover:brightness-110 active:scale-[0.98] transition border border-emerald-400/40">
             ＋ ฝากเงิน
           </button>
-          <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); }}
+          <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
             className="rounded-xl bg-gradient-to-r from-sky-700 to-blue-800 text-white font-black py-3.5 text-sm tracking-wide shadow-lg shadow-blue-900/25 hover:brightness-110 active:scale-[0.98] transition border border-sky-400/40">
             🏦 ถอนเงิน
           </button>

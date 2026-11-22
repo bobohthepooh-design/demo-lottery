@@ -4,3 +4,4 @@ export { Input, Select } from './Input.jsx';
 export { default as Modal } from './Modal.jsx';
 export { default as Badge } from './Badge.jsx';
 export { default as StatCard } from './StatCard.jsx';
+export { Marquee, BorderBeam } from './magic.jsx';

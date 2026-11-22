@@ -5,6 +5,7 @@ import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { typeAccent } from '../typeAccent.js';
 import { marketInfo, MODE_BADGE, sourceBadge, isOfficial } from '../resultSource.js';
+import { Marquee } from '../components/ui/index.js';
 
 // ผลย่อกระชับสำหรับการ์ดผลรางวัล — เฉพาะเลขหลักที่คนดูบ่อย
 const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
@@ -130,6 +131,22 @@ export default function Home() {
           <span>🛡️</span>
           <span className="flex-1">เล่นอย่างมีความรับผิดชอบ — ตั้งวงเงินได้ที่โปรไฟล์ • ระบบจำลองเพื่อการศึกษา</span>
           <Link to="/legal" className="text-gold-400 hover:text-gold-300 font-semibold shrink-0">ข้อกำหนด/PDPA →</Link>
+        </div>
+      )}
+
+      {/* ticker ผลล่าสุดวิ่ง — Magic UI marquee */}
+      {resultCards.length > 0 && (
+        <div className="rounded-xl border border-navy-700 bg-navy-900/60 overflow-hidden">
+          <Marquee speed={45} className="py-2 text-xs">
+            {resultCards.map(g => {
+              const txt = compactResult(g.settled[0].winning);
+              return txt ? (
+                <span key={`${g.type_code}|${g.cat_code || ''}`} className="text-navy-300">
+                  🏆 {g.label}: <b className="text-gold-300">{txt}</b>
+                </span>
+              ) : null;
+            })}
+          </Marquee>
         </div>
       )}
 

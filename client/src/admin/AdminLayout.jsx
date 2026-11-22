@@ -124,10 +124,10 @@ export default function AdminLayout() {
           {user && (
             <div className="hidden lg:flex items-center gap-2.5 px-4 py-3 border-t border-navy-700/60">
               <span className="w-7 h-7 rounded-full bg-navy-700 border border-navy-600 flex items-center justify-center text-xs font-bold text-gold-300">
-                {(user.display_name || user.username || '?').slice(0, 1).toUpperCase()}
+                {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
               </span>
               <div className="leading-tight min-w-0">
-                <div className="text-xs font-semibold text-white truncate">{user.display_name || user.username}</div>
+                <div className="text-xs font-semibold text-white truncate">{user.displayName || user.username}</div>
                 <div className="text-[10px] text-navy-400 truncate">{(user.roles || []).join(', ') || 'staff'}</div>
               </div>
             </div>
