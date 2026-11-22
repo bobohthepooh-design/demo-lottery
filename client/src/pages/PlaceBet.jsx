@@ -397,31 +397,34 @@ export default function PlaceBet() {
 
         {!closed && (
           <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20">
-            {/* Bet Type Selector — Horizontal scroll chips */}
+            {/* Bet Type Selector — Grid layout, all visible */}
             <div>
               <h2 className="font-bold text-white text-lg mb-1 flex items-center gap-2">
                 <span className="w-1 h-5 bg-gold-500 rounded-full" />
                 เลือกประเภทการแทง
               </h2>
               {rule && <div className="text-xs text-navy-400 mb-3 ml-3">💡 {ruleHint(rule)}</div>}
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
                   const isSel = selRule === String(r.id);
                   return (
                     <button key={r.id} onClick={() => setSelRule(String(r.id))}
-                      className={`shrink-0 px-4 py-3 rounded-xl border transition-all duration-200 text-left min-w-[120px] ${
+                      className={`px-3 py-2.5 rounded-xl border transition-all duration-200 text-left ${
                         isSel 
                           ? 'border-gold-500 bg-gold-500/10 text-gold-300 shadow-lg shadow-gold-500/10' 
                           : 'border-navy-600 bg-navy-800/50 text-navy-200 hover:border-navy-500 hover:bg-navy-800'
                       }`}>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300">อั้น</span>}
-                        <span className="font-bold text-sm truncate">{r.name_th}</span>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="font-bold text-sm truncate flex items-center gap-1.5">
+                          {isAnn && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 shrink-0">อั้น</span>}
+                          <span className="truncate">{r.name_th}</span>
+                        </div>
+                        <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${isSel ? 'bg-gold-500/20 text-gold-300' : 'bg-black/20 text-gold-400'}`}>x{r.payout_multiplier}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-navy-400">{r.digits} หลัก</span>
-                        <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${isSel ? 'bg-gold-500/20 text-gold-300' : 'bg-black/20 text-gold-400'}`}>x{r.payout_multiplier}</span>
+                      <div className="text-[10px] text-navy-400">
+                        {r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : '1 ราศี') : `${r.digits} หลัก`}
+                        {isAnn && <span className="text-amber-400"> • ครึ่งรางวัล</span>}
                       </div>
                     </button>
                   );
