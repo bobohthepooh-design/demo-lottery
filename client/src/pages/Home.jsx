@@ -2,28 +2,8 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime, satang } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import { FlagIcon } from '../components/ResultLine.jsx';
-import { typeAccent } from '../typeAccent.js';
-import { marketInfo, MODE_BADGE, sourceBadge, isOfficial } from '../resultSource.js';
+import ResultLine from '../components/ResultLine.jsx';
 import { Marquee } from '../components/ui/index.js';
-
-// ผลย่อกระชับสำหรับการ์ดผลรางวัล — เฉพาะเลขหลักที่คนดูบ่อย
-const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
-function compactResult(w) {
-  if (!w) return null;
-  const parts = [];
-  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
-  if (w.p1) { parts.push(`อ.1 ${firstOf(w.p1)}`); if (w.p2) parts.push(`อ.2 ${firstOf(w.p2)}`); }
-  else if (w.first) parts.push(`รางวัล1 ${w.first}`);
-  if (w.last4) parts.push(`ท้าย4 ${w.last4}`);
-  if (w.main || w.num4) parts.push(w.main || w.num4);
-  if (w.zodiac) parts.push(w.zodiac);
-  const top = w.top3 ?? w.last3 ?? w.front3;
-  const bot = w.bottom2 ?? w.last2 ?? w.top2;
-  if (top) parts.push(`บน ${asList(top)}`);
-  if (bot) parts.push(`ล่าง ${asList(bot)}`);
-  return parts.length ? parts.join(' · ') : null;
-}
 
 export default function Home() {
   const { user, demoNotice, isAdmin, balance } = useAuth();
@@ -139,10 +119,10 @@ export default function Home() {
         <div className="rounded-xl border border-navy-700 bg-navy-900/60 overflow-hidden">
           <Marquee speed={45} className="py-2 text-xs">
             {resultCards.map(g => {
-              const txt = compactResult(g.settled[0].winning);
-              return txt ? (
+              const last = g.settled[0];
+              return last ? (
                 <span key={`${g.type_code}|${g.cat_code || ''}`} className="text-navy-300">
-                  🏆 {g.label}: <b className="text-gold-300">{txt}</b>
+                  🏆 {g.label}: <b className="text-gold-300">{fmtDateTime(last.draw_at)}</b>
                 </span>
               ) : null;
             })}
@@ -161,43 +141,28 @@ export default function Home() {
             </div>
             <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
           </div>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {resultCards.slice(0, 8).map(g => {
-              const ac = typeAccent(g.type_code);
               const last = g.settled[0];
               const nxt = g.pending.find(d => d.status === 'open' || d.status === 'scheduled');
-              const txt = last ? compactResult(last.winning) : null;
-              const srcB = last ? sourceBadge(last.result_source) : null;
-              const mi = marketInfo(g.type_code, g.cat_code);
+              // สร้าง object แบบ result สำหรับ ResultLine
+              const resultObj = last ? {
+                ...last,
+                category_name_th: g.label,
+                type_name_th: g.type_name_th,
+                type_code: g.type_code,
+                category_code: g.cat_code,
+              } : null;
               return (
                 <Link key={`${g.type_code}|${g.cat_code || ''}`} to="/results"
-                  className="bg-navy-800/70 border border-navy-700 hover:border-gold-500/40 rounded-xl p-3 transition group flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <FlagIcon code={g.type_code} className="w-6 h-6 text-[10px]" />
-                    <div className="min-w-0 flex-1">
-                      <div className={`text-sm font-bold ${ac.text} truncate group-hover:text-gold-300 transition`}>{g.label}</div>
-                      <div className="text-[10px] text-navy-500 font-mono truncate">{last?.draw_code || g.type_name_th}</div>
+                  className="group transition hover:-translate-y-0.5">
+                  {resultObj ? (
+                    <ResultLine r={resultObj} compact />
+                  ) : (
+                    <div className="bg-navy-800/70 border border-navy-700 rounded-xl p-3 text-center text-navy-400 text-sm">
+                      {nxt ? `⏳ ถัดไป ${fmtDateTime(nxt.draw_at)}` : 'ไม่มีรอบวันนี้'}
                     </div>
-                    {last
-                      ? (srcB && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${srcB.cls}`} title={mi ? `ที่มา: ${mi.src}${mi.mode === 'auto' && !isOfficial(mi) ? ' — ไม่ใช่ผลทางการ' : ''}` : ''}>{srcB.short}</span>)
-                      : (mi && <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${MODE_BADGE[mi.mode]?.cls || ''}`} title={mi.mode === 'auto' && !isOfficial(mi) ? 'ผลจากเว็บภายนอก — ไม่ใช่ผลทางการ' : ''}>{mi.mode === 'auto' && !isOfficial(mi) ? '⚠️ ' : ''}{MODE_BADGE[mi.mode]?.label}</span>)}
-                  </div>
-                  <div className="mt-2 flex-1 min-h-[1.25rem]">
-                    {last ? (
-                      <div className="text-xs font-mono tabular-nums text-slate-100 truncate" title={txt}>{txt}</div>
-                    ) : (
-                      <div className="text-[11px] text-navy-400 truncate">
-                        {nxt ? `⏳ ถัดไป ${fmtDateTime(nxt.draw_at)}` : 'ไม่มีรอบวันนี้'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3 pt-2 border-t border-navy-700/60 flex items-center justify-between text-[10px] text-navy-400">
-                    <span>
-                      {last ? `ออก ${fmtDateTime(last.draw_at)}` : nxt ? `ถัดไป ${fmtDateTime(nxt.draw_at)}` : '—'}
-                      {g.settled.length > 1 && <span className="text-navy-500"> • วันนี้ {g.settled.length} งวด</span>}
-                    </span>
-                    <span className="truncate max-w-[45%]" title={mi?.src || ''}>{mi?.src || ''}</span>
-                  </div>
+                  )}
                 </Link>
               );
             })}

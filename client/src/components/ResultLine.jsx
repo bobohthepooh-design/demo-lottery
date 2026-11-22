@@ -91,7 +91,8 @@ export function FlagIcon({ code, className = '' }) {
 }
 
 // การ์ดผลรางวัล 1 ประเทศ — หัวข้อ + คอลัมน์แยกตามประเภทรางวัล
-export default function ResultLine({ r }) {
+// compact = true สำหรับหน้าแรก (เล็กลง แสดง field หลักเท่านั้น ไม่แสดง sourceChecks/fairness)
+export default function ResultLine({ r, compact = false }) {
   let data = r.winning_numbers;
   if (typeof data === 'string') { try { data = JSON.parse(data); } catch { data = {}; } }
   const schema = resultSchema(r.type_code, r.category_code);
@@ -100,36 +101,49 @@ export default function ResultLine({ r }) {
   const extras = Object.entries(data || {}).filter(([k, v]) => !known.has(k) && v !== '');
   const sourceChecks = r.source_checks || [];
   const hasMismatch = sourceChecks.some(c => c.verification_status === 'mismatch');
+
+  // compact mode: เลือกเฉพาะ field หลัก (รางวัลที่ 1, รางวัลที่ 2, 3 ตัวบน, 2 ตัวล่าง)
+  const isCompact = compact;
+  const compactFields = fields.filter(f => {
+    const k = f.key.toLowerCase();
+    return k.includes('first') || k.includes('p1') || k.includes('p2') ||
+           k.includes('top3') || k.includes('front3') || k.includes('last3') ||
+           k.includes('bottom2') || k.includes('last2') || k.includes('top2');
+  });
+
+  const displayFields = isCompact ? compactFields : fields;
+  const displayExtras = isCompact ? [] : extras;
+
   const cell = (key, label, raw) => {
     const vals = raw === undefined || raw === null || raw === '' ? '—'
       : (Array.isArray(raw) ? raw : [raw]).join(', ');
     const tokens = String(vals).split(/([,\s]+)/);
     return (
-      <div key={key} className="shrink-0 text-center min-w-[3.4rem]">
-        <div className="text-[9px] leading-tight text-navy-400">{label}</div>
-        <div className="text-xs font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-0.5">
+      <div key={key} className={`shrink-0 text-center ${isCompact ? 'min-w-[2.8rem]' : 'min-w-[3.4rem]'}`}>
+        <div className={`leading-tight text-navy-400 ${isCompact ? 'text-[8px]' : 'text-[9px]'}`}>{label}</div>
+        <div className={`font-mono font-bold text-gold-300 whitespace-nowrap flex flex-wrap justify-center gap-0.5 ${isCompact ? 'text-[10px]' : 'text-xs'}`}>
           {tokens.map((t, ti) => /^\d/.test(t) ? (
-            <span key={ti} className="lotto-ball" style={{ fontSize: '0.8em' }}>{t}</span>
+            <span key={ti} className="lotto-ball" style={{ fontSize: isCompact ? '0.7em' : '0.8em' }}>{t}</span>
           ) : <span key={ti}>{t}</span>)}
         </div>
       </div>
     );
   };
   return (
-    <div className="bg-navy-800/70 border border-navy-700/60 rounded-lg px-3 py-2">
-      <div className="flex items-center gap-2 text-[11px]">
-        <FlagIcon code={r.type_code} className="w-6 h-6 text-[10px]" />
-        <span className="font-semibold text-navy-950">{r.category_name_th || r.type_name_th}</span>
-        {(() => { const b = sourceBadge(r.source); return b && (
+    <div className={`bg-navy-800/70 border border-navy-700/60 rounded-lg ${isCompact ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
+      <div className={`flex items-center gap-2 ${isCompact ? 'text-[10px]' : 'text-[11px]'}`}>
+        <FlagIcon code={r.type_code} className={isCompact ? 'w-5 h-5 text-[9px]' : 'w-6 h-6 text-[10px]'} />
+        <span className={`font-semibold text-navy-950 ${isCompact ? 'truncate' : ''}`}>{r.category_name_th || r.type_name_th}</span>
+        {!isCompact && (() => { const b = sourceBadge(r.source); return b && (
           <span className={`text-[9px] px-1.5 py-0.5 rounded ${b.cls}`} title={r.source}>{b.label}</span>
         ); })()}
-        {r.fairness?.method === 'deterministic' && (
+        {!isCompact && r.fairness?.method === 'deterministic' && (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
             title={`Provably fair — ผล generate จาก seed "${r.fairness.seed}" ตรวจสอบย้อนหลังได้ที่ /api/lottery/fairness/gen?kind=${r.fairness.kind}&code=${r.draw_code}`}>🔐 ตรวจสอบได้</span>
         )}
-        <span className="text-navy-500 ml-auto">{fmtDate(r.draw_at)} • ออก {thaiTime(r.draw_at)} น.</span>
+        <span className={`text-navy-500 ml-auto ${isCompact ? 'truncate text-[9px]' : ''}`}>{fmtDate(r.draw_at)}{!isCompact && ` • ออก ${thaiTime(r.draw_at)} น.`}</span>
       </div>
-      {sourceChecks.length > 0 && (
+      {!isCompact && sourceChecks.length > 0 && (
         <div className={`mt-1 text-[9px] ${hasMismatch ? 'text-amber-300' : 'text-navy-400'}`}>
           {hasMismatch ? '⚠ แหล่งข้อมูลไม่ตรงกัน' : 'ตรวจแหล่งข้อมูล'}:{' '}
           {sourceChecks.map(c => {
@@ -144,24 +158,24 @@ export default function ResultLine({ r }) {
       )}
       {r.type_code === 'HR' ? (
         // หวยราษี — แสดงผลเป็นชิปราศีเหมือนช่องสัญลักษณ์หวยขูด
-        <div className="flex gap-4 mt-1.5 flex-wrap items-center">
+        <div className={`flex gap-4 mt-1.5 flex-wrap items-center ${isCompact ? 'gap-2' : ''}`}>
           {data?.zodiac ? (
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-navy-400">รางวัลใหญ่</span>
+              <span className={`text-navy-400 ${isCompact ? 'text-[8px]' : 'text-[9px]'}`}>รางวัลใหญ่</span>
               <ZodiacChip sign={String(data.zodiac)} hero small />
             </div>
           ) : null}
           {data?.seq ? (
             <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-[9px] text-navy-400 mr-1">ผล 6 ราศี</span>
+              <span className={`text-navy-400 mr-1 ${isCompact ? 'text-[8px]' : 'text-[9px]'}`}>ผล 6 ราศี</span>
               {zodiacList(data.seq).map((s, i) => <ZodiacChip key={i} sign={s} hero={i === 0} small />)}
             </div>
           ) : null}
         </div>
       ) : (
-      <div className="flex gap-5 mt-1.5 overflow-x-auto pb-0.5">
-        {fields.map(f => cell(f.key, f.short || f.label, data?.[f.key]))}
-        {extras.map(([k, v]) => cell(k, k, v))}
+      <div className={`flex gap-5 mt-1.5 overflow-x-auto pb-0.5 ${isCompact ? 'gap-3' : ''}`}>
+        {displayFields.map(f => cell(f.key, f.short || f.label, data?.[f.key]))}
+        {displayExtras.map(([k, v]) => cell(k, k, v))}
       </div>
       )}
     </div>
