@@ -134,44 +134,44 @@ export default function Wallet() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* HERO BALANCE CARD — NEW DESIGN - RED BACKGROUND FOR VISIBILITY */}
-      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-2 border-red-400 overflow-hidden">
+      {/* HERO BALANCE CARD — RuayRaew style: large balance + deposit/withdraw */}
+      <Card className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 overflow-hidden">
         {/* member strip — subtitle */}
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <span className="w-8 h-8 rounded-full bg-white text-red-600 font-black text-sm flex items-center justify-center border-2 border-white shrink-0">
+          <span className="w-8 h-8 rounded-full bg-gold-500/20 text-gold-300 font-black text-sm flex items-center justify-center border border-gold-500/40 shrink-0">
             {(user?.displayName || user?.username || 'ล').slice(0, 1).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-white truncate">{user?.displayName || user?.username || 'สมาชิก'}</div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white text-red-600">MEMBER</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-yellow-400 text-black">DEMO</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-navy-700 text-navy-300">MEMBER</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-600/90 text-white">DEMO</span>
             </div>
           </div>
         </div>
         
         {/* large balance display */}
         <div className="px-5 pb-4">
-          <div className="text-[10px] font-bold text-white/80 uppercase tracking-wider mb-1">ยอดคงเหลือ</div>
-          <div className="text-5xl sm:text-6xl font-black text-white leading-none">{satang(balance)}</div>
-          <div className="text-sm font-bold text-white/80 mt-0.5">บาท</div>
+          <div className="text-[10px] font-bold text-navy-400 uppercase tracking-wider mb-1">ยอดคงเหลือ</div>
+          <div className="text-4xl sm:text-5xl font-black text-gold-300 leading-none">{satang(balance)}</div>
+          <div className="text-sm font-bold text-navy-400 mt-0.5">บาท</div>
         </div>
 
         {/* full-width action buttons */}
         <div className="px-5 pb-3 space-y-2">
           <button onClick={() => { setModal('deposit'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
-            className="w-full rounded-xl bg-white text-red-600 font-black py-4 text-sm tracking-wide shadow-lg hover:bg-gray-100 active:scale-[0.98] transition">
+            className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black py-3 text-sm tracking-wide shadow-lg shadow-emerald-900/25 hover:brightness-110 active:scale-[0.98] transition border border-emerald-400/40">
             ＋ ฝากเงิน
           </button>
           <button onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
-            className="w-full rounded-xl bg-yellow-400 text-black font-black py-4 text-sm tracking-wide shadow-lg hover:bg-yellow-300 active:scale-[0.98] transition">
+            className="w-full rounded-xl bg-gradient-to-r from-sky-700 to-blue-800 text-white font-black py-3 text-sm tracking-wide shadow-lg shadow-blue-900/25 hover:brightness-110 active:scale-[0.98] transition border border-sky-400/40">
             🏦 ถอนเงิน
           </button>
         </div>
 
         {/* withdrawable status */}
         {wd && (
-          <div className={`mx-5 mb-4 rounded-lg px-3 py-2 text-xs font-semibold text-center ${wd.pendingSlips > 0 ? 'bg-yellow-300 text-black' : wd.unlocked ? 'bg-green-300 text-black' : 'bg-yellow-300 text-black'}`}>
+          <div className={`mx-5 mb-4 rounded-lg px-3 py-2 text-xs font-semibold text-center ${wd.pendingSlips > 0 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' : wd.unlocked ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'}`}>
             {wd.pendingSlips > 0 && (
               <div className="mb-0.5">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท)</div>
             )}
@@ -186,7 +186,7 @@ export default function Wallet() {
         )}
         
         <div className="px-5 pb-5 text-center">
-          <div className="text-[10px] text-white/80 font-semibold">เครดิตเสมือนสำหรับการศึกษา — โปรโมชันถอนไม่ได้ เฉพาะเงินฝาก/เงินรางวัล</div>
+          <div className="text-[10px] text-navy-400 font-semibold">เครดิตเสมือนสำหรับการศึกษา — โปรโมชันถอนไม่ได้ เฉพาะเงินฝาก/เงินรางวัล</div>
         </div>
       </Card>
 
@@ -197,6 +197,38 @@ export default function Wallet() {
         <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-lose-300" />
         <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-win-300" />
       </div>
+
+      {/* ประวัติคำขอชำระเงิน */}
+      {payReqs.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader title="คำขอเติม/ถอนเงิน" />
+          <div className="divide-y divide-navy-700/50">
+            {payReqs.slice(0, 10).map(p => (
+              <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+                <div className="min-w-0">
+                  <div className="font-semibold text-white">
+                    {p.kind === 'deposit' ? '💳 เติม' : '🏦 ถอน'} ฿{satang(p.amount)}
+                    <span className="ml-2 text-[11px] font-mono text-navy-400">{p.reference}</span>
+                  </div>
+                  <div className="text-[11px] text-navy-400 truncate">
+                    {fmtDateTime(p.created_at)}
+                    {p.slip_trans_ref ? ` • สลิป ${p.slip_trans_ref}` : ''}
+                    {p.bank_name ? ` • ${p.bank_name} ${p.bank_account_no}` : ''}
+                    {p.slip_error ? ` • ⚠️ ${p.slip_error}` : ''}
+                    {p.admin_note ? ` • หมายเหตุ: ${p.admin_note}` : ''}
+                  </div>
+                </div>
+                <span className={`shrink-0 text-[11px] font-bold px-2 py-1 rounded ${
+                  p.status === 'approved' ? 'bg-green-500/15 text-green-300'
+                  : p.status === 'rejected' ? 'bg-red-500/15 text-red-300'
+                  : 'bg-amber-500/15 text-amber-300'}`}>
+                  {p.status === 'approved' ? '✅ สำเร็จ' : p.status === 'rejected' ? '❌ ปฏิเสธ' : p.status === 'pending_slip' ? '📤 รอสลิป' : '⏳ รอตรวจสอบ'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card className="overflow-hidden">
         <CardHeader title="ประวัติธุรกรรมเครดิต" />
