@@ -41,6 +41,18 @@ export default function Home() {
     { to: '/register', icon: '👤', label: 'สมัครสมาชิก', cls: 'from-sky-600 to-blue-700', sub: 'เริ่มต้น' },
   ];
 
+  // Hero — หาตลาดที่เปิดรับแทงและใกล้ปิดที่สุด (live countdown)
+  const heroDraw = (() => {
+    const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
+    const todays = todayDraws.filter(d => drawVisible(d) && !INSTANT.has(d.type_code) && (d.status === 'open' || d.status === 'scheduled'));
+    const now = Date.now();
+    const upcoming = todays
+      .map(d => ({ ...d, closeTime: new Date(d.betting_close_at || d.draw_at).getTime() }))
+      .filter(d => d.closeTime > now)
+      .sort((a, b) => a.closeTime - b.closeTime);
+    return upcoming[0] || null;
+  })();
+
   // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด
   const resultCards = (() => {
     // เฉพาะหวย — ไม่เอาเกมด่วน (สล็อต/ไฮโล/ยี่กี) มาแสดงในส่วนผลรางวัล
@@ -84,14 +96,48 @@ export default function Home() {
         </div>
       )}
 
+      {/* Hero — Live Draw Highlight */}
+      {heroDraw && (
+        <div className="rounded-xl border border-gold-500/40 bg-gradient-to-br from-gold-500/10 via-navy-800/80 to-navy-900/90 p-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-3xl" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider text-green-400">Live Draw</span>
+              <span className="text-navy-400 text-xs ml-auto">{heroDraw.category_name_th || heroDraw.type_name_th}</span>
+            </div>
+            <div className="mb-3">
+              <div className="text-2xl font-display font-bold text-white mb-1">{heroDraw.type_name_th}</div>
+              <div className="text-xs text-navy-400">ปิดรับ {fmtDateTime(heroDraw.betting_close_at || heroDraw.draw_at)}</div>
+            </div>
+            <div className="flex items-center gap-4 text-navy-300 text-sm mb-4">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
+                3 ตัวบน
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
+                2 ตัวล่าง
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
+                ท้าย 2 ตัว
+              </span>
+            </div>
+            <Link to={`/bet/${heroDraw.id}`} className="inline-flex items-center gap-2 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95">
+              แทงรอบนี้ →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ปุ่มลัดหลัก — portal-style icon tiles */}
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {quickActions.map(a => (
           <Link key={a.label} to={a.to}
-            className={`group relative rounded-2xl bg-gradient-to-br ${a.cls} py-4 px-2 flex flex-col items-center gap-1.5 text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl active:scale-95 border border-white/10`}>
-            <span className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent rounded-full" />
-            <span className="text-2xl drop-shadow">{a.icon}</span>
-            <span className="text-xs sm:text-sm font-bold tracking-wide">{a.label}</span>
+            className={`group relative rounded-xl bg-gradient-to-br ${a.cls} py-3 px-2 flex flex-col items-center gap-1 text-white transition-all duration-200 hover:brightness-110 active:scale-95 border border-white/10`}>
+            <span className="text-xl drop-shadow">{a.icon}</span>
+            <span className="text-xs font-bold tracking-wide">{a.label}</span>
             <span className="text-[9px] opacity-80 font-mono truncate max-w-full px-1">{a.sub}</span>
           </Link>
         ))}
