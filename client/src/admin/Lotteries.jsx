@@ -279,7 +279,7 @@ export default function AdminLotteries() {
 
       {showTypeForm && (
         <Card className="p-5">
-        <form onSubmit={createType} className="grid sm:grid-cols-2 gap-3">
+        <form onSubmit={createType} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input required placeholder="code (เช่น TH)" value={typeForm.code} onChange={e => setTypeForm({...typeForm, code: e.target.value})} />
           <Input required placeholder="ชื่อภาษาไทย" value={typeForm.name_th} onChange={e => setTypeForm({...typeForm, name_th: e.target.value})} />
           <Input placeholder="ชื่อภาษาอังกฤษ" value={typeForm.name_en} onChange={e => setTypeForm({...typeForm, name_en: e.target.value})} />
@@ -289,7 +289,7 @@ export default function AdminLotteries() {
         </Card>
       )}
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {types.map(t => (
           <Card key={t.id} className="p-4">
             <div className="flex items-center justify-between">
@@ -447,7 +447,7 @@ export default function AdminLotteries() {
 
       <Modal open={!!editRule} onClose={() => setEditRule(null)} wide title={`${editRule?.id ? 'แก้ไข' : 'เพิ่ม'}กติกา`}>
         {editRule && (<>
-            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><label className="text-navy-300 text-xs">ประเภทหวย</label>
                 <select value={editRule.lottery_type_id} disabled={!!editRule.id} onChange={e => setEditRule({...editRule, lottery_type_id: +e.target.value, category_id: null})}
                   className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1">
@@ -488,7 +488,7 @@ export default function AdminLotteries() {
                 return (
                 <div className="sm:col-span-2 rounded-lg border border-navy-700 bg-navy-900/50 p-3">
                   <div className="text-xs font-semibold text-gold-300 mb-2">🎯 เงื่อนไขการตรวจผล (match_config)</div>
-                  <div className="grid sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div><label className="text-navy-400 text-[10px]">แหล่งผล (source)</label>
                       <select value={c.source || ''} onChange={e => patchCfg({ source: e.target.value })}
                         className="w-full bg-navy-900 border border-navy-600 rounded px-2 py-1.5 text-xs mt-0.5">
@@ -511,7 +511,7 @@ export default function AdminLotteries() {
                 <input value={editRule.name_th} onChange={e => setEditRule({...editRule, name_th: e.target.value})} className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 mt-1" /></div>
               {editRule.bet_type === 'scratch' ? (
                 <div className="sm:col-span-2"><label className="text-navy-300 text-xs">ตารางรางวัล — จ่ายเมื่อสัญลักษณ์ซ้ำ 3 รีลบน 1 เพย์ไลน์ (บาท)</label>
-                  <div className="grid sm:grid-cols-2 gap-2 mt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                     {(() => {
                       const c = parseCfg(editRule.match_config);
                       const cur = Array.isArray(c.prizes) ? c.prizes : [];

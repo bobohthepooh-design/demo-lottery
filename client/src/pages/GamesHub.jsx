@@ -60,7 +60,7 @@ export default function GamesHub() {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {games.map(g => (
           <Link key={g.to} to={g.to}
             className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${g.grad} p-5 hover:scale-[1.02] transition-transform`}>

@@ -91,7 +91,7 @@ export default function AdminWallet() {
       <h1 className="text-2xl font-bold text-white">จัดการเครดิตเสมือน (Virtual Wallet)</h1>
       <Card>
       <CardBody>
-      <form onSubmit={submit} className="grid sm:grid-cols-2 gap-3">
+      <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} inputClassName="py-2.5">
           <option value="">— เลือกสมาชิก —</option>
           {members.map(m => <option key={m.id} value={m.id}>{m.username} ({satang(m.balance)} บาท)</option>)}
@@ -124,7 +124,7 @@ export default function AdminWallet() {
             </button>
           </div>
           {bulk.mode === 'selected' && (
-            <div className="max-h-40 overflow-y-auto bg-navy-900/60 border border-navy-700 rounded-lg p-2 grid sm:grid-cols-2 gap-1">
+            <div className="max-h-40 overflow-y-auto bg-navy-900/60 border border-navy-700 rounded-lg p-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
               {members.map(m => (
                 <label key={m.id} className="flex items-center gap-2 text-xs text-navy-200 px-2 py-1 rounded hover:bg-navy-800 cursor-pointer">
                   <input type="checkbox" checked={bulk.userIds.includes(m.id)} onChange={() => toggleMember(m.id)} className="accent-gold-500" />
@@ -134,7 +134,7 @@ export default function AdminWallet() {
               {!members.length && <div className="text-navy-400 text-xs p-2">ไม่มีสมาชิก</div>}
             </div>
           )}
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={bulk.amount} onChange={e => setBulk({ ...bulk, amount: e.target.value })} inputClassName="py-2.5" />
             <Select value={bulk.direction} onChange={e => setBulk({ ...bulk, direction: e.target.value })} inputClassName="py-2.5">
               <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>

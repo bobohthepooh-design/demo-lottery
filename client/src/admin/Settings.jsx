@@ -132,7 +132,7 @@ export default function AdminSettings() {
         <CardBody>
           <div className="text-sm font-bold text-white mb-1">🎯 ซ่อนเมนูเฉพาะประเภท (แสดงผลอย่างเดียว)</div>
           <div className="text-xs text-navy-400 mb-1">ติ๊ก "แสดง" = สมาชิกเห็นเมนูประเภทนั้น • ติ๊กออก = ซ่อนการ์ดเมนูเฉยๆ — <b className="text-amber-300">ระบบยังสร้างรอบและรับแทงได้ปกติ</b> (ต่างจากปิดตลาดจริงที่หน้าประเภทหวย &amp; กติกา)</div>
-          <div className="grid sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {lotteryTypes.map(t => {
               const shown = !hiddenTypes.includes(t.code);
               return (

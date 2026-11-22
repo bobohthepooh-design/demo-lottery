@@ -40,7 +40,7 @@ export default function LuckyNumbers() {
           className="text-xs text-navy-400 hover:text-gold-300 transition">แหล่งข้อมูล: lotterychecks.com ↗</a>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(expanded ? data.markets : data.markets.slice(0, COLLAPSED_COUNT)).map(m => (
           <div key={m.key} className="bg-navy-800/70 border border-navy-700/60 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">

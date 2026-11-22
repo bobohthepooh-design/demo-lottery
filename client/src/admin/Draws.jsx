@@ -157,7 +157,7 @@ export default function AdminDraws() {
 
       {showForm && (
         <Card className="p-5">
-        <form onSubmit={create} className="grid sm:grid-cols-2 gap-3">
+        <form onSubmit={create} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Select required value={form.lottery_type_id} onChange={e => setForm({...form, lottery_type_id: e.target.value, category_id: ''})} className="sm:col-span-2">
             <option value="">— เลือกประเภทหวย —</option>
             {types.filter(t => t.is_active && !['SC', 'HL', 'KI'].includes(t.code)).map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
@@ -198,7 +198,7 @@ export default function AdminDraws() {
             (groups[k] = groups[k] || { label: `${s.type_name_th}${s.category_name_th ? ' — ' + s.category_name_th : ''}`, type_code: s.type_code, items: [] }).items.push(s);
           }
           return (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {Object.values(groups).map(g => (
                 <div key={g.label} className="bg-navy-900/60 border border-navy-700/60 rounded-lg p-3">
                   <div className="text-xs font-bold text-white mb-1.5 truncate">{g.label}</div>
@@ -359,7 +359,7 @@ function BulkAnnounce({ types, cats, onDone }) {
         <button onClick={() => setOpen(false)} className="text-navy-400 hover:text-white text-xs">✕</button>
       </div>
       <p className="text-[11px] text-navy-400">ใช้กับทุกรอบ status=open/scheduled ที่ยังไม่ถึงเวลาออกรางวัลของตลาดที่เลือก — ใช้เมื่อต้องการประกาศเลขอั้นชุดเดียวกันหลายงวด</p>
-      <div className="grid sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
         <Select value={f.type_id} onChange={e => setF({...f, type_id: e.target.value, category_id: ''})}
           inputClassName="!px-2 !py-1.5 text-xs">
           <option value="">ประเภทหวย *</option>

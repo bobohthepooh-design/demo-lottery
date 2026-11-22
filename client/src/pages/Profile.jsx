@@ -47,7 +47,7 @@ function RGCard({ user, onDone }) {
           ⛔ บัญชีถูกระงับการแทง{user.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${user.selfExcludedUntil}`}
         </div>
       )}
-      <div className="grid sm:grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <Input label="วงเงินสูงสุด/วัน (บาท — เว้นว่าง = ไม่จำกัด)" type="number" min="0" value={daily} onChange={e => setDaily(e.target.value)} placeholder="เช่น 500" inputClassName="py-2" />
         <Input label="วงเงินสูงสุด/เดือน (บาท)" type="number" min="0" value={monthly} onChange={e => setMonthly(e.target.value)} placeholder="เช่น 5000" inputClassName="py-2" />
       </div>
@@ -116,7 +116,7 @@ function PrefsCard() {
     <Card>
       <CardHeader title="การตั้งค่าบัญชี" sub="เขตเวลา • การแจ้งเตือน" />
       <CardBody>
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select label="เขตเวลา / Timezone" value={tz} onChange={e => changeTz(e.target.value)} inputClassName="py-2 text-sm">
           {TZ_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </Select>
@@ -214,7 +214,7 @@ export default function Profile() {
       <Card>
         <CardHeader title="โปรไฟล์สมาชิก" />
         <CardBody>
-        <dl className="grid sm:grid-cols-2 gap-3 text-sm">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div><dt className="text-navy-300">ชื่อผู้ใช้</dt><dd className="text-white font-semibold">{user?.username}</dd></div>
           <div><dt className="text-navy-300">ชื่อที่แสดง</dt><dd className="text-white">{user?.displayName}</dd></div>
           <div><dt className="text-navy-300">อีเมล</dt><dd className="text-white">{user?.email}</dd></div>

@@ -208,7 +208,7 @@ export default function AdminOverview() {
       </div>
 
       {/* Audit + Security */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-navy-800 border border-navy-700 rounded-xl p-4">
           <h2 className="font-bold text-white mb-3">Audit ล่าสุด</h2>
           <div className="space-y-1 text-xs max-h-64 overflow-y-auto">

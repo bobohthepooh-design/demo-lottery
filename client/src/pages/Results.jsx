@@ -400,7 +400,7 @@ export default function Results() {
       {settledF.length > 0 && (
         <section>
           <h2 className="font-bold text-white mb-3">✅ ออกผลแล้ว {thaiShort(date)} ({settledF.length})</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {settledF.map(d => (
               <div key={d.id} className="bg-navy-800/70 border border-emerald-500/30 rounded-xl p-3">
                 <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ export default function Results() {
         {statErr && <div className="p-3 text-sm text-red-300">{statErr}</div>}
         {!hist && !statErr && <div className="p-4 text-sm text-navy-400">กำลังโหลด…</div>}
         {hist && (
-          <div className="grid md:grid-cols-2">
+          <div className="grid grid-cols-1 md:grid-cols-2">
             {/* ความถี่เลข */}
             <div className="p-4 border-b md:border-b-0 md:border-r border-navy-700">
               <div className="text-xs font-bold text-navy-300 mb-2">ความถี่เลข ({stats?.draws_used ?? 0} งวด)</div>

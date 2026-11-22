@@ -311,7 +311,7 @@ export default function AdminSettle() {
         </div>
         {sel && selDraw && schema && (
           <>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {schema.fields.map(f => (
                 <div key={f.key}>
                   <label className="text-sm text-navy-300">
@@ -413,7 +413,7 @@ export default function AdminSettle() {
           };
           return (
             <>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {s.fields.map(f => (
                   <div key={f.key}>
                     <label className="text-sm text-navy-300">{f.label}{f.prizes > 1 && <span className="text-gold-400"> ({f.prizes} รางวัล)</span>}</label>

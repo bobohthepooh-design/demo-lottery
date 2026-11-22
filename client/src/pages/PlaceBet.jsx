@@ -354,7 +354,7 @@ export default function PlaceBet() {
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;
 
   return (
-    <div className="grid lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* left: entry form */}
       <div className="lg:col-span-3 space-y-4">
         {/* Header — Draw Info + Countdown */}
@@ -434,7 +434,7 @@ export default function PlaceBet() {
             </div>
 
             {/* Number Input Area */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {isZodiac ? (
                 <div className="sm:col-span-2">
                   <label className="text-sm font-semibold text-navy-200 mb-2 block">

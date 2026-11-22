@@ -293,7 +293,7 @@ export default function Lotteries() {
             <span>ออนไลน์ตอนนี้ — กำลังรับแทง</span>
             <span className="text-sm font-semibold text-green-400/70 bg-green-500/10 px-2 py-0.5 rounded-full">{liveDraws.length} รอบ</span>
           </h2>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {liveDraws.map(d => <DrawCard key={d.id} d={d} featured />)}
           </div>
         </section>
@@ -308,7 +308,7 @@ export default function Lotteries() {
             <span className="text-sm font-semibold text-blue-400/70 bg-blue-500/10 px-2 py-0.5 rounded-full">{openOthers.length} รอบ</span>
           </h2>
           <p className="text-xs text-navy-400 mb-4 ml-1">รอบเหล่านี้ยังรับแทงได้ แต่ไม่ใช่รอบหลักด้านบน</p>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {openOthers.map(d => <DrawCard key={d.id} d={d} soft />)}
           </div>
         </section>
@@ -322,7 +322,7 @@ export default function Lotteries() {
             <span>🎰 กำลังออกรางวัล</span>
             <span className="text-sm font-semibold text-gold-300/70 bg-gold-500/10 px-2 py-0.5 rounded-full">{drawingDraws.length} รอบ</span>
           </h2>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {drawingDraws.map(d => <DrawCard key={d.id} d={d} />)}
           </div>
         </section>
@@ -336,7 +336,7 @@ export default function Lotteries() {
             <span>รอบถัดไป / รอบที่ผ่านมา</span>
             <span className="text-sm font-semibold text-navy-400/70 bg-navy-700/50 px-2 py-0.5 rounded-full">{upcomingOthers.length} รอบ</span>
           </h2>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {upcomingOthers.map(d => <DrawCard key={d.id} d={d} />)}
           </div>
         </section>
@@ -352,7 +352,7 @@ export default function Lotteries() {
             <span className="text-sm font-semibold text-navy-400/70 bg-navy-700/50 px-2 py-0.5 rounded-full">{pastDraws.length} รอบ</span>
           </button>
           {showPast && (
-            <div className="grid md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {pastDraws.slice(0, 2).map(d => <DrawCard key={d.id} d={d} />)}
             </div>
           )}
