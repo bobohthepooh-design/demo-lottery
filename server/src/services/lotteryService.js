@@ -706,13 +706,21 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
 
   winningNumbers = { ...winningNumbers };
   mergeAnnounce(winningNumbers, draw.announce);
-  // top4 (เลข 4 ตัวบน) derive จากรางวัลที่ 1 อัตโนมัติ — ไม่ต้องกรอกแยก
-  if (winningNumbers.top4 == null) {
-    const firstRaw = Array.isArray(winningNumbers.first) ? winningNumbers.first[0] : winningNumbers.first;
-    const d = String(firstRaw ?? '').replace(/\D/g, '');
-    if (d.length >= 4) winningNumbers.top4 = d.slice(-4);
-    if (d.length >= 2 && winningNumbers.top2 == null) winningNumbers.top2 = d.slice(-2);
-    if (d.length >= 1 && winningNumbers.last1 == null) winningNumbers.last1 = d.slice(-1);
+  // derive เลขบน/ล่างจากรางวัลหลักอัตโนมัติ — first (หวยไทย) หรือ p1 (ออมสิน) ไม่ต้องกรอกแยก
+  const mainRaw = winningNumbers.first ?? (Array.isArray(winningNumbers.p1) ? winningNumbers.p1[0] : winningNumbers.p1);
+  const d = String(mainRaw ?? '').replace(/\D/g, '');
+  if (d.length >= 4) {
+    if (winningNumbers.top4 == null) winningNumbers.top4 = d.slice(-4);
+    if (winningNumbers.top3 == null) winningNumbers.top3 = d.slice(-3);
+    if (winningNumbers.front3 == null) winningNumbers.front3 = d.slice(0, 3);
+  }
+  if (d.length >= 2 && winningNumbers.top2 == null) winningNumbers.top2 = d.slice(-2);
+  if (d.length >= 1 && winningNumbers.last1 == null) winningNumbers.last1 = d.slice(-1);
+  // bottom2 ของออมสิน = 2 ตัวท้ายของอันดับ 5
+  if (winningNumbers.bottom2 == null) {
+    const p5 = Array.isArray(winningNumbers.p5) ? winningNumbers.p5[0] : winningNumbers.p5;
+    const b = String(p5 ?? '').replace(/\D/g, '');
+    if (b.length >= 2) winningNumbers.bottom2 = b.slice(-2);
   }
   return winningNumbers;
 }

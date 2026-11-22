@@ -11,6 +11,10 @@ const TH = {
     { key: 'front3',   label: 'เลขหน้า 3 ตัว',     short: 'หน้า3',   digits: 3, prizes: 2 },
     { key: 'top3',     label: 'เลขท้าย 3 ตัวบน',   short: 'ท้าย3',   digits: 3, prizes: 2 },
     { key: 'bottom2',  label: 'เลขท้าย 2 ตัว',     short: 'ท้าย2',   digits: 2, prizes: 1 },
+    // เลขบน/วิ่ง derive จากรางวัลที่ 1 อัตโนมัติ — ไม่ต้องกรอก (แสดงผลเท่านั้น)
+    { key: 'top2',     label: 'เลข 2 ตัวบน',       short: '2บน',    digits: 2, optional: true },
+    { key: 'top4',     label: 'เลข 4 ตัวบน',       short: '4บน',    digits: 4, optional: true },
+    { key: 'last1',    label: 'เลขวิ่งบน',         short: 'วิ่งบน',  digits: 1, optional: true },
   ],
 };
 
@@ -67,8 +71,15 @@ const GS = {
     { key: 'p3',     label: 'รางวัลอันดับ 3',  short: 'อ.3',  digits: 7, prizes: 5 },
     { key: 'p4',     label: 'รางวัลอันดับ 4',  short: 'อ.4',  digits: 7, prizes: 10 },
     { key: 'p5',     label: 'รางวัลอันดับ 5',  short: 'อ.5',  digits: 7, prizes: 15 },
-    { key: 'last4',  label: 'เลขท้าย 4 ตัว',   short: 'ท้าย4', digits: 4, prizes: 1 },
-    { key: 'last3',  label: 'เลขท้าย 3 ตัว',   short: 'ท้าย3', digits: 3, prizes: 1 },
+    { key: 'last4',  label: 'เลขท้าย 4 ตัว',   short: 'ท้าย4', digits: 4, prizes: 1, optional: true },
+    { key: 'last3',  label: 'เลขท้าย 3 ตัว',   short: 'ท้าย3', digits: 3, prizes: 1, optional: true },
+    // เลขบน/ล่าง derive จากอันดับ 1/5 อัตโนมัติ — ไม่ต้องกรอก (แสดงผลเท่านั้น)
+    { key: 'top2',   label: 'เลข 2 ตัวบน',     short: '2บน',  digits: 2, optional: true },
+    { key: 'top3',   label: 'เลข 3 ตัวบน',     short: '3บน',  digits: 3, optional: true },
+    { key: 'top4',   label: 'เลข 4 ตัวบน',     short: '4บน',  digits: 4, optional: true },
+    { key: 'front3', label: 'เลข 3 ตัวล่างหน้า', short: 'ล่างหน้า', digits: 3, optional: true },
+    { key: 'bottom2',label: 'เลข 2 ตัวล่าง',   short: '2ล่าง', digits: 2, optional: true },
+    { key: 'last1',  label: 'เลขวิ่งบน',       short: 'วิ่งบน', digits: 1, optional: true },
   ],
 };
 

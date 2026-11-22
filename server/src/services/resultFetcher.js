@@ -222,13 +222,22 @@ function winningFor(kind, x) {
   }
   if (kind === 'gsb') {
     // สลากออมสินพิเศษ — อันดับ 1-5 (7 หลัก, อ.3=5 เลข อ.4=10 เลข อ.5=15 เลข) + เลขท้าย 4/3 ตัว
-    return {
+    const w = {
       p1: lcAll(x, 'first-prize', 7), p2: lcAll(x, 'second-prize', 7),
       p3: lcAll(x, 'third-prize', 7), p4: lcAll(x, 'fourth-prize', 7),
       p5: lcAll(x, 'fifth-prize', 7),
       last4: lcNum(x, 'last-four-digit', 4),
       last3: lcNum(x, 'last-three-digit', 3),
     };
+    // derive เลขบน/ล่าง/วิ่ง เหมือนหวยไทย — บน/หน้า/หลัง จากอันดับ 1, ล่าง 2 ตัวจากอันดับ 5
+    const a = String(w.p1?.[0] ?? w.p1 ?? '').replace(/\D/g, '');
+    const b = String(w.p5?.[0] ?? w.p5 ?? '').replace(/\D/g, '');
+    if (a.length >= 7) {
+      w.front3 = a.slice(0, 3); w.top3 = a.slice(-3); w.top4 = a.slice(-4);
+      w.top2 = a.slice(-2); w.last1 = a.slice(-1);
+    }
+    if (b.length >= 2) w.bottom2 = b.slice(-2);
+    return w;
   }
   if (kind === 'thai-gov') {
     // หวยรัฐบาล — fallback ของ GLO: เลข 6 หลัก + เลขหน้า/ท้าย 3 ตัว (ตลาดละ 2 เลข) + เลขท้าย 2 ตัว
