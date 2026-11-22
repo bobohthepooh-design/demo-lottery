@@ -13,6 +13,8 @@ const FIELDS = [
   { key: 'cta_bet', label: 'ข้อความปุ่มแทงหวย' },
   { key: 'cta_register', label: 'ข้อความปุ่มสมัครสมาชิก' },
   { key: 'show_stats', label: 'แสดงแถบสถิติ (รอบเปิดรับ/ตลาด/อัตราจ่าย)', type: 'checkbox' },
+  { key: 'show_results_ticker', label: 'แสดงข้อความวิ่ง ผลรางวัลล่าสุด (ใต้เมนู)', type: 'checkbox' },
+  { key: 'show_winners_ticker', label: 'แสดงข้อความวิ่ง ผู้ชนะล่าสุด', type: 'checkbox' },
 ];
 
 const DEFAULT_ANNOUNCEMENT = { enabled: true, text: '' };

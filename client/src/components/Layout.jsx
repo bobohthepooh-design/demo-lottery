@@ -41,6 +41,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [bettingMenu, setBettingMenu] = useState(true);
+  const [banner, setBanner] = useState(null);
   const [now, setNow] = useState(() => new Date());
   const [soundOn, setSoundOnState] = useState(isSoundOn());
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export default function Layout() {
   const loadMenuData = () => {
     api('/lottery/public-config').then(r => {
       setBettingMenu(r.bettingMenuEnabled !== false);
+      setBanner(r.banner && typeof r.banner === 'object' ? r.banner : null);
     }).catch(() => {});
   };
 
@@ -279,9 +281,9 @@ export default function Layout() {
       )}
 
       <AnnouncementBar />
-      {/* ผลรางวัล + ผู้ชนะ ล่าสุด — แถบ LED ทองสไตล์ตารางประกาศผล ทุกหน้า */}
-      <ResultsTicker />
-      <WinTicker />
+      {/* ผลรางวัล + ผู้ชนะ ล่าสุด — แถบ LED ทองสไตล์ตารางประกาศผล (admin ปิด/เปิดได้ที่ แบนเนอร์หน้าแรก) */}
+      {banner?.show_results_ticker !== false && <ResultsTicker />}
+      {banner?.show_winners_ticker !== false && <WinTicker />}
       {/* banner บังคับยืนยันอายุ 18+ สำหรับบัญชีที่ยังไม่ได้ยืนยัน (สมัครเก่า/LINE) */}
       {user && !user.ageConfirmed && (
         <div className="bg-amber-500/15 border-b border-amber-500/40">

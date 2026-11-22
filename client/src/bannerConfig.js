@@ -9,6 +9,8 @@ export const DEFAULT_BANNER = {
   cta_bet: '🎟️ แทงหวยเลย',
   cta_register: 'สมัครรับเครดิตทดลอง',
   show_stats: true,
+  show_results_ticker: true,  // แถบข้อความวิ่ง ผลรางวัลล่าสุด (ใต้เมนู)
+  show_winners_ticker: true,  // แถบข้อความวิ่ง ผู้ชนะล่าสุด
 };
 
 export function mergeBanner(saved) {
