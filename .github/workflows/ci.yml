@@ -33,6 +33,8 @@ jobs:
         run: npm --prefix server test
       - name: Install client deps
         run: npm ci --prefix client
+      - name: Client unit tests (vitest)
+        run: npm --prefix client test
       - name: Client build
         run: npm --prefix client run build
       - name: Dependency audit (server)
