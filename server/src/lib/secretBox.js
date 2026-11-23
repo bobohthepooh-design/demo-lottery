@@ -14,7 +14,7 @@ const key = () => crypto.createHash('sha256')
 export function encryptSecret(plain) {
   if (plain == null) return plain;
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key(), iv);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key(), iv, { authTagLength: 16 });
   const ct = Buffer.concat([cipher.update(String(plain), 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
   return PREFIX + [iv, tag, ct].map(b => b.toString('base64url')).join(':');
@@ -26,7 +26,7 @@ export function decryptSecret(stored) {
   if (!s.startsWith(PREFIX)) return s; // legacy plaintext row
   try {
     const [iv, tag, ct] = s.slice(PREFIX.length).split(':').map(p => Buffer.from(p, 'base64url'));
-    const d = crypto.createDecipheriv('aes-256-gcm', key(), iv);
+    const d = crypto.createDecipheriv('aes-256-gcm', key(), iv, { authTagLength: 16 });
     d.setAuthTag(tag);
     return Buffer.concat([d.update(ct), d.final()]).toString('utf8');
   } catch {

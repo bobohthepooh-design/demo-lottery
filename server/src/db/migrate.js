@@ -19,6 +19,22 @@ const migrationFiles = () => fs.readdirSync(migrationsDir)
  */
 export async function migrate() {
   const pool = getPool();
+  // advisory lock ระดับ session — กันหลาย process/worker migrate พร้อมกัน
+  // (test files รันขนานบน DB เดียวกันเจอ race ที่ schema.pg.sql / INSERT version)
+  // ต้องใช้ client เดียวตลอด เพราะ pg_advisory_lock ผูกกับ session ไม่ใช่ pool
+  const client = await pool.connect();
+  const MIGRATE_LOCK = 727001;
+  try {
+    await client.query('SELECT pg_advisory_lock($1)', [MIGRATE_LOCK]);
+    await migrateLocked(client);
+  } finally {
+    try { await client.query('SELECT pg_advisory_unlock($1)', [MIGRATE_LOCK]); } catch {}
+    client.release();
+  }
+}
+
+async function migrateLocked(client) {
+  const pool = { query: (...a) => client.query(...a) }; // compat shim
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     version BIGINT PRIMARY KEY,
     name TEXT NOT NULL,

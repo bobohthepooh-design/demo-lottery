@@ -9,6 +9,7 @@ import { migrate } from './db/migrate.js';
 import { seed } from './db/seed.js';
 import { seedDemoDraws } from './db/demo-data.js';
 import { getDb } from './db/index.js';
+import { getPool } from './db/pg.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { csrfTokenEndpoint, csrfProtection, ensureCsrf } from './middleware/csrf.js';
 import authRoutes from './routes/auth.js';
@@ -36,8 +37,19 @@ import { openApiSpec } from './lib/openapi.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 await migrate();
-// seed only if users table empty
-if ((await getDb().prepare('SELECT COUNT(*) c FROM users').get()).c === 0) await seed();
+// seed only if users table empty — advisory lock กันหลาย worker seed ซ้ำกัน
+// (test files รันขนานบน DB เดียวกัน: ทั้งคู่เห็น users=0 แล้ว INSERT admin ชนกัน)
+{
+  const client = await getPool().connect();
+  try {
+    await client.query('SELECT pg_advisory_lock(727002)');
+    const c = await client.query('SELECT COUNT(*)::int c FROM users');
+    if (c.rows[0].c === 0) await seed();
+  } finally {
+    try { await client.query('SELECT pg_advisory_unlock(727002)'); } catch {}
+    client.release();
+  }
+}
 
 // instant games (หวยขูด/ไฮโล) — สร้าง lottery type/rule/standing draw ตอน boot
 // เพื่อให้ type โผล่ใน /lottery/types และเมนูทันที ไม่ต้องรอการซื้อครั้งแรก

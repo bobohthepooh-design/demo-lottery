@@ -63,7 +63,7 @@ const USER = { username: `smoke${uniq}`, email: `smoke${uniq}@test.local`, passw
   csrf = c.json?.csrfToken || '';
   ok('GET /csrf-token', !!csrf);
 
-  const reg = await api('/auth/register', { method: 'POST', body: { ...USER, ageConfirmed: true }, auth: false });
+  const reg = await api('/auth/register', { method: 'POST', body: { ...USER, ageConfirmed: true, termsAccepted: true }, auth: false });
   ok('POST /auth/register', reg.status === 201 || reg.status === 200, `status=${reg.status} ${reg.json?.error || ''}`);
 
   const login = await api('/auth/login', { method: 'POST', body: { username: USER.username, password: USER.password }, auth: false });
@@ -81,7 +81,18 @@ let openDraw = null;
 
   const draws = await api('/lottery/draws?upcoming=1', { auth: false });
   const list = draws.json?.draws || [];
-  openDraw = list.find(d => d.status === 'open');
+  // เลือกรอบที่ "แทงได้จริง" — ต้องอยู่ใน betting window (ตรงกับ bettingWindow.js ฝั่ง client)
+  // window: รายเดือน TH/GS = 14 วัน, อื่นๆ = 24 ชม. ก่อน close_at
+  const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const winH = (code) => (code === 'TH' || code === 'GS') ? 24 * 14 : 24;
+  const bettable = (d) => {
+    if (d.status !== 'open' || !(d.close_at > nowSql)) return false;
+    const t = Date.parse(String(d.close_at).replace(' ', 'T') + 'Z');
+    if (!Number.isFinite(t)) return false;
+    const openAt = new Date(t - winH(d.type_code) * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
+    return nowSql >= openAt;
+  };
+  openDraw = list.find(bettable) || list.find(d => d.status === 'open');
   ok('GET /lottery/draws', draws.status === 200 && list.length > 0, `${list.length} draws`);
 
   const mk = await api('/lottery/markets', { auth: false });

@@ -72,6 +72,11 @@ jobs:
           PORT: '4000'
           SESSION_SECRET: ci-e2e-session-secret-not-for-prod
           HIBP_CHECK: 'false'
+          # เครดิตสูงพอสำหรับ scratch(5000)+hilo+kiwi+bets ใน smoke เดียว
+          INITIAL_CREDIT: '100000'
+          # บังคับ demo wallet mode — smoke ทดสอบ /bets/wallet/action
+          # (ถ้า .env หลุดเข้ามาจะได้ 403 USE_PAYMENTS แทน)
+          PROMPTPAY_ID: ''
         run: npm --prefix server start &
       - name: Wait for health
         run: |
@@ -111,18 +116,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Trivy filesystem + IaC scan
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          format: table
-      - name: Trivy IaC config scan (docker-compose/Caddyfile-adjacent)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          format: table
+      # ใช้ docker image ตรงๆ แทน trivy-action — action บน GH runner ล้มที่ "Set up job"
+      # (ดาวน์โหลด trivy DB โดน rate limit) ส่วน image pull ผ่าน docker hub ปกติ
+      - name: Trivy filesystem scan (vuln+secret)
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src aquasec/trivy:0.58.2 \
+            fs --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 \
+            --scanners vuln,secret .
+      - name: Trivy IaC config scan
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src aquasec/trivy:0.58.2 \
+            config --severity CRITICAL,HIGH --exit-code 1 .
