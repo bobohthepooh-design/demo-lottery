@@ -44,6 +44,47 @@ jobs:
       - name: Dependency audit (root)
         run: npm audit --audit-level=high
 
+  # ---------- E2E smoke: server จริง + postgres service จริง ----------
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lottery
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: lottery_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U lottery -d lottery_e2e"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install server deps
+        run: npm ci --prefix server
+      - name: Start server (auto migrate + seed)
+        env:
+          DATABASE_URL: postgres://lottery:ci-test-password@127.0.0.1:5432/lottery_e2e
+          PORT: '4000'
+          SESSION_SECRET: ci-e2e-session-secret-not-for-prod
+          HIBP_CHECK: 'false'
+        run: npm --prefix server start &
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:4000/api/health && exit 0
+            sleep 1
+          done
+          echo "server did not become healthy"; exit 1
+      - name: Smoke test (register→play→wallet guards)
+        env:
+          BASE_URL: http://localhost:4000
+        run: node tests/smoke.mjs
+
   # ---------- Security scanning (DevSecOps) ----------
   gitleaks:
     runs-on: ubuntu-latest
