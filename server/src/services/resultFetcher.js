@@ -54,7 +54,10 @@ export async function fetchThaiResult() {
       second: vals(g.second), third: vals(g.third), fourth: vals(g.fourth), fifth: vals(g.fifth),
       near1: vals(g.near1),
       front3: vals(g.last3f),
-      top3: vals(g.last3b),
+      // เลขตัวบนทั้งหมด derive จากรางวัลที่ 1 (กติกาหวยจริง): บน3=3 ตัวท้าย, บน2=2 ตัวท้าย, บน4=4 ตัวท้าย
+      // last3 = เลขท้าย 3 ตัวทางการ (ลางวัลแยก — ฝั่งล่าง) — เก็บไว้แสดงผลเท่านั้น
+      top3: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-3) || null,
+      last3: vals(g.last3b),
       top4: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-4) || null,
       top2: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-2) || null,
       last1: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-1) || null,
@@ -121,7 +124,9 @@ export function generateThaiResult(drawCode) {
       second: n6(100000, 5), third: n6(100000, 10), fourth: n6(100000, 20), fifth: n6(100000, 30),
       near1: [String((Number(first) - 1 + 1000000) % 1000000).padStart(6, '0'), String((Number(first) + 1) % 1000000).padStart(6, '0')],
       front3: [n3(), n3()],
-      top3: [n3(), n3()],
+      // เลขตัวบน derive จากรางวัลที่ 1 — last3 = เลขท้าย 3 ตัวทางการ (ฝั่งล่าง)
+      top3: first.slice(-3), last3: [n3(), n3()],
+      top4: first.slice(-4), top2: first.slice(-2), last1: first.slice(-1),
       bottom2: pad(rnd(rng, 0, 99), 2),
     },
   };
@@ -264,15 +269,19 @@ function winningFor(kind, x) {
     return w;
   }
   if (kind === 'thai-gov') {
-    // หวยรัฐบาล — fallback ของ GLO: เลข 6 หลัก + รางวัล 2-5 + เลขอั้น + เลขหน้า/ท้าย 3 ตัว + เลขท้าย 2 ตัว
+    // หวยรัฐบาล — fallback ของ GLO: รางวัล 1-5 + เลขอั้น + เลขหน้า/ท้าย 3 ตัว + เลขท้าย 2 ตัว
+    // เลขตัวบน derive จากรางวัลที่ 1 (กติกาจริง) — last3 = เลขท้าย 3 ตัวทางการ (ฝั่งล่าง)
+    const first = lcNum(x, 'first-prize', 6);
+    const bottom2 = lcNum(x, 'last-two-digit', 2);
     return {
-      first: lcNum(x, 'first-prize', 6),
+      first,
       second: lcAll(x, 'second-prize', 6), third: lcAll(x, 'third-prize', 6),
       fourth: lcAll(x, 'fourth-prize', 6), fifth: lcAll(x, 'fifth-prize', 6),
       near1: lcAll(x, 'near-first-prize', 6),
       front3: lcAll(x, 'first-three-digit', 3),
-      top3: lcAll(x, 'last-three-digit', 3),
-      bottom2: lcNum(x, 'last-two-digit', 2),
+      top3: first.slice(-3), last3: lcAll(x, 'last-three-digit', 3),
+      top4: first.slice(-4), top2: first.slice(-2), last1: first.slice(-1),
+      bottom2, bottom1: bottom2.slice(-1),
     };
   }
   // hn
