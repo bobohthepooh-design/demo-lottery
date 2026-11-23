@@ -4,6 +4,7 @@ process.env.SESSION_SECRET = 'test-secret';
 process.env.NODE_ENV = 'test';
 process.env.LOGIN_RATE_LIMIT_MAX = '200';
 process.env.INITIAL_CREDIT = '5000';
+process.env.HIBP_CHECK = 'false'; // hermetic: ห้ามยิง api.pwnedpasswords.com ใน test
 process.env.PROMPTPAY_ID = '0812345678'; // test-only — ไม่ใช่เบอร์จริง
 if (!process.env.TEST_DATABASE_URL) {
   throw new Error('TEST_DATABASE_URL is required');

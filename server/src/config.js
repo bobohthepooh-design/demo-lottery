@@ -56,6 +56,9 @@ export const config = {
   otpDevEcho: process.env.OTP_DEV_ECHO !== undefined
     ? process.env.OTP_DEV_ECHO === 'true'
     : (process.env.NODE_ENV || 'development') !== 'production',
+  // HIBP k-anonymity password breach check — fail-open ถ้า api.pwnedpasswords.com ล่ม
+  // ปิดได้ด้วย HIBP_CHECK=false (เช่น LAN ที่ไม่มี outbound internet)
+  hibpCheck: process.env.HIBP_CHECK !== 'false',
   // Security hardening (ฟรี): Turnstile bot protection + SMTP email + terms version
   // Turnstile: https://dash.cloudflare.com → Turnstile (ฟรีไม่จำกัด) — เว้นว่าง = ปิด
   turnstile: {

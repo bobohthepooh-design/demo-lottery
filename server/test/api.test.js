@@ -7,6 +7,7 @@ process.env.NODE_ENV = 'test';
 process.env.LOGIN_RATE_LIMIT_MAX = '200';
 // .env root มี INITIAL_CREDIT=0 (production) — test ต้องการเครดิตเริ่มต้น
 process.env.INITIAL_CREDIT = '5000';
+process.env.HIBP_CHECK = 'false'; // hermetic: ห้ามยิง api.pwnedpasswords.com ใน test
 // test นี้ครอบคลุม demo wallet/action — บังคับ payments ไม่ configured
 // (กัน env รั่วจากไฟล์ test อื่นใน worker เดียวกัน เช่น payments.test.js)
 process.env.PROMPTPAY_ID = '';

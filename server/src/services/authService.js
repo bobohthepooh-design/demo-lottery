@@ -6,6 +6,7 @@ import { HttpError, audit, securityEvent } from '../lib/audit.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { generateSecret, verifyTotp, otpauthUri } from '../lib/totp.js';
 import { encryptSecret, decryptSecret } from '../lib/secretBox.js';
+import { isPasswordBreached } from '../lib/haveibeenpwned.js';
 import { randomInt, createHash } from 'node:crypto';
 import { q, qGet, qRun } from '../db/pg.js';
 
@@ -89,6 +90,14 @@ export function assertPasswordPolicy(pw) {
   if (!/[A-Za-zก-๙]/.test(pw) || !/\d/.test(pw)) throw new HttpError(400, 'รหัสผ่านต้องมีทั้งตัวอักษรและตัวเลข');
 }
 
+// HIBP k-anonymity: reject รหัสที่เคยรั่วไหล (fail-open ถ้าตรวจไม่ได้ —
+// LAN/offline ไม่ควร block user; ตั้ง HIBP_CHECK=false เพื่อปิดทั้งระบบ)
+async function assertPasswordNotBreached(pw) {
+  if (!config.hibpCheck) return;
+  const { breached } = await isPasswordBreached(pw);
+  if (breached === true) throw new HttpError(400, 'รหัสผ่านนี้เคยรั่วไหลในการรั่วไหลข้อมูล — กรุณาใช้รหัสอื่น');
+}
+
 // promo abuse guard: ไอพีเดียวกันสมัครเกิน 3 บัญชีใน 7 วัน → ไม่ให้เครดิตเริ่มต้น (บัญชียังสร้างได้)
 // excludeUserId: กันนับตัวเอง (เช็คหลัง INSERT แล้ว)
 async function promoAbuseCheck(ip, d, excludeUserId = null) {
@@ -111,6 +120,7 @@ export async function register({ username, email, password, displayName, termsAc
   const mail = (email || '').trim().toLowerCase();
   if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new HttpError(400, 'อีเมลไม่ถูกต้อง');
   assertPasswordPolicy(password);
+  await assertPasswordNotBreached(password);
   if (termsAccepted !== true) throw new HttpError(400, 'ต้องยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว');
   const finalEmail = mail || `${username.toLowerCase()}@member.local`;
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -189,6 +199,7 @@ export async function changePassword(userId, oldPassword, newPassword, req = nul
   const user = await qGet('SELECT * FROM users WHERE id = $1', [userId]);
   if (!user || !verifyPassword(oldPassword, user.password_hash)) throw new HttpError(400, 'รหัสผ่านเดิมไม่ถูกต้อง');
   assertPasswordPolicy(newPassword);
+  await assertPasswordNotBreached(newPassword);
   await qRun(`UPDATE users SET password_hash = $1,
       updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = $2`,
     [hashPassword(newPassword), userId]);
@@ -230,6 +241,7 @@ export async function forgotPassword({ email, ip }) {
 
 export async function resetPassword({ token, newPassword, req = null }) {
   assertPasswordPolicy(newPassword);
+  await assertPasswordNotBreached(newPassword);
   const tokenHash = createHash('sha256').update(`password-reset:${token}`).digest('hex');
   const userId = await txAsync(async (d) => {
     const reset = await d.prepare(`SELECT id, user_id, expires_at, used_at FROM password_reset_tokens
