@@ -1397,6 +1397,15 @@ router.get('/payments', requirePerm('wallet.adjust'), async (req, res, next) => 
   } catch (e) { next(e); }
 });
 
+// ดูรูปสลิปที่ member อัปโหลด (base64) — image อยู่ใน DB เป็น TEXT
+router.get('/payments/:id/slip', requirePerm('wallet.adjust'), async (req, res, next) => {
+  try {
+    const p = await db().prepare('SELECT slip_image, slip_trans_ref, slip_amount, slip_error FROM payment_requests WHERE id=?').get(Number(req.params.id));
+    if (!p) return res.status(404).json({ error: 'ไม่พบคำขอ' });
+    res.json({ imageBase64: p.slip_image || null, slipTransRef: p.slip_trans_ref, slipAmount: p.slip_amount, slipError: p.slip_error });
+  } catch (e) { next(e); }
+});
+
 const reviewSchema = z.object({ action: z.enum(['approve', 'reject']), note: z.string().max(500).optional() });
 router.post('/payments/:id/review', requirePerm('wallet.adjust'), async (req, res, next) => {
   try {

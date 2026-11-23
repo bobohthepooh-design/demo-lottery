@@ -21,6 +21,17 @@ export default function AdminPayments() {
   const [busy, setBusy] = useState(null);
   const [note, setNote] = useState({});
   const [msg, setMsg] = useState('');
+  const [slipView, setSlipView] = useState(null); // { id, loading, imageBase64, meta }
+
+  const viewSlip = async (p) => {
+    setSlipView({ id: p.id, loading: true });
+    try {
+      const r = await api(`/admin/payments/${p.id}/slip`);
+      setSlipView({ id: p.id, loading: false, imageBase64: r.imageBase64, meta: r });
+    } catch (e) {
+      setSlipView({ id: p.id, loading: false, error: e.message });
+    }
+  };
 
   const load = () => api(`/admin/payments?status=${status}${kind ? `&kind=${kind}` : ''}`).then(r => setRows(r.requests || [])).catch(e => setMsg(e.message));
   useEffect(() => { load(); }, [status, kind]);
@@ -110,6 +121,11 @@ export default function AdminPayments() {
                       </div>;
                     })()}
                     {p.slip_payer && <div className="text-navy-400">ผู้โอน: {p.slip_payer}</div>}
+                    {p.has_slip_image && (
+                      <button onClick={() => viewSlip(p)} className="mt-1 text-[11px] text-sky-300 hover:underline">
+                        🧾 ดูรูปสลิป
+                      </button>
+                    )}
                   </TableCell>
                   <TableCell className="align-top">
                     <Badge variant="outline" className={cn('text-[11px] font-bold', STATUS_BADGE[p.status])}>
@@ -138,6 +154,27 @@ export default function AdminPayments() {
           </Table>
         )}
       </Card>
+
+      {/* Slip image viewer */}
+      {slipView && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setSlipView(null)}>
+          <div className="bg-navy-900 border border-navy-600 rounded-2xl max-w-lg w-full p-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm font-bold text-white">🧾 รูปสลิปการโอน</div>
+              <button onClick={() => setSlipView(null)} className="text-navy-400 hover:text-white text-lg">✕</button>
+            </div>
+            {slipView.loading && <div className="text-navy-300 text-sm py-8 text-center">กำลังโหลด...</div>}
+            {slipView.error && <div className="text-red-400 text-sm py-8 text-center">{slipView.error}</div>}
+            {!slipView.loading && !slipView.error && slipView.imageBase64 && (
+              <img src={`data:image/jpeg;base64,${slipView.imageBase64}`} alt="slip" className="w-full rounded-lg bg-white" />
+            )}
+            {!slipView.loading && !slipView.error && !slipView.imageBase64 && (
+              <div className="text-navy-400 text-sm py-8 text-center">ไม่มีรูปสลิป (คำขอนี้ส่งก่อนมีระบบเก็บรูป)</div>
+            )}
+            {slipView.meta?.slipTransRef && <div className="text-[11px] text-navy-400 mt-2 font-mono">Ref: {slipView.meta.slipTransRef}</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

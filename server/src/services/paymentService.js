@@ -120,11 +120,12 @@ export async function submitDepositSlip(userId, paymentId, { imageBase64 }) {
     const amountOk = slip?.amount != null && slip.amount === p.amount;
     const autoApprove = prov && slip && amountOk;
     const status = autoApprove ? 'approved' : 'pending_review';
-    await d.prepare(`UPDATE payment_requests SET status=?, slip_trans_ref=?, slip_amount=?, slip_payer=?, slip_receiver=?, slip_datetime=?, slip_raw=?, slip_error=?, reviewed_at=CASE WHEN ?='approved' THEN strftime('%Y-%m-%d %H:%M:%S','now') ELSE reviewed_at END WHERE id=?`)
+    await d.prepare(`UPDATE payment_requests SET status=?, slip_trans_ref=?, slip_amount=?, slip_payer=?, slip_receiver=?, slip_datetime=?, slip_raw=?, slip_image=?, slip_error=?, reviewed_at=CASE WHEN ?='approved' THEN strftime('%Y-%m-%d %H:%M:%S','now') ELSE reviewed_at END WHERE id=?`)
       .run(status, slip?.transRef || null, slip?.amount || null,
         slip?.sender ? JSON.stringify(slip.sender) : null,
         slip?.receiver ? JSON.stringify(slip.receiver) : null,
         slip?.datetime || null, slip?.raw ? JSON.stringify(slip.raw) : null,
+        imageBase64 || null,
         verifyErr || (slip && !amountOk ? `ยอดสลิป ${slip.amount != null ? slip.amount / 100 : '?'} บาท ไม่ตรงกับคำขอ ${p.amount / 100} บาท` : null),
         status, paymentId);
     if (autoApprove) {
@@ -177,7 +178,14 @@ export async function listMine(userId) {
   return q(`SELECT id,reference,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id,slip_trans_ref,slip_error,admin_note,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY id DESC LIMIT 50`, [userId]);
 }
 export async function adminList({ status = 'pending_review', kind = null, limit = 100 } = {}) {
-  let sql = `SELECT pr.*, u.username, u.email, u.phone, u.display_name FROM payment_requests pr JOIN users u ON u.id=pr.user_id`;
+  // ไม่ select slip_image/slip_raw (ใหญ่) — มี has_slip_image flag แทน
+  let sql = `SELECT pr.id, pr.reference, pr.user_id, pr.kind, pr.amount, pr.method, pr.status,
+      pr.promptpay_payload, pr.promptpay_id, pr.slip_trans_ref, pr.slip_amount, pr.slip_payer,
+      pr.slip_receiver, pr.slip_datetime, pr.slip_error, pr.bank_name, pr.bank_account_no,
+      pr.bank_account_name, pr.admin_note, pr.reviewed_by, pr.reviewed_at, pr.created_at, pr.updated_at,
+      (pr.slip_image IS NOT NULL) AS has_slip_image,
+      u.username, u.email, u.phone, u.display_name
+    FROM payment_requests pr JOIN users u ON u.id=pr.user_id`;
   const params = [];
   const where = [];
   if (status === 'pending') where.push(`pr.status IN ('pending_slip','pending_review')`);

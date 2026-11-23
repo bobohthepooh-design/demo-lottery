@@ -388,6 +388,7 @@ CREATE TABLE IF NOT EXISTS payment_requests (
   slip_receiver TEXT,
   slip_datetime TEXT,
   slip_raw TEXT,
+  slip_image TEXT,
   slip_error TEXT,
   bank_name TEXT,
   bank_account_no TEXT,
