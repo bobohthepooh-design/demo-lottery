@@ -229,7 +229,7 @@ function winningFor(kind, x) {
     const top3 = lcNum(x, 'three-digit-top', 3);
     const bottom2 = lcNum(x, 'two-digit-bottom', 2);
     return {
-      last4: s5.slice(-4), num4: s5.slice(0, 4), db5: s5,
+      last4: s5.slice(-4), num4: s5.slice(-4), db5: s5,
       top3, last3: top3, last2: top3.slice(-2), bottom2,
     };
   }
@@ -262,7 +262,8 @@ function winningFor(kind, x) {
     const a = String(w.p1?.[0] ?? w.p1 ?? '').replace(/\D/g, '');
     const b = String(w.p5?.[0] ?? w.p5 ?? '').replace(/\D/g, '');
     if (a.length >= 7) {
-      w.front3 = a.slice(0, 3); w.top3 = a.slice(-3); w.top4 = a.slice(-4);
+      // front3 ไม่ derive — ออมสินไม่มีรางวัลเลขหน้า 3 ตัวแยก (มีแค่ เลขท้าย 4/3 ตัว)
+      w.top3 = a.slice(-3); w.top4 = a.slice(-4);
       w.top2 = a.slice(-2); w.last1 = a.slice(-1);
     }
     if (b.length >= 2) { w.bottom2 = b.slice(-2); w.bottom1 = b.slice(-1); }
@@ -284,11 +285,11 @@ function winningFor(kind, x) {
       bottom2, bottom1: bottom2.slice(-1),
     };
   }
-  // hn
+  // hn — เลข 4 ตัว = 4 ตัวท้ายของเลขพิเศษ (ไม่ใช่ 4 ตัวแรก)
   const s5 = lcNum(x, 'special-prize', 5);
   const h3 = lcNum(x, 'three-digit-top', 3);
   return {
-    num4: s5.slice(0, 4),
+    num4: s5.slice(-4),
     top3: h3,
     top2: (h3 || s5).slice(-2),
     bottom2: lcNum(x, 'two-digit-bottom', 2),
@@ -320,15 +321,16 @@ export async function fetchHanoiResult() {
   const rows = await xsmbRows();
   const last = rows[rows.length - 1];
   const s = (n, len) => n == null ? null : String(n).padStart(len, '0').slice(-len);
-  const special = Number(last.special), p1 = Number(last.prize1), p2 = Number(last.prize2_1 ?? last.prize2_2), p7 = Number(last.prize7_1);
+  // 베팅용 숫자는 모두 ĐB(giải đặc biệt, 5자리)에서 파생 — Vietnam "đề" 규칙과 동일
+  const db = s(last.special, 5);
   return {
     date: String(last.date).slice(0, 10),
     winning: {
-      num4: s(special, 5).slice(0, 4),
-      top3: s(p1, 5).slice(-3),
-      top2: s(p2, 5).slice(-2),
-      bottom2: s(p7, 2),
-      db5: s(special, 5),
+      num4: db?.slice(-4) ?? null,
+      top3: db?.slice(-3) ?? null,
+      top2: db?.slice(-2) ?? null,
+      bottom2: db?.slice(-2) ?? null,
+      db5: db,
     },
   };
 }

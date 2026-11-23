@@ -59,12 +59,12 @@ const renderPage = () => render(<MemoryRouter><Results /></MemoryRouter>);
 afterEach(() => { cleanup(); apiMock.mockReset(); });
 
 describe('Results — เลือกวัน', () => {
-  it('กดปุ่มวันแล้วเรียก API ด้วยวันที่ใหม่และแสดงผลของวันนั้น', async () => {
+  it('เลือกวันจาก date picker แล้วเรียก API ด้วยวันที่ใหม่และแสดงผลของวันนั้น', async () => {
     mockApi();
     renderPage();
     await screen.findByText('DD-TODAY-001');
 
-    fireEvent.click(screen.getByRole('button', { name: /เมื่อวาน/ }));
+    fireEvent.change(document.querySelector('input[type="date"]'), { target: { value: YEST } });
 
     await waitFor(() => expect(apiMock).toHaveBeenCalledWith(`/lottery/today?date=${YEST}`));
     await screen.findByText('DD-YEST-001');
@@ -72,11 +72,11 @@ describe('Results — เลือกวัน', () => {
   });
 
   it('เปลี่ยนวันแล้วล้างข้อมูลวันเก่าทิ้งและแสดงสถานะกำลังโหลดทันที', async () => {
-    mockApi({ pendingDates: [YEST] }); // fetch ของเมื่อวานค้างไว้
+    mockApi({ pendingDates: [YEST] }); // fetch ของวันเมื่อวานค้างไว้
     renderPage();
     await screen.findByText('DD-TODAY-001');
 
-    fireEvent.click(screen.getByRole('button', { name: /เมื่อวาน/ }));
+    fireEvent.change(document.querySelector('input[type="date"]'), { target: { value: YEST } });
 
     // ต้องไม่แสดงผลของวันเก่าค้างไว้ระหว่างรอ fetch ใหม่
     await waitFor(() => expect(screen.queryByText('DD-TODAY-001')).toBeNull());

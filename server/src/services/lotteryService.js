@@ -721,9 +721,9 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
   if (d.length >= 4 && winningNumbers.top4 == null) winningNumbers.top4 = d.slice(-4);
   if (d.length >= 2 && winningNumbers.top2 == null) winningNumbers.top2 = d.slice(-2);
   if (d.length >= 1 && winningNumbers.last1 == null) winningNumbers.last1 = d.slice(-1);
-  // ออมสินไม่มีรางวัลหน้า/หลังแยก — derive front3/top3 จากอันดับ 1 เหมือน fetcher
+  // ออมสิน: เลขท้าย 3 ตัวเป็นรางวัลแยก (last3) — ห้าม derive จากอันดับ 1
+  // top3 (เลขบน/วิ่งบน) derive จากอันดับ 1 ตามกติกาฝั่งบน
   if (winningNumbers.p1 != null) {
-    if (d.length >= 3 && winningNumbers.front3 == null) winningNumbers.front3 = d.slice(0, 3);
     if (d.length >= 3 && winningNumbers.top3 == null) winningNumbers.top3 = d.slice(-3);
   }
   // bottom2 ของออมสิน = 2 ตัวท้ายของอันดับ 5 (ผลรางวัลของตัวเอง)

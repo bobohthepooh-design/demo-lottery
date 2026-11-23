@@ -67,7 +67,6 @@ export default function Results() {
     }).catch(() => {});
   }, [user]);
 
-  const shiftDay = n => setDate(fmtDay(new Date(parseDay(date).getTime() + n * 864e5)));
   const isToday = date === bkkTodayStr();
 
   // ---- P3: history + stats ----
@@ -243,19 +242,11 @@ export default function Results() {
       <div className="text-center">
         <h1 className="text-2xl font-black text-white">ผลรางวัลและตารางออกรางวัล</h1>
         <p className="text-sm text-navy-400 mt-1">{thaiFull(date)} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
-        {/* เลือกวัน — เมื่อวาน / วันนี้ / พรุ่งนี้ + date picker */}
+        {/* เลือกวัน — วันนี้ + date picker (ปุ่มเมื่อวาน/พรุ่งนี้ถูกเอาออกตามที่ผู้ใช้แจ้ง) */}
         <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
-          <button onClick={() => shiftDay(-1)}
-            className="text-xs bg-navy-800 border border-navy-600 hover:border-gold-500/50 text-navy-200 rounded-lg px-3 py-1.5 transition">
-            ‹ เมื่อวาน · {thaiShort(fmtDay(new Date(parseDay(date).getTime() - 864e5)))}
-          </button>
           <button onClick={() => setDate(bkkTodayStr())} disabled={isToday}
             className={`text-xs rounded-lg px-3 py-1.5 font-bold transition ${isToday ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40' : 'bg-navy-800 border border-navy-600 text-navy-200 hover:border-gold-500/50'}`}>
             วันนี้
-          </button>
-          <button onClick={() => shiftDay(1)}
-            className="text-xs bg-navy-800 border border-navy-600 hover:border-gold-500/50 text-navy-200 rounded-lg px-3 py-1.5 transition">
-            พรุ่งนี้ · {thaiShort(fmtDay(new Date(parseDay(date).getTime() + 864e5)))} ›
           </button>
           <input type="date" value={date} onChange={e => e.target.value && setDate(e.target.value)}
             className="text-xs bg-navy-800 border border-navy-600 rounded-lg px-2 py-1.5 text-navy-200 [color-scheme:dark]" />
