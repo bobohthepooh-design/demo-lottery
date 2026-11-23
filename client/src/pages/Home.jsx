@@ -4,24 +4,8 @@ import { api, fmtDateTime, satang, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge } from '../resultSource.js';
+import { heroNumbers, resultSummary } from '../resultFields.js';
 import { Marquee } from '../components/ui/index.js';
-
-// เลขเด่นสำหรับการ์ดผลล่าสุด — เหมือนหน้า Results (รางวัลใหญ่/เลขหลัก/บน-ล่าง)
-const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
-function heroNumbers(w) {
-  if (!w) return [];
-  const out = [];
-  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
-  const first = firstOf(w.first ?? w.p1);
-  if (first) out.push({ label: 'รางวัลที่ 1', num: first });
-  const main = w.main || w.num4;
-  if (main) out.push({ label: w.num4 && !w.main ? 'เลข 4 ตัว' : 'เลขหลัก', num: main });
-  const top = asList(w.top3 ?? w.last3 ?? w.front3);
-  if (top) out.push({ label: 'เลขบน 3 ตัว', num: top });
-  const bot = w.bottom2 ?? w.last2 ?? w.top2;
-  if (bot) out.push({ label: 'เลขล่าง 2 ตัว', num: asList(bot) });
-  return out.slice(0, 3);
-}
 const GROUP_ORDER = ['TH', 'LA', 'HN', 'GS', 'HR'];
 const GROUP_LABEL = { TH: 'ไทย', LA: 'ลาว', HN: 'ฮานอย', GS: 'ออมสิน', HR: 'ราศี' };
 
@@ -31,6 +15,7 @@ export default function Home() {
   const [cashbackPct, setCashbackPct] = useState(0); // โปรคืนยอดเสีย %/วัน — 0 = ปิด
   const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ ticker
   const [latestResults, setLatestResults] = useState([]); // ผลล่าสุดข้ามตลาด (ไม่จำกัดวัน)
+  const [cardOpen, setCardOpen] = useState({}); // การ์ดผลล่าสุด — ขยายดูผลทุกรางวัล
 
   useEffect(() => {
     api('/lottery/public-config').then(r => {
@@ -201,12 +186,16 @@ export default function Home() {
                   if (typeof w === 'string') { try { w = JSON.parse(w); } catch { w = null; } }
                   const heroes = heroNumbers(w);
                   const badge = sourceBadge(d.result_source);
+                  const sumAll = resultSummary(w) || [];
+                  const ck = `${d.type_code}|${d.category_code || ''}`;
+                  const open = !!cardOpen[ck];
                   return (
-                    <Link key={d.id} to="/results"
-                      className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5 hover:border-gold-500/40 transition group">
+                    <div key={d.id}
+                      className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5 hover:border-gold-500/40 transition">
+                      <Link to="/results" className="block">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
-                        <span className="text-xs font-bold text-white group-hover:text-gold-300">{d.category_name_th || d.type_name_th}</span>
+                        <span className="text-xs font-bold text-white">{d.category_name_th || d.type_name_th}</span>
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-bold">ออกผลแล้ว</span>
                         {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
                       </div>
@@ -221,8 +210,20 @@ export default function Home() {
                           ))}
                         </div>
                       )}
+                      </Link>
+                      {sumAll.length > 0 && (
+                        <button onClick={() => setCardOpen(e => ({ ...e, [ck]: !open }))}
+                          className="mt-1.5 w-full text-left text-[10px] text-navy-400 hover:text-gold-300 transition">
+                          {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
+                        </button>
+                      )}
+                      {open && sumAll.length > 0 && (
+                        <div className="mt-1 text-[10px] text-navy-200 bg-navy-900/70 rounded-lg px-2 py-1.5 font-mono leading-relaxed break-all">
+                          {sumAll.map((p, i) => <div key={i}>{p}</div>)}
+                        </div>
+                      )}
                       <div className="text-[9px] text-navy-500 mt-1.5">อัปเดต {thaiTime(d.published_at || d.draw_at)}</div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>
