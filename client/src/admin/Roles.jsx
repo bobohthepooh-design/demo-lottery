@@ -32,8 +32,9 @@ export default function AdminRoles() {
     const role = data.roles.find(r => r.id === roleId);
     if (!(await confirmAction({ title: 'ยืนยันบันทึกสิทธิ์', message: `บันทึกสิทธิ์การใช้งานของ role "${role?.name}" ใช่หรือไม่?` }))) return;
     try {
-      await api('/admin/roles/permissions', { method: 'PUT', body: { roleId, permissionIds: [...sel[roleId]] } });
-      toast('บันทึกสิทธิ์แล้ว', 'success');
+      const r = await api('/admin/roles/permissions', { method: 'PUT', body: { roleId, permissionIds: [...sel[roleId]] } });
+      if (r.pendingApproval) toast(`📨 ส่งคำขอแก้ไขสิทธิ์ ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว`, 'info');
+      else toast('บันทึกสิทธิ์แล้ว', 'success');
     } catch (e) { toast(e.message, 'error'); }
   };
 

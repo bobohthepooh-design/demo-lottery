@@ -2,7 +2,7 @@ import { txAsync, makeReference } from '../db/index.js';
 import { getSetting } from './settingsService.js';
 import { randomToken } from '../lib/password.js';
 import { config } from '../config.js';
-import { HttpError, audit, securityEvent } from '../lib/audit.js';
+import { HttpError, audit, securityEvent, authEvent } from '../lib/audit.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { generateSecret, verifyTotp, otpauthUri } from '../lib/totp.js';
 import { encryptSecret, decryptSecret } from '../lib/secretBox.js';
@@ -152,10 +152,15 @@ export async function login({ username, password, ip, userAgent }) {
 
   if (!user) {
     securityEvent({ eventType: 'login.failed_unknown_user', severity: 'warning', ip, detail: { username } });
+    authEvent({ event: 'login.failed_unknown', ip, userAgent, detail: { username } });
     throw new HttpError(401, 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
   }
-  if (user.status !== 'active') throw new HttpError(403, 'บัญชีนี้ถูกระงับการใช้งาน');
+  if (user.status !== 'active') {
+    authEvent({ userId: user.id, event: 'login.blocked', ip, userAgent, detail: { reason: `status=${user.status}` } });
+    throw new HttpError(403, 'บัญชีนี้ถูกระงับการใช้งาน');
+  }
   if (user.locked_until && user.locked_until > new Date().toISOString().replace('T', ' ').slice(0, 19)) {
+    authEvent({ userId: user.id, event: 'login.blocked', ip, userAgent, detail: { reason: 'locked' } });
     throw new HttpError(423, 'บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ภายหลัง');
   }
 
@@ -167,6 +172,7 @@ export async function login({ username, password, ip, userAgent }) {
         updated_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = $3`,
       [lock ? 0 : fails, lock ? new Date(Date.now() + LOCK_MINUTES * 60000).toISOString().replace('T', ' ').slice(0, 19) : null, user.id]);
     securityEvent({ eventType: 'login.failed', severity: lock ? 'critical' : 'warning', userId: user.id, ip });
+    authEvent({ userId: user.id, event: 'login.failed', ip, userAgent, detail: { locked: lock } });
     if (lock) audit({ userId: user.id, action: 'user.locked_bruteforce', entityType: 'user', entityId: String(user.id) });
     throw new HttpError(401, 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
   }
@@ -182,6 +188,7 @@ export async function login({ username, password, ip, userAgent }) {
   const roles = (await q(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = $1`, [user.id])).map(r => r.name);
 
   audit({ userId: user.id, action: 'user.login', entityType: 'user', entityId: String(user.id), req: { ip, headers: { 'user-agent': userAgent } } });
+  authEvent({ userId: user.id, event: 'login.success', ip, userAgent, detail: { via: 'password' } });
 
   // member ที่เปิด MFA ไว้เองก็ต้องยืนยัน MFA ตอน login (admin เหมือนเดิม — middleware บังคับต่อ)
   return { token, user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name, roles, mfaEnabled: !!user.mfa_enabled, emailVerified: !!user.email_verified }, requiresMfa: !!user.mfa_enabled };
@@ -193,6 +200,7 @@ export function logout(req) {
   qRun(`UPDATE user_sessions SET revoked_at = to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id = $1`, [token])
     .catch(e => console.error('[logout] pg:', e.message));
   audit({ userId: req.user?.id, action: 'user.logout', entityType: 'user', entityId: req.user ? String(req.user.id) : null, req });
+  if (req.user?.id) authEvent({ userId: req.user.id, event: 'logout', ip: req.ip, userAgent: req.headers?.['user-agent'] });
 }
 
 export async function changePassword(userId, oldPassword, newPassword, req = null) {
@@ -331,6 +339,7 @@ async function createSessionToken(userId, ip, userAgent) {
   await qRun(`INSERT INTO user_sessions (id, user_id, ip, user_agent, expires_at)
               VALUES ($1, $2, $3, $4, ${SESSION_EXPIRES_PG(config.sessionTtlHours)})`,
     [token, userId, ip || null, (userAgent || '').slice(0, 300)]);
+  authEvent({ userId, event: 'login.success', ip, userAgent, detail: { via: 'otp' } });
   return token;
 }
 

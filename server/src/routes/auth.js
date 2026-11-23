@@ -8,7 +8,8 @@ import { getBalance, getWallet, listTransactions } from '../services/walletServi
 import { getDb, txAsync } from '../db/index.js';
 import { getSetting } from '../services/settingsService.js';
 import { randomToken, hashPassword } from '../lib/password.js';
-import { audit, HttpError } from '../lib/audit.js';
+import { audit, authEvent, HttpError } from '../lib/audit.js';
+import { userPermissions } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -124,8 +125,9 @@ router.get('/me', auth.requireAuth, async (req, res) => {
   const balance = await getBalance(req.user.id);
   const roles = (await getDb().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`)
     .all(req.user.id)).map(r => r.name);
+  const permissions = [...await userPermissions(req.user.id)];
   res.json({
-    user: { ...req.user, roles, mfaVerified: !!req.session.mfa_verified, emailVerified: !!req.user.emailVerified },
+    user: { ...req.user, roles, permissions, mfaVerified: !!req.session.mfa_verified, emailVerified: !!req.user.emailVerified },
     balance,
     currency: 'THB',
     demoNotice: await getSetting('demo_notice', ''),
@@ -395,6 +397,7 @@ router.get('/line/callback', async (req, res) => {
       .run(token, user.id, req.ip || null, String(req.headers['user-agent'] || '').slice(0, 300));
     auth.setSessionCookie(res, token);
     audit({ userId: user.id, action: 'user.login_line', entityType: 'user', entityId: String(user.id), req });
+    authEvent({ userId: user.id, event: 'login.success', ip: req.ip, userAgent: req.headers['user-agent'], detail: { via: 'line' } });
     res.redirect('/');
   } catch (e) {
     console.error('[line-auth]', e);

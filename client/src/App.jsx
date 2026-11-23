@@ -39,6 +39,8 @@ const AdminSettings = lazy(() => import('./admin/Settings.jsx'));
 const AdminBanner = lazy(() => import('./admin/Banner.jsx'));
 const AdminChat = lazy(() => import('./admin/Chat.jsx'));
 const AdminBroadcast = lazy(() => import('./admin/Broadcast.jsx'));
+const AdminApprovals = lazy(() => import('./admin/Approvals.jsx'));
+const AdminUsers = lazy(() => import('./admin/AdminUsers.jsx'));
 const BetHub = lazy(() => import('./pages/BetHub.jsx'));
 const GamesHub = lazy(() => import('./pages/GamesHub.jsx'));
 
@@ -113,6 +115,8 @@ export default function App() {
             <Route path="settings" element={<AdminSettings />} />
             <Route path="banner" element={<AdminBanner />} />
             <Route path="chat" element={<AdminChat />} />
+            <Route path="approvals" element={<AdminApprovals />} />
+            <Route path="admin-users" element={<AdminUsers />} />
             <Route path="broadcast" element={<AdminBroadcast />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

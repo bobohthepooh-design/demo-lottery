@@ -30,6 +30,10 @@ const PERMISSIONS = [
   { code: 'audit.view', description: 'ดู audit log' },
   { code: 'security.view', description: 'ดู security events' },
   { code: 'settings.manage', description: 'จัดการ system settings' },
+  // admin back office — maker-checker + admin user management
+  { code: 'approvals.view', description: 'ดูศูนย์อนุมัติ (maker-checker)' },
+  { code: 'approvals.approve', description: 'อนุมัติ/ปฏิเสธคำขอที่รออยู่' },
+  { code: 'admin.users.manage', description: 'จัดการบัญชีผู้ดูแลระบบ' },
 ];
 
 const ROLE_PERMS = {
@@ -37,6 +41,7 @@ const ROLE_PERMS = {
   admin: [
     'dashboard.admin', 'members.manage', 'lottery.manage', 'draws.manage',
     'results.publish', 'wallet.adjust', 'bets.view_all', 'reports.view',
+    'approvals.view', 'approvals.approve',
     'lottery.view', 'results.view',
   ],
   member: ['lottery.view', 'bet.place', 'bet.view_own', 'wallet.view_own', 'results.view'],
@@ -104,6 +109,7 @@ export async function seed() {
     await setSetting('announcement', { enabled: true, text: '🎉 ยินดีต้อนรับสู่ Demo Lottery — หวยไทย • หวยลาว • ฮานอย อัตราจ่ายสูงสุด x1,000 ใช้เครดิตจำลองเพื่อการศึกษา' }, null);
     await setSetting('cashback_percent', 0, null); // % คืนยอดเสียต่อวัน — 0 = ปิด, admin ตั้งในหน้าตั้งค่า
     await setSetting('require_email_verify_for_withdraw', false, null); // บังคับยืนยันอีเมลก่อนถอน — admin เปิดในหน้าตั้งค่าเมื่อพร้อม
+    await setSetting('maker_checker', 'auto', null); // maker-checker: auto=บังคับเมื่อมี admin ≥2 คน, off=ปิด, always=บังคับเสมอ
   });
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   await seedRulesV2();

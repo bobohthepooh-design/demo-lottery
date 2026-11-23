@@ -406,8 +406,10 @@ export default function AdminSettle() {
             const { winning, error: winErr } = buildWinning(editFields, s, false);
             if (winErr) return setEditMsg(winErr);
             try {
-              await api(`/admin/draws/${editSel}/result`, { method: 'POST', body: { winning_numbers: winning } });
-              setEditMsg('บันทึกผลแก้ไขสำเร็จ — ระบบปรับเครดิตโพยทั้งหมดแล้ว');
+              const r = await api(`/admin/draws/${editSel}/result`, { method: 'POST', body: { winning_numbers: winning } });
+              setEditMsg(r.pendingApproval
+                ? `📨 ส่งคำขอแก้ไขผลย้อนหลัง ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว — ต้องรอ admin อีกคนอนุมัติ`
+                : 'บันทึกผลแก้ไขสำเร็จ — ระบบปรับเครดิตโพยทั้งหมดแล้ว');
               load();
             } catch (e) { setEditMsg(e.message); }
           };

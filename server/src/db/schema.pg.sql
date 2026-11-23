@@ -405,3 +405,35 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verifications(user_id, created_at);
+
+-- 029: admin back office — maker-checker approvals + auth events
+CREATE TABLE IF NOT EXISTS approval_requests (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  reference TEXT NOT NULL UNIQUE,
+  category TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  maker_id BIGINT NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','executed','failed','cancelled')),
+  checker_id BIGINT REFERENCES users(id),
+  checker_note TEXT,
+  decided_at TEXT,
+  executed_at TEXT,
+  execution_result TEXT,
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+);
+CREATE INDEX IF NOT EXISTS idx_approval_status ON approval_requests(status, category, id DESC);
+CREATE INDEX IF NOT EXISTS idx_approval_maker ON approval_requests(maker_id, id DESC);
+
+CREATE TABLE IF NOT EXISTS auth_events (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  event TEXT NOT NULL,
+  ip TEXT,
+  user_agent TEXT,
+  detail TEXT,
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+);
+CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, id DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_events_ip ON auth_events(ip, id DESC);

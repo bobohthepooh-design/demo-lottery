@@ -69,6 +69,9 @@ const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2,
 beforeAll(async () => {
   // test DB เป็น persistent — reset MFA ของ admin ให้ setup/enable ทำซ้ำได้ทุกรอบ
   await getDb().prepare(`UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE username = 'admin'`).run();
+  // maker-checker: ไฟล์นี้เทส direct-execution path — ปิด approval (payments.test.js สร้าง admin คนที่ 2 → auto mode จะบังคับ approval)
+  const { setSetting } = await import('../src/services/settingsService.js');
+  await setSetting('maker_checker', 'off', null);
   // create member
   await makeAgent().post('/auth/register', { username: `m${ts}`, email: `m${ts}@t.local`, password: 'Password123', ageConfirmed: true, termsAccepted: true });
   member = await loginAs(`m${ts}`, 'Password123');

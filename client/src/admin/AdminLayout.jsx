@@ -4,38 +4,45 @@ import { useAuth } from '../auth.jsx';
 import { api } from '../api.js';
 import { Icon } from '../components/icons.jsx';
 import { toast } from '../components/toast.js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export const adminGroups = [
   {
     label: 'ภาพรวม',
     items: [
-      { to: '/admin', label: 'ภาพรวม', icon: 'dashboard', end: true },
-      { to: '/admin/reports', label: 'รายงาน', icon: 'reports' },
-      { to: '/admin/health', label: 'สุขภาพระบบ', icon: 'bell' },
+      { to: '/admin', label: 'ภาพรวม', icon: 'dashboard', end: true, perm: 'dashboard.admin' },
+      { to: '/admin/reports', label: 'รายงาน', icon: 'reports', perm: 'reports.view' },
+      { to: '/admin/health', label: 'สุขภาพระบบ', icon: 'bell', perm: 'dashboard.admin' },
+    ],
+  },
+  {
+    label: 'กำกับดูแล',
+    items: [
+      { to: '/admin/approvals', label: 'ศูนย์อนุมัติ', icon: 'audit', perm: 'approvals.view' },
+      { to: '/admin/admin-users', label: 'บัญชีผู้ดูแล', icon: 'user', perm: 'admin.users.manage' },
     ],
   },
   {
     label: 'จัดการข้อมูล',
     items: [
-      { to: '/admin/members', label: 'สมาชิก', icon: 'members' },
-      { to: '/admin/lotteries', label: 'ประเภทหวย/กติกา', icon: 'lotteries' },
-      { to: '/admin/draws', label: 'รอบหวย', icon: 'draws' },
-      { to: '/admin/bets', label: 'ตรวจโพย', icon: 'bets' },
-      { to: '/admin/chat', label: 'แชทสมาชิก', icon: 'chat' },
-      { to: '/admin/broadcast', label: 'แจ้งเตือนสมาชิก', icon: 'volume' },
+      { to: '/admin/members', label: 'สมาชิก', icon: 'members', perm: 'members.manage' },
+      { to: '/admin/lotteries', label: 'ประเภทหวย/กติกา', icon: 'lotteries', perm: 'lottery.manage' },
+      { to: '/admin/draws', label: 'รอบหวย', icon: 'draws', perm: 'draws.manage' },
+      { to: '/admin/bets', label: 'ตรวจโพย', icon: 'bets', perm: 'bets.view_all' },
+      { to: '/admin/chat', label: 'แชทสมาชิก', icon: 'chat', perm: 'members.manage' },
+      { to: '/admin/broadcast', label: 'แจ้งเตือนสมาชิก', icon: 'volume', perm: 'members.manage' },
     ],
   },
   {
     label: 'เครดิต & ระบบ',
     items: [
-      { to: '/admin/wallet', label: 'จัดการเครดิต', icon: 'wallet' },
-      { to: '/admin/payments', label: 'เติม/ถอนเงิน', icon: 'wallet' },
-      { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก', icon: 'banner' },
-      { to: '/admin/audit', label: 'Audit Log', icon: 'audit', superOnly: true },
-      { to: '/admin/security', label: 'Security Events', icon: 'security', superOnly: true },
-      { to: '/admin/settings', label: 'ตั้งค่าระบบ', icon: 'settings', superOnly: true },
-      { to: '/admin/roles', label: 'สิทธิ์การใช้งาน', icon: 'roles', superOnly: true },
+      { to: '/admin/wallet', label: 'จัดการเครดิต', icon: 'wallet', perm: 'wallet.adjust' },
+      { to: '/admin/payments', label: 'เติม/ถอนเงิน', icon: 'wallet', perm: 'wallet.adjust' },
+      { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก', icon: 'banner', perm: 'settings.manage' },
+      { to: '/admin/audit', label: 'Audit Log', icon: 'audit', perm: 'audit.view' },
+      { to: '/admin/security', label: 'Security Events', icon: 'security', perm: 'security.view' },
+      { to: '/admin/settings', label: 'ตั้งค่าระบบ', icon: 'settings', perm: 'settings.manage' },
+      { to: '/admin/roles', label: 'สิทธิ์การใช้งาน', icon: 'roles', perm: 'roles.manage' },
     ],
   },
 ];
@@ -45,7 +52,14 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [chatUnread, setChatUnread] = useState(0);
   const [payPending, setPayPending] = useState(0); // คำขอเติม/ถอนที่รอตรวจสอบ
+  const [apprPending, setApprPending] = useState(0); // คำขอ maker-checker ที่รออนุมัติ
   const prevUnread = useRef(0);
+
+  const perms = user?.permissions || [];
+  const hasPerm = (p) => !p || perms.includes(p) || perms.includes('*');
+  const visibleGroups = useMemo(() => adminGroups
+    .map(g => ({ ...g, items: g.items.filter(i => hasPerm(i.perm)) }))
+    .filter(g => g.items.length > 0), [perms]);
 
   // badge จำนวนแชทที่ยังไม่อ่าน — poll 15 วิ + อัปเดตทันทีเมื่อ SSE แจ้ง 'chat'
   // ถ้ามีข้อความใหม่เข้ามาแบบ real-time → เด้ง toast แจ้งเตือน
@@ -72,30 +86,41 @@ export default function AdminLayout() {
       .catch(() => {});
     load();
     const t = setInterval(load, 30000);
-    const h = (e) => { if (['payments', 'notify'].includes(e.detail?.kind)) load(); };
+    const h = (e) => { if (['payments', 'notify', 'approvals'].includes(e.detail?.kind)) load(); };
     window.addEventListener('sys:update', h);
     return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
   }, []);
 
+  // badge จำนวนคำขออนุมัติที่รออยู่ — poll 30 วิ (SSE 'approvals' อัปเดตเร็วขึ้น)
+  useEffect(() => {
+    const perms = user?.permissions || [];
+    if (!perms.includes('approvals.view') && !perms.includes('*')) return;
+    const load = () => api('/admin/approvals?status=pending&limit=1')
+      .then(r => setApprPending(r.total || 0))
+      .catch(() => {});
+    load();
+    const t = setInterval(load, 30000);
+    const h = (e) => { if (e.detail?.kind === 'approvals') load(); };
+    window.addEventListener('sys:update', h);
+    return () => { clearInterval(t); window.removeEventListener('sys:update', h); };
+  }, [user?.permissions]);
+
   // keyboard shortcuts — กดตัวอักษรเดี่ยวขณะไม่ได้พิมพ์ใน input เพื่อกระโดดไปหน้าต่างๆ
   // o=ภาพรวม r=รายงาน h=สุขภาพ m=สมาชิก l=ประเภทหวย d=รอบหวย b=โพย c=แชท w=เครดิต a=audit s=ตั้งค่า
   useEffect(() => {
-    const MAP = { o: '/admin', r: '/admin/reports', h: '/admin/health', m: '/admin/members', l: '/admin/lotteries', d: '/admin/draws', b: '/admin/bets', c: '/admin/chat', w: '/admin/wallet', a: '/admin/audit', s: '/admin/settings' };
+    const MAP = { o: '/admin', r: '/admin/reports', h: '/admin/health', m: '/admin/members', l: '/admin/lotteries', d: '/admin/draws', b: '/admin/bets', c: '/admin/chat', w: '/admin/wallet', a: '/admin/audit', s: '/admin/settings', p: '/admin/approvals' };
+    const allowed = new Set(visibleGroups.flatMap(g => g.items.map(i => i.to)));
     const onKey = (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       const to = MAP[e.key.toLowerCase()];
-      if (to) { e.preventDefault(); navigate(to); }
+      if (to && allowed.has(to)) { e.preventDefault(); navigate(to); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [navigate]);
+  }, [navigate, visibleGroups]);
 
-  const isSuper = (user?.roles || []).includes('super_admin');
-  const visibleGroups = adminGroups
-    .map(g => ({ ...g, items: g.items.filter(i => !i.superOnly || isSuper) }))
-    .filter(g => g.items.length > 0);
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6">
       <aside className="lg:w-60 shrink-0">
@@ -131,6 +156,11 @@ export default function AdminLayout() {
                     {i.to === '/admin/payments' && payPending > 0 && (
                       <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-navy-950 text-[9px] font-black flex items-center justify-center">
                         {payPending > 99 ? '99+' : payPending}
+                      </span>
+                    )}
+                    {i.to === '/admin/approvals' && apprPending > 0 && (
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-navy-950 text-[9px] font-black flex items-center justify-center">
+                        {apprPending > 99 ? '99+' : apprPending}
                       </span>
                     )}
                   </NavLink>

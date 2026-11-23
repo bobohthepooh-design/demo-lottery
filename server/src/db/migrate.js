@@ -55,8 +55,16 @@ async function migrateLocked(client) {
   );
   for (const { version, name } of migrationFiles()) {
     if (applied.has(version)) continue;
+    // ไฟล์ .pg.sql = PostgreSQL dialect จริง — รันบน DB เดิมได้ (idempotent: ใช้ IF NOT EXISTS)
+    // ไฟล์ .sql อื่น = SQLite legacy — mark applied เฉยๆ (schema จริงอยู่ใน schema.pg.sql)
+    if (name.endsWith('.pg.sql')) {
+      const sql = fs.readFileSync(path.join(migrationsDir, name), 'utf8');
+      await pool.query(sql);
+      console.log(`[migrate] applied ${name}`);
+    } else {
+      console.log(`[migrate] marked ${name}`);
+    }
     await pool.query('INSERT INTO schema_migrations (version, name) VALUES ($1, $2)', [version, name]);
-    console.log(`[migrate] marked ${name}`);
   }
   console.log('[migrate] up to date');
 }

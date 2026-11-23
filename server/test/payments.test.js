@@ -52,6 +52,9 @@ let member, adminAgent, depositId, withdrawId;
 const TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 beforeAll(async () => {
+  // maker-checker: เทส direct-execution path — ไฟล์นี้สร้าง admin คนที่ 2 ทำให้ auto mode บังคับ approval
+  const { setSetting } = await import('../src/services/settingsService.js');
+  await setSetting('maker_checker', 'off', null);
   // member
   await makeAgent().post('/auth/register', { username: `p${ts}`, email: `p${ts}@t.local`, password: 'Password123', ageConfirmed: true, termsAccepted: true });
   member = makeAgent();

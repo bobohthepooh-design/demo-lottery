@@ -29,7 +29,11 @@ export default function AdminPayments() {
     setBusy(id); setMsg('');
     try {
       const r = await api(`/admin/payments/${id}/review`, { method: 'POST', body: { action, note: note[id] || '' } });
-      setMsg(action === 'approve' ? `✅ อนุมัติแล้ว${r.balance != null ? ` — ยอดใหม่ ${satang(r.balance)} บาท` : ''}` : 'ปฏิเสธแล้ว');
+      if (r.pendingApproval) {
+        setMsg(`📨 ส่งคำขอ ${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'} การชำระเงิน ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว`);
+      } else {
+        setMsg(action === 'approve' ? `✅ อนุมัติแล้ว${r.balance != null ? ` — ยอดใหม่ ${satang(r.balance)} บาท` : ''}` : 'ปฏิเสธแล้ว');
+      }
       load();
     } catch (e) { setMsg('❌ ' + e.message); }
     finally { setBusy(null); }

@@ -14,9 +14,19 @@ import { broadcast } from '../services/events.js';
 import { config } from '../config.js';
 import { seedDemoDraws, drawSchedulePreview } from '../db/demo-data.js';
 import { notify } from '../services/notifyService.js';
+import * as approvals from '../services/approvalService.js';
 
 const router = Router();
-router.use(requireAuth, requireMfaVerified, requirePerm('dashboard.admin'));
+
+// บังคับ MFA สำหรับทุกบัญชีที่เข้า admin portal — mfa_enabled=0 → ต้องไป setup ก่อน
+const requireAdminMfa = (req, res, next) => {
+  if (!req.user?.mfaEnabled) {
+    return res.status(403).json({ error: 'บัญชีผู้ดูแลต้องเปิดใช้ MFA ก่อนเข้าใช้งาน — ไปที่ โปรไฟล์ > ตั้งค่า MFA', code: 'MFA_ENROLLMENT_REQUIRED' });
+  }
+  next();
+};
+
+router.use(requireAuth, requireMfaVerified, requireAdminMfa, requirePerm('dashboard.admin'));
 
 // ---------- helpers ----------
 const db = () => getDb();
@@ -180,13 +190,15 @@ const rolePermSchema = z.object({
 router.put('/roles/permissions', requirePerm('roles.manage'), requireRole('super_admin'), async (req, res, next) => {
   try {
     const { roleId, permissionIds } = rolePermSchema.parse(req.body);
-    await txAsync(async (d) => {
-      await d.prepare('DELETE FROM role_permissions WHERE role_id = ?').run(roleId);
-      for (const pid of permissionIds) await d.prepare('INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)').run(roleId, pid);
+    const role = await db().prepare('SELECT name FROM roles WHERE id = ?').get(roleId);
+    if (!role) return res.status(404).json({ error: 'ไม่พบ role' });
+    const r = await approvals.submitOrExecute({
+      category: 'roles.update',
+      payload: { roleId, permissionIds },
+      summary: `เปลี่ยนสิทธิ์ role "${role.name}" (${permissionIds.length} permissions)`,
+      makerId: req.user.id, req,
     });
-    // invalidate caches for users with this role
-    for (const u of await db().prepare('SELECT user_id FROM user_roles WHERE role_id = ?').all(roleId)) invalidatePermCache(u.user_id);
-    audit({ userId: req.user.id, action: 'admin.roles_update', entityType: 'role', entityId: String(roleId), detail: { permissionIds }, req });
+    if (r.pending) return res.json({ ok: true, pendingApproval: true, approval: r.request });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
@@ -636,9 +648,19 @@ router.post('/draws/:id/fetch-result', requirePerm('results.publish'), async (re
 router.post('/draws/:id/result', requirePerm('results.publish'), async (req, res, next) => {
   try {
     const { winning_numbers } = settleSchema.parse(req.body);
-    const result = await fetcher.updateDrawResult(req.user.id, Number(req.params.id), winning_numbers);
+    const drawId = Number(req.params.id);
+    const draw = await db().prepare(`SELECT d.draw_code, lt.name_th AS type_name FROM lottery_draws d
+      JOIN lottery_types lt ON lt.id = d.lottery_type_id WHERE d.id = ?`).get(drawId);
+    if (!draw) return res.status(404).json({ error: 'ไม่พบรอบ' });
+    const r = await approvals.submitOrExecute({
+      category: 'result.manual',
+      payload: { drawId, winningNumbers: winning_numbers },
+      summary: `แก้ไขผลย้อนหลัง ${draw.draw_code} (${draw.type_name})`,
+      makerId: req.user.id, req,
+    });
+    if (r.pending) return res.json({ ok: true, pendingApproval: true, approval: r.request });
     broadcast('results');
-    res.json(result);
+    res.json(r.result);
   } catch (e) { next(e); }
 });
 
@@ -694,8 +716,17 @@ const adjustSchema = z.object({
 router.post('/wallet/adjust', requirePerm('wallet.adjust'), async (req, res, next) => {
   try {
     const { userId, ...rest } = adjustSchema.parse(req.body);
-    const result = await wallet.adminAdjust({ adminId: req.user.id, targetUserId: userId, ...rest });
-    res.json({ ok: true, ...result });
+    const target = await db().prepare('SELECT username FROM users WHERE id = ?').get(userId);
+    if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
+    const baht = (rest.amount / 100).toLocaleString('th-TH');
+    const r = await approvals.submitOrExecute({
+      category: 'wallet.adjust',
+      payload: { targetUserId: userId, ...rest },
+      summary: `ปรับเครดิต ${target.username}: ${rest.direction === 'credit' ? '+' : '-'}${baht} บาท — ${rest.reason}`,
+      makerId: req.user.id, req,
+    });
+    if (r.pending) return res.json({ ok: true, pendingApproval: true, approval: r.request });
+    res.json({ ok: true, ...r.result });
   } catch (e) { next(e); }
 });
 
@@ -960,17 +991,16 @@ router.post('/wallet/bulk-adjust', requirePerm('wallet.adjust'), async (req, res
     }
     if (!targets.length) return res.status(400).json({ error: 'ไม่ได้เลือกสมาชิก' });
     const baseKey = `bulk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const results = [];
-    for (const uid of targets) {
-      try {
-        const r = await wallet.adminAdjust({ adminId: req.user.id, targetUserId: uid, amount, direction, reason, idempotencyKey: `${baseKey}-${uid}` });
-        results.push({ userId: uid, ok: true, balance: r.balance });
-      } catch (e) {
-        results.push({ userId: uid, ok: false, error: e.message });
-      }
-    }
-    audit({ userId: req.user.id, action: 'wallet.bulk_adjust', detail: { direction, amount, reason, total: targets.length, ok: results.filter(r => r.ok).length }, req });
-    res.json({ ok: true, results, succeeded: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length });
+    const baht = (amount / 100).toLocaleString('th-TH');
+    const r = await approvals.submitOrExecute({
+      category: 'wallet.bulk_adjust',
+      payload: { targets, amount, direction, reason, baseKey },
+      summary: `ปรับเครดิตหมู่ ${targets.length} คน: ${direction === 'credit' ? '+' : '-'}${baht} บาท — ${reason}`,
+      makerId: req.user.id, req,
+    });
+    if (r.pending) return res.json({ ok: true, pendingApproval: true, approval: r.request });
+    const results = r.result.results;
+    res.json({ ok: true, results, succeeded: r.result.succeeded, failed: r.result.failed });
   } catch (e) { next(e); }
 });
 
@@ -988,7 +1018,163 @@ const reviewSchema = z.object({ action: z.enum(['approve', 'reject']), note: z.s
 router.post('/payments/:id/review', requirePerm('wallet.adjust'), async (req, res, next) => {
   try {
     const { action, note } = reviewSchema.parse(req.body);
-    const r = await paySvc.adminReview({ adminId: req.user.id, paymentId: Number(req.params.id), action, note });
-    res.json({ ok: true, ...r });
+    const pay = await db().prepare('SELECT reference, kind, amount FROM payment_requests WHERE id = ?').get(Number(req.params.id));
+    if (!pay) return res.status(404).json({ error: 'ไม่พบคำขอ' });
+    const baht = (pay.amount / 100).toLocaleString('th-TH');
+    const r = await approvals.submitOrExecute({
+      category: 'payment.review',
+      payload: { paymentId: Number(req.params.id), action, note },
+      summary: `${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'} ${pay.kind === 'deposit' ? 'เติมเงิน' : 'ถอนเงิน'} ${baht} บาท (${pay.reference})`,
+      makerId: req.user.id, req,
+    });
+    if (r.pending) return res.json({ ok: true, pendingApproval: true, approval: r.request });
+    res.json({ ok: true, ...r.result });
+  } catch (e) { next(e); }
+});
+
+// ---------- Approval Center (maker-checker) ----------
+
+router.get('/approvals', requirePerm('approvals.view'), async (req, res, next) => {
+  try {
+    const status = ['pending', 'approved', 'rejected', 'executed', 'failed', 'cancelled'].includes(req.query.status) ? req.query.status : null;
+    const r = await approvals.listApprovals({
+      status, category: req.query.category || null, q: req.query.q || '',
+      limit: Math.min(parseInt(req.query.limit || '50', 10) || 50, 200),
+      offset: Math.max(parseInt(req.query.offset || '0', 10) || 0, 0),
+    });
+    res.json(r);
+  } catch (e) { next(e); }
+});
+
+router.get('/approvals/:id', requirePerm('approvals.view'), async (req, res, next) => {
+  try { res.json({ request: await approvals.getApproval(Number(req.params.id)) }); }
+  catch (e) { next(e); }
+});
+
+const decideSchema = z.object({ note: z.string().max(500).optional() });
+router.post('/approvals/:id/approve', requirePerm('approvals.approve'), async (req, res, next) => {
+  try {
+    const { note } = decideSchema.parse(req.body || {});
+    const r = await approvals.decide({ id: Number(req.params.id), checkerId: req.user.id, approve: true, note, req });
+    res.json({ ok: true, request: r });
+  } catch (e) { next(e); }
+});
+router.post('/approvals/:id/reject', requirePerm('approvals.approve'), async (req, res, next) => {
+  try {
+    const { note } = decideSchema.parse(req.body || {});
+    if (!note || note.trim().length < 3) return res.status(400).json({ error: 'กรุณาระบุเหตุผลการปฏิเสธ', code: 'NOTE_REQUIRED' });
+    const r = await approvals.decide({ id: Number(req.params.id), checkerId: req.user.id, approve: false, note, req });
+    res.json({ ok: true, request: r });
+  } catch (e) { next(e); }
+});
+router.post('/approvals/:id/cancel', async (req, res, next) => {
+  try { res.json({ ok: true, request: await approvals.cancel({ id: Number(req.params.id), userId: req.user.id }) }); }
+  catch (e) { next(e); }
+});
+
+// ---------- Admin user management (admin.users.manage — super_admin เท่านั้น) ----------
+
+// รายชื่อ user ที่มีสิทธิ์เข้า admin portal (role ใดก็ได้ที่ให้ dashboard.admin)
+router.get('/admin-users', requirePerm('admin.users.manage'), async (req, res, next) => {
+  try {
+    const rows = await db().prepare(`SELECT DISTINCT u.id, u.username, u.display_name, u.status,
+        u.mfa_enabled, u.email_verified, u.created_at, u.updated_at
+      FROM users u
+      JOIN user_roles ur ON ur.user_id = u.id
+      JOIN role_permissions rp ON rp.role_id = ur.role_id
+      JOIN permissions p ON p.id = rp.permission_id
+      WHERE p.code = 'dashboard.admin'
+      ORDER BY u.id`).all();
+    const out = [];
+    for (const u of rows) {
+      const roles = (await db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ?`).all(u.id)).map(r => r.name);
+      const sess = await db().prepare(`SELECT COUNT(*) c FROM user_sessions WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?`).get(u.id, new Date().toISOString().replace('T', ' ').slice(0, 19));
+      const lastLogin = await db().prepare(`SELECT created_at FROM auth_events WHERE user_id = ? AND event = 'login.success' ORDER BY id DESC LIMIT 1`).get(u.id).catch(() => null);
+      out.push({ ...u, roles, activeSessions: sess?.c || 0, lastLoginAt: lastLogin?.created_at || null });
+    }
+    res.json({ admins: out, makerChecker: await approvals.makerCheckerRequired(), adminCount: await approvals.adminUserCount() });
+  } catch (e) { next(e); }
+});
+
+const adminUserCreateSchema = z.object({
+  username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_.-]+$/, 'username ใช้ได้เฉพาะ a-z 0-9 _ . -'),
+  password: z.string().min(8).max(128),
+  displayName: z.string().max(100).optional(),
+  roleName: z.enum(['admin', 'super_admin']),
+});
+// สร้างบัญชีผู้ดูแลใหม่ — ใช้ได้เฉพาะ role ที่ให้สิทธิ์ admin portal
+router.post('/admin-users', requirePerm('admin.users.manage'), async (req, res, next) => {
+  try {
+    const { username, password, displayName, roleName } = adminUserCreateSchema.parse(req.body);
+    const exists = await db().prepare('SELECT id FROM users WHERE username = ?').get(username);
+    if (exists) return res.status(409).json({ error: 'username นี้ถูกใช้แล้ว' });
+    const role = await db().prepare(`SELECT r.id FROM roles r
+      JOIN role_permissions rp ON rp.role_id = r.id JOIN permissions p ON p.id = rp.permission_id
+      WHERE r.name = ? AND p.code = 'dashboard.admin'`).get(roleName);
+    if (!role) return res.status(400).json({ error: 'role นี้ไม่มีสิทธิ์ admin portal' });
+    const r = await txAsync(async (d) => {
+      const ins = await d.prepare(`INSERT INTO users (username, email, password_hash, display_name, status)
+        VALUES (?, ?, ?, ?, 'active')`).run(username, `${username}@admin.local`, hashPassword(password), displayName || username);
+      const uid = ins.lastInsertRowid;
+      await d.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)').run(uid, role.id);
+      await d.prepare('INSERT INTO virtual_wallets (user_id, balance) VALUES (?, 0)').run(uid);
+      return uid;
+    });
+    audit({ userId: req.user.id, action: 'admin.user_create', entityType: 'user', entityId: String(r), detail: { username, roleName }, req });
+    securityEvent({ eventType: 'admin.user_created', severity: 'warning', userId: r, ip: req.ip, detail: { by: req.user.id, username, roleName } });
+    res.json({ ok: true, userId: r, note: 'บัญชีใหม่ต้อง setup MFA ก่อนเข้า admin portal' });
+  } catch (e) { next(e); }
+});
+
+// reset MFA ของ admin คนอื่น — ใช้เมื่ออุปกรณ์ MFA หาย (break-glass ต้องมี admin อีกคนกด)
+router.post('/admin-users/:id/reset-mfa', requirePerm('admin.users.manage'), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (id === req.user.id) return res.status(400).json({ error: 'ไม่สามารถ reset MFA บัญชีตัวเองได้ — ใช้ flow ปกติ' });
+    const target = await db().prepare('SELECT id, username, mfa_enabled FROM users WHERE id = ?').get(id);
+    if (!target) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+    await txAsync(async (d) => {
+      await d.prepare('UPDATE users SET mfa_secret = NULL, mfa_enabled = 0, updated_at = ? WHERE id = ?').run(new Date().toISOString().replace('T', ' ').slice(0, 19), id);
+      await d.prepare('UPDATE user_sessions SET revoked_at = ?, mfa_verified = 0 WHERE user_id = ? AND revoked_at IS NULL').run(new Date().toISOString().replace('T', ' ').slice(0, 19), id);
+    });
+    invalidatePermCache(id);
+    audit({ userId: req.user.id, action: 'admin.mfa_reset', entityType: 'user', entityId: String(id), detail: { target: target.username }, req });
+    securityEvent({ eventType: 'admin.mfa_reset', severity: 'warning', userId: id, ip: req.ip, detail: { by: req.user.id } });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+const adminStatusSchema = z.object({ status: z.enum(['active', 'disabled']) });
+router.post('/admin-users/:id/status', requirePerm('admin.users.manage'), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (id === req.user.id) return res.status(400).json({ error: 'ไม่สามารถปิดบัญชีตัวเองได้' });
+    const { status } = adminStatusSchema.parse(req.body);
+    const target = await db().prepare('SELECT username FROM users WHERE id = ?').get(id);
+    if (!target) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+    await db().prepare(`UPDATE users SET status = ?, updated_at = ? WHERE id = ?`).run(status, new Date().toISOString().replace('T', ' ').slice(0, 19), id);
+    if (status === 'disabled') await db().prepare(`UPDATE user_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`).run(new Date().toISOString().replace('T', ' ').slice(0, 19), id);
+    invalidatePermCache(id);
+    audit({ userId: req.user.id, action: 'admin.user_status', entityType: 'user', entityId: String(id), detail: { target: target.username, status }, req });
+    securityEvent({ eventType: 'admin.user_status_changed', severity: status === 'disabled' ? 'warning' : 'info', userId: id, ip: req.ip, detail: { by: req.user.id, status } });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+
+// sessions ของ admin user — ดู/เพิกถอนจากระยะไกล
+router.get('/admin-users/:id/sessions', requirePerm('admin.users.manage'), async (req, res, next) => {
+  try {
+    const sessions = await db().prepare(`SELECT id, created_at, expires_at, ip, user_agent, mfa_verified
+      FROM user_sessions WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 50`).all(Number(req.params.id));
+    res.json({ sessions });
+  } catch (e) { next(e); }
+});
+router.delete('/admin-users/:id/sessions/:sid', requirePerm('admin.users.manage'), async (req, res, next) => {
+  try {
+    await db().prepare(`UPDATE user_sessions SET revoked_at = ? WHERE id = ? AND user_id = ? AND revoked_at IS NULL`)
+      .run(new Date().toISOString().replace('T', ' ').slice(0, 19), String(req.params.sid), Number(req.params.id));
+    audit({ userId: req.user.id, action: 'admin.session_revoke', entityType: 'user_session', entityId: String(req.params.sid), detail: { targetUserId: req.params.id }, req });
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });

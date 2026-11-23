@@ -39,7 +39,11 @@ export default function AdminWallet() {
       const r = await api('/admin/wallet/adjust', { method: 'POST', body: {
         ...form, userId: Number(form.userId), amount: Math.round(parseFloat(form.amount) * 100),
       }});
-      setMsg(`สำเร็จ — ref ${r.transaction.reference} • ยอดใหม่ ${satang(r.balance)} บาท`);
+      if (r.pendingApproval) {
+        setMsg(`📨 ส่งคำขอปรับเครดิต ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว — รอ admin อีกคนอนุมัติ`);
+      } else {
+        setMsg(`สำเร็จ — ref ${r.transaction.reference} • ยอดใหม่ ${satang(r.balance)} บาท`);
+      }
       setForm({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: newKey() });
       load();
     } catch (e2) { setMsg('ERROR: ' + e2.message); }
@@ -68,8 +72,12 @@ export default function AdminWallet() {
       const body = { amount: Math.round(parseFloat(bulk.amount) * 100), direction: bulk.direction, reason: bulk.reason };
       if (bulk.mode === 'all') body.all = true; else body.userIds = bulk.userIds;
       const r = await api('/admin/wallet/bulk-adjust', { method: 'POST', body });
-      const fails = (r.results || []).filter(x => !x.ok);
-      setBulkMsg(`สำเร็จ ${r.succeeded} • ล้มเหลว ${r.failed}` + (fails.length ? ` — ${fails.slice(0, 3).map(f => `#${f.userId}: ${f.error}`).join(' | ')}` : ''));
+      if (r.pendingApproval) {
+        setBulkMsg(`📨 ส่งคำขอปรับเครดิตกลุ่ม ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว`);
+      } else {
+        const fails = (r.results || []).filter(x => !x.ok);
+        setBulkMsg(`สำเร็จ ${r.succeeded} • ล้มเหลว ${r.failed}` + (fails.length ? ` — ${fails.slice(0, 3).map(f => `#${f.userId}: ${f.error}`).join(' | ')}` : ''));
+      }
       setBulk({ mode: 'selected', userIds: [], amount: '', direction: 'credit', reason: '' });
       load();
     } catch (e2) { setBulkMsg('ERROR: ' + e2.message); }
