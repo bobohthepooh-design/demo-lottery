@@ -353,7 +353,7 @@ export default function Wallet() {
                 </div>
                 <div>
                   <div className="text-xs text-navy-400 mb-1.5">แนบรูปสลิปการโอน (JPG/PNG):</div>
-                  <input type="file" accept="image/*" capture="environment"
+                  <input type="file" accept="image/*"
                     onChange={e => setSlipFile(e.target.files?.[0] || null)}
                     className="w-full text-sm text-navy-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gold-500 file:text-navy-950 file:font-bold file:cursor-pointer" />
                   {slipFile && <div className="text-xs text-green-400 mt-1">✓ {slipFile.name}</div>}
@@ -369,7 +369,7 @@ export default function Wallet() {
                 </div>
                 <div>
                   <div className="text-xs text-navy-400 mb-1.5">แนบรูปสลิปการโอน (JPG/PNG):</div>
-                  <input type="file" accept="image/*" capture="environment"
+                  <input type="file" accept="image/*"
                     onChange={e => setSlipFile(e.target.files?.[0] || null)}
                     className="w-full text-sm text-navy-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gold-500 file:text-navy-950 file:font-bold file:cursor-pointer" />
                   {slipFile && <div className="text-xs text-green-400 mt-1">✓ {slipFile.name}</div>}
