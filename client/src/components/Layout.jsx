@@ -32,6 +32,7 @@ const navGroups = [
     { to: '/wallet', k: 'wallet', icon: 'wallet', auth: true, memberOnly: true },
     { to: '/performance', k: 'perf', icon: 'chart', auth: true, memberOnly: true },
     { to: '/profile', k: 'profile', icon: 'user', auth: true },
+    { to: '/support', k: 'support', icon: 'chat', auth: true, memberOnly: true },
   ]},
   { label: 'navAdmin', items: [{ to: '/admin', k: 'admin', icon: 'dashboard', auth: true, admin: true }] },
 ];

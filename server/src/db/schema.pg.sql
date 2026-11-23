@@ -14,7 +14,8 @@ CREATE TABLE users (
   mfa_enabled BIGINT NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
   updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
-, withdraw_unlocked BIGINT NOT NULL DEFAULT 0, phone TEXT, self_excluded_until TEXT, daily_limit_satang BIGINT, monthly_limit_satang BIGINT, age_confirmed BIGINT DEFAULT 0, timezone TEXT, language TEXT, terms_accepted_at TEXT, terms_version TEXT, email_verified BIGINT NOT NULL DEFAULT 0, signup_ip TEXT);
+, withdraw_unlocked BIGINT NOT NULL DEFAULT 0, phone TEXT, self_excluded_until TEXT, daily_limit_satang BIGINT, monthly_limit_satang BIGINT, age_confirmed BIGINT DEFAULT 0, timezone TEXT, language TEXT, terms_accepted_at TEXT, terms_version TEXT, email_verified BIGINT NOT NULL DEFAULT 0, signup_ip TEXT
+, kyc_status TEXT NOT NULL DEFAULT 'none', kyc_requested_at TEXT, kyc_reviewed_by BIGINT, kyc_reviewed_at TEXT, kyc_note TEXT);
 
 CREATE TABLE roles (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -437,3 +438,19 @@ CREATE TABLE IF NOT EXISTS auth_events (
 );
 CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_auth_events_ip ON auth_events(ip, id DESC);
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL DEFAULT 'general',
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','resolved','closed')),
+  admin_reply TEXT,
+  admin_id BIGINT REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  resolved_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_tickets_user ON support_tickets(user_id, id DESC);
+CREATE INDEX IF NOT EXISTS idx_tickets_status ON support_tickets(status, id DESC);

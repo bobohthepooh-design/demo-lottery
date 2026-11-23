@@ -8,6 +8,46 @@ import { getTz, setTz } from '../time.js';
 import { pushSupported, subscribePush, unsubscribePush, pushSubscriptionCount } from '../push.js';
 import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
 
+// KYC — member ขอ verify ตัวตน (manual review โดยแอดมิน)
+function KycCard({ user }) {
+  const [kyc, setKyc] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => api('/compliance/kyc/status').then(r => setKyc(r.kyc)).catch(() => {});
+  useEffect(() => { load(); }, []);
+  if (!kyc) return null;
+  const st = kyc.kyc_status || 'none';
+  const TH = { none: 'ยังไม่ได้ยืนยัน', pending: 'รอแอดมินตรวจสอบ', verified: 'ยืนยันแล้ว ✓', rejected: 'ถูกปฏิเสธ' };
+  const request = async () => {
+    if (!(await confirmAction({ title: 'ขอ verify ตัวตน (KYC)', message: 'ส่งคำขอยืนยันตัวตนให้แอดมินตรวจสอบ? ระยะเวลาแล้วแต่แอดมิน' }))) return;
+    setBusy(true);
+    try { await api('/compliance/kyc/request', { method: 'POST', body: {} }); toast('ส่งคำขอ KYC แล้ว', 'success'); load(); }
+    catch (e) { toast(e.message, 'error'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Card>
+      <CardHeader title="ยืนยันตัวตน (KYC)" sub="ยืนยันตัวตนเพื่อปลดล็อกฟีเจอร์ที่ต้องการ identity — แอดมินตรวจสอบแบบ manual" />
+      <CardBody>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-sm">
+            <span className={`font-semibold ${st === 'verified' ? 'text-emerald-300' : st === 'rejected' ? 'text-red-300' : st === 'pending' ? 'text-amber-300' : 'text-navy-300'}`}>{TH[st]}</span>
+            {kyc.kyc_requested_at && <span className="text-navy-400 text-xs ml-2">ส่งคำขอ {kyc.kyc_requested_at}</span>}
+            {st === 'rejected' && kyc.kyc_note && <div className="text-xs text-red-300/80 mt-1">เหตุผล: {kyc.kyc_note}</div>}
+          </div>
+          {(st === 'none' || st === 'rejected') && (
+            <Button size="sm" onClick={request} disabled={busy || !user?.emailVerified}>
+              {busy ? 'กำลังส่ง...' : st === 'rejected' ? 'ส่งคำขอใหม่' : 'ขอ verify ตัวตน'}
+            </Button>
+          )}
+        </div>
+        {!user?.emailVerified && (st === 'none' || st === 'rejected') && (
+          <div className="text-xs text-amber-300 mt-2">กรุณายืนยันอีเมลก่อนสมัคร KYC</div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
 // Responsible gambling — ตั้งวงเงินเดิมพันรายวัน/เดือน + self-exclusion (แก้กลับไม่ได้)
 function RGCard({ user, onDone }) {
   const [daily, setDaily] = useState(user?.dailyLimitSatang != null ? String(user.dailyLimitSatang / 100) : '');
@@ -323,6 +363,9 @@ export default function Profile() {
 
       {/* Email verification */}
       <EmailVerifyCard user={user} onDone={refresh} />
+
+      {/* KYC — verify ตัวตน */}
+      <KycCard user={user} />
 
       {/* Sessions — อุปกรณ์ที่ล็อกอินอยู่ */}
       <SessionsCard />

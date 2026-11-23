@@ -13,9 +13,11 @@ export default function AdminMembers() {
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
   const [act, setAct] = useState(null); // member 360 activity
+  const [rgList, setRgList] = useState(null); // responsible-gaming restricted members
 
   const load = () => api(`/admin/members?q=${encodeURIComponent(q)}`).then(r => setMembers(r.members)).catch(e => toast(e.message, 'error'));
-  useEffect(() => { load(); }, []);
+  const loadRg = () => api('/admin/rg/restricted').then(r => setRgList(r.restricted || [])).catch(() => {});
+  useEffect(() => { load(); loadRg(); }, []);
 
   const save = async () => {
     if (!(await confirmAction({ title: 'ยืนยันการแก้ไขสมาชิก', message: `บันทึกการเปลี่ยนแปลงของ ${edit.username} ใช่หรือไม่?` }))) return;
@@ -39,6 +41,17 @@ export default function AdminMembers() {
   const loadActivity = (m) => api(`/admin/members/${m.id}/activity`)
     .then(setAct).catch(e => toast(e.message, 'error'));
 
+  const kycReview = async (userId, action) => {
+    const note = action === 'reject' ? prompt('เหตุผลการปฏิเสธ KYC (จำเป็น):') : '';
+    if (action === 'reject' && (!note || note.trim().length < 3)) { if (note !== null) toast('ต้องระบุเหตุผล', 'error'); return; }
+    if (note === null) return;
+    try {
+      await api(`/admin/kyc/${userId}/review`, { method: 'POST', body: { action, note: note || undefined } });
+      toast(action === 'verify' ? 'ยืนยัน KYC แล้ว' : 'ปฏิเสธ KYC แล้ว', 'success');
+      loadActivity({ id: userId }); load();
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -46,6 +59,22 @@ export default function AdminMembers() {
         <Input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
           placeholder="ค้นหา username/email..." inputClassName="w-64 py-2 text-sm" />
       </div>
+      {rgList?.length > 0 && (
+        <Card>
+          <div className="p-3 flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-amber-300">⛔ Responsible Gaming — สมาชิกที่มีข้อจำกัด ({rgList.length})</span>
+            {rgList.slice(0, 12).map(m => (
+              <button key={m.id} onClick={() => loadActivity(m)}
+                className="text-[10px] px-2 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
+                title={m.self_excluded_until ? `ระงับ${m.self_excluded_until === 'permanent' ? 'ถาวร' : `ถึง ${m.self_excluded_until}`} • stake 24h: ${satang(m.staked_24h)}฿` : `จำกัดวงเงิน`}>
+                {m.username}{m.self_excluded_until ? ' ⛔' : ''}
+              </button>
+            ))}
+            {rgList.length > 12 && <span className="text-[10px] text-navy-400">+{rgList.length - 12} คน</span>}
+          </div>
+        </Card>
+      )}
+
       <Card>
         <Table>
           <TableHeader>
@@ -147,7 +176,38 @@ export default function AdminMembers() {
               <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">เครดิต</div><div className="text-gold-300 font-bold">{satang(act.user.balance)} ฿</div></div>
               <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">สถานะ</div><div className="text-white">{act.user.status}</div></div>
               <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">โพยทั้งหมด</div><div className="text-white">{act.betStats.count} ({satang(act.betStats.totalStaked)} ฿)</div></div>
-              <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">สมัครเมื่อ</div><div className="text-white">{fmtDateTime(act.user.created_at)}</div></div>
+              <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">ฝาก/ถอน</div><div className="text-white">{satang(act.financials?.deposit || 0)} / {satang(act.financials?.withdraw || 0)} ฿</div></div>
+            </div>
+
+            {act.riskFlags?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {act.riskFlags.map(f => (
+                  <span key={f.code} className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    f.severity === 'high' ? 'bg-red-500/15 text-red-300 border-red-500/40' :
+                    f.severity === 'medium' ? 'bg-amber-500/15 text-amber-300 border-amber-500/40' :
+                    'bg-sky-500/15 text-sky-300 border-sky-500/40'}`}>{f.label}</span>
+                ))}
+              </div>
+            )}
+
+            {/* KYC review */}
+            <div className="bg-navy-900/60 border border-navy-700/60 rounded-lg p-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs">
+                  <span className="font-bold text-navy-300">KYC:</span>{' '}
+                  <span className={act.user.kyc_status === 'verified' ? 'text-emerald-300' : act.user.kyc_status === 'rejected' ? 'text-red-300' : act.user.kyc_status === 'pending' ? 'text-amber-300' : 'text-navy-300'}>
+                    {{ none: 'ยังไม่สมัคร', pending: 'รอตรวจ', verified: 'ยืนยันแล้ว', rejected: 'ถูกปฏิเสธ' }[act.user.kyc_status || 'none']}
+                  </span>
+                  {act.user.kyc_requested_at && <span className="text-navy-400"> • ส่ง {act.user.kyc_requested_at}</span>}
+                  {act.user.kyc_note && <div className="text-[10px] text-navy-400 mt-0.5">note: {act.user.kyc_note}</div>}
+                </div>
+                {act.user.kyc_status === 'pending' && (
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="text-[10px] bg-emerald-600 hover:bg-emerald-500" onClick={() => kycReview(act.user.id, 'verify')}>✓ ยืนยัน</Button>
+                    <Button size="sm" variant="ghost" className="text-[10px] text-red-300" onClick={() => kycReview(act.user.id, 'reject')}>✗ ปฏิเสธ</Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <Section title={`ประวัติการเข้าสู่ระบบ (${act.authEvents.length})`}>

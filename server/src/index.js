@@ -31,6 +31,7 @@ import * as kiwiService from './services/kiwiService.js';
 import kiwiRoutes from './routes/kiwi.js';
 import publicRoutes from './routes/public.js';
 import paymentRoutes from './routes/payments.js';
+import complianceRoutes from './routes/compliance.js';
 import { logger } from './lib/logger.js';
 import { openApiSpec } from './lib/openapi.js';
 
@@ -185,6 +186,7 @@ const apiRouters = [
   ['/lottery', lotteryRoutes],
   ['/bets', betRoutes],
   ['/payments', paymentRoutes],
+  ['/compliance', complianceRoutes],
   ['/notifications', notificationRoutes],
   ['/scratch', scratchRoutes],
   ['/hilo', hiloRoutes],

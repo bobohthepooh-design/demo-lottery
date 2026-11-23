@@ -30,6 +30,7 @@ export const adminGroups = [
       { to: '/admin/draws', label: 'รอบหวย', icon: 'draws', perm: 'draws.manage' },
       { to: '/admin/bets', label: 'ตรวจโพย', icon: 'bets', perm: 'bets.view_all' },
       { to: '/admin/chat', label: 'แชทสมาชิก', icon: 'chat', perm: 'members.manage' },
+      { to: '/admin/tickets', label: 'ตั๋วสนับสนุน', icon: 'ticket', perm: 'members.manage' },
       { to: '/admin/broadcast', label: 'แจ้งเตือนสมาชิก', icon: 'volume', perm: 'members.manage' },
     ],
   },

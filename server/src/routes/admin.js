@@ -38,7 +38,8 @@ async function memberDto(u) {
     balance: w?.balance ?? 0, roles, createdAt: u.created_at, mfaEnabled: !!u.mfa_enabled,
     withdrawUnlocked: !!u.withdraw_unlocked,
     ageConfirmed: !!u.age_confirmed, selfExcludedUntil: u.self_excluded_until,
-    dailyLimitSatang: u.daily_limit_satang, monthlyLimitSatang: u.monthly_limit_satang };
+    dailyLimitSatang: u.daily_limit_satang, monthlyLimitSatang: u.monthly_limit_satang,
+    kycStatus: u.kyc_status || 'none' };
 }
 
 // ป้องกัน privilege escalation — admin ธรรมดา (มี members.manage) ห้ามแก้/ลบบัญชี super_admin
@@ -171,7 +172,8 @@ router.get('/members/:id/activity', requirePerm('members.manage'), async (req, r
     const id = Number(req.params.id);
     const u = await db().prepare(`SELECT id, username, email, display_name, status, created_at,
       mfa_enabled, email_verified, age_confirmed, self_excluded_until,
-      daily_limit_satang, monthly_limit_satang, withdraw_unlocked FROM users WHERE id = ?`).get(id);
+      daily_limit_satang, monthly_limit_satang, withdraw_unlocked,
+      kyc_status, kyc_requested_at, kyc_reviewed_at, kyc_note FROM users WHERE id = ?`).get(id);
     if (!u) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
     const w = await db().prepare('SELECT balance FROM virtual_wallets WHERE user_id = ?').get(id);
     const authEvents = await db().prepare(`SELECT event, ip, user_agent, created_at FROM auth_events
@@ -188,11 +190,114 @@ router.get('/members/:id/activity', requirePerm('members.manage'), async (req, r
       FROM virtual_transactions WHERE user_id = ? ORDER BY id DESC LIMIT 10`).all(id);
     const auditRows = await db().prepare(`SELECT action, entity_type, entity_id, detail, created_at
       FROM audit_logs WHERE user_id = ? ORDER BY id DESC LIMIT 15`).all(id);
+    // risk flags — สัญญาณเฝ้าระวังง่ายๆ จากข้อมูลที่มีอยู่แล้ว (ไม่ใช่ ML)
+    const failed7d = (await db().prepare(`SELECT COUNT(*) c FROM auth_events
+      WHERE user_id = ? AND event LIKE 'login.failed%' AND created_at > datetime('now','-7 days')`).get(id)).c;
+    const blocked7d = (await db().prepare(`SELECT COUNT(*) c FROM auth_events
+      WHERE user_id = ? AND event = 'login.blocked' AND created_at > datetime('now','-7 days')`).get(id)).c;
+    const distinctIps = (await db().prepare(`SELECT COUNT(DISTINCT ip) c FROM auth_events
+      WHERE user_id = ? AND ip IS NOT NULL AND created_at > datetime('now','-30 days')`).get(id)).c;
+    const fin = await db().prepare(`SELECT
+      COALESCE(SUM(CASE WHEN kind='deposit' AND status='approved' THEN amount END),0) dep,
+      COALESCE(SUM(CASE WHEN kind='withdraw' AND status='approved' THEN amount END),0) wd
+      FROM payment_requests WHERE user_id = ?`).get(id);
+    const riskFlags = [];
+    if (failed7d >= 5) riskFlags.push({ code: 'brute_force', label: `login ผิด ${failed7d} ครั้งใน 7 วัน`, severity: 'high' });
+    if (blocked7d > 0) riskFlags.push({ code: 'account_blocked', label: `ถูกบล็อก login ${blocked7d} ครั้งใน 7 วัน`, severity: 'high' });
+    if (distinctIps >= 5) riskFlags.push({ code: 'many_ips', label: `เข้าใช้จาก ${distinctIps} IP ใน 30 วัน`, severity: 'medium' });
+    if (u.self_excluded_until) riskFlags.push({ code: 'self_excluded', label: 'RG: ระงับตัวเอง', severity: 'info' });
+    if (fin.wd > fin.dep && fin.wd > 0) riskFlags.push({ code: 'withdraw_over_deposit', label: 'ถอนได้มากกว่าฝาก (possible promo abuse)', severity: 'medium' });
     res.json({
       user: { ...u, balance: w?.balance ?? 0, roles: (await db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(id)).map(r => r.name) },
-      authEvents, sessions, payments, recentBets, walletTx, auditRows,
+      authEvents, sessions, payments, recentBets, walletTx, auditRows, riskFlags,
       betStats: { count: betStats?.c || 0, totalStaked: betStats?.s || 0 },
+      financials: { deposit: fin.dep, withdraw: fin.wd },
     });
+  } catch (e) { next(e); }
+});
+
+// ---------- KYC review (manual) ----------
+
+router.get('/kyc', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const status = ['pending', 'verified', 'rejected'].includes(req.query.status) ? req.query.status : null;
+    const where = status ? 'WHERE u.kyc_status = ?' : `WHERE u.kyc_status <> 'none'`;
+    const args = status ? [status] : [];
+    const rows = await db().prepare(`SELECT u.id, u.username, u.display_name, u.email, u.status,
+        u.kyc_status, u.kyc_requested_at, u.kyc_reviewed_at, u.kyc_note, u.email_verified, u.created_at
+      FROM users u ${where} ORDER BY u.kyc_requested_at DESC NULLS LAST, u.id DESC LIMIT 200`).all(...args);
+    res.json({ kyc: rows });
+  } catch (e) { next(e); }
+});
+
+const kycReviewSchema = z.object({
+  action: z.enum(['verify', 'reject']),
+  note: z.string().max(500).optional(),
+});
+router.post('/kyc/:userId/review', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const userId = Number(req.params.userId);
+    const { action, note } = kycReviewSchema.parse(req.body);
+    if (action === 'reject' && (!note || note.trim().length < 3))
+      return res.status(400).json({ error: 'กรุณาระบุเหตุผลการปฏิเสธ', code: 'NOTE_REQUIRED' });
+    const target = await db().prepare('SELECT id, username, kyc_status FROM users WHERE id = ?').get(userId);
+    if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
+    if (target.kyc_status !== 'pending') return res.status(400).json({ error: `สถานะ KYC ปัจจุบันคือ ${target.kyc_status} — review ได้เฉพาะ pending` });
+    const t = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    await db().prepare(`UPDATE users SET kyc_status=?, kyc_reviewed_by=?, kyc_reviewed_at=?, kyc_note=?, updated_at=? WHERE id=?`)
+      .run(action === 'verify' ? 'verified' : 'rejected', req.user.id, t, note || null, t, userId);
+    audit({ userId: req.user.id, action: `kyc.${action === 'verify' ? 'verified' : 'rejected'}`, entityType: 'user', entityId: String(userId), detail: { target: target.username, note: note || null }, req });
+    broadcast('kyc');
+    res.json({ ok: true, kycStatus: action === 'verify' ? 'verified' : 'rejected' });
+  } catch (e) { next(e); }
+});
+
+// ---------- support / dispute tickets (admin) ----------
+
+router.get('/tickets', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const status = ['open', 'in_progress', 'resolved', 'closed'].includes(req.query.status) ? req.query.status : null;
+    const where = status ? 'WHERE t.status = ?' : '';
+    const args = status ? [status] : [];
+    const rows = await db().prepare(`SELECT t.*, u.username, u.display_name, au.username AS admin_name
+      FROM support_tickets t JOIN users u ON u.id = t.user_id
+      LEFT JOIN users au ON au.id = t.admin_id
+      ${where} ORDER BY t.id DESC LIMIT 200`).all(...args);
+    res.json({ tickets: rows });
+  } catch (e) { next(e); }
+});
+
+const ticketReplySchema = z.object({
+  reply: z.string().min(1).max(3000),
+  status: z.enum(['in_progress', 'resolved', 'closed']).optional(),
+});
+router.post('/tickets/:id/reply', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const { reply, status } = ticketReplySchema.parse(req.body);
+    const t = await db().prepare('SELECT id, status, user_id FROM support_tickets WHERE id = ?').get(Number(req.params.id));
+    if (!t) return res.status(404).json({ error: 'ไม่พบ ticket' });
+    if (t.status === 'closed') return res.status(400).json({ error: 'ticket นี้ปิดแล้ว' });
+    const newStatus = status || (t.status === 'open' ? 'in_progress' : t.status);
+    const resolvedAt = newStatus === 'resolved' || newStatus === 'closed' ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null;
+    await db().prepare(`UPDATE support_tickets SET admin_reply=?, admin_id=?, status=?, resolved_at=COALESCE(?, resolved_at), updated_at=? WHERE id=?`)
+      .run(reply, req.user.id, newStatus, resolvedAt, new Date().toISOString().replace('T', ' ').slice(0, 19), t.id);
+    audit({ userId: req.user.id, action: 'ticket.reply', entityType: 'support_ticket', entityId: String(t.id), detail: { status: newStatus }, req });
+    broadcast('tickets');
+    res.json({ ok: true, status: newStatus });
+  } catch (e) { next(e); }
+});
+
+// ---------- responsible gaming — รายชื่อสมาชิกที่มีข้อจำกัด ----------
+
+router.get('/rg/restricted', requirePerm('members.manage'), async (req, res) => {
+  try {
+    const rows = await db().prepare(`SELECT u.id, u.username, u.display_name, u.status,
+        u.self_excluded_until, u.daily_limit_satang, u.monthly_limit_satang,
+        (SELECT COALESCE(SUM(total_stake),0) FROM bet_slips b WHERE b.user_id = u.id AND b.created_at > datetime('now','-1 day')) staked_24h
+      FROM users u
+      WHERE u.self_excluded_until IS NOT NULL OR u.daily_limit_satang IS NOT NULL OR u.monthly_limit_satang IS NOT NULL
+      ORDER BY u.id DESC LIMIT 200`).all();
+    res.json({ restricted: rows });
   } catch (e) { next(e); }
 });
 

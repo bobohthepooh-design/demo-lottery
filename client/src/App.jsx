@@ -22,6 +22,7 @@ const Hilo = lazy(() => import('./pages/Hilo.jsx'));
 const Kiwi = lazy(() => import('./pages/Kiwi.jsx'));
 const Legal = lazy(() => import('./pages/Legal.jsx'));
 const Performance = lazy(() => import('./pages/Performance.jsx'));
+const Support = lazy(() => import('./pages/Support.jsx'));
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminOverview = lazy(() => import('./admin/Overview.jsx'));
 const AdminMembers = lazy(() => import('./admin/Members.jsx'));
@@ -41,6 +42,7 @@ const AdminChat = lazy(() => import('./admin/Chat.jsx'));
 const AdminBroadcast = lazy(() => import('./admin/Broadcast.jsx'));
 const AdminApprovals = lazy(() => import('./admin/Approvals.jsx'));
 const AdminUsers = lazy(() => import('./admin/AdminUsers.jsx'));
+const AdminTickets = lazy(() => import('./admin/Tickets.jsx'));
 const BetHub = lazy(() => import('./pages/BetHub.jsx'));
 const GamesHub = lazy(() => import('./pages/GamesHub.jsx'));
 
@@ -88,6 +90,7 @@ export default function App() {
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/bet/:drawId" element={<Protected><PlaceBet /></Protected>} />
           <Route path="/wallet" element={<Protected><Wallet /></Protected>} />
+          <Route path="/support" element={<Protected><Support /></Protected>} />
           <Route path="/my-bets" element={<Protected><MyBets /></Protected>} />
           <Route path="/winners" element={<Winners />} />
           <Route path="/results" element={<Results />} />
@@ -117,6 +120,7 @@ export default function App() {
             <Route path="chat" element={<AdminChat />} />
             <Route path="approvals" element={<AdminApprovals />} />
             <Route path="admin-users" element={<AdminUsers />} />
+            <Route path="tickets" element={<AdminTickets />} />
             <Route path="broadcast" element={<AdminBroadcast />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
