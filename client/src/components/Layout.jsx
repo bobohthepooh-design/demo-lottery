@@ -24,7 +24,6 @@ const navGroups = [
   ] },
   { label: 'navInfo', items: [
     { to: '/results', k: 'results', icon: 'trophy' },
-    { to: '/check', k: 'check', icon: 'search' },
     { to: '/winners', k: 'winners', icon: 'trophy' },
   ]},
   { label: 'navAccount', items: [
