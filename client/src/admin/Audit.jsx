@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, fmtDateTime } from '../api.js';
 import { toast } from '../components/toast.js';
-import { Card, Input, Button } from '../components/ui/index.js';
+import { Card, CardBody, Input, Button } from '../components/ui/index.js';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/shadcn/select.jsx';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 
@@ -46,8 +46,32 @@ export default function AdminAudit() {
   const [action, setAction] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [corr, setCorr] = useState('');
+  const [verify, setVerify] = useState(null);
+  const [verifying, setVerifying] = useState(false);
   const PAGE_SIZE = 50;
-  useEffect(() => { api('/admin/audit?limit=50').then(r => setLogs(r.logs)).catch(e => toast(e.message, 'error')); }, []);
+
+  const load = (f = from, t = to, c = corr) => {
+    const p = new URLSearchParams({ limit: '200' });
+    if (f) p.set('from', f);
+    if (t) p.set('to', t.length === 10 ? `${t} 23:59:59` : t);
+    if (c.trim()) p.set('correlation_id', c.trim());
+    api(`/admin/audit?${p}`).then(r => setLogs(r.logs)).catch(e => toast(e.message, 'error'));
+  };
+  useEffect(() => { load(); }, []);
+
+  const runVerify = async () => {
+    setVerifying(true); setVerify(null);
+    try {
+      const r = await api('/admin/audit/verify');
+      setVerify(r);
+      if (r.ok) toast(`Hash chain ถูกต้อง — ตรวจ ${r.hashed} รายการ`, 'success');
+      else toast(`พบความผิดปกติที่ id ${r.firstBreak?.id} (${r.firstBreak?.reason})`, 'error');
+    } catch (e) { toast(e.message, 'error'); }
+    setVerifying(false);
+  };
 
   const actionKeys = [...new Set(logs.map(l => l.action))].sort();
   const filtered = logs.filter(l => {
@@ -77,12 +101,31 @@ export default function AdminAudit() {
               {actionKeys.map(k => <SelectItem key={k} value={k}>{ACTION_TH[k] || k}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Input type="date" value={from} onChange={e => { setFrom(e.target.value); setPage(0); load(e.target.value, to, corr); }}
+            inputClassName="w-36 py-2 text-sm" title="จากวันที่" />
+          <Input type="date" value={to} onChange={e => { setTo(e.target.value); setPage(0); load(from, e.target.value, corr); }}
+            inputClassName="w-36 py-2 text-sm" title="ถึงวันที่" />
+          <Input value={corr} onChange={e => { setCorr(e.target.value); }}
+            onKeyDown={e => e.key === 'Enter' && load(from, to, corr)}
+            placeholder="correlation id..." inputClassName="w-44 py-2 text-sm" />
+          <Button variant="ghost" size="sm" onClick={() => load(from, to, corr)}>ค้นหา</Button>
+          <Button variant="ghost" size="sm" onClick={runVerify} disabled={verifying}
+            title="ตรวจสอบ hash-chain ว่าไม่มีการแก้ไข/ลบ audit log ย้อนหลัง">
+            {verifying ? 'กำลังตรวจ...' : 'ตรวจ hash chain'}
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => exportCsv(filtered, `audit-${new Date().toISOString().slice(0, 10)}.csv`)}
             title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่เป็น CSV">
             ⬇ CSV
           </Button>
         </div>
       </div>
+      {verify && (
+        <Card><CardBody className="py-3 text-sm">
+          {verify.ok
+            ? <span className="text-green-300">✓ Hash chain ถูกต้อง — ตรวจสอบ {verify.hashed} รายการที่มี hash (ทั้งหมด {verify.checked} แถว)</span>
+            : <span className="text-red-300">✗ พบความผิดปกติที่ id {verify.firstBreak?.id}: {verify.firstBreak?.reason}</span>}
+        </CardBody></Card>
+      )}
       <Card>
         <Table>
           <TableHeader>

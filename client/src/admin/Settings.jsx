@@ -14,6 +14,8 @@ export default function AdminSettings() {
   const [cashbackPct, setCashbackPct] = useState('0');
   const [cashbackMsg, setCashbackMsg] = useState('');
   const [cashbackPreview, setCashbackPreview] = useState(null);
+  const [campaigns, setCampaigns] = useState([]);
+  const [campForm, setCampForm] = useState({ name: '', percent: '', window_hours: '24', min_satang: '100' });
 
   // ราคา/อัตราจ่ายเกมด่วนแก้ที่หน้าประเภทและกติกา (lottery_rules) ที่เดียว — key เหล่านี้เป็น cache ที่ sync อัตโนมัติ
   const GAME_KEYS = ['scratch_price', 'hilo_price', 'hilo_mult_low', 'hilo_mult_high', 'hilo_mult_11', 'kiwi_price_kiwi', 'kiwi_price_kiwi_vip', 'kiwi_price_kiwi_dice'];
@@ -34,6 +36,7 @@ export default function AdminSettings() {
       if (cb) setCashbackPct(String(cb.value ?? 0));
     }).catch(e => toast(e.message, 'error'));
     api('/admin/lottery/types').then(r => setLotteryTypes(r.types || [])).catch(() => {});
+    api('/admin/promotions/campaigns').then(r => setCampaigns(r.campaigns || [])).catch(() => {});
   };
   useEffect(() => { load(); }, []);
 
@@ -93,6 +96,38 @@ export default function AdminSettings() {
           : `จ่ายแล้ว — ${r.users} คน รวม ${(r.total / 100).toLocaleString('th-TH')} บาท`);
       }
     } catch (e) { setCashbackMsg('ERROR: ' + e.message); }
+  };
+
+  const createCampaign = async () => {
+    const percent = parseInt(campForm.percent, 10);
+    const window_hours = parseInt(campForm.window_hours, 10) || 24;
+    const min_satang = Math.round(parseFloat(campForm.min_satang) * 100) || 0;
+    if (!campForm.name.trim() || !Number.isFinite(percent) || percent < 1 || percent > 100) {
+      toast('กรอกชื่อแคมเปญและ % (1-100) ให้ครบ', 'error'); return;
+    }
+    try {
+      await api('/admin/promotions/campaigns', { method: 'POST', body: { name: campForm.name.trim(), percent, window_hours, min_satang } });
+      setCampForm({ name: '', percent: '', window_hours: '24', min_satang: '100' });
+      toast('สร้างแคมเปญแล้ว', 'success'); load();
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  const toggleCampaign = async (c) => {
+    try {
+      await api(`/admin/promotions/campaigns/${c.id}`, { method: 'PATCH', body: { active: !c.active } });
+      toast(c.active ? 'ปิดแคมเปญแล้ว' : 'เปิดแคมเปญแล้ว (แคมเปญอื่นจะถูกปิดอัตโนมัติ)', 'success'); load();
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  const runCampaign = async (c) => {
+    if (!(await confirmAction({
+      title: `ยืนยันรันแคมเปญ "${c.name}"`,
+      message: `คืนยอดเสีย ${c.percent}% ย้อนหลัง ${c.window_hours} ชม. (ขั้นต่ำ ${(c.min_satang / 100).toLocaleString('th-TH')} บาท) ให้สมาชิกทั้งหมดทันที?`,
+    }))) return;
+    try {
+      const r = await api(`/admin/promotions/campaigns/${c.id}/run`, { method: 'POST' });
+      toast(r.skipped === 'disabled' ? 'แคมเปญถูกปิด/ไม่มีผล' : `จ่ายแล้ว — ${r.users} คน รวม ${(r.total / 100).toLocaleString('th-TH')} บาท`, r.users ? 'success' : 'error');
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const save = async (key) => {
@@ -175,6 +210,48 @@ export default function AdminSettings() {
           </div>
         )}
         {cashbackMsg && <div className={`text-xs mt-3 ${cashbackMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-400'}`}>{cashbackMsg}</div>}
+        </CardBody>
+      </Card>
+
+      {/* Promotion campaigns — cashback แบบมีชื่อ/เงื่อนไข ของตัวเอง */}
+      <Card>
+        <CardBody>
+        <div className="text-sm font-bold text-white mb-1">📣 แคมเปญโปรโมชัน (Cashback)</div>
+        <div className="text-xs text-navy-400 mb-3">
+          แคมเปญที่ active จะถูกใช้แทน % ในการตั้งค่าด้านบนตอนรันรายวัน • เปิดได้ครั้งละ 1 แคมเปญ • รันเองได้ทุกเมื่อ (idempotent)
+        </div>
+        <div className="flex items-end gap-2 flex-wrap mb-3">
+          <input value={campForm.name} onChange={e => setCampForm({ ...campForm, name: e.target.value })}
+            placeholder="ชื่อแคมเปญ" className="bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-44" />
+          <label className="text-[11px] text-navy-300">คืน (%)
+            <input value={campForm.percent} onChange={e => setCampForm({ ...campForm, percent: e.target.value })}
+              className="block mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-20" placeholder="5" />
+          </label>
+          <label className="text-[11px] text-navy-300">ย้อนหลัง (ชม.)
+            <input value={campForm.window_hours} onChange={e => setCampForm({ ...campForm, window_hours: e.target.value })}
+              className="block mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-20" />
+          </label>
+          <label className="text-[11px] text-navy-300">ขั้นต่ำ (บาท)
+            <input value={campForm.min_satang} onChange={e => setCampForm({ ...campForm, min_satang: e.target.value })}
+              className="block mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm w-24" />
+          </label>
+          <Button size="sm" onClick={createCampaign}>+ สร้างแคมเปญ</Button>
+        </div>
+        <div className="space-y-2">
+          {campaigns.map(c => (
+            <div key={c.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${c.active ? 'border-gold-500/50 bg-gold-500/5' : 'border-navy-700 bg-navy-900/50'}`}>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white truncate">{c.name}
+                  {c.active ? <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/40">ACTIVE</span> : null}
+                </div>
+                <div className="text-[11px] text-navy-400">คืน {c.percent}% • ย้อนหลัง {c.window_hours} ชม. • ขั้นต่ำ {(c.min_satang / 100).toLocaleString('th-TH')} บาท{c.created_by_name ? ` • โดย ${c.created_by_name}` : ''}</div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => runCampaign(c)}>รันเลย</Button>
+              <Button variant={c.active ? 'danger' : 'accent'} size="sm" onClick={() => toggleCampaign(c)}>{c.active ? 'ปิด' : 'เปิด'}</Button>
+            </div>
+          ))}
+          {!campaigns.length && <div className="text-xs text-navy-500 py-2">ยังไม่มีแคมเปญ — สร้างด้านบน</div>}
+        </div>
         </CardBody>
       </Card>
 

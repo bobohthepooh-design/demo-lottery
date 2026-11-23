@@ -273,8 +273,13 @@ CREATE TABLE audit_logs (
   detail TEXT,
   ip TEXT,
   user_agent TEXT,
+  correlation_id TEXT,
+  prev_hash TEXT,
+  hash TEXT,
   created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
 );
+CREATE INDEX IF NOT EXISTS idx_audit_correlation ON audit_logs(correlation_id);
+CREATE INDEX IF NOT EXISTS idx_audit_filters ON audit_logs(action, entity_type, created_at);
 
 CREATE TABLE security_events (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -454,3 +459,16 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 );
 CREATE INDEX IF NOT EXISTS idx_tickets_user ON support_tickets(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON support_tickets(status, id DESC);
+
+CREATE TABLE IF NOT EXISTS promo_campaigns (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'cashback' CHECK (kind IN ('cashback')),
+  percent INTEGER NOT NULL CHECK (percent > 0 AND percent <= 100),
+  window_hours INTEGER NOT NULL DEFAULT 24 CHECK (window_hours > 0 AND window_hours <= 720),
+  min_satang BIGINT NOT NULL DEFAULT 100,
+  active INTEGER NOT NULL DEFAULT 0 CHECK (active IN (0,1)),
+  created_by BIGINT REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+);

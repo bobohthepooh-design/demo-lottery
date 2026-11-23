@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getDb, txAsync } from '../db/index.js';
 import { requireAuth, requireMfaVerified } from '../services/authService.js';
 import { requirePerm, requireRole, hasRole, invalidatePermCache } from '../middleware/rbac.js';
-import { audit, securityEvent, HttpError } from '../lib/audit.js';
+import { audit, securityEvent, HttpError, verifyAuditChain } from '../lib/audit.js';
 import { hashPassword } from '../lib/password.js';
 import * as lottery from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
@@ -872,9 +872,49 @@ router.get('/wallet/transactions', requirePerm('wallet.adjust'), async (req, res
 router.get('/audit', requirePerm('audit.view'), async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '100', 10) || 100, 500);
   const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
-  const total = (await db().prepare('SELECT COUNT(*) c FROM audit_logs').get()).c;
-  const logs = await db().prepare(`SELECT al.*, u.username FROM audit_logs al LEFT JOIN users u ON u.id=al.user_id ORDER BY al.id DESC LIMIT ? OFFSET ?`).all(limit, offset);
+  const where = [], params = [];
+  const add = (cond, val) => { if (val != null && val !== '') { params.push(val); where.push(cond.replace('?', `$${params.length}`)); } };
+  add('al.action = ?', req.query.action);
+  add('al.entity_type = ?', req.query.entity_type);
+  const uid = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
+  add('al.user_id = ?', Number.isFinite(uid) ? uid : null);
+  add('al.correlation_id = ?', req.query.correlation_id);
+  add(`al.created_at >= ?`, req.query.from);
+  add(`al.created_at <= ?`, req.query.to);
+  const wsql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const total = (await db().prepare(`SELECT COUNT(*) c FROM audit_logs al ${wsql}`).get(...params)).c;
+  params.push(limit, offset);
+  const logs = await db().prepare(`SELECT al.*, u.username FROM audit_logs al LEFT JOIN users u ON u.id=al.user_id ${wsql} ORDER BY al.id DESC LIMIT $${params.length - 1} OFFSET $${params.length}`).all(...params);
   res.json({ logs, total, limit, offset });
+});
+
+// ตรวจสอบ hash-chain ของ audit log — tamper evidence (แก้/ลบ/แทรกแถว → firstBreak)
+router.get('/audit/verify', requirePerm('audit.view'), async (req, res) => {
+  res.json(await verifyAuditChain());
+});
+
+// ---------- infra / system ----------
+// health เชิงโครงสร้าง: uptime, memory, ขนาด DB, จำนวนแถวตารางหลัก, migration ล่าสุด
+router.get('/infra', requirePerm('dashboard.admin'), async (req, res) => {
+  const d = db();
+  const mem = process.memoryUsage();
+  const dbSize = await d.prepare(`SELECT pg_database_size(current_database()) s`).get();
+  const mig = await d.prepare(`SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC, version DESC LIMIT 1`).get().catch(() => null);
+  const counts = {};
+  for (const t of ['users', 'bet_slips', 'bet_items', 'virtual_transactions', 'audit_logs', 'security_events', 'auth_events', 'support_tickets', 'approval_requests', 'promo_campaigns']) {
+    counts[t] = (await d.prepare(`SELECT COUNT(*) c FROM ${t}`).get().catch(() => ({ c: 0 }))).c;
+  }
+  res.json({
+    uptimeSec: Math.floor(process.uptime()),
+    node: process.version,
+    env: config.env,
+    memory: { rss: mem.rss, heapUsed: mem.heapUsed, heapTotal: mem.heapTotal },
+    dbSizeBytes: dbSize?.s ?? null,
+    latestMigration: mig,
+    tableCounts: counts,
+    pendingApprovals: counts.approval_requests != null
+      ? (await d.prepare(`SELECT COUNT(*) c FROM approval_requests WHERE status='pending'`).get().catch(() => ({ c: 0 }))).c : 0,
+  });
 });
 
 router.get('/security-events', requirePerm('security.view'), async (req, res) => {
@@ -931,6 +971,63 @@ router.post('/promotions/cashback/run', requirePerm('settings.manage'), async (r
     const r = await promo.runCashback({ windowHours: hours, runKey: `manual-${Date.now()}` });
     audit({ userId: req.user.id, action: 'admin.cashback_run', entityType: 'system', entityId: String(r.runKey || 'disabled'), detail: r, req });
     broadcast('settings');
+    res.json({ ok: true, ...r });
+  } catch (e) { next(e); }
+});
+
+// ---------- promotion campaigns ----------
+const campaignSchema = z.object({
+  name: z.string().min(1).max(120),
+  percent: z.number().int().min(1).max(100),
+  window_hours: z.number().int().min(1).max(720).default(24),
+  min_satang: z.number().int().min(0).default(100),
+});
+
+router.get('/promotions/campaigns', requirePerm('settings.manage'), async (req, res) => {
+  const campaigns = await db().prepare(`SELECT pc.*, u.username AS created_by_name FROM promo_campaigns pc
+    LEFT JOIN users u ON u.id = pc.created_by ORDER BY pc.id DESC`).all();
+  res.json({ campaigns });
+});
+
+router.post('/promotions/campaigns', requirePerm('settings.manage'), async (req, res, next) => {
+  try {
+    const b = campaignSchema.parse(req.body);
+    const r = await db().prepare(`INSERT INTO promo_campaigns (name, kind, percent, window_hours, min_satang, created_by)
+      VALUES (?, 'cashback', ?, ?, ?, ?)`).run(b.name, b.percent, b.window_hours, b.min_satang, req.user.id);
+    audit({ userId: req.user.id, action: 'admin.promo_campaign_create', entityType: 'promo_campaign', entityId: String(r.lastInsertRowid ?? ''), detail: b, req });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.patch('/promotions/campaigns/:id', requirePerm('settings.manage'), async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const cur = await db().prepare('SELECT * FROM promo_campaigns WHERE id = ?').get(id);
+    if (!cur) return res.status(404).json({ error: 'ไม่พบแคมเปญ' });
+    const b = campaignSchema.partial().parse(req.body || {});
+    const active = req.body?.active;
+    // เปิดใช้งานได้ครั้งละ 1 แคมเปญ — กัน cashback ซ้อนกัน
+    if (active === true || active === 1 || active === '1') {
+      await db().prepare(`UPDATE promo_campaigns SET active = 0, updated_at = datetime('now')`).run();
+    }
+    const name = b.name ?? cur.name, percent = b.percent ?? cur.percent,
+      wh = b.window_hours ?? cur.window_hours, ms = b.min_satang ?? cur.min_satang;
+    const act = active !== undefined ? (active === true || active === 1 || active === '1' ? 1 : 0) : cur.active;
+    await db().prepare(`UPDATE promo_campaigns SET name=?, percent=?, window_hours=?, min_satang=?, active=?,
+      updated_at=datetime('now') WHERE id=?`).run(name, percent, wh, ms, act, id);
+    audit({ userId: req.user.id, action: 'admin.promo_campaign_update', entityType: 'promo_campaign', entityId: String(id),
+      detail: { before: { name: cur.name, percent: cur.percent, active: cur.active }, after: { name, percent, active: act } }, req });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.post('/promotions/campaigns/:id/run', requirePerm('settings.manage'), async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const c = await db().prepare(`SELECT * FROM promo_campaigns WHERE id = ?`).get(id);
+    if (!c) return res.status(404).json({ error: 'ไม่พบแคมเปญ' });
+    const r = await promo.runCashback({ windowHours: c.window_hours, minSatang: c.min_satang, percent: c.percent, runKey: `campaign-${id}-manual-${Date.now()}` });
+    audit({ userId: req.user.id, action: 'admin.promo_campaign_run', entityType: 'promo_campaign', entityId: String(id), detail: r, req });
     res.json({ ok: true, ...r });
   } catch (e) { next(e); }
 });

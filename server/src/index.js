@@ -145,6 +145,15 @@ app.use(helmet({
 app.use('/api/payments', express.json({ limit: '6mb' }));
 app.use(express.json({ limit: '256kb' }));
 
+// request id ต่อ request — ใช้เป็น correlation_id ใน audit_logs
+// (client ส่ง X-Request-Id กลับมาก็ได้เพื่อ trace ข้าม hop)
+import crypto from 'node:crypto';
+app.use((req, res, next) => {
+  req.requestId = req.headers['x-request-id'] || crypto.randomUUID();
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
+
 const limiter = rateLimit({
   windowMs: config.rateLimitWindowMs,
   max: config.rateLimitMax,

@@ -18,8 +18,8 @@ const NET_LOSS_SQL = `SELECT bs.user_id,
 // Cashback promotion — คืนเครดิต X% ของยอดเสียสุทธิ (stake − payout)
 // ของโพยที่ settled ในช่วง windowHours ล่าสุด ให้สมาชิกทุกคน
 // idempotent ต่อ user ต่อ runKey (unique idempotency_key ใน virtual_transactions)
-export function runCashback({ windowHours = 24, runKey, minSatang = 100 } = {}) {
-  return runCashbackPg({ windowHours, runKey, minSatang });
+export function runCashback(opts = {}) {
+  return runCashbackPg(opts);
 }
 
 async function cashbackRowsPg(since) {
@@ -54,8 +54,8 @@ async function creditOne(userId, amount, pct, windowHours, key) {
   return true;
 }
 
-async function runCashbackPg({ windowHours = 24, runKey, minSatang = 100 } = {}) {
-  const pct = Number(await getSetting('cashback_percent', 0)) || 0;
+async function runCashbackPg({ windowHours = 24, runKey, minSatang = 100, percent = null } = {}) {
+  const pct = percent ?? (Number(await getSetting('cashback_percent', 0)) || 0);
   if (pct <= 0) return { skipped: 'disabled', percent: 0, users: 0, total: 0 };
   const key = runKey || `daily-${new Date().toISOString().slice(0, 10)}`;
   const since = new Date(Date.now() - windowHours * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
@@ -81,11 +81,16 @@ export function maybeDailyCashback() {
 }
 
 async function maybeDailyCashbackPg() {
-  const pct = Number(await getSetting('cashback_percent', 0)) || 0;
-  if (pct <= 0) return null;
   const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  // active campaign (promo_campaigns) มี priority เหนือ setting cashback_percent
+  const camp = await q(`SELECT * FROM promo_campaigns WHERE kind='cashback' AND active=1 ORDER BY id DESC LIMIT 1`).catch(() => []);
+  const c = camp[0];
+  const pct = c ? c.percent : (Number(await getSetting('cashback_percent', 0)) || 0);
+  if (pct <= 0) return null;
   if (await getSetting('cashback_last_run') === today) return null;
-  const r = await runCashbackPg({ runKey: `daily-${today}` });
+  const r = c
+    ? await runCashbackPg({ windowHours: c.window_hours, minSatang: c.min_satang, percent: c.percent, runKey: `campaign-${c.id}-${today}` })
+    : await runCashbackPg({ runKey: `daily-${today}` });
   await setSetting('cashback_last_run', today, null);
   if (r.users) console.log('[cashback]', JSON.stringify(r));
   return r;

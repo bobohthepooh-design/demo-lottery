@@ -30,12 +30,14 @@ function Stat({ label, value, tone }) {
 
 export default function AdminHealth() {
   const [d, setD] = useState(null);
+  const [infra, setInfra] = useState(null);
   const [err, setErr] = useState('');
   const [updated, setUpdated] = useState(null);
 
   const load = useCallback(() => {
     api('/admin/health').then(r => { setD(r); setErr(''); setUpdated(new Date()); })
       .catch(e => setErr(e.message));
+    api('/admin/infra').then(setInfra).catch(() => {});
   }, []);
   useEffect(() => {
     load();
@@ -139,6 +141,25 @@ export default function AdminHealth() {
                   ))}
                 </div>
                 <div className="text-[11px] text-navy-500 mt-2">✓ = ดึงสำเร็จล่าสุด • ✕ = ดึงล้มเหลวล่าสุด (ระบบจะลอง source ถัดไปใน chain อัตโนมัติ)</div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* โครงสร้างระบบ — uptime/memory/db size/table counts/migration */}
+          {infra && (
+            <Card>
+              <CardBody>
+                <h2 className="font-bold text-white mb-3">🖥️ โครงสร้างระบบ</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Uptime</div><div className="text-white font-bold mt-1">{Math.floor(infra.uptimeSec / 3600)} ชม. {Math.floor(infra.uptimeSec % 3600 / 60)} นาที</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Node / env</div><div className="text-white font-bold mt-1">{infra.node} • {infra.env}</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">หน่วยความจำ (heap)</div><div className="text-white font-bold mt-1">{(infra.memory.heapUsed / 1048576).toFixed(0)} / {(infra.memory.heapTotal / 1048576).toFixed(0)} MB</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">ขนาดฐานข้อมูล</div><div className="text-white font-bold mt-1">{infra.dbSizeBytes ? `${(infra.dbSizeBytes / 1048576).toFixed(1)} MB` : '—'}</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Migration ล่าสุด</div><div className="text-white font-bold mt-1 font-mono text-[11px]">{infra.latestMigration?.version || '—'}</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">สมาชิก / โพย</div><div className="text-white font-bold mt-1">{infra.tableCounts?.users ?? '—'} / {infra.tableCounts?.bet_slips ?? '—'}</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Audit / Security logs</div><div className="text-white font-bold mt-1">{infra.tableCounts?.audit_logs ?? '—'} / {infra.tableCounts?.security_events ?? '—'}</div></div>
+                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">คำขอรออนุมัติ</div><div className={`font-bold mt-1 ${infra.pendingApprovals ? 'text-amber-300' : 'text-green-300'}`}>{infra.pendingApprovals ?? 0}</div></div>
+                </div>
               </CardBody>
             </Card>
           )}
