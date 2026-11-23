@@ -142,7 +142,7 @@ export async function createWithdraw(userId, { amount, bankName, accountNo, acco
   if (amount + pendingSum > wd.withdrawable) throw new HttpError(400,
     `ถอนได้สูงสุด ฿${((wd.withdrawable - pendingSum) / 100).toFixed(2)} (รวมคำขอที่รออนุมัติแล้ว)`, 'WITHDRAW_LIMIT');
   const ref = makeReference('WDR');
-  const row = await q(`INSERT INTO payment_requests (reference,user_id,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id) VALUES (?,?, 'withdraw',?,'bank_transfer','pending_review',?,?,?,?,?) RETURNING id,reference,created_at`,
+  const row = await q(`INSERT INTO payment_requests (reference,user_id,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id) VALUES (?,?, 'withdraw',?,'bank_transfer','pending_review',?,?,?,?) RETURNING id,reference,created_at`,
     [ref, userId, amount, bankName, accountNo, accountName, ppId]);
   await notify(userId, { type: 'withdraw', title: `ส่งคำขอถอน ฿${(amount / 100).toLocaleString('th-TH')} แล้ว`, body: `รอแอดมินอนุมัติ — ${bankName} ${accountNo}`, link: '/wallet' });
   return { id: row[0].id, reference: ref, amount, status: 'pending_review' };

@@ -7,6 +7,9 @@ process.env.NODE_ENV = 'test';
 process.env.LOGIN_RATE_LIMIT_MAX = '200';
 // .env root มี INITIAL_CREDIT=0 (production) — test ต้องการเครดิตเริ่มต้น
 process.env.INITIAL_CREDIT = '5000';
+// test นี้ครอบคลุม demo wallet/action — บังคับ payments ไม่ configured
+// (กัน env รั่วจากไฟล์ test อื่นใน worker เดียวกัน เช่น payments.test.js)
+process.env.PROMPTPAY_ID = '';
 if (!process.env.TEST_DATABASE_URL) {
   throw new Error('TEST_DATABASE_URL is required (e.g. postgres://lottery:PASS@127.0.0.1:5432/lottery_test)');
 }
@@ -18,9 +21,13 @@ import request from 'supertest';
 const { default: app } = await import('../src/index.js');
 const { getDb, closeDb } = await import('../src/db/index.js');
 
+let __agentSeq = 0;
 function makeAgent() {
   const jar = {};
   let csrf = null;
+  // IP เฉพาะต่อ agent — NODE_ENV=test → trustProxy=1 → XFF มีผล
+  // (กัน promo-abuse guard นับ signup จาก IP เดียวกัน + แยก rate-limit bucket)
+  const ip = `10.99.${Math.floor(++__agentSeq / 250)}.${__agentSeq % 250}`;
   const cookieHeader = () => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
   const store = (res) => {
     const raw = res.headers.getSetCookie?.() || res.headers['set-cookie'] || [];
@@ -38,7 +45,7 @@ function makeAgent() {
   }
   async function call(method, url, body) {
     if (method !== 'get') await ensureCsrf();
-    let req = request(app)[method](`/api${url}`).set('Cookie', cookieHeader());
+    let req = request(app)[method](`/api${url}`).set('Cookie', cookieHeader()).set('X-Forwarded-For', ip);
     if (method !== 'get') req = req.set('x-csrf-token', csrf).set('Content-Type', 'application/json');
     const res = await (body !== undefined ? req.send(body) : req);
     store(res);
@@ -62,7 +69,7 @@ beforeAll(async () => {
   // test DB เป็น persistent — reset MFA ของ admin ให้ setup/enable ทำซ้ำได้ทุกรอบ
   await getDb().prepare(`UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE username = 'admin'`).run();
   // create member
-  await makeAgent().post('/auth/register', { username: `m${ts}`, email: `m${ts}@t.local`, password: 'Password123', ageConfirmed: true });
+  await makeAgent().post('/auth/register', { username: `m${ts}`, email: `m${ts}@t.local`, password: 'Password123', ageConfirmed: true, termsAccepted: true });
   member = await loginAs(`m${ts}`, 'Password123');
 
   // admin: login + MFA setup/enable/verify
@@ -108,7 +115,7 @@ describe('auth', () => {
     expect(r.status).toBe(401);
   });
   it('register rejects duplicate', async () => {
-    const r = await makeAgent().post('/auth/register', { username: `m${ts}`, email: `dup${ts}@test.com`, password: 'Password123', ageConfirmed: true });
+    const r = await makeAgent().post('/auth/register', { username: `m${ts}`, email: `dup${ts}@test.com`, password: 'Password123', ageConfirmed: true, termsAccepted: true });
     expect(r.status).toBe(409);
   });
   it('member cannot access admin', async () => {
@@ -165,10 +172,10 @@ describe('phone otp', () => {
   const phone = `08${String(Date.now()).slice(-8)}`;
   it('registers via OTP and gets session + credit', async () => {
     const a = makeAgent();
-    const req = await a.post('/auth/otp/request', { phone, purpose: 'register' });
+    const req = await a.post('/auth/otp/request', { target: phone, purpose: 'register' });
     expect(req.status).toBe(200);
     expect(req.body.devCode).toMatch(/^\d{6}$/);
-    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register', displayName: 'OTP User', ageConfirmed: true });
+    const v = await a.post('/auth/otp/verify', { target: phone, code: req.body.devCode, purpose: 'register', displayName: 'OTP User', ageConfirmed: true });
     expect(v.status).toBe(200);
     expect(v.body.user.roles).toContain('member');
     const me = await a.get('/auth/me');
@@ -177,36 +184,36 @@ describe('phone otp', () => {
   it('rejects wrong OTP code', async () => {
     const p2 = `09${String(Date.now()).slice(-8)}`;
     const a = makeAgent();
-    const req = await a.post('/auth/otp/request', { phone: p2, purpose: 'register' });
+    const req = await a.post('/auth/otp/request', { target: p2, purpose: 'register' });
     const wrong = req.body.devCode === '000000' ? '000001' : '000000';
-    const v = await a.post('/auth/otp/verify', { phone: p2, code: wrong, purpose: 'register', ageConfirmed: true });
+    const v = await a.post('/auth/otp/verify', { target: p2, code: wrong, purpose: 'register', ageConfirmed: true });
     expect(v.status).toBe(401);
   });
   it('rejects duplicate phone registration', async () => {
     const a = makeAgent();
-    const req = await a.post('/auth/otp/request', { phone, purpose: 'register' });
-    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'register', ageConfirmed: true });
+    const req = await a.post('/auth/otp/request', { target: phone, purpose: 'register' });
+    const v = await a.post('/auth/otp/verify', { target: phone, code: req.body.devCode, purpose: 'register', ageConfirmed: true });
     expect(v.status).toBe(409);
   });
   it('logs in via OTP for existing phone user', async () => {
     const a = makeAgent();
-    const req = await a.post('/auth/otp/request', { phone, purpose: 'login' });
-    const v = await a.post('/auth/otp/verify', { phone, code: req.body.devCode, purpose: 'login' });
+    const req = await a.post('/auth/otp/request', { target: phone, purpose: 'login' });
+    const v = await a.post('/auth/otp/verify', { target: phone, code: req.body.devCode, purpose: 'login' });
     expect(v.status).toBe(200);
     const me = await a.get('/auth/me');
     expect(me.body.user.displayName).toBe('OTP User');
   });
   it('consumed OTP cannot be reused', async () => {
     const a = makeAgent();
-    const req = await a.post('/auth/otp/request', { phone, purpose: 'login' });
+    const req = await a.post('/auth/otp/request', { target: phone, purpose: 'login' });
     const code = req.body.devCode;
-    await a.post('/auth/otp/verify', { phone, code, purpose: 'login' });
+    await a.post('/auth/otp/verify', { target: phone, code, purpose: 'login' });
     const again = makeAgent();
-    const v = await again.post('/auth/otp/verify', { phone, code, purpose: 'login' });
+    const v = await again.post('/auth/otp/verify', { target: phone, code, purpose: 'login' });
     expect([400, 401]).toContain(v.status);
   });
   it('rejects OTP request for invalid phone', async () => {
-    const r = await makeAgent().post('/auth/otp/request', { phone: '123', purpose: 'login' });
+    const r = await makeAgent().post('/auth/otp/request', { target: '123', purpose: 'login' });
     expect(r.status).toBe(400);
   });
 });
@@ -240,7 +247,7 @@ describe('wallet', () => {
   it('admin-unlocked withdrawable excludes un-clawed signup credit', async () => {
     const u = `w${ts}`;
     const ag = makeAgent();
-    await ag.post('/auth/register', { username: u, email: `${u}@t.local`, password: 'Password123', ageConfirmed: true });
+    await ag.post('/auth/register', { username: u, email: `${u}@t.local`, password: 'Password123', ageConfirmed: true, termsAccepted: true });
     await ag.post('/auth/login', { username: u, password: 'Password123' });
     const me = await ag.get('/auth/me');
     // จำลองเคส flag ถูกปลดล็อกโดยตรง (ยังไม่ได้ clawback เครดิตแถม)

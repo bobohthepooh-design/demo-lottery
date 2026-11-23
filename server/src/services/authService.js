@@ -5,6 +5,7 @@ import { config } from '../config.js';
 import { HttpError, audit, securityEvent } from '../lib/audit.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { generateSecret, verifyTotp, otpauthUri } from '../lib/totp.js';
+import { encryptSecret, decryptSecret } from '../lib/secretBox.js';
 import { randomInt, createHash } from 'node:crypto';
 import { q, qGet, qRun } from '../db/pg.js';
 
@@ -255,14 +256,15 @@ export async function setupMfa(userId) {
   const user = await qGet('SELECT username, mfa_secret, mfa_enabled FROM users WHERE id = $1', [userId]);
   if (user.mfa_enabled) throw new HttpError(400, 'MFA เปิดใช้งานแล้ว');
   const secret = generateSecret();
-  await qRun('UPDATE users SET mfa_secret = $1 WHERE id = $2', [secret, userId]);
+  await qRun('UPDATE users SET mfa_secret = $1 WHERE id = $2', [encryptSecret(secret), userId]);
   return { secret, uri: otpauthUri(secret, user.username) };
 }
 
 export async function enableMfa(userId, code) {
   const user = await qGet('SELECT mfa_secret FROM users WHERE id = $1', [userId]);
-  if (!user?.mfa_secret) throw new HttpError(400, 'กรุณาสร้าง MFA secret ก่อน');
-  if (!verifyTotp(user.mfa_secret, code)) throw new HttpError(400, 'รหัส MFA ไม่ถูกต้อง');
+  const plain = user?.mfa_secret ? decryptSecret(user.mfa_secret) : null;
+  if (!plain) throw new HttpError(400, 'กรุณาสร้าง MFA secret ก่อน');
+  if (!verifyTotp(plain, code)) throw new HttpError(400, 'รหัส MFA ไม่ถูกต้อง');
   await qRun('UPDATE users SET mfa_enabled = 1 WHERE id = $1', [userId]);
   audit({ userId, action: 'user.mfa_enabled', entityType: 'user', entityId: String(userId) });
   securityEvent({ eventType: 'mfa.enabled', userId, detail: { admin_only: true } });
@@ -270,8 +272,9 @@ export async function enableMfa(userId, code) {
 
 export async function verifyMfa(sessionId, code) {
   const s = await qGet('SELECT s.id, u.mfa_secret, u.mfa_enabled FROM user_sessions s JOIN users u ON u.id = s.user_id WHERE s.id = $1', [sessionId]);
-  if (!s || !s.mfa_enabled || !s.mfa_secret) throw new HttpError(400, 'ไม่ต้องยืนยัน MFA');
-  if (!verifyTotp(s.mfa_secret, code)) {
+  const plain = s?.mfa_secret ? decryptSecret(s.mfa_secret) : null;
+  if (!s || !s.mfa_enabled || !plain) throw new HttpError(400, 'ไม่ต้องยืนยัน MFA');
+  if (!verifyTotp(plain, code)) {
     securityEvent({ eventType: 'mfa.failed', severity: 'warning', detail: { sessionId } });
     throw new HttpError(401, 'รหัส MFA ไม่ถูกต้อง');
   }
@@ -463,8 +466,9 @@ export async function revokeOtherSessions(userId, currentToken) {
 // ---------- MFA disable (member) ----------
 export async function disableMfa(userId, code) {
   const user = await qGet('SELECT mfa_secret, mfa_enabled FROM users WHERE id = $1', [userId]);
-  if (!user?.mfa_enabled || !user.mfa_secret) throw new HttpError(400, 'ยังไม่ได้เปิด MFA');
-  if (!verifyTotp(user.mfa_secret, code)) throw new HttpError(400, 'รหัส MFA ไม่ถูกต้อง');
+  const plain = user?.mfa_enabled && user?.mfa_secret ? decryptSecret(user.mfa_secret) : null;
+  if (!plain) throw new HttpError(400, 'ยังไม่ได้เปิด MFA');
+  if (!verifyTotp(plain, code)) throw new HttpError(400, 'รหัส MFA ไม่ถูกต้อง');
   await qRun('UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = $1', [userId]);
   await qRun('UPDATE user_sessions SET mfa_verified = 0 WHERE user_id = $1', [userId]);
   audit({ userId, action: 'user.mfa_disabled', entityType: 'user', entityId: String(userId) });

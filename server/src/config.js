@@ -21,6 +21,8 @@ export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   sessionSecret: process.env.SESSION_SECRET || 'dev-insecure-secret-change-me',
+  // key แยกสำหรับ encrypt secrets at rest (mfa_secret ฯลฯ) — fallback sessionSecret
+  mfaEncryptionKey: process.env.MFA_ENCRYPTION_KEY || '',
   sessionTtlHours: parseInt(process.env.SESSION_TTL_HOURS || '12', 10),
   // PostgreSQL — runtime บังคับใช้ PG เท่านั้น (SQLite support ถูกลบออกแล้ว)
   databaseUrl: process.env.DATABASE_URL || null,
