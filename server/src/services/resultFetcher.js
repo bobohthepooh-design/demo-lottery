@@ -179,20 +179,23 @@ const LC_MARKET_MAP = {
   GS:    { slug: 'gsb-lottery',              kind: 'gsb' },
 };
 
-// ดึงผลดิบจาก lotterychecks — คืน {date, prizes:{slug:digits}}
+// ดึงผลหลายงวดล่าสุดจาก lotterychecks — คืน array [{date, prizes:{slug:digits}}]
+// (ต้องหลายงวดเพราะรอบค้างย้อนหลังต้องหา result ของวันที่ตรงกัน ไม่ใช่แค่ล่าสุด)
 async function fetchLCAll(slug) {
-  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${slug}&limit=1`,
+  const r = await fetchResilient(`https://lotterychecks.com/api/public/results?lottery=${slug}&limit=10`,
     { signal: AbortSignal.timeout(20000) });
   if (!r.ok) throw new Error(`LC HTTP ${r.status}`);
   const j = await r.json();
-  const d = j?.data?.[0];
-  if (!d || d.status !== 'complete') throw new Error(`LC ${slug}: no result`);
-  const prizes = {};
-  // เก็บทุกเลขรางวัล — บางตลาด (เช่น GSB) อันดับ 3/4/5 มีหลายเลข
-  for (const p of d.prizes || []) {
-    prizes[p.slug] = (p.numbers || []).map(n => String(n).replace(/\D/g, '')).filter(Boolean);
-  }
-  return { date: String(d.drawDate).slice(0, 10), prizes };
+  const list = (j?.data || []).filter(d => d && d.status === 'complete');
+  if (!list.length) throw new Error(`LC ${slug}: no result`);
+  return list.map(d => {
+    const prizes = {};
+    // เก็บทุกเลขรางวัล — บางตลาด (เช่น GSB) อันดับ 3/4/5 มีหลายเลข
+    for (const p of d.prizes || []) {
+      prizes[p.slug] = (p.numbers || []).map(n => String(n).replace(/\D/g, '')).filter(Boolean);
+    }
+    return { date: String(d.drawDate).slice(0, 10), prizes };
+  });
 }
 
 const lcNum = (x, slug, len) => {
@@ -271,8 +274,10 @@ function winningFor(kind, x) {
 }
 
 // ผลดิบ LC → winning ตาม kind (ใช้ร่วมกันทุก source chain)
-async function lcWinning(slug, kind) {
-  const raw = await fetchLCAll(slug);
+async function lcWinning(slug, kind, date) {
+  const list = await fetchLCAll(slug);
+  const raw = date ? list.find(x => x.date === date) : list[0];
+  if (!raw) throw new Error(`LC ${slug}: no result for ${date || 'latest'}`);
   return { date: raw.date, winning: winningFor(kind, raw), slug };
 }
 
@@ -386,10 +391,10 @@ function drawLocalDate(draw) {
   return isNaN(d) ? String(draw.draw_at).slice(0, 10) : d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
 }
 
-//<HNS=manual> — หวยฮานอยเฉพาะกิจออกเป็นงวดไม่แน่นอน (ไม่ใช่ทุกวัน) ไม่มีแหล่งผลอัตโนมัติที่เชื่อถือได้
-// → admin เป็นคนกรอกผลเองเฉพาะวันที่หวยจริงออก (กันรอบค้างรอผลที่ไม่มีวันหมด)
+//<HNS=auto> — หวยฮานอยเฉพาะกิจมีผลรายวันบน lotterychecks (hanoi-adhoc, เผยแพร่ ~16:45)
+// → auto-fetch ได้; ถ้าตลาดไหนไม่มีผลวันไหน date-match จะไม่ settle (รอ admin กรอกเอง)
 export function isManualDraw(d) {
-  return d.result_mode === 'manual' || (d.type_code === 'HN' && (d.cat_code === 'HNS' || d.category_code === 'HNS'));
+  return d.result_mode === 'manual';
 }
 
 const PENDING_DRAWS_SQL = `SELECT d.*, lt.code AS type_code, lt.result_mode AS result_mode, c.code AS cat_code
@@ -474,7 +479,12 @@ async function autoSettleResultsInner() {
       runCache.set(label, Promise.resolve().then(fn).then(r => ({ ok: true, r })).catch(e => ({ ok: false, e })));
     return runCache.get(label);
   };
-  const lcWin = (slug, kind) => lcRaw(slug).then(raw => ({ date: raw.date, winning: winningFor(kind, raw) }));
+  const lcWin = (slug, kind, date) => lcRaw(slug).then(list => {
+    // date = วันที่รอบ (Asia/Bangkok) — เลือกงวดที่ตรงกันเท่านั้น (กัน settle ด้วยผลคนละวัน)
+    const raw = date ? list.find(x => x.date === date) : list[0];
+    if (!raw) throw new Error(`LC ${slug}: no result for ${date || 'latest'}`);
+    return { date: raw.date, winning: winningFor(kind, raw) };
+  });
 
   // source chain ต่อ draw — ลำดับ = ความน่าเชื่อถือ (official ก่อน, fallback ตามหลัง)
   // ทุก candidate ต้องผ่าน date-match กับรอบนั้นๆ ถึงจะ settle — กัน source เก่า/ผิดวัน
@@ -484,18 +494,19 @@ async function autoSettleResultsInner() {
     const cat = d.cat_code;
     if (d.type_code === 'TH') return [
       { label: 'TH(GLO)', role: 'official', url: GLO_URL, get: () => cached('src:TH(GLO)', fetchThaiResult) },
-      { label: 'TH(LC)',  role: 'backup',   url: LC_URL('thai-government'), get: () => cached('src:TH(LC)', () => lcWin('thai-government', 'thai-gov')) },
+      { label: 'TH(LC)',  role: 'backup',   url: LC_URL('thai-government'), get: () => cached(`src:TH(LC):${drawLocalDate(d)}`, () => lcWin('thai-government', 'thai-gov', drawLocalDate(d))) },
     ];
     if (d.type_code === 'HR')
       return [{ label: 'HR(gen)', role: 'primary', url: 'internal:generate', get: () => cached('src:HR(gen)', async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) })) }];
     if (d.type_code === 'HN' && (cat === 'HNN' || cat === 'HNST')) return [
-      { label: 'HN(XSMB)', role: 'primary', url: XSMB_URL, get: () => cached('src:HN(XSMB)', fetchHanoiResult) },
-      { label: 'HN(LC)',   role: 'backup',  url: LC_URL('hanoi-normal'), get: () => cached('src:HN(LC)', () => lcWin('hanoi-normal', 'hn')) },
+      { label: 'HN(XSMB)', role: 'primary', url: XSMB_URL, get: () => cached(`src:HN(XSMB):${drawLocalDate(d)}`, fetchHanoiResult) },
+      { label: 'HN(LC)',   role: 'backup',  url: LC_URL('hanoi-normal'), get: () => cached(`src:HN(LC):${drawLocalDate(d)}`, () => lcWin('hanoi-normal', 'hn', drawLocalDate(d))) },
     ];
     if (d.type_code === 'LA' || d.type_code === 'HN' || d.type_code === 'GS') {
       const m = LC_MARKET_MAP[cat] || LC_MARKET_MAP[d.type_code];
       if (!m) return [];
-      return [{ label: `${d.type_code}(${m.slug})`, role: 'primary', url: LC_URL(m.slug), get: () => cached(`src:${m.slug}`, () => lcWin(m.slug, m.kind)) }];
+      const localDate = drawLocalDate(d);
+      return [{ label: `${d.type_code}(${m.slug})`, role: 'primary', url: LC_URL(m.slug), get: () => cached(`src:${m.slug}:${localDate}`, () => lcWin(m.slug, m.kind, localDate)) }];
     }
     return [];
   };
@@ -596,16 +607,16 @@ export async function fetchResultForDraw(drawId) {
   const cands = [];
   if (d.type_code === 'TH') cands.push(
     ['TH(GLO)', 'official', GLO_URL, fetchThaiResult],
-    ['TH(LC)', 'backup', LC_URL('thai-government'), () => lcWinning('thai-government', 'thai-gov')]);
+    ['TH(LC)', 'backup', LC_URL('thai-government'), () => lcWinning('thai-government', 'thai-gov', localDate)]);
   else if (d.type_code === 'HR') return { date: localDate, winning: generateZodiacResult(d.draw_code) };
   else if (d.type_code === 'HN' && (d.cat_code === 'HNN' || d.cat_code === 'HNST'))
     cands.push(
       ['HN(XSMB)', 'primary', XSMB_URL, fetchHanoiResult],
-      ['HN(LC)', 'backup', LC_URL('hanoi-normal'), () => lcWinning('hanoi-normal', 'hn')]);
+      ['HN(LC)', 'backup', LC_URL('hanoi-normal'), () => lcWinning('hanoi-normal', 'hn', localDate)]);
   else if (d.type_code === 'LA' || d.type_code === 'HN' || d.type_code === 'GS') {
     const m = LC_MARKET_MAP[d.cat_code] || LC_MARKET_MAP[d.type_code];
     if (!m) throw new HttpError(400, 'ไม่ทราบแหล่งผลสำหรับหวยประเภทนี้ — กรุณากรอกผลเอง');
-    cands.push([`${d.type_code}(${m.slug})`, 'primary', LC_URL(m.slug), () => lcWinning(m.slug, m.kind)]);
+    cands.push([`${d.type_code}(${m.slug})`, 'primary', LC_URL(m.slug), () => lcWinning(m.slug, m.kind, localDate)]);
   } else throw new HttpError(400, 'ไม่ทราบแหล่งผลสำหรับหวยประเภทนี้ — กรุณากรอกผลเอง');
   const errors = [];
   const observations = [];
