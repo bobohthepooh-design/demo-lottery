@@ -103,6 +103,7 @@ export async function seed() {
     await setSetting('demo_notice', 'ระบบจำลองเพื่อการศึกษาเท่านั้น ใช้เครดิตเสมือน ไม่มีเงินจริง', null);
     await setSetting('announcement', { enabled: true, text: '🎉 ยินดีต้อนรับสู่ Demo Lottery — หวยไทย • หวยลาว • ฮานอย อัตราจ่ายสูงสุด x1,000 ใช้เครดิตจำลองเพื่อการศึกษา' }, null);
     await setSetting('cashback_percent', 0, null); // % คืนยอดเสียต่อวัน — 0 = ปิด, admin ตั้งในหน้าตั้งค่า
+    await setSetting('require_email_verify_for_withdraw', false, null); // บังคับยืนยันอีเมลก่อนถอน — admin เปิดในหน้าตั้งค่าเมื่อพร้อม
   });
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   await seedRulesV2();

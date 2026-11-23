@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { HttpError, audit } from '../lib/audit.js';
 import { notify } from './notifyService.js';
 import * as wallet from './walletService.js';
+import { getSetting } from './settingsService.js';
 
 // ================= PromptPay EMV QR payload =================
 // EMVCo payload สำหรับพร้อมเพย์ — https://www.emvco.com + spec PromptPay ของ BOT
@@ -129,6 +130,14 @@ export async function submitDepositSlip(userId, paymentId, { imageBase64 }) {
 
 // ================= Withdraw =================
 export async function createWithdraw(userId, { amount, bankName, accountNo, accountName, promptpayId }) {
+  // setting: require_email_verify_for_withdraw (default ปิด) — admin เปิดเมื่อพร้อม
+  // บังคับเฉพาะตอนเปิด: user ต้องยืนยันอีเมลก่อนสร้างคำขอถอน (กัน fake email รับเงิน)
+  const reqVerify = await getSetting('require_email_verify_for_withdraw', false);
+  const verifyRequired = reqVerify === true || reqVerify === 'true' || reqVerify === 1 || reqVerify === '1';
+  if (verifyRequired) {
+    const u = await qGet('SELECT email_verified FROM users WHERE id=?', [userId]);
+    if (!u?.email_verified) throw new HttpError(403, 'ต้องยืนยันอีเมลก่อนถอนเงิน — กรุณายืนยันอีเมลในหน้าโปรไฟล์', 'EMAIL_NOT_VERIFIED');
+  }
   if (!Number.isInteger(amount) || amount < 10000) throw new HttpError(400, 'ขั้นต่ำถอน 100 บาท');
   if (!bankName || !accountNo || !accountName) throw new HttpError(400, 'กรุณากรอกข้อมูลบัญชีธนาคารให้ครบ');
   // PromptPay ID ของผู้ใช้ (ถ้าระบุ) — normalize เหลือ digits; admin ใช้เทียบกับเบอร์ที่ verify OTP

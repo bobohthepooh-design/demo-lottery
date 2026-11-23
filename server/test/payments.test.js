@@ -169,3 +169,18 @@ describe('payments — demo wallet action guard', () => {
     expect(r.status).toBe(403);
   });
 });
+
+describe('payments — require_email_verify_for_withdraw setting', () => {
+  it('default off → withdraw works; on → 403 EMAIL_NOT_VERIFIED; off again → works', async () => {
+    const body = { amount: 10000, bankName: 'กสิกร', accountNo: '123-4', accountName: 't', idempotencyKey: `ev-${ts}` };
+    // member ที่สมัครผ่าน password ไม่มี email จริง → email_verified=0
+    // setting default false → ต้องไม่โดนบล็อก (อาจติด WITHDRAW_LIMIT ถ้าเครดิตไม่พอ — เช็คแค่ไม่ใช่ EMAIL_NOT_VERIFIED)
+    await adminAgent.put('/admin/settings/require_email_verify_for_withdraw', { value: true });
+    const blocked = await member.post('/payments/withdraw', body);
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.code).toBe('EMAIL_NOT_VERIFIED');
+    await adminAgent.put('/admin/settings/require_email_verify_for_withdraw', { value: false });
+    const allowed = await member.post('/payments/withdraw', { ...body, idempotencyKey: `ev2-${ts}` });
+    expect(allowed.body.code).not.toBe('EMAIL_NOT_VERIFIED');
+  });
+});
