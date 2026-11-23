@@ -170,11 +170,7 @@ export default function Results() {
     return [d.draw_code, d.type_name_th, d.cat_name_th, d.round_no != null ? `รอบ ${d.round_no}` : '']
       .filter(Boolean).some(v => String(v).toLowerCase().includes(t));
   });
-  const settled = draws.filter(d => d.status === 'settled');
-  const pending = draws.filter(d => d.status !== 'settled' && d.status !== 'cancelled');
-  // เมื่อเลือก tab ประเภท — section ออกผลแล้ว/รอผล กรองตามด้วย
-  const settledF = typeFilter ? settled.filter(d => d.type_code === typeFilter) : settled;
-  const pendingF = typeFilter ? pending.filter(d => d.type_code === typeFilter) : pending;
+  // settled/pending แสดงในตารางออกรางวัลอยู่แล้ว — ไม่ทำ section ซ้ำเพื่อไม่ให้หน้ารก
 
   // จัดกลุ่มตามตลาด (ประเภท+หมวด) — หัวกลุ่มแสดงตัวนับ ออกแล้ว X/Y เรียงตามรอบแรกของกลุ่ม
   const groups = [];
@@ -355,7 +351,10 @@ export default function Results() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {items.map(r => {
                     const badge = sourceBadge(r.result_source);
-                    const heroes = heroNumbers(r.winning).slice(0, 3);
+                    // /lottery/results ส่ง winning_numbers เป็น JSON string — parse ก่อนใช้ heroNumbers
+                    let w = r.winning || r.winning_numbers;
+                    if (typeof w === 'string') { try { w = JSON.parse(w); } catch { w = null; } }
+                    const heroes = heroNumbers(w).slice(0, 3);
                     return (
                       <div key={`${r.type_code}:${r.category_code || ''}`}
                         className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5">
@@ -453,25 +452,7 @@ export default function Results() {
         })}
       </section>
 
-      {/* สรุปผลที่ออกแล้ว */}
-      {settledF.length > 0 && (
-        <section>
-          <h2 className="font-bold text-white mb-3">✅ ออกผลแล้ว {thaiShort(date)} ({settledF.length})</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {settledF.map(d => (
-              <div key={d.id} className="bg-navy-800/70 border border-emerald-500/30 rounded-xl p-3">
-                <div className="flex items-center gap-2">
-                  <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
-                  <span className="text-sm font-bold text-navy-950">{d.category_name_th || d.type_name_th}</span>
-                </div>
-                <div className="mt-1.5 text-[11px] text-slate-200 space-y-0.5">
-                  {resultSummary(d.winning)?.map((p, i) => <div key={i} className="font-mono tabular-nums">{p}</div>)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ผลที่ออกแล้ว/รอผลแสดงในตารางออกรางวัลด้านบนครบแล้ว — ตัด section ซ้ำออก (layout LC: การ์ดล่าสุด → ตาราง → ผู้ชนะ → สถิติ) */}
 
       {/* ผู้ชนะของวันที่เลือก */}
       {dayWinners.length > 0 && (
@@ -487,19 +468,6 @@ export default function Results() {
                 </div>
                 <div className="text-green-400 font-bold whitespace-nowrap">{satang(w.payout)} ฿</div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {pendingF.length > 0 && (
-        <section>
-          <h2 className="font-bold text-white mb-3">⏳ รอผล {thaiShort(date)} ({pendingF.length})</h2>
-          <div className="flex flex-wrap gap-2">
-            {pendingF.map(d => (
-              <span key={d.id} className="text-xs bg-navy-800 border border-navy-700 rounded-full px-3 py-1.5 text-navy-200">
-                {d.category_name_th || d.type_name_th} · {fmtDateTime(d.draw_at)}
-              </span>
             ))}
           </div>
         </section>
