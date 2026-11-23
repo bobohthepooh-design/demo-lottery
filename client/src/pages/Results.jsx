@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime } from '../api.js';
+import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import ResultLine, { FlagIcon } from '../components/ResultLine.jsx';
+import { FlagIcon } from '../components/ResultLine.jsx';
+import CheckNumbers from '../components/CheckNumbers.jsx';
 import { sourceBadge } from '../resultSource.js';
 import { typeAccent } from '../typeAccent.js';
 import { toast } from '../components/toast.js';
@@ -321,6 +322,73 @@ export default function Results() {
 
       {err && <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl px-4 py-3 text-sm">{err}</div>}
 
+      {/* ตรวจเลขด่วน — pattern จาก lotterychecks: ช่องตรวจรางวัลบนหน้าเดียว ไม่ต้องเปลี่ยนหน้า */}
+      <CheckNumbers />
+
+      {/* ผลล่าสุดทุกตลาด — แบบ lotterychecks: การ์ดแยกตามประเทศ (ไทย/ลาว/ฮานอย/ออมสิน/ราศี)
+          ไม่ขึ้นกับวันที่เลือก — แสดงผลล่าสุดที่บันทึกแล้วของแต่ละตลาด */}
+      {latestResults.length > 0 && (() => {
+        const GROUP_ORDER = ['TH', 'LA', 'HN', 'GS', 'HR'];
+        const GROUP_LABEL = { TH: 'ไทย', LA: 'ลาว', HN: 'ฮานอย', GS: 'ออมสิน', HR: 'ราศี' };
+        const byType = new Map();
+        for (const r of latestResults) {
+          const k = r.type_code || '';
+          if (!byType.has(k)) byType.set(k, []);
+          byType.get(k).push(r);
+        }
+        const groups = [...byType.entries()].sort((a, b) => {
+          const ia = GROUP_ORDER.indexOf(a[0]), ib = GROUP_ORDER.indexOf(b[0]);
+          return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+        });
+        return (
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-sm font-bold text-white">🏆 ผลล่าสุดทุกตลาด</h2>
+              <p className="text-[11px] text-navy-400 mt-0.5">ผลล่าสุดของแต่ละตลาด โดยไม่ขึ้นกับวันที่เลือกด้านบน</p>
+            </div>
+            {groups.map(([code, items]) => (
+              <div key={code}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <FlagIcon code={code} className="w-4 h-4 text-[8px]" />
+                  <span className="text-xs font-bold text-navy-200">{GROUP_LABEL[code] || code}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {items.map(r => {
+                    const badge = sourceBadge(r.result_source);
+                    const heroes = heroNumbers(r.winning).slice(0, 3);
+                    return (
+                      <div key={`${r.type_code}:${r.category_code || ''}`}
+                        className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <FlagIcon code={r.type_code} className="w-4 h-4 text-[8px]" />
+                          <span className="text-xs font-bold text-white">{r.category_name_th || r.type_name_th}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-bold">ออกผลแล้ว</span>
+                          {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
+                        </div>
+                        <div className="text-[10px] text-navy-400 mt-1">งวดวันที่ {thaiDate(r.draw_at)}</div>
+                        {heroes.length > 0 && (
+                          <div className="grid grid-cols-3 gap-1 mt-2">
+                            {heroes.map(h => (
+                              <div key={h.label} className="text-center bg-navy-900/60 rounded-lg py-1.5 px-1">
+                                <div className="text-[8px] text-navy-400 leading-tight">{h.label}</div>
+                                <div className="font-mono font-bold text-gold-300 text-sm leading-tight mt-0.5 break-all">{h.num}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-[9px] text-navy-500 mt-1.5">
+                          อัปเดต {thaiTime(r.published_at || r.draw_at)}{r.published_at ? '' : ' (เวลาออกรางวัล)'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </section>
+        );
+      })()}
+
       {/* ค้นหารอบ — กรองตามรหัส/ชื่อรอบ/หมวด */}
       <div className="max-w-sm mx-auto">
         <input value={q} onChange={e => setQ(e.target.value)}
@@ -437,18 +505,7 @@ export default function Results() {
         </section>
       )}
 
-      {/* ผลล่าสุดทุกตลาด — ไม่ขึ้นกับวันที่เลือก จึงวางไว้ใต้เนื้อหาตามวันที่เพื่อไม่ให้ดูเหมือนผลของวันที่เลือก */}
-      {latestResults.length > 0 && (
-        <section className="space-y-2">
-          <div>
-            <h2 className="text-sm font-bold text-white">🏆 ผลล่าสุดที่บันทึกแล้วทุกตลาด ({latestResults.length})</h2>
-            <p className="text-[11px] text-navy-400 mt-0.5">แสดงผลล่าสุดของแต่ละประเภทโดยไม่ขึ้นกับวันที่เลือก • ตลาดกรอกผลเองจะแสดงหลังแอดมินบันทึกผล</p>
-          </div>
-          <div className="space-y-2">
-            {latestResults.map(r => <ResultLine key={`${r.type_code}:${r.category_code || ''}`} r={r} />)}
-          </div>
-        </section>
-      )}
+      {/* ผลล่าสุดทุกตลาดย้ายขึ้นด้านบน (LC-style cards) — section นี้ถูกแทนที่แล้ว */}
 
       {/* P3: ประวัติย้อนหลัง + สถิติความถี่เลข */}
       <section className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
