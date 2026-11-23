@@ -165,9 +165,13 @@ export default function AdminPayments() {
             </div>
             {slipView.loading && <div className="text-navy-300 text-sm py-8 text-center">กำลังโหลด...</div>}
             {slipView.error && <div className="text-red-400 text-sm py-8 text-center">{slipView.error}</div>}
-            {!slipView.loading && !slipView.error && slipView.imageBase64 && (
-              <img src={`data:image/jpeg;base64,${slipView.imageBase64}`} alt="slip" className="w-full rounded-lg bg-white" />
-            )}
+            {!slipView.loading && !slipView.error && slipView.imageBase64 && (() => {
+              // client ส่ง data URI มาแล้ว (มี prefix) — อย่าเติมซ้ำ
+              const src = slipView.imageBase64.startsWith('data:')
+                ? slipView.imageBase64
+                : `data:image/jpeg;base64,${slipView.imageBase64}`;
+              return <img src={src} alt="slip" className="w-full rounded-lg bg-white" />;
+            })()}
             {!slipView.loading && !slipView.error && !slipView.imageBase64 && (
               <div className="text-navy-400 text-sm py-8 text-center">ไม่มีรูปสลิป (คำขอนี้ส่งก่อนมีระบบเก็บรูป)</div>
             )}
