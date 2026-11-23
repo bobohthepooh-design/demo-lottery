@@ -151,23 +151,48 @@ router.delete('/members/:id', requirePerm('members.manage'), async (req, res, ne
     const target = await db().prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!target) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
     await assertCanManageTarget(req, id);
+    // pre-check ให้ feedback เร็ว — executor re-check อีกครั้งตอน approve (กันโพยเข้ามาระหว่างรอ)
     const slips = (await db().prepare('SELECT COUNT(*) c FROM bet_slips WHERE user_id = ?').get(id)).c;
     if (slips > 0) return res.status(400).json({ error: `ไม่สามารถลบได้ สมาชิกนี้มีประวัติโพย ${slips} รายการ` });
-    await txAsync(async (d) => {
-      await d.prepare('DELETE FROM virtual_transactions WHERE user_id = ?').run(id);
-      await d.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
-      await d.prepare('DELETE FROM chat_messages WHERE sender_id = ?').run(id); // FK ไม่ cascade — ลบทิ้งก่อนลบ user
-      await d.prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?').run(id);
-      await d.prepare('UPDATE security_events SET user_id = NULL WHERE user_id = ?').run(id);
-      await d.prepare('UPDATE lottery_results SET published_by = NULL WHERE published_by = ?').run(id);
-      await d.prepare('UPDATE virtual_transactions SET created_by = NULL WHERE created_by = ?').run(id);
-      await d.prepare('UPDATE system_settings SET updated_by = NULL WHERE updated_by = ?').run(id);
-      // user_roles / user_sessions / virtual_wallets ถูกลบตามด้วย ON DELETE CASCADE
-      await d.prepare('DELETE FROM users WHERE id = ?').run(id);
+    const r = await approvals.submitOrExecute({
+      category: 'member.delete',
+      payload: { targetUserId: id, username: target.username },
+      summary: `ลบบัญชีสมาชิก ${target.username} (#${id})`,
+      makerId: req.user.id, req,
     });
-    invalidatePermCache(id);
-    audit({ userId: req.user.id, action: 'admin.member_delete', entityType: 'user', entityId: String(id), detail: { username: target.username }, req });
+    if (r.pending) return res.json({ ok: true, pendingApproval: true, approval: r.request });
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// member 360° — profile + wallet + login history + sessions + payments + bets + audit
+router.get('/members/:id/activity', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const u = await db().prepare(`SELECT id, username, email, display_name, status, created_at,
+      mfa_enabled, email_verified, age_confirmed, self_excluded_until,
+      daily_limit_satang, monthly_limit_satang, withdraw_unlocked FROM users WHERE id = ?`).get(id);
+    if (!u) return res.status(404).json({ error: 'ไม่พบสมาชิก' });
+    const w = await db().prepare('SELECT balance FROM virtual_wallets WHERE user_id = ?').get(id);
+    const authEvents = await db().prepare(`SELECT event, ip, user_agent, created_at FROM auth_events
+      WHERE user_id = ? ORDER BY id DESC LIMIT 20`).all(id);
+    const sessions = await db().prepare(`SELECT id, created_at, expires_at, ip, user_agent, mfa_verified
+      FROM user_sessions WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 10`).all(id);
+    const payments = await db().prepare(`SELECT id, reference, kind, amount, status, created_at, reviewed_at
+      FROM payment_requests WHERE user_id = ? ORDER BY id DESC LIMIT 10`).all(id);
+    const betStats = await db().prepare(`SELECT COUNT(*) c, COALESCE(SUM(total_stake),0) s
+      FROM bet_slips WHERE user_id = ?`).get(id);
+    const recentBets = await db().prepare(`SELECT id, draw_id, status, total_stake, total_payout, created_at
+      FROM bet_slips WHERE user_id = ? ORDER BY id DESC LIMIT 10`).all(id);
+    const walletTx = await db().prepare(`SELECT reference, type, direction, amount, balance_after, description, created_at
+      FROM virtual_transactions WHERE user_id = ? ORDER BY id DESC LIMIT 10`).all(id);
+    const auditRows = await db().prepare(`SELECT action, entity_type, entity_id, detail, created_at
+      FROM audit_logs WHERE user_id = ? ORDER BY id DESC LIMIT 15`).all(id);
+    res.json({
+      user: { ...u, balance: w?.balance ?? 0, roles: (await db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(id)).map(r => r.name) },
+      authEvents, sessions, payments, recentBets, walletTx, auditRows,
+      betStats: { count: betStats?.c || 0, totalStaked: betStats?.s || 0 },
+    });
   } catch (e) { next(e); }
 });
 
@@ -759,10 +784,16 @@ router.get('/security-events', requirePerm('security.view'), async (req, res) =>
 router.get('/settings', requirePerm('settings.manage'), async (req, res) => {
   res.json({ settings: await settings.allSettings() });
 });
+// keys ที่กระทบ security/economy โดยตรง — admin ธรรมดาแก้ไม่ได้ (super_admin เท่านั้น)
+// maker_checker: ปิดได้ = bypass approval ทั้งระบบ; initial_credit: เศรษฐกิจ; require_email_verify_for_withdraw: fraud gate
+const SUPER_ONLY_SETTINGS = new Set(['maker_checker', 'initial_credit', 'require_email_verify_for_withdraw']);
+
 router.put('/settings/:key', requirePerm('settings.manage'), async (req, res, next) => {
   try {
     const key = String(req.params.key).slice(0, 100);
     if (!/^[a-z0-9_.-]+$/i.test(key)) return res.status(400).json({ error: 'key ไม่ถูกต้อง' });
+    if (SUPER_ONLY_SETTINGS.has(key) && !(await hasRole(req.user.id, 'super_admin')))
+      return res.status(403).json({ error: 'key นี้เฉพาะ super_admin เท่านั้นที่แก้ไขได้', code: 'SUPER_ONLY' });
     await settings.setSetting(key, req.body?.value, req.user.id);
     // sync เกมด่วน: ราคา → min/max ของทุกกติกาในเกมนั้น, อัตราจ่าย → payout_multiplier ของกติกาฝั่งนั้น
     const priceGame = Object.keys(INSTANT_GAMES).find(g => INSTANT_GAMES[g].setting === key);

@@ -71,6 +71,28 @@ const EXECUTORS = {
     broadcast('results'); // ผลเปลี่ยน — ดัน SSE ให้ member/admin UI refresh
     return r;
   },
+  // ลบบัญชีสมาชิก — destructive, ต้อง maker-checker; re-check slips ตอน execute
+  // (อาจมีโพยเข้ามาระหว่างรอ approve → fail ชัดเจน)
+  'member.delete': async (p, actorId) => {
+    const id = p.targetUserId;
+    const slips = Number((await qGet('SELECT COUNT(*) c FROM bet_slips WHERE user_id=$1', [id]))?.c || 0);
+    if (slips > 0) throw new HttpError(400, `ไม่สามารถลบได้ สมาชิกนี้มีประวัติโพย ${slips} รายการ`);
+    await txAsync(async (d) => {
+      await d.prepare('DELETE FROM virtual_transactions WHERE user_id = ?').run(id);
+      await d.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
+      await d.prepare('DELETE FROM chat_messages WHERE sender_id = ?').run(id); // FK ไม่ cascade — ลบทิ้งก่อนลบ user
+      await d.prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?').run(id);
+      await d.prepare('UPDATE security_events SET user_id = NULL WHERE user_id = ?').run(id);
+      await d.prepare('UPDATE lottery_results SET published_by = NULL WHERE published_by = ?').run(id);
+      await d.prepare('UPDATE virtual_transactions SET created_by = NULL WHERE created_by = ?').run(id);
+      await d.prepare('UPDATE system_settings SET updated_by = NULL WHERE updated_by = ?').run(id);
+      // user_roles / user_sessions / virtual_wallets ถูกลบตามด้วย ON DELETE CASCADE
+      await d.prepare('DELETE FROM users WHERE id = ?').run(id);
+    });
+    invalidatePermCache(id);
+    audit({ userId: actorId, action: 'admin.member_delete', entityType: 'user', entityId: String(id), detail: { username: p.username, via: 'approval' } });
+    return { ok: true };
+  },
 };
 
 export const APPROVAL_CATEGORIES = Object.keys(EXECUTORS);

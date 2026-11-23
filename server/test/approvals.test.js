@@ -21,10 +21,12 @@ const { hashPassword } = await import('../src/lib/password.js');
 const { setSetting } = await import('../src/services/settingsService.js');
 
 let __agentSeq = 0;
+// run-unique IP octet — กัน signup_ip ซ้ำข้าม test run จน promoAbuseCheck ตัดเครดิตเริ่มต้น
+const RUN_OCTET = 30 + (Date.now() % 200);
 function makeAgent() {
   const jar = {};
   let csrf = null;
-  const ip = `10.98.${Math.floor(++__agentSeq / 250)}.${__agentSeq % 250}`;
+  const ip = `10.98.${RUN_OCTET}.${++__agentSeq % 250}`;
   const cookieHeader = () => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
   const store = (res) => {
     const raw = res.headers.getSetCookie?.() || res.headers['set-cookie'] || [];
@@ -147,5 +149,30 @@ describe('approvals — maker-checker', () => {
 
   it('member ธรรมดาเข้าถึง approvals ไม่ได้', async () => {
     expect((await member.get('/admin/approvals')).status).toBe(403);
+  });
+
+  it('member activity 360 — login history + sessions + payments', async () => {
+    const r = await maker.agent.get(`/admin/members/${memberId}/activity`);
+    expect(r.status).toBe(200);
+    expect(r.body.user.username).toBe(`mm${ts}`);
+    expect(Array.isArray(r.body.authEvents)).toBe(true);
+    expect(Array.isArray(r.body.sessions)).toBe(true);
+    expect(r.body.betStats).toBeTruthy();
+    // member ธรรมดาดู activity ของคนอื่นไม่ได้
+    expect((await member.get(`/admin/members/${memberId}/activity`)).status).toBe(403);
+  });
+
+  it('member.delete → approval → checker approve → user ถูกลบ', async () => {
+    const r = await maker.agent.delete(`/admin/members/${memberId}`);
+    expect(r.status).toBe(200);
+    expect(r.body.pendingApproval).toBe(true);
+    const id = r.body.approval.id;
+    // checker อนุมัติ → execute
+    const a = await checker.agent.post(`/admin/approvals/${id}/approve`, {});
+    expect(a.status).toBe(200);
+    expect(a.body.request.status).toBe('executed');
+    // user หายจาก DB
+    const gone = await getDb().prepare('SELECT id FROM users WHERE id=$1').get(memberId);
+    expect(gone).toBeFalsy();
   });
 });

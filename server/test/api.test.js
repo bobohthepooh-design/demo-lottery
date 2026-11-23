@@ -23,12 +23,14 @@ const { default: app } = await import('../src/index.js');
 const { getDb, closeDb } = await import('../src/db/index.js');
 
 let __agentSeq = 0;
+// run-unique IP octet — กัน signup_ip ซ้ำข้าม test run จน promoAbuseCheck ตัดเครดิตเริ่มต้น (7 วัน/3 บัญชี)
+const RUN_OCTET = 30 + (Date.now() % 200);
 function makeAgent() {
   const jar = {};
   let csrf = null;
   // IP เฉพาะต่อ agent — NODE_ENV=test → trustProxy=1 → XFF มีผล
   // (กัน promo-abuse guard นับ signup จาก IP เดียวกัน + แยก rate-limit bucket)
-  const ip = `10.99.${Math.floor(++__agentSeq / 250)}.${__agentSeq % 250}`;
+  const ip = `10.99.${RUN_OCTET}.${++__agentSeq % 250}`;
   const cookieHeader = () => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
   const store = (res) => {
     const raw = res.headers.getSetCookie?.() || res.headers['set-cookie'] || [];

@@ -65,10 +65,23 @@ async function verifySlipWithSlipOk(imageBase64, branchId, apiKey) {
   };
 }
 
+// limits จาก system_settings (บาท) — admin ปรับในหน้าตั้งค่า; fallback ค่าเดิม
+async function payLimits() {
+  const [dMin, dMax, wMin, wMax] = await Promise.all([
+    getSetting('deposit_min_baht', 1), getSetting('deposit_max_baht', 1000000),
+    getSetting('withdraw_min_baht', 100), getSetting('withdraw_max_baht', 1000000),
+  ]);
+  return {
+    depositMin: Math.round(Number(dMin) * 100), depositMax: Math.round(Number(dMax) * 100),
+    withdrawMin: Math.round(Number(wMin) * 100), withdrawMax: Math.round(Number(wMax) * 100),
+  };
+}
+
 // ================= Deposit =================
 export async function createDeposit(userId, { amount, method = 'promptpay' }) {
-  if (!Number.isInteger(amount) || amount < 100) throw new HttpError(400, 'ขั้นต่ำเติม 1 บาท');
-  if (amount > 100000000) throw new HttpError(400, 'สูงสุด 1,000,000 บาทต่อรายการ');
+  const lim = await payLimits();
+  if (!Number.isInteger(amount) || amount < lim.depositMin) throw new HttpError(400, `ขั้นต่ำเติม ${lim.depositMin / 100} บาท`);
+  if (amount > lim.depositMax) throw new HttpError(400, `สูงสุด ${(lim.depositMax / 100).toLocaleString('th-TH')} บาทต่อรายการ`);
   const promptPayId = config.promptPayId;
   if (!promptPayId) throw new HttpError(503, 'ระบบชำระเงินยังไม่พร้อมใช้งาน (ยังไม่ได้ตั้ง PROMPTPAY_ID)');
   return txAsync(async (d) => {
@@ -138,7 +151,9 @@ export async function createWithdraw(userId, { amount, bankName, accountNo, acco
     const u = await qGet('SELECT email_verified FROM users WHERE id=?', [userId]);
     if (!u?.email_verified) throw new HttpError(403, 'ต้องยืนยันอีเมลก่อนถอนเงิน — กรุณายืนยันอีเมลในหน้าโปรไฟล์', 'EMAIL_NOT_VERIFIED');
   }
-  if (!Number.isInteger(amount) || amount < 10000) throw new HttpError(400, 'ขั้นต่ำถอน 100 บาท');
+  const lim = await payLimits();
+  if (!Number.isInteger(amount) || amount < lim.withdrawMin) throw new HttpError(400, `ขั้นต่ำถอน ${lim.withdrawMin / 100} บาท`);
+  if (amount > lim.withdrawMax) throw new HttpError(400, `สูงสุด ${(lim.withdrawMax / 100).toLocaleString('th-TH')} บาทต่อรายการ`);
   if (!bankName || !accountNo || !accountName) throw new HttpError(400, 'กรุณากรอกข้อมูลบัญชีธนาคารให้ครบ');
   // PromptPay ID ของผู้ใช้ (ถ้าระบุ) — normalize เหลือ digits; admin ใช้เทียบกับเบอร์ที่ verify OTP
   const ppId = promptpayId ? String(promptpayId).replace(/\D/g, '') : null;

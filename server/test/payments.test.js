@@ -18,9 +18,14 @@ const { default: app } = await import('../src/index.js');
 const { getDb, closeDb } = await import('../src/db/index.js');
 const { hashPassword } = await import('../src/lib/password.js');
 
+let __agentSeq = 0;
+// run-unique IP — กัน signup_ip ซ้ำข้าม test run จน promoAbuseCheck ตัดเครดิตเริ่มต้น
+const RUN_OCTET = 30 + (Date.now() % 200);
+
 function makeAgent() {
   const jar = {};
   let csrf = null;
+  const ip = `10.97.${RUN_OCTET}.${++__agentSeq % 250}`;
   const cookieHeader = () => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
   const store = (res) => {
     const raw = res.headers.getSetCookie?.() || res.headers['set-cookie'] || [];
@@ -38,7 +43,7 @@ function makeAgent() {
   }
   async function call(method, url, body) {
     if (method !== 'get') await ensureCsrf();
-    let req = request(app)[method](`/api${url}`).set('Cookie', cookieHeader());
+    let req = request(app)[method](`/api${url}`).set('Cookie', cookieHeader()).set('X-Forwarded-For', ip);
     if (method !== 'get') req = req.set('x-csrf-token', csrf).set('Content-Type', 'application/json');
     const res = await (body !== undefined ? req.send(body) : req);
     store(res);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, satang } from '../api.js';
+import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { Card, Input, Button, Modal, Select } from '../components/ui/index.js';
@@ -12,6 +12,7 @@ export default function AdminMembers() {
   const [q, setQ] = useState('');
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
+  const [act, setAct] = useState(null); // member 360 activity
 
   const load = () => api(`/admin/members?q=${encodeURIComponent(q)}`).then(r => setMembers(r.members)).catch(e => toast(e.message, 'error'));
   useEffect(() => { load(); }, []);
@@ -29,10 +30,14 @@ export default function AdminMembers() {
 
   const remove = async () => {
     try {
-      await api(`/admin/members/${del.id}`, { method: 'DELETE' });
+      const r = await api(`/admin/members/${del.id}`, { method: 'DELETE' });
+      if (r.pendingApproval) toast(`📨 ส่งคำขอลบบัญชี ${del.username} เข้าศูนย์อนุมัติแล้ว`, 'info');
       setDel(null); load();
     } catch (e) { toast(e.message, 'error'); setDel(null); }
   };
+
+  const loadActivity = (m) => api(`/admin/members/${m.id}/activity`)
+    .then(setAct).catch(e => toast(e.message, 'error'));
 
   return (
     <div className="space-y-4">
@@ -79,6 +84,7 @@ export default function AdminMembers() {
                   {!m.ageConfirmed && <span className="text-red-400 ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}
                 </TableCell>
                 <TableCell className="whitespace-nowrap sticky right-0 bg-navy-800 group-hover:bg-navy-700/40 z-10">
+                  <button onClick={() => loadActivity(m)} className="text-sky-300 text-xs hover:underline mr-3">กิจกรรม</button>
                   <button onClick={() => setEdit({ ...m })} className="text-gold-300 text-xs hover:underline mr-3">แก้ไข</button>
                   <button onClick={() => setDel(m)} className="text-red-400 text-xs hover:underline">ลบ</button>
                 </TableCell>
@@ -132,6 +138,75 @@ export default function AdminMembers() {
           <Button variant="ghost" onClick={() => setDel(null)}>ยกเลิก</Button>
         </div>
       </Modal>
+
+      {/* modal member 360 — login history / sessions / payments / bets / wallet / audit */}
+      <Modal open={!!act} onClose={() => setAct(null)} title={`กิจกรรม: ${act?.user?.username || ''}`}>
+        {act && (
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">เครดิต</div><div className="text-gold-300 font-bold">{satang(act.user.balance)} ฿</div></div>
+              <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">สถานะ</div><div className="text-white">{act.user.status}</div></div>
+              <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">โพยทั้งหมด</div><div className="text-white">{act.betStats.count} ({satang(act.betStats.totalStaked)} ฿)</div></div>
+              <div className="bg-navy-900/60 rounded p-2"><div className="text-navy-400">สมัครเมื่อ</div><div className="text-white">{fmtDateTime(act.user.created_at)}</div></div>
+            </div>
+
+            <Section title={`ประวัติการเข้าสู่ระบบ (${act.authEvents.length})`}>
+              {act.authEvents.length === 0 && <Empty />}
+              {act.authEvents.map((e, i) => (
+                <Row key={i} left={`${e.event} • ${e.ip || '—'}`} right={fmtDateTime(e.created_at)} sub={e.user_agent?.slice(0, 60)} />
+              ))}
+            </Section>
+
+            <Section title={`Session ที่ใช้งานอยู่ (${act.sessions.length})`}>
+              {act.sessions.length === 0 && <Empty />}
+              {act.sessions.map(s => (
+                <Row key={s.id} left={`${s.ip || '—'} • MFA ${s.mfa_verified ? '✓' : '✗'}`} right={`หมด ${fmtDateTime(s.expires_at)}`} sub={s.user_agent?.slice(0, 60)} />
+              ))}
+            </Section>
+
+            <Section title="การชำระเงินล่าสุด" cols={[['ref', 'reference'], ['ประเภท', 'kind'], ['ยอด', 'amount'], ['สถานะ', 'status'], ['เวลา', 'created_at']]} rows={act.payments.map(p => ({ ...p, amount: satang(p.amount) + ' ฿' }))} />
+            <Section title="กระเป๋าเครดิตล่าสุด" cols={[['ref', 'reference'], ['ประเภท', 'type'], ['ทิศ', 'direction'], ['ยอด', 'amount'], ['หลังทำ', 'balance_after'], ['เวลา', 'created_at']]} rows={act.walletTx.map(t => ({ ...t, amount: satang(t.amount), balance_after: satang(t.balance_after) }))} />
+            <Section title="โพยล่าสุด" cols={[['id', 'id'], ['draw', 'draw_id'], ['สถานะ', 'status'], ['ยอดรวม', 'total_stake'], ['รางวัล', 'total_payout'], ['เวลา', 'created_at']]} rows={act.recentBets.map(b => ({ ...b, total_stake: satang(b.total_stake), total_payout: satang(b.total_payout || 0) }))} />
+            <Section title="Audit ที่เกี่ยวข้อง" cols={[['action', 'action'], ['entity', 'entity_type'], ['id', 'entity_id'], ['เวลา', 'created_at']]} rows={act.auditRows} />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
+
+function Section({ title, children, cols, rows }) {
+  return (
+    <div>
+      <div className="text-xs font-bold text-navy-300 mb-1">{title}</div>
+      <div className="bg-navy-900/50 border border-navy-700/60 rounded-lg overflow-hidden">
+        {cols ? (
+          <table className="w-full text-[10px]">
+            <thead><tr className="text-navy-400 text-left">
+              {cols.map(c => <th key={c[1]} className="px-2 py-1">{c[0]}</th>)}
+            </tr></thead>
+            <tbody>
+              {rows.length === 0 && <tr><td colSpan={cols.length} className="px-2 py-2 text-navy-500 text-center">ไม่มีข้อมูล</td></tr>}
+              {rows.map((r, i) => (
+                <tr key={i} className="border-t border-navy-800/60">
+                  {cols.map(c => <td key={c[1]} className="px-2 py-1 text-navy-200 whitespace-nowrap">{c[1] === 'created_at' || c[1] === 'reviewed_at' ? fmtDateTime(r[c[1]]) : (r[c[1]] ?? '—')}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : children}
+      </div>
+    </div>
+  );
+}
+
+function Row({ left, right, sub }) {
+  return (
+    <div className="px-2 py-1.5 border-t border-navy-800/60 first:border-0">
+      <div className="flex justify-between gap-2 text-[11px] text-navy-200"><span>{left}</span><span className="text-navy-400 whitespace-nowrap">{right}</span></div>
+      {sub && <div className="text-[9px] text-navy-500 truncate">{sub}</div>}
+    </div>
+  );
+}
+
+function Empty() { return <div className="px-2 py-2 text-navy-500 text-[11px] text-center">ไม่มีข้อมูล</div>; }

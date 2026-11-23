@@ -17,6 +17,8 @@ export default function AdminSettings() {
 
   // ราคา/อัตราจ่ายเกมด่วนแก้ที่หน้าประเภทและกติกา (lottery_rules) ที่เดียว — key เหล่านี้เป็น cache ที่ sync อัตโนมัติ
   const GAME_KEYS = ['scratch_price', 'hilo_price', 'hilo_mult_low', 'hilo_mult_high', 'hilo_mult_11', 'kiwi_price_kiwi', 'kiwi_price_kiwi_vip', 'kiwi_price_kiwi_dice'];
+  // sync กับ SUPER_ONLY_SETTINGS ใน server/src/routes/admin.js — super_admin เท่านั้นที่แก้ได้
+  const SUPER_ONLY_KEYS = ['maker_checker', 'initial_credit', 'require_email_verify_for_withdraw'];
 
   const load = () => {
     api('/admin/settings').then(r => {
@@ -181,6 +183,7 @@ export default function AdminSettings() {
           <div key={s.key} className="p-4 flex items-center gap-4">
             <div className="w-56 shrink-0">
               <code className="text-gold-300 text-sm">{s.key}</code>
+              {SUPER_ONLY_KEYS.includes(s.key) && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/40">SUPER</span>}
               <div className="text-[10px] text-navy-400">updated {s.updatedAt}</div>
             </div>
             <input value={edits[s.key] ?? ''} onChange={e => setEdits({...edits, [s.key]: e.target.value})}

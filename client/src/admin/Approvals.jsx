@@ -14,6 +14,7 @@ const STATUS_TH = {
 const CAT_TH = {
   'wallet.adjust': 'ปรับเครดิต', 'wallet.bulk_adjust': 'ปรับเครดิตกลุ่ม',
   'payment.review': 'ตรวจชำระเงิน', 'roles.update': 'แก้ไขสิทธิ์', 'result.manual': 'แก้ไขผลรางวัล',
+  'member.delete': 'ลบบัญชีสมาชิก',
 };
 const STATUS_CLS = {
   pending: 'bg-amber-500/15 text-amber-300 border-amber-500/40',

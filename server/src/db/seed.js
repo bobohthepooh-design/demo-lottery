@@ -110,6 +110,11 @@ export async function seed() {
     await setSetting('cashback_percent', 0, null); // % คืนยอดเสียต่อวัน — 0 = ปิด, admin ตั้งในหน้าตั้งค่า
     await setSetting('require_email_verify_for_withdraw', false, null); // บังคับยืนยันอีเมลก่อนถอน — admin เปิดในหน้าตั้งค่าเมื่อพร้อม
     await setSetting('maker_checker', 'auto', null); // maker-checker: auto=บังคับเมื่อมี admin ≥2 คน, off=ปิด, always=บังคับเสมอ
+    // payment limits (บาท) — admin ปรับในหน้าตั้งค่า
+    await setSetting('deposit_min_baht', 1, null);
+    await setSetting('deposit_max_baht', 1000000, null);
+    await setSetting('withdraw_min_baht', 100, null);
+    await setSetting('withdraw_max_baht', 1000000, null);
   });
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   await seedRulesV2();
