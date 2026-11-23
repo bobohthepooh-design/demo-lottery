@@ -35,27 +35,31 @@
 | ระดับ | รายการ |
 |---|---|
 | 🟡 | `created_at` ทั้ง DB เป็น text `YYYY-MM-DD HH:MM:SS` (UTC) — ไม่ใช่ timestamptz; migration ใหญ่ถ้าจะแก้ |
-| 🟡 | `mfa_secret` เก็บ plaintext ใน DB — ควร encrypt-at-rest ก่อน go-live |
+| 🟡 | ~~`mfa_secret` plaintext~~ → แก้แล้ว: AES-256-GCM `enc:v1:` + `MFA_ENCRYPTION_KEY` แยก (rotate SESSION_SECRET ได้ไม่ทำ MFA พัง) |
 | 🟡 | ไม่มี KYC/e-KYC/bank-account verify จริง — withdrawal อนุมัติ manual ล้วน |
-| 🟡 | ไม่มี break-glass runbook สำหรับ admin 2 คน (คู่มือกู้ admin access) |
-| 🟢 | `email_verified` ไม่บังคับก่อนเล่น/ถอน (มี verify flow แต่ไม่ enforce) |
+| 🟡 | Break-glass เป็น manual runbook (`docs/BREAKGLASS.md`) — ไม่มี automation/alert |
+| 🟢 | `email_verified` ไม่บังคับก่อนถอนโดย default — มี setting `require_email_verify_for_withdraw` (admin เปิดใน Settings เมื่อพร้อม) |
 | 🟢 | Turnstile/SMTP/SlipOK/Telegram ยังไม่ตั้ง production keys — ทำงานแบบ dev-fallback |
-| 🟢 | Client ไม่มี unit tests; playwright smoke ไม่ได้อยู่ใน CI |
-| 🟢 | `_audit-*.mjs`, `scripts/fix-*.mjs` ~50 one-off scripts ปนใน repo — ควรย้าย `scripts/oneoff/` |
+| 🟢 | ~~Client ไม่มี unit tests~~ → มีแล้ว 9 tests (vitest+jsdom); e2e smoke อยู่ใน CI job `e2e` |
+| 🟢 | ~~one-off scripts ปน repo~~ → ย้าย `scripts/oneoff/` แล้ว 60 ไฟล์ |
 | 🟢 | `docs/audit/*` 11 ฉบับเก่า อาจล้าสมัยหลัง feature ใหม่ |
+| 🟢 | GitHub repo public: `github.com/bobohthepooh-design/demo-lottery` — CI 5 jobs เขียว (test/e2e/gitleaks/semgrep/trivy) |
 
 ## Recent commits (สำคัญ)
 
+- `d99aa4a` feat(payments): require_email_verify_for_withdraw setting (default off)
+- `67c4766`/`2db8566` CI fixes: migrate/seed advisory lock, smoke drift, semgrep GCM, trivy docker, vitest 5.1.1 — **CI 5/5 jobs เขียวบน GitHub แล้ว**
+- `c1fcaa6` e2e CI job + client component tests + image digest pinning
+- `78f181b` admin break-glass runbook + HIBP password breach check
+- `78ce9e8` MFA secret AES-256-GCM at rest + payments.test.js 12 tests (+พบ withdraw INSERT bug)
 - `68a0b42` fix(security): block demo wallet self-mint when payments configured — **ช่องโหว่ร้ายแรงที่เจอใน audit**
 - `a188f38` fix(payments): unblock pending_slip + auto-compress slip images
 - `8467ffc` admin payments menu + pending badge + kind filter
-- `425d78e` wallet payment requests top + 30 limit
-- `9c627e4` deposit min 1฿ + PromptPay cross-check withdrawals
 
 ## Next recommended actions
 
 1. **ก่อนรับเงินจริง**: legal opinion, KYC flow (e-KYC หรือ micro-deposit), withdrawal fraud review checklist, PDPA consent
 2. ตั้ง SMTP + Turnstile keys บน production (ฟรี) — ตอนนี้ dev-fallback
-3. Encrypt `mfa_secret` at rest + เขียน admin break-glass runbook
-4. ย้าย one-off scripts → `scripts/oneoff/`, เพิ่ม payment-flow tests ใน `server/test/`
+3. Admin: review pending payment requests (user 14 มี 2 pending_slip, user 63 มี 1 pending_review — ข้อมูลจริง)
+4. เมื่อพร้อม: เปิด `require_email_verify_for_withdraw` + แจ้ง member ที่ยังไม่ verify
 5. พิจารณา timestamptz migration เมื่อมี downtime window

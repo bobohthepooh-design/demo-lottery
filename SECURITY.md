@@ -46,7 +46,7 @@
 | ระดับ | รายการ |
 |---|---|
 | 🔴 go-live blocker | ไม่มี KYC, withdrawal review manual ทั้งหมด, legal/license review, Turnstile keys ยังไม่ตั้ง |
-| 🟡 medium | `created_at` เป็น text ไม่ใช่ timestamptz, email_verified ไม่บังคับก่อนถอน, permission cache 30s, break-glass เป็น manual runbook |
+| 🟡 medium | `created_at` เป็น text ไม่ใช่ timestamptz, permission cache 30s, break-glass เป็น manual runbook; email_verified บังคับได้ผ่าน setting `require_email_verify_for_withdraw` (default ปิด) |
 | 🟢 low | HIBP fail-open (ตั้งใจ), OTP dev-echo ผูกกับ private IP check |
 
 ## Security testing
