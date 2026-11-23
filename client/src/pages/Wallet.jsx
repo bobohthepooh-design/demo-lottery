@@ -38,13 +38,24 @@ export default function Wallet() {
   const [bankAccName, setBankAccName] = useState('');
   const [ppId, setPpId] = useState('');
   const [showAllPays, setShowAllPays] = useState(false);
-  const [showAllTxs, setShowAllTxs] = useState(false);
+  const [txTotal, setTxTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const TX_PAGE = 20;
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
   const loadPays = () => api('/payments').then(r => { setPayReqs(r.requests || []); setPayConfigured(!!r.paymentsConfigured); }).catch(() => setPayConfigured(false));
-  const load = () => api('/bets/wallet?limit=100').then(r => { setTxs(r.transactions); setBalance(r.balance); setWd(r.withdrawable || null); })
+  const load = () => api(`/bets/wallet?limit=${TX_PAGE}&offset=0`).then(r => {
+      setTxs(r.transactions); setTxTotal(r.total ?? r.transactions.length);
+      setBalance(r.balance); setWd(r.withdrawable || null);
+    })
     .catch(() => {}).finally(() => setLoading(false));
+  const loadMoreTxs = () => {
+    setLoadingMore(true);
+    api(`/bets/wallet?limit=${TX_PAGE}&offset=${txs.length}`)
+      .then(r => { setTxs(prev => [...prev, ...(r.transactions || [])]); setTxTotal(r.total ?? txs.length); })
+      .catch(() => {}).finally(() => setLoadingMore(false));
+  };
   useEffect(() => {
     // ?action=deposit|withdraw — เปิด modal จากปุ่มลัดหน้าแรก
     const act = params.get('action');
@@ -269,7 +280,7 @@ export default function Wallet() {
         <CardHeader title="ประวัติธุรกรรมเครดิต" />
         {/* มือถือ/แท็บเล็ต: การ์ดเรียงแนวตั้ง ไม่ล้นจอ */}
         <div className="md:hidden divide-y divide-navy-700">
-          {txs.slice(0, showAllTxs ? txs.length : 20).map(t => (
+          {txs.map(t => (
             <div key={t.id} className="px-4 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -304,7 +315,7 @@ export default function Wallet() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {txs.slice(0, showAllTxs ? txs.length : 20).map(t => (
+              {txs.map(t => (
                 <TableRow key={t.id} className="border-navy-700/50">
                   <TableCell className="font-mono text-xs text-navy-300">{t.reference}</TableCell>
                   <TableCell className="text-white">{TYPE_TH[t.type] || t.type}</TableCell>
@@ -321,10 +332,10 @@ export default function Wallet() {
             </TableBody>
           </Table>
         </div>
-        {txs.length > 20 && (
-          <button onClick={() => setShowAllTxs(!showAllTxs)}
-            className="w-full py-2.5 text-sm font-semibold text-gold-300 hover:text-gold-200 border-t border-navy-700/50">
-            {showAllTxs ? '▲ ย่อรายการ' : `▼ แสดงทั้งหมด (${txs.length - 20} รายการเพิ่มเติม)`}
+        {txs.length < txTotal && (
+          <button onClick={loadMoreTxs} disabled={loadingMore}
+            className="w-full py-2.5 text-sm font-semibold text-gold-300 hover:text-gold-200 border-t border-navy-700/50 disabled:opacity-50">
+            {loadingMore ? 'กำลังโหลด...' : `▼ โหลดเพิ่มเติม (แสดง ${txs.length}/${txTotal})`}
           </button>
         )}
       </Card>

@@ -21,10 +21,18 @@ export default function AdminWallet() {
   const [msg, setMsg] = useState('');
   const [ledgerAccts, setLedgerAccts] = useState([]);
   const [ledgerVerify, setLedgerVerify] = useState(null);
+  const [txPage, setTxPage] = useState(0);
+  const [txTotal, setTxTotal] = useState(0);
+  const TX_PAGE = 50;
 
+  const loadTxs = (page = txPage) => {
+    api(`/admin/wallet/transactions?limit=${TX_PAGE}&offset=${page * TX_PAGE}`)
+      .then(r => { setTxs(r.transactions); setTxTotal(r.total || 0); })
+      .catch(() => {});
+  };
   const load = () => {
     api('/admin/members').then(r => setMembers(r.members)).catch(() => {});
-    api('/admin/wallet/transactions?limit=100').then(r => setTxs(r.transactions)).catch(() => {});
+    loadTxs();
     api('/admin/ledger/accounts').then(r => setLedgerAccts(r.accounts || [])).catch(() => {});
   };
   useEffect(load, []);
@@ -102,15 +110,17 @@ export default function AdminWallet() {
     finally { setBulkBusy(false); }
   };
 
-  // export transactions เป็น CSV (ข้อมูลชุดเดียวกับตารางด้านล่าง)
+  // export transactions เป็น CSV (เฉพาะหน้าที่กำลังดู)
   const exportCsv = () => {
     const head = 'ref,username,type,direction,amount_satang,balance_after_satang,description,created_at';
     const rows = txs.map(t => [t.reference, t.username, t.type, t.direction, t.amount, t.balance_after, `"${String(t.description || '').replace(/"/g, '""')}"`, t.created_at].join(','));
     const blob = new Blob(['﻿' + head + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `wallet-tx-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    a.href = URL.createObjectURL(blob); a.download = `wallet-tx-p${txPage + 1}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(a.href);
   };
+
+  const txPageCount = Math.max(1, Math.ceil(txTotal / TX_PAGE));
 
   return (
     <div className="space-y-4">
@@ -176,8 +186,8 @@ export default function AdminWallet() {
       </Card>
 
       <Card className="overflow-x-auto">
-        <CardHeader title="ประวัติธุรกรรมทั้งหมด" actions={
-          <Button variant="ghost" size="sm" onClick={exportCsv}>⬇️ Export CSV</Button>
+        <CardHeader title={`ประวัติธุรกรรมทั้งหมด (${txTotal.toLocaleString()} รายการ)`} actions={
+          <Button variant="ghost" size="sm" onClick={exportCsv}>⬇️ Export CSV (หน้านี้)</Button>
         } />
         <Table>
           <TableHeader>
@@ -212,6 +222,17 @@ export default function AdminWallet() {
             ))}
           </TableBody>
         </Table>
+        {txPageCount > 1 && (
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-navy-700/50 text-xs text-navy-300">
+            <span>หน้า {txPage + 1}/{txPageCount} — {txTotal.toLocaleString()} รายการ</span>
+            <div className="flex gap-1.5">
+              <Button variant="ghost" size="sm" disabled={txPage === 0}
+                onClick={() => { const p = txPage - 1; setTxPage(p); loadTxs(p); }}>← ก่อนหน้า</Button>
+              <Button variant="ghost" size="sm" disabled={txPage + 1 >= txPageCount}
+                onClick={() => { const p = txPage + 1; setTxPage(p); loadTxs(p); }}>ถัดไป →</Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Double-entry ledger — ยอดบัญชีแยกประเภท + verify */}

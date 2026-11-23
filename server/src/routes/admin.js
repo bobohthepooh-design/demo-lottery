@@ -1393,7 +1393,9 @@ export default router;
 import * as paySvc from '../services/paymentService.js';
 router.get('/payments', requirePerm('wallet.adjust'), async (req, res, next) => {
   try {
-    res.json({ requests: await paySvc.adminList({ status: req.query.status || 'pending_review', kind: req.query.kind || null }) });
+    const limit = Math.min(parseInt(req.query.limit || '50', 10) || 50, 200);
+    const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+    res.json(await paySvc.adminList({ status: req.query.status || 'pending_review', kind: req.query.kind || null, limit, offset }));
   } catch (e) { next(e); }
 });
 

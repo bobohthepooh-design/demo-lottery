@@ -109,10 +109,12 @@ router.get('/slips/:ref', async (req, res, next) => {
 router.get('/wallet', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
   const offset = parseInt(req.query.offset || '0', 10);
+  const totalRow = await qGet('SELECT COUNT(*)::int AS c FROM virtual_transactions WHERE user_id=$1', [req.user.id]);
   res.json({
     balance: await wallet.getBalance(req.user.id),
     withdrawable: await wallet.getWithdrawable(req.user.id),
     transactions: await wallet.listTransactions(req.user.id, { limit, offset }),
+    total: totalRow?.c || 0,
   });
 });
 

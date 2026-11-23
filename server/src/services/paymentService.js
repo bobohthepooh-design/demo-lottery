@@ -177,7 +177,7 @@ export async function createWithdraw(userId, { amount, bankName, accountNo, acco
 export async function listMine(userId) {
   return q(`SELECT id,reference,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id,slip_trans_ref,slip_error,admin_note,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY id DESC LIMIT 50`, [userId]);
 }
-export async function adminList({ status = 'pending_review', kind = null, limit = 100 } = {}) {
+export async function adminList({ status = 'pending_review', kind = null, limit = 50, offset = 0 } = {}) {
   // ไม่ select slip_image/slip_raw (ใหญ่) — มี has_slip_image flag แทน
   let sql = `SELECT pr.id, pr.reference, pr.user_id, pr.kind, pr.amount, pr.method, pr.status,
       pr.promptpay_payload, pr.promptpay_id, pr.slip_trans_ref, pr.slip_amount, pr.slip_payer,
@@ -192,9 +192,10 @@ export async function adminList({ status = 'pending_review', kind = null, limit 
   else if (status !== 'all') { where.push(`pr.status=?`); params.push(status); }
   if (kind) { where.push(`pr.kind=?`); params.push(kind); }
   if (where.length) sql += ' WHERE ' + where.join(' AND ');
-  sql += ` ORDER BY pr.id DESC LIMIT ?`;
-  params.push(limit);
-  return q(sql, params);
+  sql += ` ORDER BY pr.id DESC LIMIT ? OFFSET ?`;
+  params.push(Math.min(Math.max(limit, 1), 200), Math.max(offset, 0));
+  const total = (await q(`SELECT COUNT(*)::int AS c FROM payment_requests pr ${where.length ? 'WHERE ' + where.join(' AND ') : ''}`, params.slice(0, -2))).c;
+  return { requests: await q(sql, params), total };
 }
 
 export async function adminReview({ adminId, paymentId, action, note }) {

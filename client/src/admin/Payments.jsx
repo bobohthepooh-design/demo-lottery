@@ -22,6 +22,9 @@ export default function AdminPayments() {
   const [note, setNote] = useState({});
   const [msg, setMsg] = useState('');
   const [slipView, setSlipView] = useState(null); // { id, loading, imageBase64, meta }
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 50;
 
   const viewSlip = async (p) => {
     setSlipView({ id: p.id, loading: true });
@@ -33,8 +36,11 @@ export default function AdminPayments() {
     }
   };
 
-  const load = () => api(`/admin/payments?status=${status}${kind ? `&kind=${kind}` : ''}`).then(r => setRows(r.requests || [])).catch(e => setMsg(e.message));
-  useEffect(() => { load(); }, [status, kind]);
+  const load = (p = page) => api(`/admin/payments?status=${status}${kind ? `&kind=${kind}` : ''}&limit=${PAGE_SIZE}&offset=${p * PAGE_SIZE}`)
+    .then(r => { setRows(r.requests || []); setTotal(r.total || 0); })
+    .catch(e => setMsg(e.message));
+  useEffect(() => { setPage(0); load(0); }, [status, kind]);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const review = async (id, action) => {
     setBusy(id); setMsg('');
@@ -45,7 +51,7 @@ export default function AdminPayments() {
       } else {
         setMsg(action === 'approve' ? `✅ อนุมัติแล้ว${r.balance != null ? ` — ยอดใหม่ ${satang(r.balance)} บาท` : ''}` : 'ปฏิเสธแล้ว');
       }
-      load();
+      load(page);
     } catch (e) { setMsg('❌ ' + e.message); }
     finally { setBusy(null); }
   };
@@ -82,7 +88,7 @@ export default function AdminPayments() {
       </div>
       {msg && <div className="text-sm text-gold-300">{msg}</div>}
       <Card>
-        <CardHeader title={`คำขอ (${rows.length})`} />
+        <CardHeader title={`คำขอ (${total.toLocaleString()} รายการ — หน้า ${page + 1}/${pageCount})`} />
         {rows.length === 0 ? (
           <div className="py-8 text-center text-navy-400 text-sm">ไม่มีคำขอ</div>
         ) : (
@@ -152,6 +158,17 @@ export default function AdminPayments() {
               ))}
             </TableBody>
           </Table>
+        )}
+        {pageCount > 1 && (
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-navy-700/50 text-xs text-navy-300">
+            <span>ทั้งหมด {total.toLocaleString()} รายการ</span>
+            <div className="flex gap-1.5">
+              <Button variant="ghost" size="sm" disabled={page === 0}
+                onClick={() => { const p = page - 1; setPage(p); load(p); }}>← ก่อนหน้า</Button>
+              <Button variant="ghost" size="sm" disabled={page + 1 >= pageCount}
+                onClick={() => { const p = page + 1; setPage(p); load(p); }}>ถัดไป →</Button>
+            </div>
+          </div>
         )}
       </Card>
 
