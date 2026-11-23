@@ -33,8 +33,13 @@ export function audit({ userId = null, action, entityType = null, entityId = nul
     detail: detailJson, ip, user_agent: ua, correlation_id: req?.requestId || null,
   };
   // fire-and-forget — audit log ไม่ block request; caller ไม่ต้อง await
+  // คืน promise เพื่อให้ critical path (การเงิน/ผลรางวัล) await ได้ — กัน row หายตอน crash
   tail = tail.then(() => insertAudit(row)).catch(e => console.error('[audit] pg insert failed:', e.message));
+  return tail;
 }
+
+// audit แบบบังคับรอ insert — ใช้ในเส้นทางการเงิน/settlement ที่ห้ามเสีย audit row
+export async function auditNow(opts) { return audit(opts); }
 
 // ตรวจสอบ hash chain ทั้งตาราง — คืน { ok, checked, firstBreak }
 // แถวเก่า (ก่อน migration 033, hash IS NULL) ไม่อยู่ใน chain — ข้ามไป

@@ -37,14 +37,21 @@ export default function Wallet() {
   const [bankName, setBankName] = useState('');
   const [bankAccName, setBankAccName] = useState('');
   const [ppId, setPpId] = useState('');
-  const [showAllPays, setShowAllPays] = useState(false);
   const [txTotal, setTxTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const TX_PAGE = 20;
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
-  const loadPays = () => api('/payments').then(r => { setPayReqs(r.requests || []); setPayConfigured(!!r.paymentsConfigured); }).catch(() => setPayConfigured(false));
+  const [payTotal, setPayTotal] = useState(0);
+  const [loadingMorePays, setLoadingMorePays] = useState(false);
+  const PAY_PAGE = 30;
+  const loadPays = (offset = 0) => api(`/payments?limit=${PAY_PAGE}&offset=${offset}`).then(r => {
+      setPayReqs(prev => offset === 0 ? (r.requests || []) : [...prev, ...(r.requests || [])]);
+      setPayTotal(r.total ?? (r.requests || []).length);
+      setPayConfigured(!!r.paymentsConfigured);
+    }).catch(() => setPayConfigured(false));
+  const loadMorePays = () => { setLoadingMorePays(true); loadPays(payReqs.length).finally(() => setLoadingMorePays(false)); };
   const load = () => api(`/bets/wallet?limit=${TX_PAGE}&offset=0`).then(r => {
       setTxs(r.transactions); setTxTotal(r.total ?? r.transactions.length);
       setBalance(r.balance); setWd(r.withdrawable || null);
@@ -224,7 +231,7 @@ export default function Wallet() {
         <Card>
           <CardHeader title={`คำขอเติม/ถอนเงิน (${payReqs.length})`} />
           <div className="divide-y divide-navy-700/50">
-            {payReqs.slice(0, showAllPays ? payReqs.length : 30).map(p => (
+            {payReqs.map(p => (
               <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
                 <div className="min-w-0">
                   <div className="font-semibold text-white">
@@ -259,10 +266,10 @@ export default function Wallet() {
               </div>
             ))}
           </div>
-          {payReqs.length > 30 && (
-            <button onClick={() => setShowAllPays(!showAllPays)}
-              className="w-full py-2.5 text-sm font-semibold text-gold-300 hover:text-gold-200 border-t border-navy-700/50">
-              {showAllPays ? '▲ ย่อรายการ' : `▼ แสดงทั้งหมด (${payReqs.length - 30} รายการเพิ่มเติม)`}
+          {payReqs.length < payTotal && (
+            <button onClick={loadMorePays} disabled={loadingMorePays}
+              className="w-full py-2.5 text-sm font-semibold text-gold-300 hover:text-gold-200 border-t border-navy-700/50 disabled:opacity-50">
+              {loadingMorePays ? 'กำลังโหลด...' : `▼ โหลดเพิ่มเติม (แสดง ${payReqs.length}/${payTotal})`}
             </button>
           )}
         </Card>

@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { txAsync, makeReference } from '../db/index.js';
 import { q, qGet } from '../db/pg.js';
 import { config } from '../config.js';
@@ -5,6 +8,48 @@ import { HttpError, audit } from '../lib/audit.js';
 import { notify } from './notifyService.js';
 import * as wallet from './walletService.js';
 import { getSetting } from './settingsService.js';
+
+// รูปสลิปเก็บเป็นไฟล์ใน data/slips/ (volume ถาวร) — ไม่ฝัง base64 ใน DB
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SLIP_DIR = path.join(__dirname, '..', '..', 'data', 'slips');
+
+// แปลง data-URI/base64 → buffer + extension; คืน null ถ้า decode ไม่ได้
+function decodeSlipImage(imageBase64) {
+  if (!imageBase64 || typeof imageBase64 !== 'string') return null;
+  const m = imageBase64.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/s);
+  const b64 = m ? m[2] : imageBase64;
+  if (!/^[A-Za-z0-9+/=\r\n]+$/.test(b64)) return null;
+  try {
+    const buf = Buffer.from(b64.replace(/\s/g, ''), 'base64');
+    if (buf.length < 100 || buf.length > 8 * 1024 * 1024) return null;
+    const ext = m ? (m[1] === 'jpg' ? 'jpg' : m[1]) : 'jpg';
+    return { buf, ext };
+  } catch { return null; }
+}
+
+// เขียนไฟล์สลิป → คืน path สัมพัทธ์ (เช่น slips/123-....jpg) หรือ null
+function saveSlipImage(paymentId, imageBase64) {
+  const d = decodeSlipImage(imageBase64);
+  if (!d) return null;
+  try {
+    fs.mkdirSync(SLIP_DIR, { recursive: true });
+    const name = `${paymentId}-${Date.now()}.${d.ext}`;
+    fs.writeFileSync(path.join(SLIP_DIR, name), d.buf);
+    return `slips/${name}`;
+  } catch (e) {
+    console.error('[slip] save failed:', e.message);
+    return null;
+  }
+}
+
+// อ่านไฟล์สลิป → base64ดิบ (ไม่มี data: prefix) หรือ null
+export function readSlipImage(relPath) {
+  if (!relPath || typeof relPath !== 'string' || relPath.includes('..')) return null;
+  try {
+    const buf = fs.readFileSync(path.join(SLIP_DIR, '..', relPath));
+    return buf.toString('base64');
+  } catch { return null; }
+}
 
 // ================= PromptPay EMV QR payload =================
 // EMVCo payload สำหรับพร้อมเพย์ — https://www.emvco.com + spec PromptPay ของ BOT
@@ -109,6 +154,8 @@ export async function submitDepositSlip(userId, paymentId, { imageBase64 }) {
     try { slip = await verifySlipWithSlipOk(imageBase64, config.slipokBranchId, config.slipokApiKey); }
     catch (e) { verifyErr = e.message; }
   }
+  // เขียนรูปสลิปเป็นไฟล์ก่อน — path เก็บใน slip_image_path (ไม่เก็บ base64 ใน DB แล้ว)
+  const slipPath = saveSlipImage(paymentId, imageBase64);
   return txAsync(async (d) => {
     // re-check status ใน tx กัน race
     const cur = await d.prepare(`SELECT status FROM payment_requests WHERE id=?`).get(paymentId);
@@ -120,12 +167,12 @@ export async function submitDepositSlip(userId, paymentId, { imageBase64 }) {
     const amountOk = slip?.amount != null && slip.amount === p.amount;
     const autoApprove = prov && slip && amountOk;
     const status = autoApprove ? 'approved' : 'pending_review';
-    await d.prepare(`UPDATE payment_requests SET status=?, slip_trans_ref=?, slip_amount=?, slip_payer=?, slip_receiver=?, slip_datetime=?, slip_raw=?, slip_image=?, slip_error=?, reviewed_at=CASE WHEN ?='approved' THEN strftime('%Y-%m-%d %H:%M:%S','now') ELSE reviewed_at END WHERE id=?`)
+    await d.prepare(`UPDATE payment_requests SET status=?, slip_trans_ref=?, slip_amount=?, slip_payer=?, slip_receiver=?, slip_datetime=?, slip_raw=?, slip_image_path=?, slip_error=?, reviewed_at=CASE WHEN ?='approved' THEN strftime('%Y-%m-%d %H:%M:%S','now') ELSE reviewed_at END WHERE id=?`)
       .run(status, slip?.transRef || null, slip?.amount || null,
         slip?.sender ? JSON.stringify(slip.sender) : null,
         slip?.receiver ? JSON.stringify(slip.receiver) : null,
         slip?.datetime || null, slip?.raw ? JSON.stringify(slip.raw) : null,
-        imageBase64 || null,
+        slipPath,
         verifyErr || (slip && !amountOk ? `ยอดสลิป ${slip.amount != null ? slip.amount / 100 : '?'} บาท ไม่ตรงกับคำขอ ${p.amount / 100} บาท` : null),
         status, paymentId);
     if (autoApprove) {
@@ -174,8 +221,12 @@ export async function createWithdraw(userId, { amount, bankName, accountNo, acco
 }
 
 // ================= Queries =================
-export async function listMine(userId) {
-  return q(`SELECT id,reference,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id,slip_trans_ref,slip_error,admin_note,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY id DESC LIMIT 50`, [userId]);
+export async function listMine(userId, { limit = 50, offset = 0 } = {}) {
+  const lim = Math.min(Math.max(limit, 1), 200);
+  const off = Math.max(offset, 0);
+  const total = (await qGet(`SELECT COUNT(*)::int AS c FROM payment_requests WHERE user_id=?`, [userId])).c;
+  const requests = await q(`SELECT id,reference,kind,amount,method,status,bank_name,bank_account_no,bank_account_name,promptpay_id,slip_trans_ref,slip_error,admin_note,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY id DESC LIMIT ? OFFSET ?`, [userId, lim, off]);
+  return { requests, total };
 }
 export async function adminList({ status = 'pending_review', kind = null, limit = 50, offset = 0 } = {}) {
   // ไม่ select slip_image/slip_raw (ใหญ่) — มี has_slip_image flag แทน
@@ -183,7 +234,7 @@ export async function adminList({ status = 'pending_review', kind = null, limit 
       pr.promptpay_payload, pr.promptpay_id, pr.slip_trans_ref, pr.slip_amount, pr.slip_payer,
       pr.slip_receiver, pr.slip_datetime, pr.slip_error, pr.bank_name, pr.bank_account_no,
       pr.bank_account_name, pr.admin_note, pr.reviewed_by, pr.reviewed_at, pr.created_at, pr.updated_at,
-      (pr.slip_image IS NOT NULL) AS has_slip_image,
+      (pr.slip_image IS NOT NULL OR pr.slip_image_path IS NOT NULL) AS has_slip_image,
       u.username, u.email, u.phone, u.display_name
     FROM payment_requests pr JOIN users u ON u.id=pr.user_id`;
   const params = [];

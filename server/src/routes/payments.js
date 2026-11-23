@@ -26,8 +26,12 @@ const withdrawSchema = z.object({
 // GET /payments — รายการคำขอของฉัน + สถานะระบบชำระเงิน
 router.get('/', async (req, res, next) => {
   try {
+    const limit = Math.min(parseInt(req.query.limit || '50', 10) || 50, 200);
+    const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
+    const r = await pay.listMine(req.user.id, { limit, offset });
     res.json({
-      requests: await pay.listMine(req.user.id),
+      requests: r.requests,
+      total: r.total,
       paymentsConfigured: pay.isPaymentsConfigured(),
       slipVerifyConfigured: pay.isSlipVerifyConfigured(),
     });

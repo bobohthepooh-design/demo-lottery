@@ -1,5 +1,5 @@
 import { txAsync, makeReference } from '../db/index.js';
-import { settleDraw, getDraw, evaluateBet, listRules, mergeAnnounce, validateWinningNumbers } from './lotteryService.js';
+import { settleDraw, getDraw, evaluateBet, listRules, mergeAnnounce, validateWinningNumbers, updateDrawStatus } from './lotteryService.js';
 import { audit, HttpError } from '../lib/audit.js';
 import { broadcast } from './events.js';
 import { notify } from './notifyService.js';
@@ -558,7 +558,7 @@ async function autoSettleResultsInner() {
       try {
         await settleDraw(null, d.id, selected.src.winning, selected.c.label);
         out.settled.push(`${d.draw_code}(${selected.c.label})`);
-        audit({ action: 'draw.auto_settle', entityType: 'draw', entityId: String(d.id), detail: { source: selected.c.label, winning: selected.src.winning } });
+        await audit({ action: 'draw.auto_settle', entityType: 'draw', entityId: String(d.id), detail: { source: selected.c.label, winning: selected.src.winning } });
       } catch (e) {
         out.errors.push(`${d.draw_code}: ${e.message}`);
       }
@@ -566,6 +566,27 @@ async function autoSettleResultsInner() {
       out.skipped.push(`${d.draw_code}: รอผลจริง [${tried.join(' | ') || 'no data'}]`);
     }
   }
+
+  // HNS (หวยฮานอยเฉพาะกิจ) ออกไม่ทุกวัน — ระบบ generate ทุกรอบแต่บางวันไม่มีผลจริงบน LC
+  // ถ้าค้างเกิน 36 ชม. แล้วยังไม่มีผล → ยกเลิกรอบ + refund โพยอัตโนมัติ (admin เห็นใน audit)
+  try {
+    const staleCut = new Date(Date.now() - 36 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
+    const stale = await q(`SELECT d.id, d.draw_code FROM lottery_draws d
+      JOIN lottery_types lt ON lt.id=d.lottery_type_id
+      LEFT JOIN lottery_categories c ON c.id=d.category_id
+      WHERE d.status IN ('open','scheduled','closed') AND d.draw_at < ?
+        AND lt.code='HN' AND (c.code='HNS' OR d.category_id IS NULL)
+        AND d.id NOT IN (SELECT draw_id FROM lottery_results)`, [staleCut]);
+    for (const s of stale) {
+      try {
+        await updateDrawStatus(null, s.id, 'cancelled');
+        await audit({ action: 'draw.auto_cancel_stale', entityType: 'draw', entityId: String(s.id), detail: { drawCode: s.draw_code, reason: 'no result after 36h (HNS adhoc)' } });
+        out.cancelled = [...(out.cancelled || []), s.draw_code];
+      } catch (e) { console.error('[auto-cancel]', s.draw_code, e.message); }
+    }
+    if (out.cancelled?.length) broadcast('draws');
+  } catch (e) { console.error('[auto-cancel] scan failed:', e.message); }
+
   if (out.settled.length) {
     broadcast('results');
     // แจ้งผลรอบที่เพิ่งออกไป Telegram channel (ถ้าตั้งค่าไว้)
@@ -726,7 +747,7 @@ export async function updateDrawResult(adminId, drawId, winningNumbers) {
         link: '/my-bets',
       }, d);
     }
-    audit({ userId: adminId, action: 'draw.result_update', entityType: 'draw', entityId: String(drawId), detail: { winningNumbers } });
+    await audit({ userId: adminId, action: 'draw.result_update', entityType: 'draw', entityId: String(drawId), detail: { winningNumbers } });
     return { ok: true };
   });
 }

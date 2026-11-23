@@ -49,8 +49,22 @@ export async function maybeRunRetention() {
   const r1 = await qRun(`DELETE FROM security_events WHERE created_at < ${secCut}`);
   const r2 = await qRun(`DELETE FROM auth_events WHERE created_at < ${authCut}`);
   const r3 = await qRun(`DELETE FROM audit_logs WHERE hash IS NULL AND created_at < ${auditCut}`);
+  // slip images — ลบไฟล์ของคำขอที่เก่ากว่า slip_retention_days (default 180 วัน)
+  // เก็บ DB row ไว้ (audit trail) แต่ลบไฟล์รูป — path ใน slip_image_path จะอ่านไม่ได้หลังจากนี้
+  const slipDays = Math.max(30, Number(await getSetting('slip_retention_days', 180)) || 180);
+  const slipCut = `to_char((now() AT TIME ZONE 'UTC') - interval '${slipDays} days','YYYY-MM-DD HH24:MI:SS')`;
+  const oldSlips = await q(`SELECT id, slip_image_path FROM payment_requests WHERE slip_image_path IS NOT NULL AND created_at < ${slipCut}`);
+  let slipsDeleted = 0;
+  const slipsDir = path.resolve(__dirname, '../data/slips');
+  for (const s of oldSlips) {
+    try {
+      const rel = String(s.slip_image_path).replace(/^slips\//, '');
+      if (!rel.includes('..')) { fs.unlinkSync(path.join(slipsDir, rel)); slipsDeleted++; }
+    } catch { /* ไฟล์อาจถูกลบไปแล้ว */ }
+    await qRun(`UPDATE payment_requests SET slip_image_path=NULL WHERE id=$1`, [s.id]);
+  }
   await setSetting('retention_last_run', today, null);
-  const out = { date: today, securityEvents: r1.changes, authEvents: r2.changes, auditLegacy: r3.changes };
+  const out = { date: today, securityEvents: r1.changes, authEvents: r2.changes, auditLegacy: r3.changes, slipFiles: slipsDeleted };
   if (r1.changes || r2.changes || r3.changes) console.log('[retention]', JSON.stringify(out));
   return out;
 }

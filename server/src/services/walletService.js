@@ -111,7 +111,7 @@ export function adminAdjust({ adminId, targetUserId, amount, direction, reason, 
       type: direction === 'credit' ? 'admin_adjust' : 'admin_debit',
       amount, direction, balanceAfter: newBalance, description: reason, idempotencyKey, createdBy: adminId,
     });
-    audit({ userId: adminId, action: `wallet.${direction}_adjust`, entityType: 'wallet', entityId: String(w.id),
+    await audit({ userId: adminId, action: `wallet.${direction}_adjust`, entityType: 'wallet', entityId: String(w.id),
       detail: { targetUserId, amount, reason }, req: null });
     if (direction === 'credit') {
       await notify(targetUserId, {
@@ -162,7 +162,7 @@ export function memberWalletAction(userId, { direction, amount, description, ide
       balanceAfter: newBalance,
       description, idempotencyKey,
     });
-    audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
+    await audit({ userId, action: `wallet.${direction}`, entityType: 'wallet', entityId: String(w.id),
       detail: { amount }, req: null });
     await notify(userId, {
       type: isCredit ? 'deposit' : 'withdraw',

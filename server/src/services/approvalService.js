@@ -149,7 +149,7 @@ export async function decide({ id, checkerId, approve, note, req }) {
       SET status='executed', executed_at=$1, execution_result=$2, updated_at=$1
       WHERE id=$3 RETURNING *`, [now(), JSON.stringify(result ?? { ok: true }).slice(0, 2000), id]);
     row = ex[0];
-    audit({ userId: checkerId, action: 'approval.executed', entityType: 'approval_request',
+    await audit({ userId: checkerId, action: 'approval.executed', entityType: 'approval_request',
       entityId: r.reference, detail: { category: r.category, makerId: r.maker_id }, req });
   } catch (e) {
     await q(`UPDATE approval_requests

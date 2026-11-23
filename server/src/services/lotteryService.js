@@ -810,7 +810,7 @@ export async function settleDraw(adminId, drawId, winningNumbers, sourceLabel) {
       }
     }
 
-    audit({ userId: adminId, action: 'draw.settle', entityType: 'draw', entityId: String(drawId),
+    await audit({ userId: adminId, action: 'draw.settle', entityType: 'draw', entityId: String(drawId),
       detail: { winningNumbers, settledCount, winCount, totalPayout } });
 
     return { drawId, settledItems: settledCount, winningItems: winCount, totalPayout };
