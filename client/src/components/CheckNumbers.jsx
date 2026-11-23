@@ -13,7 +13,9 @@ export default function CheckNumbers() {
 
   useEffect(() => {
     api('/lottery/draws?status=settled').then(r => {
-      const settled = (r.draws || []).filter(d => d.status === 'settled');
+      // เฉพาะหวยจริง — ตัดเกมด่วน/ราศี (SC,HL,KI,CF,HR) ออก ไม่ให้ตรวจ
+      const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']);
+      const settled = (r.draws || []).filter(d => d.status === 'settled' && !INSTANT.has(d.type_code));
       setDraws(settled.slice(0, 60));
       if (settled[0]) setDrawId(String(settled[0].id));
     }).catch(() => {});

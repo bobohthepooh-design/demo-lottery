@@ -292,6 +292,9 @@ router.get('/check', async (req, res, next) => {
     if (!Number.isInteger(drawId) || drawId <= 0) throw new HttpError(400, 'ต้องระบุ draw_id');
     const draw = await svc.getDraw(drawId);
     if (!draw) throw new HttpError(404, 'ไม่พบรอบหวย');
+    // ตรวจเลขเฉพาะหวยจริง — เกมด่วน/ราศี (SC,HL,KI,CF,HR) ไม่รองรับ
+    if (['SC', 'HL', 'KI', 'CF', 'HR'].includes(draw.type_code))
+      throw new HttpError(400, 'ตรวจเลขได้เฉพาะหวย — เกมด่วน/ราศีไม่มีระบบตรวจเลข');
     const row = await getDb().prepare('SELECT winning_numbers, source FROM lottery_results WHERE draw_id = ?').get(drawId);
     if (!row) throw new HttpError(400, 'รอบนี้ยังไม่ออกผล — เลือกรอบที่ออกผลแล้ว');
     let winning;
