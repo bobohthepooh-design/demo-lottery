@@ -4,8 +4,10 @@ import { q } from '../db/pg.js';
 // audit hash-chain — แต่ละ row ผูกกับ hash ของ row ก่อนหน้า (prev_hash)
 // ทำให้แก้/ลบ/แทรกแถวย้อนหลังถูกตรวจจับได้ผ่าน /admin/audit/verify
 // insert ถูก serialize ผ่าน promise chain เพื่อให้ลำดับ id ตรงกับลำดับ hash
-const canon = (r) => [r.prev_hash || '', r.user_id ?? '', r.action || '', r.entity_type || '',
-  r.entity_id || '', r.detail || '', r.ip || '', r.user_agent || '', r.correlation_id || ''].join('|');
+// หมายเหตุ: user_id ไม่อยู่ใน hash — member.delete anonymize (SET NULL) ทำได้โดย design
+// ถ้าใส่ user_id ใน hash ทุกครั้งที่ลบสมาชิกจะทำ chain พัง
+const canon = (r) => [r.prev_hash || '', r.action || '', r.entity_type || '', r.entity_id || '',
+  r.detail || '', r.ip || '', r.user_agent || '', r.correlation_id || ''].join('|');
 const hashOf = (r) => crypto.createHash('sha256').update(canon(r)).digest('hex');
 
 let tail = Promise.resolve();
@@ -59,6 +61,26 @@ export async function verifyAuditChain() {
     }
   }
   return { ok: true, checked, hashed };
+}
+
+// re-hash ทั้ง chain ตาม canon ปัจจุบัน — ใช้ครั้งเดียวหลังเปลี่ยน canon
+// (ห้ามเรียกอัตโนมัติจาก verify — จะ mask การลบ/แทรก row จริง)
+export async function rebuildAuditChain() {
+  let prev = null, rebuilt = 0, lastId = 0;
+  for (;;) {
+    const rows = await q(`SELECT id, action, entity_type, entity_id, detail, ip, user_agent,
+        correlation_id, prev_hash, hash FROM audit_logs WHERE id > $1 ORDER BY id LIMIT 500`, [lastId]);
+    if (!rows.length) break;
+    for (const r of rows) {
+      lastId = r.id;
+      if (r.hash == null) continue; // legacy row คงเดิม
+      const full = { ...r, prev_hash: prev };
+      const h = hashOf(full);
+      await q(`UPDATE audit_logs SET prev_hash=$1, hash=$2 WHERE id=$3`, [prev, h, r.id]);
+      prev = h; rebuilt++;
+    }
+  }
+  return { rebuilt };
 }
 
 // auth_events — login/logout history ต่อ user (admin user mgmt + fraud review)

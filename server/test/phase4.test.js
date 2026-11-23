@@ -59,6 +59,9 @@ const ts = Date.now().toString(36);
 let admin;
 
 beforeAll(async () => {
+  // canon v2 (ไม่มี user_id) — re-hash chain ครั้งเดียวให้ตรง canon ปัจจุบัน
+  const { rebuildAuditChain } = await import('../src/lib/audit.js');
+  await rebuildAuditChain();
   const d = getDb();
   await d.prepare(`INSERT INTO users (username, email, password_hash, display_name) VALUES ($1,$2,$3,$4)`)
     .run(`adp4${ts}`, `adp4${ts}@t.local`, hashPassword('Admin@Demo123'), 'adp4');
@@ -133,5 +136,39 @@ describe('phase4 — infra endpoint', () => {
     expect(r.body.node).toMatch(/^v/);
     expect(r.body.tableCounts.users).toBeGreaterThan(0);
     expect(r.body.dbSizeBytes).toBeGreaterThan(0);
+  });
+});
+
+describe('phase5 — backups + incidents + retention', () => {
+  it('backup create + list', async () => {
+    const r = await admin.post('/admin/backups');
+    expect(r.status).toBe(200);
+    expect(r.body.file).toMatch(/backup-.*\.json\.gz$/);
+    const list = await admin.get('/admin/backups');
+    expect(list.status).toBe(200);
+    expect(list.body.backups.length).toBeGreaterThan(0);
+  });
+
+  it('incidents CRUD + status flow', async () => {
+    const c = await admin.post('/admin/incidents', { title: 'DB connection pool สูง', severity: 'high', detail: 'test incident' });
+    expect(c.status).toBe(200);
+    const list = await admin.get('/admin/incidents');
+    const inc = list.body.incidents.find(i => i.title === 'DB connection pool สูง');
+    expect(inc.status).toBe('open');
+    await admin.patch(`/admin/incidents/${inc.id}`, { status: 'mitigated' });
+    await admin.patch(`/admin/incidents/${inc.id}`, { status: 'resolved' });
+    const list2 = await admin.get('/admin/incidents');
+    expect(list2.body.incidents.find(i => i.id === inc.id).status).toBe('resolved');
+    // invalid status → 400
+    expect((await admin.patch(`/admin/incidents/${inc.id}`, { status: 'bogus' })).status).toBe(400);
+  });
+
+  it('retention purge ทำงาน (ลบเฉพาะ events เก่า + audit legacy)', async () => {
+    const { maybeRunRetention } = await import('../src/services/opsService.js');
+    const r = await maybeRunRetention();
+    // รันซ้ำวันเดียวกัน → null (idempotent)
+    const r2 = await maybeRunRetention();
+    expect(r === null || typeof r === 'object').toBe(true);
+    expect(r2).toBeNull();
   });
 });

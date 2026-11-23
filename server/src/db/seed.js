@@ -115,6 +115,10 @@ export async function seed() {
     await setSetting('deposit_max_baht', 1000000, null);
     await setSetting('withdraw_min_baht', 100, null);
     await setSetting('withdraw_max_baht', 1000000, null);
+    // retention (วัน) — security/auth events + audit legacy rows (hash-chain rows ไม่ถูกลบ)
+    await setSetting('retention_security_days', 90, null);
+    await setSetting('retention_auth_events_days', 180, null);
+    await setSetting('retention_audit_legacy_days', 365, null);
   });
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   await seedRulesV2();

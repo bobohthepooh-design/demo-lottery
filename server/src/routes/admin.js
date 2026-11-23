@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getDb, txAsync } from '../db/index.js';
 import { requireAuth, requireMfaVerified } from '../services/authService.js';
 import { requirePerm, requireRole, hasRole, invalidatePermCache } from '../middleware/rbac.js';
-import { audit, securityEvent, HttpError, verifyAuditChain } from '../lib/audit.js';
+import { audit, securityEvent, HttpError, verifyAuditChain, rebuildAuditChain } from '../lib/audit.js';
 import { hashPassword } from '../lib/password.js';
 import * as lottery from '../services/lotteryService.js';
 import * as wallet from '../services/walletService.js';
@@ -15,6 +15,7 @@ import { config } from '../config.js';
 import { seedDemoDraws, drawSchedulePreview } from '../db/demo-data.js';
 import { notify } from '../services/notifyService.js';
 import * as approvals from '../services/approvalService.js';
+import * as ops from '../services/opsService.js';
 
 const router = Router();
 
@@ -893,6 +894,15 @@ router.get('/audit/verify', requirePerm('audit.view'), async (req, res) => {
   res.json(await verifyAuditChain());
 });
 
+// re-hash chain ตาม canon ปัจจุบัน — ใช้เฉพาะตอน migrate canon (ห้ามใช้ซ่อม tamper)
+router.post('/audit/rebuild-chain', requirePerm('audit.view'), async (req, res, next) => {
+  try {
+    const r = await rebuildAuditChain();
+    audit({ userId: req.user.id, action: 'admin.audit_chain_rebuild', entityType: 'system', detail: r, req });
+    res.json({ ok: true, ...r });
+  } catch (e) { next(e); }
+});
+
 // ---------- infra / system ----------
 // health เชิงโครงสร้าง: uptime, memory, ขนาด DB, จำนวนแถวตารางหลัก, migration ล่าสุด
 router.get('/infra', requirePerm('dashboard.admin'), async (req, res) => {
@@ -915,6 +925,61 @@ router.get('/infra', requirePerm('dashboard.admin'), async (req, res) => {
     pendingApprovals: counts.approval_requests != null
       ? (await d.prepare(`SELECT COUNT(*) c FROM approval_requests WHERE status='pending'`).get().catch(() => ({ c: 0 }))).c : 0,
   });
+});
+
+// ---------- backups (logical dump → server/data/backups) ----------
+// เฉพาะ super_admin — backup มีข้อมูลทั้ง DB ห้ามให้ admin ธรรมดา
+router.get('/backups', requireRole('super_admin'), async (req, res) => {
+  res.json({ backups: ops.listBackups() });
+});
+router.post('/backups', requireRole('super_admin'), async (req, res, next) => {
+  try {
+    const r = await ops.createBackup({ note: String(req.body?.note || '').slice(0, 200) || null });
+    audit({ userId: req.user.id, action: 'admin.backup_create', entityType: 'backup', entityId: r.file, detail: r, req });
+    res.json({ ok: true, ...r });
+  } catch (e) { next(e); }
+});
+
+// ---------- incidents ----------
+const incidentSchema = z.object({
+  title: z.string().min(3).max(200),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+  detail: z.string().max(2000).optional().default(''),
+});
+router.get('/incidents', requirePerm('dashboard.admin'), async (req, res) => {
+  const status = ['open', 'mitigated', 'resolved'].includes(req.query.status) ? req.query.status : null;
+  const incidents = status
+    ? await db().prepare(`SELECT i.*, cu.username AS created_by_name, ru.username AS resolved_by_name FROM incidents i
+        LEFT JOIN users cu ON cu.id=i.created_by LEFT JOIN users ru ON ru.id=i.resolved_by
+        WHERE i.status=? ORDER BY i.id DESC LIMIT 100`).all(status)
+    : await db().prepare(`SELECT i.*, cu.username AS created_by_name, ru.username AS resolved_by_name FROM incidents i
+        LEFT JOIN users cu ON cu.id=i.created_by LEFT JOIN users ru ON ru.id=i.resolved_by
+        ORDER BY i.id DESC LIMIT 100`).all();
+  res.json({ incidents });
+});
+router.post('/incidents', requirePerm('dashboard.admin'), async (req, res, next) => {
+  try {
+    const b = incidentSchema.parse(req.body);
+    const r = await db().prepare(`INSERT INTO incidents (title, severity, detail, created_by) VALUES (?,?,?,?)`)
+      .run(b.title, b.severity, b.detail || null, req.user.id);
+    audit({ userId: req.user.id, action: 'admin.incident_create', entityType: 'incident', entityId: String(r.lastInsertRowid ?? ''), detail: b, req });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+router.patch('/incidents/:id', requirePerm('dashboard.admin'), async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const cur = await db().prepare('SELECT * FROM incidents WHERE id=?').get(id);
+    if (!cur) return res.status(404).json({ error: 'ไม่พบ incident' });
+    const status = ['open', 'mitigated', 'resolved'].includes(req.body?.status) ? req.body.status : null;
+    if (!status) return res.status(400).json({ error: 'status ไม่ถูกต้อง' });
+    const resolved = status === 'resolved';
+    await db().prepare(`UPDATE incidents SET status=?, resolved_by=?, resolved_at=?, updated_at=datetime('now') WHERE id=?`)
+      .run(status, resolved ? req.user.id : null, resolved ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null, id);
+    audit({ userId: req.user.id, action: 'admin.incident_update', entityType: 'incident', entityId: String(id),
+      detail: { from: cur.status, to: status }, req });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
 router.get('/security-events', requirePerm('security.view'), async (req, res) => {

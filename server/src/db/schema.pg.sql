@@ -472,3 +472,17 @@ CREATE TABLE IF NOT EXISTS promo_campaigns (
   created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
   updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
 );
+
+CREATE TABLE IF NOT EXISTS incidents (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'medium' CHECK (severity IN ('low','medium','high','critical')),
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','mitigated','resolved')),
+  detail TEXT,
+  created_by BIGINT REFERENCES users(id),
+  resolved_by BIGINT REFERENCES users(id),
+  resolved_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+);
+CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status, id DESC);

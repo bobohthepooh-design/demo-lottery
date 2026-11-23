@@ -31,6 +31,10 @@ function Stat({ label, value, tone }) {
 export default function AdminHealth() {
   const [d, setD] = useState(null);
   const [infra, setInfra] = useState(null);
+  const [backups, setBackups] = useState([]);
+  const [canBackup, setCanBackup] = useState(false);
+  const [incidents, setIncidents] = useState([]);
+  const [incForm, setIncForm] = useState({ title: '', severity: 'medium', detail: '' });
   const [err, setErr] = useState('');
   const [updated, setUpdated] = useState(null);
 
@@ -38,7 +42,31 @@ export default function AdminHealth() {
     api('/admin/health').then(r => { setD(r); setErr(''); setUpdated(new Date()); })
       .catch(e => setErr(e.message));
     api('/admin/infra').then(setInfra).catch(() => {});
+    api('/admin/backups').then(r => { setBackups(r.backups || []); setCanBackup(true); }).catch(() => setCanBackup(false));
+    api('/admin/incidents').then(r => setIncidents(r.incidents || [])).catch(() => {});
   }, []);
+
+  const createBackup = async () => {
+    try {
+      const r = await api('/admin/backups', { method: 'POST', body: {} });
+      alert(`สร้าง backup แล้ว: ${r.file} (${(r.sizeBytes / 1024).toFixed(0)} KB, ${r.rows} rows)`);
+      load();
+    } catch (e) { alert(e.message); }
+  };
+
+  const createIncident = async () => {
+    if (incForm.title.trim().length < 3) return;
+    try {
+      await api('/admin/incidents', { method: 'POST', body: incForm });
+      setIncForm({ title: '', severity: 'medium', detail: '' });
+      load();
+    } catch (e) { alert(e.message); }
+  };
+
+  const setIncidentStatus = async (inc, status) => {
+    try { await api(`/admin/incidents/${inc.id}`, { method: 'PATCH', body: { status } }); load(); }
+    catch (e) { alert(e.message); }
+  };
   useEffect(() => {
     load();
     const t = setInterval(load, 30000);
@@ -163,6 +191,61 @@ export default function AdminHealth() {
               </CardBody>
             </Card>
           )}
+
+          {/* Backups + Incidents — ops */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {canBackup && (
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-bold text-white">💾 Backups ({backups.length})</h2>
+                    <button onClick={createBackup} className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/20 text-gold-300 border border-gold-500/40 hover:bg-gold-500/30">+ สร้าง backup</button>
+                  </div>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {backups.map(b => (
+                      <div key={b.file} className="flex justify-between text-xs bg-navy-800/60 rounded px-2.5 py-1.5">
+                        <span className="font-mono text-navy-200">{b.file}</span>
+                        <span className="text-navy-400">{(b.sizeBytes / 1024).toFixed(0)} KB • {b.createdAt?.slice(0, 16).replace('T', ' ')}</span>
+                      </div>
+                    ))}
+                    {!backups.length && <div className="text-xs text-navy-500 py-2">ยังไม่มี backup — กดสร้าง (logical dump ทั้ง DB เป็นไฟล์ .json.gz)</div>}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+            <Card>
+              <CardBody>
+                <h2 className="font-bold text-white mb-3">🚨 Incidents ({incidents.filter(i => i.status !== 'resolved').length} active)</h2>
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  <input value={incForm.title} onChange={e => setIncForm({ ...incForm, title: e.target.value })}
+                    placeholder="หัวข้อ incident" className="flex-1 min-w-40 bg-navy-900 border border-navy-600 rounded-lg px-3 py-1.5 text-sm" />
+                  <select value={incForm.severity} onChange={e => setIncForm({ ...incForm, severity: e.target.value })}
+                    className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-sm">
+                    <option value="low">low</option><option value="medium">medium</option>
+                    <option value="high">high</option><option value="critical">critical</option>
+                  </select>
+                  <button onClick={createIncident} className="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40">บันทึก</button>
+                </div>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                  {incidents.map(inc => (
+                    <div key={inc.id} className="flex items-center gap-2 bg-navy-800/60 rounded px-2.5 py-1.5 text-xs">
+                      <span className={`px-1.5 py-0.5 rounded font-bold ${inc.severity === 'critical' ? 'bg-red-500/20 text-red-300' : inc.severity === 'high' ? 'bg-orange-500/20 text-orange-300' : 'bg-navy-600 text-navy-200'}`}>{inc.severity}</span>
+                      <span className={`flex-1 ${inc.status === 'resolved' ? 'line-through text-navy-500' : 'text-white'}`}>{inc.title}</span>
+                      <span className="text-navy-500">{inc.created_by_name || ''}</span>
+                      {inc.status !== 'resolved' && (
+                        <>
+                          {inc.status === 'open' && <button onClick={() => setIncidentStatus(inc, 'mitigated')} className="text-amber-300 hover:underline">mitigate</button>}
+                          <button onClick={() => setIncidentStatus(inc, 'resolved')} className="text-green-300 hover:underline">resolve</button>
+                        </>
+                      )}
+                      {inc.status === 'resolved' && <span className="text-green-400">✓</span>}
+                    </div>
+                  ))}
+                  {!incidents.length && <div className="text-xs text-navy-500 py-2">ไม่มี incident</div>}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
 
           {/* รอบค้างออกผล */}
           {overdue.length > 0 && (
