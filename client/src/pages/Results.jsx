@@ -105,7 +105,8 @@ export default function Results() {
   const [q, setQ] = useState('');                    // ค้นหารหัสรอบ/ชื่อรอบ
 
   const load = () => api(`/lottery/today?date=${date}`).then(setData).catch(e => setErr(e.message));
-  useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
+  // ล้างข้อมูลเดิมทุกครั้งที่เปลี่ยนวัน — กันผลของวันเก่าค้างแสดงจน fetch ใหม่กลับมา
+  useEffect(() => { setData(null); setErr(''); load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
 
   // ดึงโพยของฉันครั้งเดียว — mark รอบที่มีรายการถูกรางวัล เพื่อไฮไลต์ในตารางผล
   useEffect(() => {
@@ -320,18 +321,6 @@ export default function Results() {
 
       {err && <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl px-4 py-3 text-sm">{err}</div>}
 
-      {latestResults.length > 0 && (
-        <section className="space-y-2">
-          <div>
-            <h2 className="text-sm font-bold text-white">🏆 ผลล่าสุดที่บันทึกแล้วทุกตลาด ({latestResults.length})</h2>
-            <p className="text-[11px] text-navy-400 mt-0.5">แสดงผลล่าสุดของแต่ละประเภทโดยไม่ขึ้นกับวันที่เลือก • ตลาดกรอกผลเองจะแสดงหลังแอดมินบันทึกผล</p>
-          </div>
-          <div className="space-y-2">
-            {latestResults.map(r => <ResultLine key={`${r.type_code}:${r.category_code || ''}`} r={r} />)}
-          </div>
-        </section>
-      )}
-
       {/* ค้นหารอบ — กรองตามรหัส/ชื่อรอบ/หมวด */}
       <div className="max-w-sm mx-auto">
         <input value={q} onChange={e => setQ(e.target.value)}
@@ -444,6 +433,19 @@ export default function Results() {
                 {d.category_name_th || d.type_name_th} · {fmtDateTime(d.draw_at)}
               </span>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ผลล่าสุดทุกตลาด — ไม่ขึ้นกับวันที่เลือก จึงวางไว้ใต้เนื้อหาตามวันที่เพื่อไม่ให้ดูเหมือนผลของวันที่เลือก */}
+      {latestResults.length > 0 && (
+        <section className="space-y-2">
+          <div>
+            <h2 className="text-sm font-bold text-white">🏆 ผลล่าสุดที่บันทึกแล้วทุกตลาด ({latestResults.length})</h2>
+            <p className="text-[11px] text-navy-400 mt-0.5">แสดงผลล่าสุดของแต่ละประเภทโดยไม่ขึ้นกับวันที่เลือก • ตลาดกรอกผลเองจะแสดงหลังแอดมินบันทึกผล</p>
+          </div>
+          <div className="space-y-2">
+            {latestResults.map(r => <ResultLine key={`${r.type_code}:${r.category_code || ''}`} r={r} />)}
           </div>
         </section>
       )}

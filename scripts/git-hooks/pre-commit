@@ -12,7 +12,11 @@ for f in $staged; do
   case "$f" in
     node_modules/*|client/dist/*|scripts/oneoff/*) continue ;;
   esac
-  node --check "$f" 2>/dev/null || { echo "✗ syntax error: $f"; fail=1; }
+  case "$f" in
+    # JSX ไม่ใช่ plain JS — node --check parse ไม่ได้ ใช้ esbuild แทน (มากับ vite)
+    *.jsx) ./client/node_modules/.bin/esbuild "$f" >/dev/null 2>&1 || { echo "✗ syntax error: $f"; fail=1; } ;;
+    *) node --check "$f" 2>/dev/null || { echo "✗ syntax error: $f"; fail=1; } ;;
+  esac
 done
 [ $fail -eq 1 ] && exit 1
 
