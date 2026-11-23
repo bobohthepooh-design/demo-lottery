@@ -192,23 +192,18 @@ router.get('/members/:id/activity', requirePerm('members.manage'), async (req, r
       FROM virtual_transactions WHERE user_id = ? ORDER BY id DESC LIMIT 10`).all(id);
     const auditRows = await db().prepare(`SELECT action, entity_type, entity_id, detail, created_at
       FROM audit_logs WHERE user_id = ? ORDER BY id DESC LIMIT 15`).all(id);
-    // risk flags — สัญญาณเฝ้าระวังง่ายๆ จากข้อมูลที่มีอยู่แล้ว (ไม่ใช่ ML)
-    const failed7d = (await db().prepare(`SELECT COUNT(*) c FROM auth_events
-      WHERE user_id = ? AND event LIKE 'login.failed%' AND created_at > datetime('now','-7 days')`).get(id)).c;
-    const blocked7d = (await db().prepare(`SELECT COUNT(*) c FROM auth_events
-      WHERE user_id = ? AND event = 'login.blocked' AND created_at > datetime('now','-7 days')`).get(id)).c;
-    const distinctIps = (await db().prepare(`SELECT COUNT(DISTINCT ip) c FROM auth_events
-      WHERE user_id = ? AND ip IS NOT NULL AND created_at > datetime('now','-30 days')`).get(id)).c;
+    // risk flags — rule engine (riskService) + สถานะ persisted ใน risk_flags
+    const { computeFlags } = await import('../services/riskService.js');
+    const computed = await computeFlags(id);
+    const persisted = await db().prepare(`SELECT id, code, status, score FROM risk_flags
+      WHERE user_id = ? AND status IN ('open','acknowledged')`).all(id);
+    const persistedByCode = Object.fromEntries(persisted.map(p => [p.code, p]));
+    const riskFlags = computed.map(f => ({ ...f, flagId: persistedByCode[f.code]?.id || null,
+      flagStatus: persistedByCode[f.code]?.status || null }));
     const fin = await db().prepare(`SELECT
       COALESCE(SUM(CASE WHEN kind='deposit' AND status='approved' THEN amount END),0) dep,
       COALESCE(SUM(CASE WHEN kind='withdraw' AND status='approved' THEN amount END),0) wd
       FROM payment_requests WHERE user_id = ?`).get(id);
-    const riskFlags = [];
-    if (failed7d >= 5) riskFlags.push({ code: 'brute_force', label: `login ผิด ${failed7d} ครั้งใน 7 วัน`, severity: 'high' });
-    if (blocked7d > 0) riskFlags.push({ code: 'account_blocked', label: `ถูกบล็อก login ${blocked7d} ครั้งใน 7 วัน`, severity: 'high' });
-    if (distinctIps >= 5) riskFlags.push({ code: 'many_ips', label: `เข้าใช้จาก ${distinctIps} IP ใน 30 วัน`, severity: 'medium' });
-    if (u.self_excluded_until) riskFlags.push({ code: 'self_excluded', label: 'RG: ระงับตัวเอง', severity: 'info' });
-    if (fin.wd > fin.dep && fin.wd > 0) riskFlags.push({ code: 'withdraw_over_deposit', label: 'ถอนได้มากกว่าฝาก (possible promo abuse)', severity: 'medium' });
     res.json({
       user: { ...u, balance: w?.balance ?? 0, roles: (await db().prepare(`SELECT r.name FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=?`).all(id)).map(r => r.name) },
       authEvents, sessions, payments, recentBets, walletTx, auditRows, riskFlags,
@@ -979,6 +974,37 @@ router.patch('/incidents/:id', requirePerm('dashboard.admin'), async (req, res, 
       .run(status, resolved ? req.user.id : null, resolved ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null, id);
     audit({ userId: req.user.id, action: 'admin.incident_update', entityType: 'incident', entityId: String(id),
       detail: { from: cur.status, to: status }, req });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- risk flags ----------
+router.get('/risk/flags', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const { listFlags, refreshUser } = await import('../services/riskService.js');
+    res.json({ flags: await listFlags({ status: req.query.status || 'open' }) });
+  } catch (e) { next(e); }
+});
+router.post('/risk/flags/:id/refresh', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const { refreshUser } = await import('../services/riskService.js');
+    const f = await db().prepare('SELECT user_id FROM risk_flags WHERE id=?').get(parseInt(req.params.id, 10));
+    if (!f) return res.status(404).json({ error: 'ไม่พบ flag' });
+    res.json({ ok: true, ...(await refreshUser(f.user_id)) });
+  } catch (e) { next(e); }
+});
+const flagActionSchema = z.object({
+  status: z.enum(['acknowledged', 'resolved']),
+  note: z.string().max(500).optional(),
+});
+router.post('/risk/flags/:id/status', requirePerm('members.manage'), async (req, res, next) => {
+  try {
+    const { setFlagStatus } = await import('../services/riskService.js');
+    const b = flagActionSchema.parse(req.body);
+    const f = await setFlagStatus(parseInt(req.params.id, 10), b.status, req.user.id, b.note || null);
+    if (!f) return res.status(404).json({ error: 'ไม่พบ flag' });
+    audit({ userId: req.user.id, action: `admin.risk_flag_${b.status}`, entityType: 'risk_flag', entityId: String(f.id),
+      detail: { userId: f.user_id, code: f.code, note: b.note }, req });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

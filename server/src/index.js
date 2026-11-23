@@ -25,6 +25,7 @@ import hiloRoutes from './routes/hilo.js';
 import pushRoutes from './routes/push.js';
 import { maybeDailyCashback } from './services/promoService.js';
 import { maybeRunRetention } from './services/opsService.js';
+import { maybeScanRisk } from './services/riskService.js';
 import { sendTelegram } from './services/telegramService.js';
 import * as scratchService from './services/scratchService.js';
 import * as hiloService from './services/hiloService.js';
@@ -110,6 +111,7 @@ if (config.env !== 'test') {
     checkOverdue();
     Promise.resolve(maybeDailyCashback()).catch(e => console.error('[cashback] failed:', e.message));
     Promise.resolve(maybeRunRetention()).catch(e => console.error('[retention] failed:', e.message));
+    Promise.resolve(maybeScanRisk()).catch(e => console.error('[risk-scan] failed:', e.message));
   }, 60 * 1000).unref();
 
   // ล้าง session/OTP ที่หมดอายุทิ้งทุก 6 ชม. — กัน DB บวมเมื่อเปิด public

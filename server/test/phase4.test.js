@@ -199,3 +199,30 @@ describe('phase6 — double-entry ledger', () => {
     expect(accts.body.accounts.length).toBeGreaterThan(0);
   });
 });
+
+describe('phase7 — risk flags', () => {
+  it('failed logins → flag open → acknowledge → resolve', async () => {
+    // สมัคร member ใหม่ + login ผิด 5 ครั้ง
+    const uname = `rsk${Date.now().toString(36)}`;
+    const reg = makeAgent();
+    await reg.post('/auth/register', { username: uname, email: `${uname}@t.local`, password: 'Password123', ageConfirmed: true, termsAccepted: true });
+    const uid = (await getDb().prepare(`SELECT id FROM users WHERE username=$1`).get(uname)).id;
+    for (let i = 0; i < 5; i++) {
+      await makeAgent().post('/auth/login', { username: uname, password: 'WrongPass999' });
+    }
+    const { refreshUser, listFlags } = await import('../src/services/riskService.js');
+    const r = await refreshUser(uid);
+    expect(r.added).toBeGreaterThan(0);
+    const flags = await listFlags({ status: 'open' });
+    const mine = flags.find(f => f.user_id === uid && f.code === 'brute_force');
+    expect(mine).toBeTruthy();
+    // member 360 เห็น flag
+    const act = await admin.get(`/admin/members/${uid}/activity`);
+    expect(act.body.riskFlags.some(f => f.code === 'brute_force')).toBe(true);
+    // acknowledge + resolve ผ่าน API
+    expect((await admin.post(`/admin/risk/flags/${mine.id}/status`, { status: 'acknowledged' })).status).toBe(200);
+    expect((await admin.post(`/admin/risk/flags/${mine.id}/status`, { status: 'resolved', note: 'test done' })).status).toBe(200);
+    const resolved = await listFlags({ status: 'resolved' });
+    expect(resolved.some(f => f.id === mine.id)).toBe(true);
+  });
+});
