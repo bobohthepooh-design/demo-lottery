@@ -140,8 +140,8 @@ function buildRules(d) {
       push(GS, null, 'rank5',     'รางวัลอันดับ 5 (7 หลัก)', 7, 'p5',      'exact', 200);
       push(GS, null, 'last4',     'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 1000);
       push(GS, null, 'last3',     'เลขท้าย 3 ตัว',   3, 'last3',   'exact', 500,  100, 100, 1000000, 60);
-      push(GS, null, 'run_top',   'เลขวิ่งบน',       1, 'last3',   'digit_contains', 3.5);
-      push(GS, null, 'run_bottom','เลขวิ่งล่าง',     1, 'last3',   'digit_contains', 4.2);
+      push(GS, null, 'run_top',   'เลขวิ่งบน',       1, 'top3',     'digit_contains', 3.5);
+      push(GS, null, 'run_bottom','เลขวิ่งล่าง',     1, 'bottom2',  'digit_contains', 4.2);
     }
 
     // ===== เลขอั้น — ไม่ใช่ประเภทแทงแยก: ผู้แทงใช้กติกาปกติ ถ้าเลขตรงเลขอั้นที่ admin
