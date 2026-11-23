@@ -109,10 +109,12 @@ async function grantInitialCredit(d, userId, walletId) {
   const initial = Number(await getSetting('initial_credit', config.initialCredit)) || 0;
   if (initial <= 0) return;
   await d.prepare('UPDATE virtual_wallets SET balance = ?, version = version + 1 WHERE id = ?').run(initial, walletId);
-  await d.prepare(`INSERT INTO virtual_transactions
+  const r = await d.prepare(`INSERT INTO virtual_transactions
     (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description)
     VALUES (?, ?, ?, 'initial_credit', ?, ?, 'credit', 'completed', ?, 'เครดิตแถมสำหรับสมาชิกใหม่')`)
     .run(makeReference('TX'), walletId, userId, initial, initial, `init-credit-${userId}`);
+  const { postJournalTx } = await import('./ledgerService.js');
+  await postJournalTx(d, { transactionId: Number(r.lastInsertRowid), userId, type: 'initial_credit', amount: initial, direction: 'credit' });
 }
 
 export async function register({ username, email, password, displayName, termsAccepted, ip, userAgent }) {

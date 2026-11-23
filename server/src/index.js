@@ -86,6 +86,14 @@ if (config.env !== 'test') {
       lastOverdueAlert = now;
       const list = rows.map(r => `• ${r.draw_code} (${r.cat_name || r.type_name}) ออก ${r.draw_at}`).join('\n');
       await sendTelegram(`🚨 หวยค้างผลเกิน 2 ชม. — ${rows.length} รอบ\n${list}\n\nตรวจสอบ: /admin/health`);
+      // auto-incident — สร้างครั้งเดียว (dedupe ด้วย title ที่ยังไม่ resolve)
+      try {
+        const title = 'หวยค้างผลเกินกำหนด';
+        const open = await d.prepare(`SELECT id FROM incidents WHERE title = ? AND status != 'resolved' LIMIT 1`).get(title);
+        if (!open) {
+          await d.prepare(`INSERT INTO incidents (title, severity, detail) VALUES (?, 'high', ?)`).run(title, `${rows.length} รอบ: ${rows.map(r => r.draw_code).join(', ')}`);
+        }
+      } catch {}
       logger.warn('overdue-alert', rows.map(r => r.draw_code).join(', '));
     } catch (e) { console.error('[overdue-alert] failed:', e.message); }
   };

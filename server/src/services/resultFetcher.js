@@ -696,11 +696,14 @@ export async function updateDrawResult(adminId, drawId, winningNumbers) {
           WHERE id = ? AND version = ?`).run(nb, w.id, w.version);
       if (upd.changes === 0) throw new HttpError(409, 'เกิด race condition กรุณาลองใหม่', 'CONCURRENT_MODIFICATION');
       const dir = diff > 0 ? 'credit' : 'debit';
-      await d.prepare(`INSERT INTO virtual_transactions
+      const txType = dir === 'credit' ? 'win_credit' : 'admin_debit';
+      const jr = await d.prepare(`INSERT INTO virtual_transactions
         (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)`)
-        .run(makeReference('TX'), w.id, uid, dir === 'credit' ? 'win_credit' : 'admin_debit',
+        .run(makeReference('TX'), w.id, uid, txType,
           Math.abs(diff), nb, dir, `refetch-${drawId}-u${uid}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`, 'ปรับผลรางวัลหลังแก้ไขผล (DEMO)');
+      const { postJournalTx } = await import('./ledgerService.js');
+      await postJournalTx(d, { transactionId: Number(jr.lastInsertRowid), userId: uid, type: txType, amount: Math.abs(diff), direction: dir });
     }
     for (const [uid, diff] of userDiff) {
       if (!diff) continue;

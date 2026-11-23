@@ -3,6 +3,7 @@ import { HttpError, audit } from '../lib/audit.js';
 import { getSetting } from './settingsService.js';
 import { notify } from './notifyService.js';
 import { qGet, q } from '../db/pg.js';
+import { postJournalTx } from './ledgerService.js';
 
 // ---------- helpers ที่ใช้ภายใน transaction (d = txAsync facade {prepare} — async เสมอ) ----------
 
@@ -18,7 +19,10 @@ async function insertTransaction(d, { walletId, userId, type, amount, direction,
     (reference, wallet_id, user_id, type, amount, balance_after, direction, status, idempotency_key, description, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)`)
     .run(ref, walletId, userId, type, amount, balanceAfter, direction, idempotencyKey, description, createdBy);
-  return { id: Number(r.lastInsertRowid), reference: ref, balanceAfter };
+  const txId = Number(r.lastInsertRowid);
+  // double-entry journal — 2 ขา (house ↔ member) ใน transaction เดียวกัน
+  await postJournalTx(d, { transactionId: txId, userId, type, amount, direction });
+  return { id: txId, reference: ref, balanceAfter };
 }
 
 async function updateBalance(d, walletId, expectedVersion, newBalance) {

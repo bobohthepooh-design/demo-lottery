@@ -62,6 +62,8 @@ beforeAll(async () => {
   // canon v2 (ไม่มี user_id) — re-hash chain ครั้งเดียวให้ตรง canon ปัจจุบัน
   const { rebuildAuditChain } = await import('../src/lib/audit.js');
   await rebuildAuditChain();
+  const { setSetting } = await import('../src/services/settingsService.js');
+  await setSetting('maker_checker', 'off', null);
   const d = getDb();
   await d.prepare(`INSERT INTO users (username, email, password_hash, display_name) VALUES ($1,$2,$3,$4)`)
     .run(`adp4${ts}`, `adp4${ts}@t.local`, hashPassword('Admin@Demo123'), 'adp4');
@@ -170,5 +172,30 @@ describe('phase5 — backups + incidents + retention', () => {
     const r2 = await maybeRunRetention();
     expect(r === null || typeof r === 'object').toBe(true);
     expect(r2).toBeNull();
+  });
+});
+
+describe('phase6 — double-entry ledger', () => {
+  it('wallet adjust → journal 2 ขา + verify ผ่าน', async () => {
+    // หา member มาปรับเครดิต (สร้าง virtual_transaction + journal)
+    const target = await getDb().prepare(`SELECT u.id FROM users u JOIN virtual_wallets w ON w.user_id=u.id WHERE u.username != 'admin' ORDER BY u.id LIMIT 1`).get();
+    expect(target).toBeTruthy();
+    const adj = await admin.post('/admin/wallet/adjust', { userId: target.id, amount: 100, direction: 'credit', reason: 'ledger test', idempotencyKey: `led-${Date.now()}` });
+    expect(adj.status).toBe(200);
+    const txId = adj.body.transaction.id;
+    const legs = await getDb().prepare(`SELECT account, debit, credit FROM journal_entries WHERE transaction_id=$1 ORDER BY id`).all(txId);
+    expect(legs.length).toBe(2);
+    expect(legs[0].account).toMatch(/^house:/);
+    expect(legs[1].account).toBe(`member:${target.id}:wallet`);
+    expect(Number(legs[0].debit) + Number(legs[1].debit)).toBe(100);
+    expect(Number(legs[0].credit) + Number(legs[1].credit)).toBe(100);
+    // rebuild backfill (transactions เก่าก่อนมี ledger)
+    const rb = await admin.post('/admin/ledger/rebuild', { limit: 100 });
+    expect(rb.status).toBe(200);
+    const v = await admin.get('/admin/ledger/verify');
+    expect(v.body.ok).toBe(true);
+    // accounts endpoint
+    const accts = await admin.get('/admin/ledger/accounts');
+    expect(accts.body.accounts.length).toBeGreaterThan(0);
   });
 });

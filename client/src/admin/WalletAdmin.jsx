@@ -19,12 +19,30 @@ export default function AdminWallet() {
   const [txs, setTxs] = useState([]);
   const [form, setForm] = useState({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: newKey() });
   const [msg, setMsg] = useState('');
+  const [ledgerAccts, setLedgerAccts] = useState([]);
+  const [ledgerVerify, setLedgerVerify] = useState(null);
 
   const load = () => {
     api('/admin/members').then(r => setMembers(r.members)).catch(() => {});
     api('/admin/wallet/transactions?limit=100').then(r => setTxs(r.transactions)).catch(() => {});
+    api('/admin/ledger/accounts').then(r => setLedgerAccts(r.accounts || [])).catch(() => {});
   };
   useEffect(load, []);
+
+  const verifyLedger = async () => {
+    try {
+      const r = await api('/admin/ledger/verify');
+      setLedgerVerify(r);
+    } catch (e) { setLedgerVerify({ ok: false, error: e.message }); }
+  };
+  const rebuildLedger = async () => {
+    if (!(await confirmAction({ title: 'Backfill journal entries', message: 'สร้าง journal entries ย้อนหลังให้ transactions ที่ยังไม่มี? (ทำครั้งเดียวสำหรับข้อมูลเก่า)' }))) return;
+    try {
+      const r = await api('/admin/ledger/rebuild', { method: 'POST', body: {} });
+      alert(`Backfill แล้ว ${r.posted} transactions`);
+      load();
+    } catch (e) { alert(e.message); }
+  };
 
   const submit = async (e) => {
     e.preventDefault(); setMsg('');
@@ -194,6 +212,47 @@ export default function AdminWallet() {
             ))}
           </TableBody>
         </Table>
+      </Card>
+
+      {/* Double-entry ledger — ยอดบัญชีแยกประเภท + verify */}
+      <Card>
+        <CardHeader title="บัญชีแยก (Double-Entry Ledger)" sub="ทุกธุรกรรมมี journal 2 ขา (Dr/Cr เท่ากัน) — house accounts เป็นบัญชีคู่ของเครดิตเสมือน"
+          actions={<div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={verifyLedger}>ตรวจยอด</Button>
+            <Button variant="ghost" size="sm" onClick={rebuildLedger}>Backfill เก่า</Button>
+          </div>} />
+        <CardBody>
+          {ledgerVerify && (
+            <div className={`text-xs rounded-lg p-2.5 mb-3 ${ledgerVerify.ok ? 'bg-green-500/10 text-green-300' : 'bg-red-500/10 text-red-300'}`}>
+              {ledgerVerify.ok
+                ? `✓ Ledger ถูกต้อง — Dr ${satang(ledgerVerify.globalDebit)} = Cr ${satang(ledgerVerify.globalCredit)} บาท • ทุก tx มี journal ครบ`
+                : `✗ พบปัญหา: ${ledgerVerify.transactionsMissingJournal} tx ขาด journal • unbalanced ${ledgerVerify.unbalancedTransactions?.length || 0} รายการ`}
+            </div>
+          )}
+          <Table>
+            <TableHeader>
+              <TableRow className="border-navy-700/60 hover:bg-transparent">
+                <TableHead className="text-navy-400">บัญชี</TableHead>
+                <TableHead className="text-navy-400 text-right">Dr รวม</TableHead>
+                <TableHead className="text-navy-400 text-right">Cr รวม</TableHead>
+                <TableHead className="text-navy-400 text-right">ยอดคงเหลือ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ledgerAccts.map(a => (
+                <TableRow key={a.account} className="border-navy-700/50">
+                  <TableCell className="font-mono text-xs text-navy-200">{a.account}</TableCell>
+                  <TableCell className="text-right text-xs text-navy-300">{satang(a.debit_total)} บาท</TableCell>
+                  <TableCell className="text-right text-xs text-navy-300">{satang(a.credit_total)} บาท</TableCell>
+                  <TableCell className={cn('text-right text-xs font-bold', a.balance >= 0 ? 'text-green-400' : 'text-red-400')}>
+                    {a.balance >= 0 ? '+' : ''}{satang(a.balance)} บาท
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!ledgerAccts.length && <TableRow><TableCell colSpan={4} className="text-center text-navy-400 text-xs py-4">ยังไม่มี journal entries — รอธุรกรรมใหม่ หรือกด Backfill</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </CardBody>
       </Card>
     </div>
   );

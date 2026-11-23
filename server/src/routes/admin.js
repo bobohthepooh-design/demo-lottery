@@ -16,6 +16,7 @@ import { seedDemoDraws, drawSchedulePreview } from '../db/demo-data.js';
 import { notify } from '../services/notifyService.js';
 import * as approvals from '../services/approvalService.js';
 import * as ops from '../services/opsService.js';
+import * as ledger from '../services/ledgerService.js';
 
 const router = Router();
 
@@ -979,6 +980,21 @@ router.patch('/incidents/:id', requirePerm('dashboard.admin'), async (req, res, 
     audit({ userId: req.user.id, action: 'admin.incident_update', entityType: 'incident', entityId: String(id),
       detail: { from: cur.status, to: status }, req });
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ---------- ledger (double-entry journal) ----------
+router.get('/ledger/accounts', requirePerm('reports.view'), async (req, res) => {
+  res.json({ accounts: await ledger.accountBalances() });
+});
+router.get('/ledger/verify', requirePerm('reports.view'), async (req, res) => {
+  res.json(await ledger.verifyLedger());
+});
+router.post('/ledger/rebuild', requirePerm('wallet.adjust'), async (req, res, next) => {
+  try {
+    const r = await ledger.rebuildJournal({ limit: Math.min(parseInt(req.body?.limit || '5000', 10) || 5000, 50000) });
+    audit({ userId: req.user.id, action: 'admin.ledger_rebuild', entityType: 'system', detail: r, req });
+    res.json({ ok: true, ...r });
   } catch (e) { next(e); }
 });
 
