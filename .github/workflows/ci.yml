@@ -41,3 +41,45 @@ jobs:
         run: npm --prefix client audit --audit-level=high
       - name: Dependency audit (root)
         run: npm audit --audit-level=high
+
+  # ---------- Security scanning (DevSecOps) ----------
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # scan full git history for leaked secrets
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  semgrep:
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep SAST (ERROR severity gate)
+        run: semgrep scan --config p/javascript --config p/typescript --config p/nodejs --config p/owasp-top-ten --config p/secrets --severity ERROR --error server/src client/src scripts tests
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem + IaC scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+      - name: Trivy IaC config scan (docker-compose/Caddyfile-adjacent)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          format: table
