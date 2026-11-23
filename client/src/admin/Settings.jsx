@@ -20,7 +20,7 @@ export default function AdminSettings() {
   // ราคา/อัตราจ่ายเกมด่วนแก้ที่หน้าประเภทและกติกา (lottery_rules) ที่เดียว — key เหล่านี้เป็น cache ที่ sync อัตโนมัติ
   const GAME_KEYS = ['scratch_price', 'hilo_price', 'hilo_mult_low', 'hilo_mult_high', 'hilo_mult_11', 'kiwi_price_kiwi', 'kiwi_price_kiwi_vip', 'kiwi_price_kiwi_dice'];
   // sync กับ SUPER_ONLY_SETTINGS ใน server/src/routes/admin.js — super_admin เท่านั้นที่แก้ได้
-  const SUPER_ONLY_KEYS = ['maker_checker', 'initial_credit', 'require_email_verify_for_withdraw'];
+  const SUPER_ONLY_KEYS = ['maker_checker', 'initial_credit', 'require_email_verify_for_withdraw', 'admin_allowed_ips'];
 
   const load = () => {
     api('/admin/settings').then(r => {

@@ -47,7 +47,7 @@ function makeAgent() {
     store(res);
     return res;
   }
-  return { get: (u) => call('get', u), post: (u, b) => call('post', u, b), patch: (u, b) => call('patch', u, b), put: (u, b) => call('put', u, b) };
+  return { get: (u) => call('get', u), post: (u, b) => call('post', u, b), patch: (u, b) => call('patch', u, b), put: (u, b) => call('put', u, b), ip };
 }
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -224,5 +224,28 @@ describe('phase7 — risk flags', () => {
     expect((await admin.post(`/admin/risk/flags/${mine.id}/status`, { status: 'resolved', note: 'test done' })).status).toBe(200);
     const resolved = await listFlags({ status: 'resolved' });
     expect(resolved.some(f => f.id === mine.id)).toBe(true);
+  });
+});
+
+describe('phase8 — admin IP allowlist', () => {
+  it('setting admin_allowed_ips บังคับ IP (default ว่าง = ผ่านทุก IP)', async () => {
+    const { setSetting } = await import('../src/services/settingsService.js');
+    try {
+      // deny-all-ish: อนุญาตเฉพาะ IP ที่ไม่มีทางเป็นเรา
+      await setSetting('admin_allowed_ips', ['10.250.250.250'], null);
+      const blocked = await admin.get('/admin/infra');
+      expect(blocked.status).toBe(403);
+      expect(blocked.body.code).toBe('IP_NOT_ALLOWED');
+      // อนุญาต IP ของ agent นี้จริงๆ (trust proxy → req.ip = XFF)
+      await setSetting('admin_allowed_ips', [admin.ip], null);
+      const ok = await admin.get('/admin/infra');
+      expect(ok.status).toBe(200);
+      // CIDR ครอบ IP เดียวกัน
+      const octets = admin.ip.split('.');
+      await setSetting('admin_allowed_ips', [`${octets[0]}.${octets[1]}.${octets[2]}.0/24`], null);
+      expect((await admin.get('/admin/infra')).status).toBe(200);
+    } finally {
+      await setSetting('admin_allowed_ips', [], null);
+    }
   });
 });

@@ -119,6 +119,8 @@ export async function seed() {
     await setSetting('retention_security_days', 90, null);
     await setSetting('retention_auth_events_days', 180, null);
     await setSetting('retention_audit_legacy_days', 365, null);
+    await setSetting('admin_allowed_ips', [], null); // IP allowlist admin — ว่าง = ทุก IP
+    await setSetting('risk_last_scan', '', null);
   });
   // กติกาหวยตามโครงสร้างจริงของแต่ละประเทศ (ทำหลัง tx หลักเพื่อเลี่ยง nested transaction)
   await seedRulesV2();

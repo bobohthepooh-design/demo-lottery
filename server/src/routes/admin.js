@@ -28,7 +28,50 @@ const requireAdminMfa = (req, res, next) => {
   next();
 };
 
-router.use(requireAuth, requireMfaVerified, requireAdminMfa, requirePerm('dashboard.admin'));
+// ---------- admin IP allowlist ----------
+// กำหนดได้ 2 ทาง: env ADMIN_ALLOWED_IPS (comma-separated) หรือ setting admin_allowed_ips
+// รูปแบบ: "1.2.3.4" หรือ CIDR "1.2.3.0/24" — ว่างทั้งคู่ = อนุญาตทุก IP (default)
+function ipToInt(ip) {
+  const p = ip.split('.').map(Number);
+  if (p.length !== 4 || p.some(n => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+  return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]) >>> 0;
+}
+function normIp(ip) {
+  const s = String(ip).replace(/^::ffff:/, '');
+  return s === '::1' ? '127.0.0.1' : s; // IPv6 loopback ≡ IPv4 loopback
+}
+function ipAllowed(clientIp, rule) {
+  const ip = normIp(clientIp);
+  if (rule === ip) return true;
+  if (rule.includes('/')) {
+    const [base, bits] = rule.split('/');
+    const b = parseInt(bits, 10);
+    const bi = ipToInt(base), ii = ipToInt(ip);
+    if (bi == null || ii == null || !Number.isInteger(b) || b < 0 || b > 32) return false;
+    const mask = b === 0 ? 0 : (~0 << (32 - b)) >>> 0;
+    return (ii & mask) === (bi & mask);
+  }
+  return false;
+}
+async function adminAllowedIpList() {
+  const env = String(process.env.ADMIN_ALLOWED_IPS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (env.length) return env;
+  const v = await settings.getSetting('admin_allowed_ips', []);
+  const arr = Array.isArray(v) ? v : String(v || '').split(',');
+  return arr.map(s => String(s).trim()).filter(Boolean);
+}
+const adminIpGuard = async (req, res, next) => {
+  try {
+    const list = await adminAllowedIpList();
+    if (!list.length) return next();
+    const clientIp = normIp(req.ip || '');
+    if (list.some(rule => ipAllowed(clientIp, rule))) return next();
+    audit({ userId: req.user?.id || null, action: 'admin.ip_blocked', entityType: 'admin', detail: { ip: clientIp }, req });
+    return res.status(403).json({ error: 'IP นี้ไม่ได้รับอนุญาตเข้าใช้งาน admin', code: 'IP_NOT_ALLOWED' });
+  } catch (e) { next(e); }
+};
+
+router.use(adminIpGuard, requireAuth, requireMfaVerified, requireAdminMfa, requirePerm('dashboard.admin'));
 
 // ---------- helpers ----------
 const db = () => getDb();
@@ -1038,7 +1081,7 @@ router.get('/settings', requirePerm('settings.manage'), async (req, res) => {
 });
 // keys ที่กระทบ security/economy โดยตรง — admin ธรรมดาแก้ไม่ได้ (super_admin เท่านั้น)
 // maker_checker: ปิดได้ = bypass approval ทั้งระบบ; initial_credit: เศรษฐกิจ; require_email_verify_for_withdraw: fraud gate
-const SUPER_ONLY_SETTINGS = new Set(['maker_checker', 'initial_credit', 'require_email_verify_for_withdraw']);
+const SUPER_ONLY_SETTINGS = new Set(['maker_checker', 'initial_credit', 'require_email_verify_for_withdraw', 'admin_allowed_ips']);
 
 router.put('/settings/:key', requirePerm('settings.manage'), async (req, res, next) => {
   try {
