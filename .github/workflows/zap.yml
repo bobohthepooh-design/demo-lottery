@@ -1,0 +1,63 @@
+name: ZAP baseline DAST
+
+# OWASP ZAP baseline scan — nightly + manual dispatch
+# สแกน app จริง (boot server + postgres service เหมือน e2e job)
+# ผลเป็น HTML/JSON report — ไม่ fail build (baseline = informational)
+# ถ้าจะ gate จริงค่อยเพิ่ม step ประเมิน risk ของ findings
+
+on:
+  schedule:
+    - cron: '0 18 * * *'   # 01:00 ICT ทุกวัน
+  workflow_dispatch:
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lottery
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: lottery_zap
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U lottery -d lottery_zap"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install server deps
+        run: npm ci --prefix server
+      - name: Start server
+        env:
+          DATABASE_URL: postgres://lottery:ci-test-password@127.0.0.1:5432/lottery_zap
+          PORT: '4000'
+          SESSION_SECRET: zap-session-secret-not-for-prod
+          HIBP_CHECK: 'false'
+          INITIAL_CREDIT: '100000'
+          PROMPTPAY_ID: ''
+        run: npm --prefix server start &
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:4000/api/health && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: ZAP baseline scan
+        run: |
+          mkdir -p zap/wrk
+          docker run --rm --network host \
+            -v "$PWD/zap/wrk:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://localhost:4000 -r zap.html -J zap.json -I
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-baseline-report
+          path: zap/wrk/zap.*
+          retention-days: 30

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# pre-commit hook — syntax check ไฟล์ JS ที่ staged + เตือนถ้าไม่มี test ใหม่คู่กับ src change
+# ติดตั้ง: git config core.hooksPath scripts/git-hooks
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+staged=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|jsx|mjs)$' || true)
+[ -z "$staged" ] && exit 0
+
+fail=0
+for f in $staged; do
+  case "$f" in
+    node_modules/*|client/dist/*|scripts/oneoff/*) continue ;;
+  esac
+  node --check "$f" 2>/dev/null || { echo "✗ syntax error: $f"; fail=1; }
+done
+[ $fail -eq 1 ] && exit 1
+
+# ถ้าแก้ server/src หรือ client/src แต่ไม่มีไฟล์ test ใน commit เดียวกัน → เตือน (ไม่ block)
+src_changed=$(echo "$staged" | grep -E '^(server/src|client/src)/' | grep -v '\.test\.' || true)
+test_changed=$(echo "$staged" | grep -E '\.test\.(js|jsx)$' || true)
+if [ -n "$src_changed" ] && [ -z "$test_changed" ]; then
+  echo "⚠  src changed without tests — ถ้าเป็น feature/bugfix ควรมี test (ดู TESTING_STRATEGY.md)"
+fi
+echo "✓ pre-commit ok"

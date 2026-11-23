@@ -90,6 +90,21 @@ jobs:
           BASE_URL: http://localhost:4000
         run: node tests/smoke.mjs
 
+  # ---------- SBOM (Software Bill of Materials) ----------
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate SBOM (syft → SPDX JSON)
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src anchore/syft:v1.23.0 \
+            dir:/src -o spdx-json=sbom.spdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-spdx
+          path: sbom.spdx.json
+          retention-days: 30
+
   # ---------- Security scanning (DevSecOps) ----------
   gitleaks:
     runs-on: ubuntu-latest
