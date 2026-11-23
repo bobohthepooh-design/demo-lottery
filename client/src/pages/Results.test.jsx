@@ -83,12 +83,12 @@ describe('Results — เลือกวัน', () => {
     expect(screen.getAllByText('กำลังโหลด…').length).toBeGreaterThan(0);
   });
 
-  it('ตารางออกรางวัลตามวันที่ต้องอยู่เหนือส่วนผลล่าสุดทุกตลาด', async () => {
+  it('การ์ดผลล่าสุดทุกตลาดอยู่เหนือตารางออกรางวัล (layout LC)', async () => {
     mockApi();
     renderPage();
     const tableHeader = await screen.findByText(/ตารางออกรางวัล.*รอบ/);
-    const latestHeader = await screen.findByText(/ผลล่าสุดที่บันทึกแล้วทุกตลาด/);
-    // DOCUMENT_POSITION_FOLLOWING = latestHeader อยู่หลัง tableHeader ใน DOM
-    expect(tableHeader.compareDocumentPosition(latestHeader) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const latestHeader = await screen.findByText(/ผลล่าสุดทุกตลาด/);
+    // DOCUMENT_POSITION_FOLLOWING = latestHeader อยู่ก่อน tableHeader ใน DOM
+    expect(latestHeader.compareDocumentPosition(tableHeader) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -52,7 +52,8 @@ export default function Results() {
 
   const load = () => api(`/lottery/today?date=${date}`).then(setData).catch(e => setErr(e.message));
   // ล้างข้อมูลเดิมทุกครั้งที่เปลี่ยนวัน — กันผลของวันเก่าค้างแสดงจน fetch ใหม่กลับมา
-  useEffect(() => { setData(null); setErr(''); load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
+  // + reset ตัวกรอง/ค้นหา — ไม่งั้นวันที่ใหม่ที่ไม่มีประเภทที่ filter อยู่จะดูเหมือนปุ่มใช้ไม่ได้
+  useEffect(() => { setData(null); setErr(''); setTypeFilter(''); setQ(''); load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [date]);
 
   // ดึงโพยของฉันครั้งเดียว — mark รอบที่มีรายการถูกรางวัล เพื่อไฮไลต์ในตารางผล
   useEffect(() => {
