@@ -23,6 +23,11 @@ function resultSummary(w) {
   const parts = [];
   const pushArr = (label, v) => { if (v) parts.push(`${label}: ${asList(v)}`); };
   pushArr('รางวัลที่ 1', w.first ?? w.p1);
+  // หวยรัฐบาล — รางวัลที่ 2-5 + เลขอั้น (หลายสิบ-ร้อยเลข ต่อแถวพับได้)
+  for (const [key, label] of [['second', 'รางวัลที่ 2'], ['third', 'รางวัลที่ 3'], ['fourth', 'รางวัลที่ 4'], ['fifth', 'รางวัลที่ 5']]) {
+    if (w[key]?.length) parts.push(`${label} (${w[key].length} เลข): ${asList(w[key])}`);
+  }
+  if (w.near1?.length) parts.push(`เลขอั้น: ${asList(w.near1)}`);
   if (w.p2) parts.push(`อ.2: ${asList(w.p2)}`);
   if (w.p3) parts.push(`อ.3: ${asList(w.p3)}`);
   if (w.p4) parts.push(`อ.4: ${asList(w.p4)}`);

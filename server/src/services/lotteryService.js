@@ -30,6 +30,12 @@ const WINNING_FIELD_SPECS = {
   p3: { re: /^\d{7}$/, desc: 'อันดับที่ 3 — 7 หลัก' },
   p4: { re: /^\d{7}$/, desc: 'อันดับที่ 4 — 7 หลัก' },
   p5: { re: /^\d{7}$/, desc: 'อันดับที่ 5 — 7 หลัก' },
+  // หวยรัฐบาล — รางวัลที่ 2-5 (เลข 6 หลัก หลายสิบ-ร้อยเลข) + เลขอั้น (เก็บไว้แสดงผล ไม่ใช้ settle)
+  second:  { re: /^\d{6}$/, desc: 'รางวัลที่ 2 — 6 หลัก', many: true, max: 120 },
+  third:   { re: /^\d{6}$/, desc: 'รางวัลที่ 3 — 6 หลัก', many: true, max: 120 },
+  fourth:  { re: /^\d{6}$/, desc: 'รางวัลที่ 4 — 6 หลัก', many: true, max: 120 },
+  fifth:   { re: /^\d{6}$/, desc: 'รางวัลที่ 5 — 6 หลัก', many: true, max: 120 },
+  near1:   { re: /^\d{6}$/, desc: 'เลขอั้นรางวัลที่ 1 — 6 หลัก', many: true, max: 20 },
 };
 const WINNING_SPECIAL_KEYS = ['ann_top_pay', 'ann_bottom_pay', 'zodiac', 'seq', 'numbers'];
 
@@ -70,8 +76,8 @@ export function validateWinningNumbers(winningNumbers) {
     if (!spec)
       throw new HttpError(400, `ไม่รู้จัก field ผลรางวัล "${key}" — field ที่ใช้ได้: ${[...Object.keys(WINNING_FIELD_SPECS), ...WINNING_SPECIAL_KEYS].join(', ')}`);
     const vals = Array.isArray(raw) ? raw : [raw];
-    if (!vals.length || vals.length > 20)
-      throw new HttpError(400, `field "${key}" ต้องมีค่า 1-20 รายการ`);
+    if (!vals.length || vals.length > (spec.max ?? 20))
+      throw new HttpError(400, `field "${key}" ต้องมีค่า 1-${spec.max ?? 20} รายการ`);
     for (const v of vals) {
       const s = String(v ?? '').trim();
       if (!spec.re.test(s))

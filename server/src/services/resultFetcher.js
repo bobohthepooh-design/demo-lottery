@@ -50,6 +50,9 @@ export async function fetchThaiResult() {
     date: d.date,
     winning: {
       first: vals(g.first)[0] || null,
+      // รางวัลที่ 2-5 + เลขอั้น — GLO ให้มาครบ เก็บไว้แสดงผล (ไม่ใช้ settle เพราะไม่มี rule)
+      second: vals(g.second), third: vals(g.third), fourth: vals(g.fourth), fifth: vals(g.fifth),
+      near1: vals(g.near1),
       front3: vals(g.last3f),
       top3: vals(g.last3b),
       top4: String(vals(g.first)[0] || '').replace(/\D/g, '').slice(-4) || null,
@@ -105,10 +108,18 @@ export function generateHanoiResult(drawCode) {
 export function generateThaiResult(drawCode) {
   const rng = mulberry32(hashSeed(`thai:${drawCode}`));
   const n3 = () => pad(rnd(rng, 100, 999), 3);
+  const n6 = (min, max) => {
+    const s = new Set();
+    while (s.size < max) s.add(pad(rnd(rng, min, 999999), 6));
+    return [...s];
+  };
+  const first = pad(rnd(rng, 100000, 999999), 6);
   return {
     date: null,
     winning: {
-      first: pad(rnd(rng, 100000, 999999), 6),
+      first,
+      second: n6(100000, 5), third: n6(100000, 10), fourth: n6(100000, 20), fifth: n6(100000, 30),
+      near1: [String((Number(first) - 1 + 1000000) % 1000000).padStart(6, '0'), String((Number(first) + 1) % 1000000).padStart(6, '0')],
       front3: [n3(), n3()],
       top3: [n3(), n3()],
       bottom2: pad(rnd(rng, 0, 99), 2),
@@ -253,9 +264,12 @@ function winningFor(kind, x) {
     return w;
   }
   if (kind === 'thai-gov') {
-    // หวยรัฐบาล — fallback ของ GLO: เลข 6 หลัก + เลขหน้า/ท้าย 3 ตัว (ตลาดละ 2 เลข) + เลขท้าย 2 ตัว
+    // หวยรัฐบาล — fallback ของ GLO: เลข 6 หลัก + รางวัล 2-5 + เลขอั้น + เลขหน้า/ท้าย 3 ตัว + เลขท้าย 2 ตัว
     return {
       first: lcNum(x, 'first-prize', 6),
+      second: lcAll(x, 'second-prize', 6), third: lcAll(x, 'third-prize', 6),
+      fourth: lcAll(x, 'fourth-prize', 6), fifth: lcAll(x, 'fifth-prize', 6),
+      near1: lcAll(x, 'near-first-prize', 6),
       front3: lcAll(x, 'first-three-digit', 3),
       top3: lcAll(x, 'last-three-digit', 3),
       bottom2: lcNum(x, 'last-two-digit', 2),
