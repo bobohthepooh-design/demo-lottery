@@ -332,18 +332,26 @@ router.get('/latest-results', async (req, res, next) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 4, 1), 20);
     const exclude = String(req.query.exclude || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    // dedupe 1 ผลต่อตลาด (type+category) — กัน HR/เกมถี่ๆ ท่วมจนตลาดอื่นหาย (เหมือน /results)
     const rows = await getDb().prepare(`
-      SELECT d.id, d.draw_code, d.draw_at, d.status,
-             lt.code AS type_code, lt.name_th AS type_name_th,
-             c.code AS category_code, c.name_th AS category_name_th,
-             lr.winning_numbers, lr.source AS result_source, lr.published_at
-      FROM lottery_results lr
-      JOIN lottery_draws d ON d.id = lr.draw_id
-      JOIN lottery_types lt ON lt.id = d.lottery_type_id
-      LEFT JOIN lottery_categories c ON c.id = d.category_id
-      WHERE lt.is_active = 1 AND d.status <> 'cancelled'
-        AND lt.code <> ALL($1::text[])
-      ORDER BY d.draw_at DESC, lr.id DESC
+      WITH ranked AS (
+        SELECT d.id, d.draw_code, d.draw_at, d.status,
+               lt.code AS type_code, lt.name_th AS type_name_th,
+               c.code AS category_code, c.name_th AS category_name_th,
+               lr.winning_numbers, lr.source AS result_source, lr.published_at,
+               ROW_NUMBER() OVER (
+                 PARTITION BY lt.id, COALESCE(c.id, 0)
+                 ORDER BY d.draw_at DESC, lr.id DESC
+               ) AS rn
+        FROM lottery_results lr
+        JOIN lottery_draws d ON d.id = lr.draw_id
+        JOIN lottery_types lt ON lt.id = d.lottery_type_id
+        LEFT JOIN lottery_categories c ON c.id = d.category_id
+        WHERE lt.is_active = 1 AND d.status <> 'cancelled'
+          AND lt.code <> ALL($1::text[])
+      )
+      SELECT * FROM ranked WHERE rn = 1
+      ORDER BY draw_at DESC
       LIMIT $2`).all(exclude, limit);
     const sourceChecks = await fetcher.getResultSourceChecks(rows.map(d => d.id));
     res.json({

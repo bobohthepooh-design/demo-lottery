@@ -1,9 +1,29 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { api, fmtDateTime, satang } from '../api.js';
+import { api, fmtDateTime, satang, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import ResultLine from '../components/ResultLine.jsx';
+import { FlagIcon } from '../components/ResultLine.jsx';
+import { sourceBadge } from '../resultSource.js';
 import { Marquee } from '../components/ui/index.js';
+
+// เลขเด่นสำหรับการ์ดผลล่าสุด — เหมือนหน้า Results (รางวัลใหญ่/เลขหลัก/บน-ล่าง)
+const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
+function heroNumbers(w) {
+  if (!w) return [];
+  const out = [];
+  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  const first = firstOf(w.first ?? w.p1);
+  if (first) out.push({ label: 'รางวัลที่ 1', num: first });
+  const main = w.main || w.num4;
+  if (main) out.push({ label: w.num4 && !w.main ? 'เลข 4 ตัว' : 'เลขหลัก', num: main });
+  const top = asList(w.top3 ?? w.last3 ?? w.front3);
+  if (top) out.push({ label: 'เลขบน 3 ตัว', num: top });
+  const bot = w.bottom2 ?? w.last2 ?? w.top2;
+  if (bot) out.push({ label: 'เลขล่าง 2 ตัว', num: asList(bot) });
+  return out.slice(0, 3);
+}
+const GROUP_ORDER = ['TH', 'LA', 'HN', 'GS', 'HR'];
+const GROUP_LABEL = { TH: 'ไทย', LA: 'ลาว', HN: 'ฮานอย', GS: 'ออมสิน', HR: 'ราศี' };
 
 export default function Home() {
   const { user, demoNotice, isAdmin, balance } = useAuth();
@@ -18,8 +38,8 @@ export default function Home() {
       setCashbackPct(Number(r.cashbackPercent) || 0);
     }).catch(() => {});
     const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-    // ผลล่าสุด 4 รายการข้ามตลาด — server กรองเกมด่วน/ราศีออกแล้ว
-    const loadLatest = () => api('/lottery/latest-results?limit=4&exclude=SC,HL,KI,CF,HR').then(r => setLatestResults(r.draws || [])).catch(() => {});
+    // ผลล่าสุด 6 รายการข้ามตลาด (1 ต่อตลาด) — server กรองเกมด่วน/ราศีออกแล้ว
+    const loadLatest = () => api('/lottery/latest-results?limit=6&exclude=SC,HL,KI,CF,HR').then(r => setLatestResults(r.draws || [])).catch(() => {});
     loadToday(); loadLatest();
     const t = setInterval(() => { loadToday(); loadLatest(); }, 30000); // refresh อัตโนมัติ — ผลใหม่ขึ้นเอง
     const h = () => { loadToday(); loadLatest(); };
@@ -64,14 +84,29 @@ export default function Home() {
       .sort((a, b) => String(b.settled[0].draw_at).localeCompare(String(a.settled[0].draw_at)));
   })();
 
-  // ผลรางวัล 4 รายการล่าสุด — จาก endpoint ข้ามตลาด (fallback todayDraws ถ้า endpoint ไม่มีข้อมูล)
+  // ผลรางวัลล่าสุด 6 การ์ด — แสดงแบบเดียวกับหน้า Results (LC-style) แต่เฉพาะ 5-6 ล่าสุด
   const recentResults = (() => {
     const src = latestResults.length ? latestResults : todayDraws;
     const INSTANT = new Set(['SC', 'HL', 'KI', 'CF', 'HR']);
+    const seen = new Set();
     return src
       .filter(d => drawVisible(d) && !INSTANT.has(d.type_code) && d.winning)
+      .filter(d => { const k = `${d.type_code}|${d.category_code || ''}`; if (seen.has(k)) return false; seen.add(k); return true; })
       .sort((a, b) => String(b.draw_at).localeCompare(String(a.draw_at)))
-      .slice(0, 4);
+      .slice(0, 6);
+  })();
+  // จัดกลุ่มตามประเทศสำหรับหัวข้อการ์ด
+  const recentGroups = (() => {
+    const m = new Map();
+    for (const d of recentResults) {
+      const k = d.type_code || '';
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(d);
+    }
+    return [...m.entries()].sort((a, b) => {
+      const ia = GROUP_ORDER.indexOf(a[0]), ib = GROUP_ORDER.indexOf(b[0]);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
   })();
 
   return (
@@ -143,25 +178,56 @@ export default function Home() {
         </div>
       )}
 
-      {/* ผลรางวัล 4 รายการล่าสุด — เรียงตามเวลาจริง */}
+      {/* ผลรางวัลล่าสุด — การ์ดแบบเดียวกับหน้า Results (LC-style) เฉพาะ 5-6 รายการล่าสุด */}
       {recentResults.length > 0 && (
-        <section>
-          <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
+        <section className="space-y-3">
+          <div className="flex items-end justify-between flex-wrap gap-2">
             <div>
               <div className="kicker mb-1">Latest Results</div>
               <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
-              <p className="text-xs text-navy-400 mt-0.5">4 รายการล่าสุด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
+              <p className="text-xs text-navy-400 mt-0.5">{recentResults.length} ตลาดล่าสุด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
             </div>
             <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {recentResults.map(d => (
-              <Link key={d.id} to="/results"
-                className="group transition hover:-translate-y-0.5">
-                <ResultLine r={d} compact />
-              </Link>
-            ))}
-          </div>
+          {recentGroups.map(([code, items]) => (
+            <div key={code}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <FlagIcon code={code} className="w-4 h-4 text-[8px]" />
+                <span className="text-xs font-bold text-navy-200">{GROUP_LABEL[code] || code}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {items.map(d => {
+                  let w = d.winning;
+                  if (typeof w === 'string') { try { w = JSON.parse(w); } catch { w = null; } }
+                  const heroes = heroNumbers(w);
+                  const badge = sourceBadge(d.result_source);
+                  return (
+                    <Link key={d.id} to="/results"
+                      className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5 hover:border-gold-500/40 transition group">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
+                        <span className="text-xs font-bold text-white group-hover:text-gold-300">{d.category_name_th || d.type_name_th}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-bold">ออกผลแล้ว</span>
+                        {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
+                      </div>
+                      <div className="text-[10px] text-navy-400 mt-1">งวดวันที่ {thaiDate(d.draw_at)}</div>
+                      {heroes.length > 0 && (
+                        <div className="grid grid-cols-3 gap-1 mt-2">
+                          {heroes.map(h => (
+                            <div key={h.label} className="text-center bg-navy-900/60 rounded-lg py-1.5 px-1">
+                              <div className="text-[8px] text-navy-400 leading-tight">{h.label}</div>
+                              <div className="font-mono font-bold text-gold-300 text-sm leading-tight mt-0.5 break-all">{h.num}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-[9px] text-navy-500 mt-1.5">อัปเดต {thaiTime(d.published_at || d.draw_at)}</div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </section>
       )}
     </div>
