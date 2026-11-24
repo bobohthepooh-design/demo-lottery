@@ -104,7 +104,7 @@ function RoundCard({ d, nowSql, nowMs }) {
 
 function TypeCard({ tg, onClick }) {
   const ac = typeAccent(tg.typeCode);
-  const cardCls = `${ac.chip} border-2 rounded-xl p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer`;
+  const cardCls = `bg-navy-800/80 border-2 ${ac.border} rounded-xl p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer hover:bg-navy-700/80`;
   return (
     <div onClick={onClick} className={cardCls}>
       <FlagIcon code={tg.typeCode} className="w-12 h-8 rounded-lg mb-2" />
