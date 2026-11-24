@@ -77,64 +77,6 @@ function RoundRow({ d, nowSql, nowMs }) {
   );
 }
 
-// Tile สำหรับประเภทหวยหลัก (level 1) — พื้นเรียบ template เดียวกันทุกประเภท
-function TypeTile({ tg, expanded, onClick }) {
-  const hasLive = tg.liveRounds > 0;
-  return (
-    <button
-      onClick={onClick}
-      className={`relative flex flex-col items-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-2xl border border-navy-600 bg-navy-800/60 hover:bg-navy-700/70 hover:border-gold-400/50 transition-all duration-200 text-center shadow-lg shadow-black/20 ${
-        expanded ? 'ring-2 ring-gold-300/80 bg-navy-700/70' : ''
-      }`}
-    >
-      <FlagIcon code={tg.typeCode} className="w-12 h-9 rounded-lg overflow-hidden" />
-      <div className="text-xs sm:text-sm font-bold text-white leading-tight text-center break-words w-full">{tg.typeName}</div>
-      <div className="flex items-center gap-1.5 text-xs">
-        {hasLive ? (
-          <span className="inline-flex items-center gap-1 text-green-300 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            {tg.liveRounds} รอบ
-          </span>
-        ) : (
-          <span className="text-navy-400">{tg.totalRounds} รอบ</span>
-        )}
-      </div>
-      {tg.hasCategories && (
-        <div className="text-xs text-navy-200">{tg.catList.length} ตลาด</div>
-      )}
-      {expanded && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gold-400 shadow shadow-gold-400/50" />
-      )}
-    </button>
-  );
-}
-
-// Tile สำหรับหมวด/ตลาดย่อย (level 2) — พื้นเรียบ แม่แบบเดียวกัน
-function CategoryTile({ cat, typeCode, expanded, onClick }) {
-  const hasLive = cat.liveCount > 0;
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl border border-navy-600 bg-navy-800/60 hover:bg-navy-700/70 hover:border-gold-400/50 transition-all duration-200 text-center shadow-md shadow-black/20 ${
-        expanded ? 'ring-2 ring-gold-300/80 bg-navy-700/70' : ''
-      }`}
-    >
-      <FlagIcon code={typeCode} className="w-8 h-6 sm:w-9 sm:h-7 rounded-md overflow-hidden" />
-      <div className="text-[10px] sm:text-xs font-semibold text-white leading-tight truncate w-full">{cat.catName}</div>
-      <div className="flex items-center gap-1 text-[10px] sm:text-xs">
-        {hasLive ? (
-          <span className="inline-flex items-center gap-0.5 text-green-300 font-semibold">
-            <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
-            {cat.liveCount}
-          </span>
-        ) : (
-          <span className="text-navy-400">{cat.roundCount} รอบ</span>
-        )}
-      </div>
-    </button>
-  );
-}
-
 export default function BetHub() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -235,10 +177,6 @@ export default function BetHub() {
     });
   }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql]);
 
-  // หา type ที่เปิดอยู่ (เผื่อ data refresh แล้ว type หายไป)
-  const activeType = typeGroups.find(t => t.typeCode === openType) || null;
-  const activeCat = activeType?.catList.find(c => c.catCode === openCat) || null;
-
   // รอบที่เปิดแทงอยู่ตอนนี้ทุกตลาด — ปุ่ม "แทงเลย" 1 คลิก (ยกเว้นหวยราศี HR)
   const liveNow = useMemo(() => {
     if (!draws) return [];
@@ -313,93 +251,83 @@ export default function BetHub() {
         <EmptyState title="ไม่มีรอบหวยที่เปิดรับในขณะนี้" sub="ลองตรวจสอบอีกครั้งภายหลัง" />
       ) : (
         <>
-          {/* Type Grid — 3 columns */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
-            {typeGroups.map(tg => (
-              <TypeTile
-                key={tg.typeCode}
-                tg={tg}
-                expanded={openType === tg.typeCode}
-                onClick={() => {
-                  if (openType === tg.typeCode) {
-                    setOpenType(''); setOpenCat('');
-                  } else {
-                    setOpenType(tg.typeCode); setOpenCat('');
-                  }
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Expanded Type Content */}
-          {activeType && (
-            <div className="animate-fade-in">
-              {/* Type Header */}
-              <div className="flex items-center gap-2 sm:gap-3 mb-4 flex-wrap">
-                <FlagIcon code={activeType.typeCode} className="w-7 h-5 sm:w-8 sm:h-6 rounded-md overflow-hidden" />
-                <h2 className="text-base sm:text-xl font-bold text-white">{activeType.typeName}</h2>
-                <span className="text-xs sm:text-sm text-navy-300">
-                  {activeType.hasCategories
-                    ? `${activeType.totalRounds} รอบ • ${activeType.catList.length} ตลาด`
-                    : `${activeType.totalRounds} รอบ`}
-                </span>
-                <button
-                  onClick={() => { setOpenType(''); setOpenCat(''); }}
-                  className="ml-auto text-xs sm:text-sm text-navy-400 hover:text-white transition-colors"
-                >
-                  ✕ ปิด
-                </button>
-              </div>
-
-              {/* Type without categories — show rounds directly */}
-              {!activeType.hasCategories && activeType.catList[0] && (
-                <div className="space-y-2">
-                  {activeType.catList[0].rounds.map(d => (
-                    <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
-                  ))}
-                </div>
-              )}
-
-              {/* Type with categories — show category grid + selected category rounds */}
-              {activeType.hasCategories && (
-                <>
-                  {/* Category Grid — 3 columns */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    {activeType.catList.map(cat => (
-                      <CategoryTile
-                        key={cat.catCode}
-                        cat={cat}
-                        typeCode={activeType.typeCode}
-                        expanded={openCat === cat.catCode}
-                        onClick={() => setOpenCat(openCat === cat.catCode ? '' : cat.catCode)}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Selected Category Rounds */}
-                  {activeCat && (
-                    <div className="mt-4">
-                      <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <span className="text-sm sm:text-base font-semibold text-navy-200">{activeCat.catName}</span>
-                        <span className="text-xs sm:text-sm text-navy-400">{activeCat.roundCount} รอบ</span>
-                        <button
-                          onClick={() => setOpenCat('')}
-                          className="ml-auto text-xs sm:text-sm text-navy-400 hover:text-white transition-colors"
-                        >
-                          ✕ ปิด
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {activeCat.rounds.map(d => (
-                          <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
-                        ))}
+          {/* ประเภทหวย — list section ต่อประเภท (กดหัวข้อเพื่อขยายดูหมวด/รอบ) */}
+          <div className="space-y-3">
+            {typeGroups.map(tg => {
+              const open = openType === tg.typeCode;
+              const nextBet = tg.catList.map(c => c.next).filter(Boolean).sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)))[0];
+              return (
+                <div key={tg.typeCode} className={`rounded-2xl border overflow-hidden transition-colors ${open ? 'border-gold-500/40 bg-navy-800/60' : 'border-navy-700/50 bg-navy-800/40'}`}>
+                  <button
+                    onClick={() => {
+                      if (openType === tg.typeCode) { setOpenType(''); setOpenCat(''); }
+                      else { setOpenType(tg.typeCode); setOpenCat(''); }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-navy-800/70 transition-colors"
+                  >
+                    <FlagIcon code={tg.typeCode} className="w-9 h-7 rounded-md overflow-hidden shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-white truncate">{tg.typeName}</div>
+                      <div className="text-[11px] text-navy-400 mt-0.5">
+                        {tg.totalRounds} รอบ{tg.hasCategories ? ` • ${tg.catList.length} ตลาด` : ''}
+                        {nextBet && ` • ถัดไป ${thaiHM(nextBet.draw_at)} น.`}
                       </div>
                     </div>
+                    {tg.liveRounds > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-green-500/15 border border-green-500/40 text-green-300 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        {tg.liveRounds} เปิด
+                      </span>
+                    )}
+                    <span className="text-navy-500 text-sm shrink-0">{open ? '▾' : '▸'}</span>
+                  </button>
+
+                  {open && (
+                    <div className="px-3 pb-3 pt-1 space-y-2 border-t border-navy-700/40">
+                      {/* ประเภทไม่มีหมวดย่อย — แสดงรอบตรงๆ */}
+                      {!tg.hasCategories && tg.catList[0] && (
+                        tg.catList[0].rounds.map(d => (
+                          <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
+                        ))
+                      )}
+
+                      {/* มีหมวดย่อย — list หมวด แต่ละหมวดกดขยายดูรอบ */}
+                      {tg.hasCategories && tg.catList.map(cat => {
+                        const catOpen = openCat === cat.catCode;
+                        return (
+                          <div key={cat.catCode} className="rounded-xl border border-navy-700/50 bg-navy-900/40 overflow-hidden">
+                            <button
+                              onClick={() => setOpenCat(catOpen ? '' : cat.catCode)}
+                              className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-navy-800/60 transition-colors"
+                            >
+                              <FlagIcon code={tg.typeCode} className="w-6 h-4 rounded overflow-hidden shrink-0" />
+                              <span className="flex-1 text-sm font-semibold text-navy-100 truncate">{cat.catName}</span>
+                              {cat.liveCount > 0 && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40 text-green-300 whitespace-nowrap">
+                                  {cat.liveCount} เปิด
+                                </span>
+                              )}
+                              <span className="text-[10px] text-navy-400 whitespace-nowrap">
+                                {cat.next ? thaiHM(cat.next.draw_at) + ' น.' : `${cat.roundCount} รอบ`}
+                              </span>
+                              <span className="text-navy-500 text-xs shrink-0">{catOpen ? '▾' : '▸'}</span>
+                            </button>
+                            {catOpen && (
+                              <div className="px-2 pb-2 pt-1 space-y-2 border-t border-navy-700/40">
+                                {cat.rounds.map(d => (
+                                  <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                </>
-              )}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
         </>
       )}
     </div>
