@@ -224,14 +224,14 @@
    RESPONSIVE UTILITIES
    ============================================ */
 
-/* Mobile (≤768px) — อ่านง่ายขึ้นบนมือถือ */
+/* Mobile (≤768px) — อ่านง่ายขึ้นบนมือถือ (ขยาย ~50% จากเดิม) */
 @media (max-width: 768px) {
   .luxury-card {
     border-radius: var(--radius-lg);
   }
 
   html {
-    font-size: 15px;
+    font-size: 22px;
   }
 
   /* Touch-friendly button sizes (minimum 44x44px for iOS) */
@@ -255,10 +255,10 @@
   }
 }
 
-/* Small mobile (≤480px) */
+/* Small mobile (≤480px) — จอเล็กมาก ลดลงเล็กน้อยกันล้น */
 @media (max-width: 480px) {
   html {
-    font-size: 15px;
+    font-size: 20px;
   }
 
   /* Even more compact spacing */
@@ -274,7 +274,7 @@
 /* Tablet (768px - 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   html {
-    font-size: 16px;
+    font-size: 24px;
   }
 
   .luxury-card {
@@ -285,7 +285,7 @@
 /* Desktop (1024px+) */
 @media (min-width: 1025px) {
   html {
-    font-size: 17px;
+    font-size: 26px;
   }
 
   /* Larger spacing for desktop luxury feel */
@@ -305,6 +305,6 @@
 /* Large desktop (1440px+) */
 @media (min-width: 1440px) {
   html {
-    font-size: 18px;
+    font-size: 27px;
   }
 }

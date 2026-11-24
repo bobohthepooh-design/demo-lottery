@@ -125,6 +125,12 @@
   --breakpoint-md: 1024px;
   --breakpoint-lg: 1280px;
   --breakpoint-xl: 1440px;
+
+  /* ===== Lock spacing scale เป็น px — แยกจาก rem =====
+     ปกติ Tailwind derive padding/margin/gap จาก --spacing (default 0.25rem)
+     ซึ่งจะพองตาม root font-size — ตั้งเป็น px ตายตัวเพื่อให้ขยายเฉพาะ "ตัวอักษร"
+     ตามที่ผู้ใช้ต้องการ โดยขนาด layout/ช่องว่างคงที่ ไม่ล้นจอ */
+  --spacing: 4px;
 }
 
 body {
@@ -892,12 +898,21 @@ button, [role="button"], a { transition: transform var(--duration-fast, 120ms) e
   .topnav-link { font-size: 12px; padding-left: 5px; padding-right: 5px; }
 }
 
-/* ===== Legibility floor — ตัวหนังสือจิ๋ว (7-10px) อ่านยากบนทุก device =====
+/* ===== Legibility floor — ตัวหนังสือจิ๋ว (px-based ไม่ scale ตาม root)
+   ยกขึ้นให้สอดคล้องกับ body text ที่ใหญ่ขึ้น ~50%
    class~= match เฉพาะ token ตรงๆ ไม่โดน sm:/md: variants */
-[class~="text-[7px]"] { font-size: 9px; }
-[class~="text-[8px]"] { font-size: 10px; }
-[class~="text-[9px]"] { font-size: 10px; }
-[class~="text-[10px]"] { font-size: 11px; }
+[class~="text-[7px]"], [class~="text-[8px]"], [class~="text-[9px]"] { font-size: 13px; }
+[class~="text-[10px]"] { font-size: 14px; }
+[class~="text-[11px]"] { font-size: 15px; }
+[class~="text-[12px]"] { font-size: 16px; }
+[class~="text-[13px]"] { font-size: 17px; }
+
+/* variants บนจอ ≥640px (sm:) — base class ไม่ match จึงต้องแยก rule */
+@media (min-width: 640px) {
+  [class~="sm:text-[8px]"], [class~="sm:text-[9px]"] { font-size: 13px; }
+  [class~="sm:text-[10px]"] { font-size: 14px; }
+  [class~="sm:text-[11px]"] { font-size: 15px; }
+}
 
 /* ===== Page transition + stagger-in (micro-interactions) ===== */
 @keyframes page-enter {
