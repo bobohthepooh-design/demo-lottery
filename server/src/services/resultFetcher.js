@@ -211,7 +211,8 @@ const suffix5 = (main) => {
     last5: take(5), last4: take(4), last3: take(3), last2: take(2), last1: take(1),
     // ลาว/ฮานอยไม่มีรางวัลล่างแยก — bottom* = ค่าเดียวกับ last* (ให้กติกา แบบไทยใช้งานได้)
     bottom2: take(2), bottom1: take(1),
-    main: m.length === 6 ? m : null,
+    // เลขรางวัลหลัก = เลขพิเศษดิบ — ลาวพัฒนา 6 หลัก / ลาว-ฮานอย 5 หลัก (ĐB เวียดนามเป็น 5 หลัก)
+    main: m.length >= 5 && m.length <= 6 ? m : null,
     num4: take(4), db5: take(5),
   };
 };

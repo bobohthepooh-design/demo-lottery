@@ -25,7 +25,7 @@ const TH = {
 const LAHN = {
   hero: 'main',
   fields: [
-    { key: 'main',    label: 'เลขรางวัลหลัก',   short: 'หลัก',   digits: 6, prizes: 1 },
+    { key: 'main',    label: 'เลขรางวัลหลัก (5-6 หลัก)', short: 'หลัก', digits: 6, prizes: 1 },
     { key: 'last5',   label: 'เลขท้าย 5 ตัว',   short: '5ตัว',   digits: 5, prizes: 1, optional: true },
     { key: 'last4',   label: 'สี่ตัวบน',         short: '4บน',   digits: 4, prizes: 1, optional: true },
     { key: 'last3',   label: 'สามตัวบน',         short: '3บน',   digits: 3, prizes: 1, optional: true },

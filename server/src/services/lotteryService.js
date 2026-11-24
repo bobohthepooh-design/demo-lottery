@@ -12,7 +12,7 @@ export const BET_TYPES = ['2top', '2bottom', '3top', '3tod', 'top4', 'run_top', 
 // field → รูปแบบที่ยอมรับ (string หรือ array ของ string ก็ได้ — engine แบนทั้งคู่)
 const WINNING_FIELD_SPECS = {
   first:   { re: /^\d{6}$/, desc: 'รางวัลที่ 1 — เลข 6 หลัก' },
-  main:    { re: /^\d{6}$/, desc: 'เลขหลัก — 6 หลัก' },
+  main:    { re: /^\d{5,6}$/, desc: 'เลขหลัก — 5-6 หลัก' },
   db5:     { re: /^\d{5}$/, desc: 'ผล DB — 5 หลัก' },
   num4:    { re: /^\d{4}$/, desc: 'เลข 4 ตัว' },
   last5:   { re: /^\d{5}$/, desc: 'เลขท้าย 5 ตัว' },

@@ -36,7 +36,8 @@ function winningFor(typeCode, categoryCode) {
     return { main: rnd(6) };
   }
   if (typeCode === 'HN') {
-    return { main: rnd(6) };
+    // Hanoi ĐB = เลขพิเศษ 5 หลัก (ผลจริงจาก XSMB)
+    return { main: rnd(5) };
   }
   if (typeCode === 'HR') {
     const pool = [...ZODIAC_SIGNS];
