@@ -224,8 +224,9 @@ function winningFor(kind, x) {
     return { ...suffix5(s6), main: s6 };
   }
   if (kind === 'lao-dev') {
-    // หวยลาวพัฒนา — ผลที่ประกาศคือ เลขท้าย 4/3/2 ตัวโดยตรง (LC ไม่มีเลข 6 หลัก)
-    // spec ต้องการ suffix จากเลขหลัก → ใช้ last4 เป็น main เท่าที่มี (backward compat)
+    // หวยลาวพัฒนา — เลขหลัก 6 หลัก (special-prize) ถ้ามี; ไม่งั้นใช้เลขท้าย 4 ตัวที่ LC มี
+    const s6 = lcNum(x, 'special-prize', 6);
+    if (s6) return { ...suffix5(s6), main: s6 };
     const l4 = lcNum(x, 'last-four-digit', 4);
     return { ...suffix5(l4), last4: l4, num4: l4 };
   }
@@ -514,11 +515,17 @@ async function autoSettleResultsInner() {
     if (d.type_code === 'HR')
       return [{ label: 'HR(gen)', role: 'primary', url: 'internal:generate', get: () => cached('src:HR(gen)', async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) })) }];
     if (d.type_code === 'LA' && cat === 'LAD') {
-      // หวยลาวพัฒนา — เว็บทางการ laodl.com เป็น primary, LC lao-lottery เป็น backup
+      // หวยลาวพัฒนา — เว็บทางการ laodl.com เป็น primary (เลข 6 หลักครบ)
+      // backup LC มีแค่เลขท้าย 4/3/2 — รับเฉพาะผลที่มี last5 ไม่งั้นถือว่าไม่มีผล (กัน settle ไม่ครบ)
       const localDate = drawLocalDate(d);
+      const lcLaoDev = () => cached(`src:lao-lottery:${localDate}`, async () => {
+        const r = await lcWin('lao-lottery', 'lao-dev', localDate);
+        if (!r.winning?.last5) throw new Error('lao-lottery: ผลไม่ครบ (ไม่มีเลข 5 ตัวท้าย)');
+        return r;
+      });
       return [
         { label: 'LA(laodl)', role: 'official', url: LAODL_URL, get: () => cached(`src:laodl:${localDate}`, () => fetchLaoDevOfficial(localDate)) },
-        { label: 'LA(lao-lottery)', role: 'backup', url: LC_URL('lao-lottery'), get: () => cached(`src:lao-lottery:${localDate}`, () => lcWin('lao-lottery', 'lao-dev', localDate)) },
+        { label: 'LA(lao-lottery)', role: 'backup', url: LC_URL('lao-lottery'), get: lcLaoDev },
       ];
     }
     if (d.type_code === 'HN' && (cat === 'HNN' || cat === 'HNST')) return [
@@ -656,7 +663,11 @@ export async function fetchResultForDraw(drawId) {
   else if (d.type_code === 'LA' && d.cat_code === 'LAD')
     cands.push(
       ['LA(laodl)', 'official', LAODL_URL, () => fetchLaoDevOfficial(localDate)],
-      ['LA(lao-lottery)', 'backup', LC_URL('lao-lottery'), () => lcWinning('lao-lottery', 'lao-dev', localDate)]);
+      ['LA(lao-lottery)', 'backup', LC_URL('lao-lottery'), async () => {
+        const r = await lcWinning('lao-lottery', 'lao-dev', localDate);
+        if (!r.winning?.last5) throw new Error('lao-lottery: ผลไม่ครบ (ไม่มีเลข 5 ตัวท้าย)');
+        return r;
+      }]);
   else if (d.type_code === 'HN' && (d.cat_code === 'HNN' || d.cat_code === 'HNST'))
     cands.push(
       ['HN(XSMB)', 'primary', XSMB_URL, fetchHanoiResult],
