@@ -278,6 +278,29 @@ async function lcWinning(slug, kind, date) {
   return { date: raw.date, winning: winningFor(kind, raw), slug };
 }
 
+// ---------- LA: ຫວຍລາວພັດທະນາ (Lao Development Lottery) — เว็บทางการ laodl.com ----------
+// ผลจริง = เลข 6 หลัก 1 เลข → รางวัล 5/4/3/2/1 ตัวท้าย (spec: ทั้งหมดจากเลขหลัก)
+const LAODL_URL = 'https://laodl.com/api/website/laolot/WinPrizeHistory?type=1';
+let laodlCache = { at: 0, rows: null };
+async function laodlRounds() {
+  if (laodlCache.rows && Date.now() - laodlCache.at < 10 * 60e3) return laodlCache.rows;
+  const r = await fetchResilient(LAODL_URL,
+    { headers: { 'User-Agent': UA['User-Agent'], 'Accept': 'application/json' }, signal: AbortSignal.timeout(20000) });
+  if (!r.ok) throw new Error(`laodl HTTP ${r.status}`);
+  const j = await r.json();
+  const rows = (j?.resultData || []).filter(x => x && /^\d{6}$/.test(String(x.winNumber || '').replace(/\D/g, '')));
+  if (!rows.length) throw new Error('laodl: no result');
+  laodlCache = { at: Date.now(), rows };
+  return rows;
+}
+export async function fetchLaoDevOfficial(date) {
+  const rows = await laodlRounds();
+  const row = date ? rows.find(x => String(x.roundDate).slice(0, 10) === date) : rows[0];
+  if (!row) throw new Error(`laodl: no result for ${date || 'latest'}`);
+  const win = String(row.winNumber).replace(/\D/g, '');
+  return { date: String(row.roundDate).slice(0, 10), winning: { ...suffix5(win), main: win } };
+}
+
 async function xsmbRows() {
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
   const latest = xsmbCache.rows?.at(-1)?.date?.slice(0, 10);
@@ -490,6 +513,14 @@ async function autoSettleResultsInner() {
     ];
     if (d.type_code === 'HR')
       return [{ label: 'HR(gen)', role: 'primary', url: 'internal:generate', get: () => cached('src:HR(gen)', async () => ({ date: drawLocalDate(d), winning: generateZodiacResult(d.draw_code) })) }];
+    if (d.type_code === 'LA' && cat === 'LAD') {
+      // หวยลาวพัฒนา — เว็บทางการ laodl.com เป็น primary, LC lao-lottery เป็น backup
+      const localDate = drawLocalDate(d);
+      return [
+        { label: 'LA(laodl)', role: 'official', url: LAODL_URL, get: () => cached(`src:laodl:${localDate}`, () => fetchLaoDevOfficial(localDate)) },
+        { label: 'LA(lao-lottery)', role: 'backup', url: LC_URL('lao-lottery'), get: () => cached(`src:lao-lottery:${localDate}`, () => lcWin('lao-lottery', 'lao-dev', localDate)) },
+      ];
+    }
     if (d.type_code === 'HN' && (cat === 'HNN' || cat === 'HNST')) return [
       { label: 'HN(XSMB)', role: 'primary', url: XSMB_URL, get: () => cached(`src:HN(XSMB):${drawLocalDate(d)}`, fetchHanoiResult) },
       { label: 'HN(LC)',   role: 'backup',  url: LC_URL('hanoi-normal'), get: () => cached(`src:HN(LC):${drawLocalDate(d)}`, () => lcWin('hanoi-normal', 'hn', drawLocalDate(d))) },
@@ -622,6 +653,10 @@ export async function fetchResultForDraw(drawId) {
     ['TH(GLO)', 'official', GLO_URL, fetchThaiResult],
     ['TH(LC)', 'backup', LC_URL('thai-government'), () => lcWinning('thai-government', 'thai-gov', localDate)]);
   else if (d.type_code === 'HR') return { date: localDate, winning: generateZodiacResult(d.draw_code) };
+  else if (d.type_code === 'LA' && d.cat_code === 'LAD')
+    cands.push(
+      ['LA(laodl)', 'official', LAODL_URL, () => fetchLaoDevOfficial(localDate)],
+      ['LA(lao-lottery)', 'backup', LC_URL('lao-lottery'), () => lcWinning('lao-lottery', 'lao-dev', localDate)]);
   else if (d.type_code === 'HN' && (d.cat_code === 'HNN' || d.cat_code === 'HNST'))
     cands.push(
       ['HN(XSMB)', 'primary', XSMB_URL, fetchHanoiResult],

@@ -2,9 +2,25 @@
 // ผลจากแหล่งต่างกันเก็บ top3 เป็น array (ไทย) หรือ string (ลาว/ฮานอย) — normalize ก่อนแสดง
 export const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
 
+// หวยลาว/ฮานอย — ทุกประเภทแทงเป็นตัวท้าย 5/4/3/2/1 ของเลขรางวัลหลัก → แสดงเลขหลัก + suffix อย่างเดียว
+// (field เก่า num4/db5/top3/bottom2 ที่ derive ซ้ำไม่ต้องแสดง)
+const isLaoHn = (w) => !!(w.db5 ?? w.main ?? w.last5) && !w.first && !w.p1 && !w.zodiac;
+function laoHnSummary(w) {
+  const main = w.main ?? w.db5 ?? w.last5;
+  const m = String(main ?? '').replace(/\D/g, '');
+  if (!m) return null;
+  const parts = [`เลขรางวัล: ${m}`];
+  for (const n of [5, 4, 3, 2, 1]) {
+    const v = w[`last${n}`] ?? (m.length >= n ? m.slice(-n) : null);
+    if (v) parts.push(`${n} ตัว: ${v}`);
+  }
+  return parts;
+}
+
 // สรุปผลทุก field ที่มี — ครบทุกประเภทการแทงของแต่ละตลาด
 export function resultSummary(w) {
   if (!w) return null;
+  if (isLaoHn(w)) return laoHnSummary(w);
   const parts = [];
   const pushArr = (label, v) => { if (v) parts.push(`${label}: ${asList(v)}`); };
   pushArr('รางวัลที่ 1', w.first ?? w.p1);
@@ -39,6 +55,10 @@ export function compactSummary(w) {
   const parts = [];
   const push = (v) => { if (v !== undefined && v !== null && v !== '') parts.push(asList(v)); };
   const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  if (isLaoHn(w)) {
+    const m = String(w.main ?? w.db5 ?? w.last5 ?? '').replace(/\D/g, '');
+    return m ? [`เลขรางวัล ${m}`] : null;
+  }
   if (w.first || w.p1) parts.push(`รางวัล1: ${firstOf(w.first ?? w.p1)}`);
   if (w.p2) parts.push(`อ.2 ${firstOf(w.p2)}`);
   if (w.last4) parts.push(`ท้าย4 ${asList(w.last4)}`);
@@ -55,6 +75,11 @@ export function heroNumbers(w) {
   if (!w) return [];
   const out = [];
   const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  if (isLaoHn(w)) {
+    const m = String(w.main ?? w.db5 ?? w.last5 ?? '').replace(/\D/g, '');
+    if (m) out.push({ label: 'เลขรางวัล', num: m });
+    return out;
+  }
   const first = firstOf(w.first ?? w.p1);
   if (first) out.push({ label: 'รางวัลที่ 1', num: first });
   const main = w.main || w.num4 || w.db5;

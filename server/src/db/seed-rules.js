@@ -70,78 +70,38 @@ function buildRules(d) {
     await d.prepare(`UPDATE lottery_rules SET is_active = 0, bet_type = bet_type || '_old_' || CAST(id AS TEXT)
                WHERE is_active = 1`).run();
 
-    // ===== หวยไทย — อัตราจ่ายตามกติกาหวยรัฐบาลไทย (ต่อ 1 บาท) =====
-    // โต๊ดไม่ใช่ประเภทแทงแยก — อยู่ใน match_config.tod ของกติกาเต็ง (3หลัก=150, 2หลัก=45)
-    // ผล: { first:'123456', front3:['123','321'], top3:'456'(=ท้าย รางวัล1), last3:['456','654'](เลขท้าย 3 ตัวทางการ), bottom2:'56' }
-    push(TH, null, 'first',    'รางวัลที่ 1 (6 หลัก)', 6, 'first',    'exact', 1000);
+    // ===== หวยไทย — spec: บน 4/3/2 จากท้าย รางวัล 1, หน้า/หลัง/ล่าง = เลขแยก, วิ่ง = ตัวสุดท้าย =====
+    // ผล: { first, top4/top3/top2(ท้าย รางวัล1), front3, last3, bottom2, last1, bottom1 }
     push(TH, null, 'front3',   'เลข 3 ตัวหน้า',   3, 'front3',   'exact', 900, 100, 100, 1000000, 150);
     push(TH, null, 'top3',     'เลข 3 ตัวหลัง',   3, 'last3',    'exact', 900, 100, 100, 1000000, 150);
-    push(TH, null, 'bottom2',  'เลขท้าย 2 ตัวล่าง',2, 'bottom2',  'exact', 90, 100, 100, 1000000, 45);
-    // เลขวิ่ง —stake 1 หลัก ตรงกับ digit ใดก็ได้ในผล (บน=top3, ล่าง=bottom2)
-    push(TH, null, 'run_top',  'เลขวิ่งบน',        1, 'top3',     'digit_contains', 3.2);
-    push(TH, null, 'run_bottom','เลขวิ่งล่าง',     1, 'bottom2',  'digit_contains', 4.2);
+    push(TH, null, '2top',     'เลข 2 ตัวบน',     2, 'top2',     'exact', 95);
+    push(TH, null, '3top',     'เลข 3 ตัวบน',     3, 'top3',     'exact', 900, 100, 100, 1000000, 150);
+    push(TH, null, 'top4',     'เลข 4 ตัวบน',     4, 'top4',     'exact', 8000);
+    push(TH, null, 'bottom2',  'เลข 2 ตัวล่าง',   2, 'bottom2',  'exact', 90, 100, 100, 1000000, 45);
+    push(TH, null, 'run_top',  'เลขวิ่งบน',       1, 'last1',    'digit_contains', 3.2);
+    push(TH, null, 'run_bottom','เลขวิ่งล่าง',    1, 'bottom1',  'digit_contains', 4.2);
 
-    // ===== หวยลาว (LA) — ผลจริงมีรางวัล เลขท้าย 4/3/2 ตัว + เลข 2 ตัวล่าง(หลักหมื่น-พัน) =====
-    // ผล: { main:'123456', last4:'3456', last3:'456', last2:'56', bottom2:'45'(หลักหมื่น-พัน) }
-    push(LA_ID, LA, 'last4',   'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 6000);
-    push(LA_ID, LA, 'last3',   'เลข 3 ตัว',      3, 'last3',   'exact', 900, 100, 100, 1000000, 150);
-    push(LA_ID, LA, 'last2',   'เลข 2 ตัวบน',    2, 'last2',   'exact', 90,  100, 100, 1000000, 45);
-    push(LA_ID, LA, 'bottom2', 'เลข 2 ตัวล่าง',  2, 'bottom2', 'exact', 90,  100, 100, 1000000, 45);
-    push(LA_ID, LA, 'run_top',  'เลขวิ่งบน',      1, 'last3',   'digit_contains', 3.5);
-    push(LA_ID, LA, 'run_bottom','เลขวิ่งล่าง',   1, 'last2',   'digit_contains', 4.2);
-
-    // (หวยลาวพัฒนา LAD ปิดให้บริการ — ไม่มีแหล่งผลจริงแยกจากหวยลาวหลัก จึงไม่ seed กติกา/รอบใหม่)
-
-    // ===== หวยลาวเช้า (LAM) — เหมือนหวยลาว แต่ผลจาก lao-morning (5 หลัก) =====
-    push(LA_ID, LAM, 'last4',   'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 6000);
-    push(LA_ID, LAM, 'last3',   'เลข 3 ตัว',      3, 'last3',   'exact', 900, 100, 100, 1000000, 150);
-    push(LA_ID, LAM, 'last2',   'เลข 2 ตัวบน',    2, 'last2',   'exact', 90,  100, 100, 1000000, 45);
-    push(LA_ID, LAM, 'bottom2', 'เลข 2 ตัวล่าง',  2, 'bottom2', 'exact', 90,  100, 100, 1000000, 45);
-    push(LA_ID, LAM, 'run_top',  'เลขวิ่งบน',      1, 'last3',   'digit_contains', 3.5);
-    push(LA_ID, LAM, 'run_bottom','เลขวิ่งล่าง',   1, 'last2',   'digit_contains', 4.2);
-
-    // ===== หวยลาวพัฒนาเที่ยง (LADT) — ผล 6 หลักจาก lao-development-midday =====
-    // num4 = เลข 4 ตัวท้ายของเลขพิเศษ 6 หลัก, bottom2 = 2 ตัวแรก (ตามรางวัลจริง)
-    if (LADT) {
-      push(LA_ID, LADT, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 6000);
-      push(LA_ID, LADT, 'top3',     'เลข 3 ตัวบน',    3, 'top3',     'exact', 850, 100, 100, 1000000, 125);
-      push(LA_ID, LADT, 'bottom2',  'เลข 2 ตัวล่าง',  2, 'bottom2',  'exact', 90,  100, 100, 1000000, 45);
-      push(LA_ID, LADT, 'run_top',  'เลขวิ่งบน',      1, 'top3',     'digit_contains', 3.5);
-      push(LA_ID, LADT, 'run_bottom','เลขวิ่งล่าง',   1, 'bottom2',  'digit_contains', 4.2);
-    }
-
-    // ===== หวยลาวพัฒนาเช้า (LADAM) — ทุกวัน 09:00 — ตามตลาดจริง: 4ตัว/3บน/2บน/2ล่าง/วิ่งบน/ล่าง =====
-    push(LA_ID, LADAM, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 6000);
-    push(LA_ID, LADAM, 'top3',     'เลข 3 ตัวบน',    3, 'top3',     'exact', 900,  100, 100, 1000000, 150);
-    push(LA_ID, LADAM, 'top2',     'เลข 2 ตัวบน',    2, 'top3',     'tail',   90,  100, 100, 1000000, 45);
-    push(LA_ID, LADAM, 'bottom2',  'เลข 2 ตัวล่าง',  2, 'bottom2',  'exact', 90,  100, 100, 1000000, 45);
-    push(LA_ID, LADAM, 'run_top',  'เลขวิ่งบน',      1, 'top3',     'digit_contains', 3.2);
-    push(LA_ID, LADAM, 'run_bottom','เลขวิ่งล่าง',   1, 'bottom2',  'digit_contains', 4.2);
-
-    // ===== ฮานอย (HN) — ตามตลาดจริงเหมือนหวยไทย: 4ตัว/3บน/2บน/2ล่าง/วิ่งบน/วิ่งล่าง =====
-    // top2 = 2 ตัวท้ายของ top3 (คำนวณได้ทุกแหล่ง รวม lotterychecks ที่ไม่มี field top2)
-    // ผล: { num4, top3, top2, bottom2, db5 }
-    const hnRules = (catId) => {
-      push(HN, catId, 'num4',     'เลข 4 ตัว',      4, 'num4',     'exact', 2000);
-      push(HN, catId, 'top3',     'เลข 3 ตัวบน',    3, 'top3',     'exact', 850, 100, 100, 1000000, 140);
-      push(HN, catId, 'top2',     'เลข 2 ตัวบน',    2, 'top3',     'tail',   90,  100, 100, 1000000, 45);
-      push(HN, catId, 'bottom2',  'เลข 2 ตัวล่าง',  2, 'bottom2',  'exact', 90,  100, 100, 1000000, 45);
-      push(HN, catId, 'run_top',  'เลขวิ่งบน',      1, 'top3',     'digit_contains', 3.2);
-      push(HN, catId, 'run_bottom','เลขวิ่งล่าง',   1, 'bottom2',  'digit_contains', 4.2);
+    // ===== หวยลาว + ฮานอย — spec: เลข 5/4/3/2/1 ตัวท้าย ทั้งหมดจากเลขรางวัลหลัก (last5..last1) =====
+    const suffixRules = (typeId, catId) => {
+      push(typeId, catId, 'num5', 'เลข 5 ตัว', 5, 'last5', 'exact', 50000);
+      push(typeId, catId, 'num4', 'เลข 4 ตัว', 4, 'last4', 'exact', 6000);
+      push(typeId, catId, 'num3', 'เลข 3 ตัว', 3, 'last3', 'exact', 900);
+      push(typeId, catId, 'num2', 'เลข 2 ตัว', 2, 'last2', 'exact', 90);
+      push(typeId, catId, 'num1', 'เลข 1 ตัว', 1, 'last1', 'exact', 9.5);
     };
-    [HNN, HNS, HNP, HNV, HNST, HNM].forEach(c => c && hnRules(c));
+    [LA, LAD, LADAM, LAM, LADT].forEach(c => c && suffixRules(LA_ID, c));
+    [HNS, HNP, HNN, HNV, HNM, HNST].forEach(c => c && suffixRules(HN, c));
 
-    // ===== สลากออมสิน (GS) — ผล: อันดับ 1-5 (7 หลัก) + เลขท้าย 4/3 ตัว — ออกวันที่ 1&16 =====
+    // ===== สลากออมสิน (GS) — spec: รูปแบบเดียวกับหวยไทย (ออมสินไม่มีรางวัลหน้า 3 ตัวแยก) — ออกวันที่ 1&16 =====
+    // ผล: { p1..p5 (อันดับ 1-5), top4/top3/top2/last3/bottom2/last1/bottom1 derive จากอันดับ 1 }
     if (GS) {
-      push(GS, null, 'rank1',     'รางวัลอันดับ 1 (7 หลัก)', 7, 'p1',      'exact', 1000);
-      push(GS, null, 'rank2',     'รางวัลอันดับ 2 (7 หลัก)', 7, 'p2',      'exact', 600);
-      push(GS, null, 'rank3',     'รางวัลอันดับ 3 (7 หลัก)', 7, 'p3',      'exact', 400);
-      push(GS, null, 'rank4',     'รางวัลอันดับ 4 (7 หลัก)', 7, 'p4',      'exact', 300);
-      push(GS, null, 'rank5',     'รางวัลอันดับ 5 (7 หลัก)', 7, 'p5',      'exact', 200);
-      push(GS, null, 'last4',     'เลขท้าย 4 ตัว',   4, 'last4',   'exact', 1000);
-      push(GS, null, 'last3',     'เลขท้าย 3 ตัว',   3, 'last3',   'exact', 500,  100, 100, 1000000, 60);
-      push(GS, null, 'run_top',   'เลขวิ่งบน',       1, 'top3',     'digit_contains', 3.5);
-      push(GS, null, 'run_bottom','เลขวิ่งล่าง',     1, 'bottom2',  'digit_contains', 4.2);
+      push(GS, null, 'top4',     'เลข 4 ตัวบน',   4, 'top4',     'exact', 9000);
+      push(GS, null, '3top',     'เลข 3 ตัวบน',   3, 'top3',     'exact', 900, 100, 100, 1000000, 150);
+      push(GS, null, '2top',     'เลข 2 ตัวบน',   2, 'top2',     'exact', 95);
+      push(GS, null, 'top3',     'เลข 3 ตัวหลัง', 3, 'last3',    'exact', 900, 100, 100, 1000000, 150);
+      push(GS, null, 'bottom2',  'เลข 2 ตัวล่าง', 2, 'bottom2',  'exact', 90, 100, 100, 1000000, 45);
+      push(GS, null, 'run_top',  'เลขวิ่งบน',     1, 'last1',    'digit_contains', 3.2);
+      push(GS, null, 'run_bottom','เลขวิ่งล่าง',  1, 'bottom1',  'digit_contains', 4.2);
     }
 
     // ===== เลขอั้น — ไม่ใช่ประเภทแทงแยก: ผู้แทงใช้กติกาปกติ ถ้าเลขตรงเลขอั้นที่ admin
