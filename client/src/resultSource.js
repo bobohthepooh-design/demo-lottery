@@ -17,6 +17,31 @@ export function sourceBadge(source) {
   return { label: `🌐 ${site}`, cls: 'bg-emerald-500/15 text-emerald-300', short: `🌐 ${site}` };
 }
 
+// ชื่อแหล่งข้อมูลแบบอ่านง่าย — ใช้แสดงคู่กับวันที่/เวลา เพื่อให้ผู้แทงตรวจสอบที่มาได้
+export function sourceName(source) {
+  if (!source) return 'ไม่ระบุ';
+  if (source === 'manual') return 'admin กรอกเอง';
+  if (source === 'demo' || source.includes('gen')) return 'สุ่มในระบบ (DEMO)';
+  const inner = source.match(/\(([^)]+)\)/)?.[1] || source;
+  const MAP = {
+    GLO: 'GLO — glo.or.th (เว็บ สำนักงานสลากกินแบ่งรัฐบาล)',
+    laodl: 'laodl.com — เว็บทางการสลากพัฒนา ลาว',
+    XSMB: 'XSMB — ผลฮานอย (ข้อมูลทางการ)',
+    'gsb-lottery': 'lotterychecks — gsb-lottery',
+    'lao-union': 'lotterychecks — lao-union',
+    'lao-lottery': 'lotterychecks — lao-lottery',
+    'lao-morning': 'lotterychecks — lao-morning',
+    'lao-development-morning': 'lotterychecks — lao-development-morning',
+    'lao-development-midday': 'lotterychecks — lao-development-midday',
+    'hanoi-normal': 'lotterychecks — hanoi-normal',
+    'hanoi-adhoc': 'lotterychecks — hanoi-adhoc',
+    'hanoi-special': 'lotterychecks — hanoi-special',
+    'hanoi-vip': 'lotterychecks — hanoi-vip',
+    'hanoi-morning': 'lotterychecks — hanoi-morning',
+  };
+  return MAP[inner] || `lotterychecks — ${inner}`;
+}
+
 // badge สำหรับรอบที่ยังไม่ออกผล — ทำนายประเภทผลจาก result_kind ของ draw
 export function kindBadge(kind) {
   if (kind === 'manual') return { label: '✏️ ผลกรอกเอง', cls: 'bg-amber-500/15 text-amber-300', short: '✏️ กรอกเอง' };
@@ -29,7 +54,7 @@ export function kindBadge(kind) {
 export const MARKET_INFO = {
   TH:          { kind: 'หวยจริง',    mode: 'auto',   official: true, src: 'GLO (glo.or.th)' },
   LA:          { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-union)' },
-  'LA:LAD':    { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-lottery)' },
+  'LA:LAD':    { kind: 'หวยจริง',    mode: 'auto',   official: true,  src: 'laodl.com (ทางการ)' },
   'LA:LADAM':  { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-development-morning)' },
   'LA:LAM':    { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-morning)' },
   'LA:LADT':   { kind: 'หวยจริง',    mode: 'auto',   official: false, src: 'lotterychecks (lao-development-midday)' },

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api, fmtDateTime, satang, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
-import { sourceBadge } from '../resultSource.js';
+import { sourceBadge, sourceName } from '../resultSource.js';
 import { heroNumbers, resultSummary } from '../resultFields.js';
 import { Marquee } from '../components/ui/index.js';
 const GROUP_ORDER = ['TH', 'LA', 'HN', 'GS', 'HR'];
@@ -222,7 +222,9 @@ export default function Home() {
                           {sumAll.map((p, i) => <div key={i}>{p}</div>)}
                         </div>
                       )}
-                      <div className="text-[9px] text-navy-500 mt-1.5">อัปเดต {thaiTime(d.published_at || d.draw_at)}</div>
+                      <div className="text-[9px] text-navy-500 mt-1.5">
+                        แหล่ง: {sourceName(d.result_source)} · อัปเดต {thaiTime(d.published_at || d.draw_at)}
+                      </div>
                     </div>
                   );
                 })}

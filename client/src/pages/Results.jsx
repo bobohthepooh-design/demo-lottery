@@ -3,7 +3,7 @@ import { api, fmtDateTime, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import CheckNumbers from '../components/CheckNumbers.jsx';
-import { sourceBadge } from '../resultSource.js';
+import { sourceBadge, sourceName } from '../resultSource.js';
 import { asList, resultSummary, compactSummary, heroNumbers } from '../resultFields.js';
 import { typeAccent } from '../typeAccent.js';
 import { toast } from '../components/toast.js';
@@ -171,6 +171,13 @@ export default function Results() {
             {STATUS_TH[d.status] || d.status}
           </span>
         </div>
+        {d.status === 'settled' && (d.published_at || d.result_source) && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-navy-400">
+            <span>งวด {thaiDate(d.draw_at)}</span>
+            {d.published_at && <span>· ประกาศผล {thaiTime(d.published_at)}</span>}
+            {d.result_source && <span>· แหล่งข้อมูล: <span className="text-navy-200 font-semibold">{sourceName(d.result_source)}</span></span>}
+          </div>
+        )}
         {sourceChecks.length > 0 && (
           <div className={`mt-2 rounded-lg border px-3 py-2 text-[10px] ${hasMismatch ? 'border-amber-500/50 bg-amber-500/10 text-amber-200' : 'border-navy-700 bg-navy-900/50 text-navy-300'}`}>
             <div className="font-semibold">
@@ -326,7 +333,7 @@ export default function Results() {
                           </div>
                         )}
                         <div className="text-[9px] text-navy-500 mt-1.5">
-                          อัปเดต {thaiTime(r.published_at || r.draw_at)}{r.published_at ? '' : ' (เวลาออกรางวัล)'}
+                          แหล่ง: {sourceName(r.result_source)} · อัปเดต {thaiTime(r.published_at || r.draw_at)}{r.published_at ? '' : ' (เวลาออกรางวัล)'}
                         </div>
                       </div>
                     );
