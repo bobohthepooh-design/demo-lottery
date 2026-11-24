@@ -213,49 +213,49 @@ export default function Hilo() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
-      <div className="relative overflow-hidden rounded-3xl border-2 border-orange-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 sm:p-8 text-center">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
+        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '0.6s' }} />
         <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
         <div className="flex justify-center gap-3 mb-4">
           <DieFace value={3} /><DieFace value={4} /><DieFace value={5} />
         </div>
-        <h1 className="font-display font-bold text-2xl sm:text-3xl text-orange-300">ไฮโลเต๋า</h1>
-        <p className="text-sm text-navy-300 mt-1">ทอยเต๋า <b className="text-orange-300">3 ลูก</b> → ทายผลรวม <b className="text-blue-300">ต่ำ (3-10)</b> / <b className="text-green-300">สูง (12-18)</b> / <b className="text-purple-300">11 ไฮโล</b> → รู้ผลทันที!</p>
+        <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">ไฮโลเต๋า</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--muted-gray)' }}>ทอยเต๋า <b style={{ color: 'var(--gold-bright)' }}>3 ลูก</b> → ทายผลรวม <b style={{ color: 'var(--info-blue)' }}>ต่ำ (3-10)</b> / <b style={{ color: 'var(--success-green)' }}>สูง (12-18)</b> / <b style={{ color: 'var(--gold-bright)' }}>11 ไฮโล</b> → รู้ผลทันที!</p>
         <div className="flex flex-col items-center gap-3 mt-4">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500/25 via-gold-500/10 to-gold-500/25 border border-gold-400/60 shadow-[0_0_20px_rgba(217,165,32,0.25)]">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05), rgba(212, 175, 55, 0.15))', border: '1px solid var(--border-gold)', boxShadow: 'var(--shadow-gold)' }}>
             <span className="text-sm">💰</span>
-            <span className="text-xs font-semibold text-gold-300">ราคาต่อครั้ง</span>
-            <span className="font-display font-bold text-2xl text-gold-300">{satang(price)} <span className="text-sm">บาท</span></span>
+            <span className="text-xs font-semibold" style={{ color: 'var(--gold-primary)' }}>ราคาต่อครั้ง</span>
+            <span className="font-display font-bold text-2xl" style={{ color: 'var(--gold-bright)' }}>{satang(price)} <span className="text-sm">บาท</span></span>
           </div>
-          <div className="flex items-center justify-center gap-4 text-[11px] text-navy-300 flex-wrap">
-            <span>🕐 <b className="text-green-300">แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
+          <div className="flex items-center justify-center gap-4 text-[11px] flex-wrap" style={{ color: 'var(--muted-gray)' }}>
+            <span>🕐 <b style={{ color: 'var(--success-green)' }}>แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
             <span>⚖️ อัตราจ่าย{mult ? ` ต่ำ ×${mult.low} • สูง ×${mult.high} • 11 ×${mult.eleven}` : 'ตามโอกาสจริง'}</span>
           </div>
         </div>
       </div>
 
       {/* ข้อมูลรอบ — ปุ่มเดิมพันอยู่ในโซนเลือก สูง/ต่ำ/11 ด้านล่างการ์ดนี้ */}
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-5">
+      <div className="luxury-card p-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="font-bold text-white">วางเดิมพัน</div>
-            <div className="text-xs text-navy-400">เครดิตคงเหลือ {satang(balance)} บาท • ไม่จำกัดรอบ เล่นต่อได้เรื่อยๆ</div>
+            <div className="font-bold" style={{ color: 'var(--white)' }}>วางเดิมพัน</div>
+            <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>เครดิตคงเหลือ {satang(balance)} บาท • ไม่จำกัดรอบ เล่นต่อได้เรื่อยๆ</div>
             {awaiting.length > 0 && (
-              <div className="text-[11px] text-amber-300 mt-1">มีตั๋วรอเดิมพัน {awaiting.length} ใบ — เปิดจากประวัติด้านล่างเพื่อทาย</div>
+              <div className="text-[11px] mt-1" style={{ color: 'var(--warning-amber)' }}>มีตั๋วรอเดิมพัน {awaiting.length} ใบ — เปิดจากประวัติด้านล่างเพื่อทาย</div>
             )}
           </div>
         </div>
-        {err && <div className="text-red-400 text-sm mt-3">{err}</div>}
+        {err && <div className="text-sm mt-3" style={{ color: 'var(--danger-red)' }}>{err}</div>}
         {balance < price && (
-          <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 mt-3">
+          <div className="text-xs rounded-lg px-3 py-2 mt-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: 'var(--warning-amber)' }}>
             เครดิตไม่พอ — <a href="/wallet?action=deposit" className="underline font-semibold">เติมเครดิต</a> ก่อนนะ
           </div>
         )}
       </div>
 
       {/* game card — เต๋า + โซนเลือกเดิมพัน (ปุ่มเดียว) + ผลล่าสุด */}
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-4 sm:p-5 space-y-4 sm:space-y-5 select-none">
+      <div className="luxury-card p-4 sm:p-5 space-y-4 sm:space-y-5 select-none">
         {active && (
           <FairnessNote fairness={active.fairness}
             verify={(seed) => api('/hilo/verify', { method: 'POST', body: { seed } })} />
@@ -356,12 +356,12 @@ export default function Hilo() {
         <EmptyState emoji="🎲" title="ยังไม่มีตั๋วไฮโล" hint="กดปุ่มเล่นเพื่อเริ่มเสี่ยงโชค" />
       )}
       {tickets.length > 0 && (
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-navy-700 font-bold text-white flex items-center gap-2">
+        <div className="luxury-card overflow-hidden">
+          <div className="px-5 py-4 border-b font-bold flex items-center gap-2" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>
             ประวัติไฮโล
-            {awaiting.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">รอเดิมพัน {awaiting.length}</span>}
+            {awaiting.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full luxury-badge-gold">รอเดิมพัน {awaiting.length}</span>}
           </div>
-          <div className="divide-y divide-navy-700">
+          <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
             {tickets.map(t => {
               const won = t.status === 'revealed' && t.side === t.pick;
               return (

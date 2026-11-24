@@ -22,8 +22,7 @@ function NumPicker({ poolSize, pickCount, picks, setPicks, disabled }) {
         return (
           <button key={n} onClick={() => toggle(n)} disabled={disabled || full}
             className={`aspect-square rounded-lg text-sm font-bold transition border ${on
-              ? 'bg-gradient-to-b from-gold-400 to-gold-600 text-black border-gold-200 shadow'
-              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-gold-400/50 disabled:opacity-40'}`}>
+              ? 'luxury-btn' : 'luxury-btn-ghost disabled:opacity-40'}`}>
             {n}
           </button>
         );
@@ -69,10 +68,9 @@ function AnimalPicker({ symbols, picks, setPicks, disabled }) {
         return (
           <button key={n} onClick={() => toggle(n)} disabled={disabled}
             className={`rounded-xl px-2 py-3 flex flex-col items-center gap-1 transition border ${on
-              ? 'bg-gradient-to-b from-gold-400 to-gold-600 text-black border-gold-200 shadow'
-              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-gold-400/50 disabled:opacity-40'}`}>
+              ? 'luxury-btn' : 'luxury-btn-ghost disabled:opacity-40'}`}>
             <AnimalGlyph name={s} size="1.9rem" />
-            <span className={`text-[10px] leading-none ${on ? 'text-navy-900' : 'text-navy-400'}`}>{s}</span>
+            <span className={`text-[10px] leading-none ${on ? 'text-navy-900' : ''}`} style={{ color: on ? 'var(--bg-deep-black)' : 'var(--muted-gray)' }}>{s}</span>
           </button>
         );
       })}
@@ -97,10 +95,9 @@ function DiceAnimalPicker({ symbols, picks, setPicks, count, disabled }) {
         return (
           <button key={n} onClick={() => toggle(n)} disabled={disabled || full}
             className={`rounded-xl px-2 py-3 flex flex-col items-center gap-1 transition border ${on
-              ? 'bg-gradient-to-b from-gold-400 to-gold-600 text-black border-gold-200 shadow'
-              : 'bg-navy-900/70 text-navy-200 border-navy-700 hover:border-gold-400/50 disabled:opacity-40'}`}>
+              ? 'luxury-btn' : 'luxury-btn-ghost disabled:opacity-40'}`}>
             <AnimalGlyph name={s} size="1.9rem" />
-            <span className={`text-[10px] leading-none ${on ? 'text-navy-900' : 'text-navy-400'}`}>{s}</span>
+            <span className={`text-[10px] leading-none ${on ? 'text-navy-900' : ''}`} style={{ color: on ? 'var(--bg-deep-black)' : 'var(--muted-gray)' }}>{s}</span>
           </button>
         );
       })}
@@ -423,20 +420,20 @@ export default function Kiwi() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
-      <div className="relative overflow-hidden rounded-3xl border-2 border-gold-400/50 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 text-center">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
+      <div className="relative overflow-hidden rounded-3xl p-6 text-center luxury-card luxury-card-gold-border">
+        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.6s' }} />
         <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
-        <h1 className="font-display font-bold text-2xl sm:text-3xl text-gold-300">หวยยี่กี</h1>
-        <p className="text-sm text-navy-300 mt-1">{g?.dice ? 'ลูกเต๋า 3 ลูก → สุ่มผลทันที → แทงสัตว์เดี่ยว / คู่ / ตอง!' : g?.symbols ? 'เลือกสัตว์ 1 ตัว → สุ่มผลทันที → ถูกรับรางวัลทันที!' : `เลือกเลข ${g ? `${g.pickCount} ตัว` : ''} → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น!`}</p>
+        <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">หวยยี่กี</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--muted-gray)' }}>{g?.dice ? 'ลูกเต๋า 3 ลูก → สุ่มผลทันที → แทงสัตว์เดี่ยว / คู่ / ตอง!' : g?.symbols ? 'เลือกสัตว์ 1 ตัว → สุ่มผลทันที → ถูกรับรางวัลทันที!' : `เลือกเลข ${g ? `${g.pickCount} ตัว` : ''} → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น!`}</p>
         <div className="flex flex-col items-center gap-2.5 mt-3">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500/25 via-gold-500/10 to-gold-500/25 border border-gold-400/60 shadow-[0_0_20px_rgba(217,165,32,0.25)]">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05), rgba(212, 175, 55, 0.15))', border: '1px solid var(--border-gold)', boxShadow: 'var(--shadow-gold)' }}>
             <span className="text-sm">💰</span>
-            <span className="text-xs font-semibold text-gold-300">{g?.label ? `${g.label} — ราคาต่อครั้ง` : 'ราคาต่อครั้ง'}</span>
-            <span className="font-display font-bold text-2xl text-gold-300">{g ? satang(g.price) : '—'} <span className="text-sm">บาท</span></span>
+            <span className="text-xs font-semibold" style={{ color: 'var(--gold-primary)' }}>{g?.label ? `${g.label} — ราคาต่อครั้ง` : 'ราคาต่อครั้ง'}</span>
+            <span className="font-display font-bold text-2xl" style={{ color: 'var(--gold-bright)' }}>{g ? satang(g.price) : '—'} <span className="text-sm">บาท</span></span>
           </div>
-          <div className="flex items-center justify-center gap-4 text-[11px] text-navy-300 flex-wrap">
-            <span>⚖️ จ่ายตามผล {tierText && <span className="text-gold-300">{tierText}</span>}</span>
+          <div className="flex items-center justify-center gap-4 text-[11px] flex-wrap" style={{ color: 'var(--muted-gray)' }}>
+            <span>⚖️ จ่ายตามผล {tierText && <span style={{ color: 'var(--gold-bright)' }}>{tierText}</span>}</span>
           </div>
         </div>
       </div>
@@ -446,11 +443,11 @@ export default function Kiwi() {
         {games.map(x => (
           <button key={x.game} onClick={() => pickGame(x.game)}
             className={`rounded-xl border px-2 py-2.5 text-center transition ${game === x.game
-              ? 'border-gold-400/70 bg-gradient-to-b from-gold-500/20 to-gold-500/5 shadow-[0_0_18px_rgba(244,201,78,0.3)]'
-              : 'border-navy-700 bg-navy-800/60 hover:border-gold-400/50 hover:shadow-[0_0_12px_rgba(244,201,78,0.18)]'}`}>
-            <div className="text-xs font-bold text-white leading-tight">{x.label}</div>
-            <div className="text-[10px] text-navy-400 mt-0.5">{satang(x.price)} บาท</div>
-            <div className="text-[9px] text-gold-300/80 mt-0.5 leading-tight">
+              ? 'luxury-card-gold-border'
+              : 'luxury-card'}`}>
+            <div className="text-xs font-bold leading-tight" style={{ color: 'var(--white)' }}>{x.label}</div>
+            <div className="text-[10px] mt-0.5" style={{ color: 'var(--muted-gray)' }}>{satang(x.price)} บาท</div>
+            <div className="text-[9px] mt-0.5 leading-tight" style={{ color: 'var(--gold-primary)' }}>
               {x.dice ? 'เดี่ยว/คู่/ตอง' : x.symbols ? 'ตรงสัตว์ x5' : Object.entries(x.tiers || {}).map(([h, m]) => 'ถูก' + h + ' = x' + m).join('  ')}
             </div>
           </button>
@@ -458,33 +455,33 @@ export default function Kiwi() {
       </div>
 
       {/* เลือกเลข + เล่น */}
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-4 sm:p-5 space-y-4">
+      <div className="luxury-card p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="text-sm font-bold text-white">
+          <div className="text-sm font-bold" style={{ color: 'var(--white)' }}>
             {g?.dice ? (betType ? g.diceBets?.[betType]?.label || 'เลือกรูปแบบ' : 'เลือกรูปแบบการแทง')
               : g?.symbols ? 'เลือกสัตว์ 1 ตัว' : `เลือก ${g?.pickCount ?? '—'} เลข จาก 1-${g?.poolSize ?? '—'}`}
-            <span className="text-navy-400 font-normal text-xs ml-2">เลือกแล้ว {picks.length}/{g?.dice ? (betType === 'pair' ? 2 : 1) : (g?.pickCount ?? '—')}</span>
+            <span className="font-normal text-xs ml-2" style={{ color: 'var(--muted-gray)' }}>เลือกแล้ว {picks.length}/{g?.dice ? (betType === 'pair' ? 2 : 1) : (g?.pickCount ?? '—')}</span>
           </div>
-          {picks.length > 0 && <button onClick={() => setPicks([])} className="text-[11px] text-navy-400 hover:text-white">ล้าง</button>}
+          {picks.length > 0 && <button onClick={() => setPicks([])} className="text-[11px] transition" style={{ color: 'var(--muted-gray)' }}>ล้าง</button>}
         </div>
         {g?.dice ? (
           <>
             {/* เลือกรูปแบบการแทง */}
             <div>
-              <div className="text-xs text-navy-400 mb-1.5">เลือกรูปแบบ</div>
+              <div className="text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>เลือกรูปแบบ</div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(g.diceBets || {}).map(([bt, info]) => (
                   <button key={bt} onClick={() => pickBetType(bt)} disabled={busy}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${betType === bt
-                      ? 'bg-red-500/20 border-red-400/70 text-gold-300' : 'bg-navy-900 border-navy-700 text-navy-300 hover:border-navy-500'}`}>
+                      ? 'luxury-badge-gold' : 'luxury-btn-ghost'}`}>
                     {info.label}
                   </button>
                 ))}
               </div>
               {betType && g.diceBets?.[betType] && (
-                <div className="text-[11px] text-navy-400 mt-1 space-y-0.5">
+                <div className="text-[11px] mt-1 space-y-0.5" style={{ color: 'var(--muted-gray)' }}>
                   <div>{g.diceBets[betType].desc}</div>
-                  <div className="text-gold-300 font-semibold">💰 อัตราจ่าย: {g.diceBets[betType].payout}</div>
+                  <div className="font-semibold" style={{ color: 'var(--gold-bright)' }}>💰 อัตราจ่าย: {g.diceBets[betType].payout}</div>
                 </div>
               )}
             </div>
@@ -529,28 +526,28 @@ export default function Kiwi() {
         <EmptyState emoji="🎲" title="ยังไม่มีตั๋วยี่กี" hint="กดปุ่มเล่นเพื่อเริ่มเสี่ยงโชค" />
       )}
       {tickets.length > 0 && (
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-navy-700 font-bold text-white">ประวัติยี่กี</div>
-          <div className="divide-y divide-navy-700">
+        <div className="luxury-card overflow-hidden">
+          <div className="px-5 py-4 border-b font-bold" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>ประวัติยี่กี</div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
             {tickets.map(t => (
               <button key={t.id} onClick={() => openTicket(t)}
-                className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left transition">
+                className="w-full flex items-center gap-3 px-5 py-3 text-left transition hover:bg-navy-700/40">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-white">{t.gameLabel} • {t.slipRef}</div>
-                  <div className="text-[11px] text-navy-400">
+                  <div className="text-sm font-semibold" style={{ color: 'var(--white)' }}>{t.gameLabel} • {t.slipRef}</div>
+                  <div className="text-[11px]" style={{ color: 'var(--muted-gray)' }}>
                     {fmtDateTime(t.createdAt)}
                     {t.dice ? ` • ${t.betType ? (DICE_BET_LABEL[t.betType] || t.betType) : ''}${t.picks?.length ? ` ${t.picks.map(p => animalText(t.diceSymbols?.[p - 1])).join('+')}` : ''}`
                       : t.symbols ? ` • ${animalEmoji(t.symbols, t.picks[0])}` : ` • ถูก ${t.hits} เลข`}
                   </div>
                 </div>
                 {t.id === spinningId ? (
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40 animate-pulse">🎲 ออกรางวัล…</span>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full luxury-badge-gold animate-pulse">🎲 ออกรางวัล…</span>
                 ) : t.payout > 0 ? (
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/15 text-green-300 border border-green-500/40">+{satang(t.payout)} บาท</span>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full luxury-badge-success">+{satang(t.payout)} บาท</span>
                 ) : (
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-300 border border-navy-600">ไม่ถูก</span>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>ไม่ถูก</span>
                 )}
-                <span className="text-[10px] text-navy-500 shrink-0">👁</span>
+                <span className="text-[10px] shrink-0" style={{ color: 'var(--dark-gray)' }}>👁</span>
               </button>
             ))}
           </div>
@@ -561,7 +558,7 @@ export default function Kiwi() {
       <div className="instant-betbar px-4">
         <div className="max-w-3xl mx-auto">
           <button onClick={play} disabled={!ready || busy || balance < (g?.price || Infinity)}
-            className="w-full rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-black py-3.5 text-sm tracking-wide shadow-lg shadow-[0_0_24px_rgba(226,168,18,0.35)] hover:brightness-110 transition disabled:opacity-50 active:scale-[0.98]">
+            className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
             {busy ? '🎲 กำลังสุ่มผล...' : ready
               ? `🎲 เล่นเลย — ${satang(g.price)} บาท${picks.length ? ` (${picks.length} เลือก)` : ''}`
               : g?.dice ? `เลือกรูปแบบ + ค่าที่ถูกต้องก่อน (${picks.length}/${betType === 'pair' ? 2 : 1})`

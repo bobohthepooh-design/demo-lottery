@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import LuxuryCard from '../components/luxury/LuxuryCard.jsx';
+import LuxuryButton from '../components/luxury/LuxuryButton.jsx';
 
 // หน้าเอกสารกฎหมาย — ข้อกำหนดการใช้งาน / ความเป็นส่วนตัว (PDPA) / เล่นอย่างรับผิดชอบ
 const SECTIONS = [
@@ -41,29 +43,40 @@ export default function Legal() {
   const [tab, setTab] = useState('terms');
   const sec = SECTIONS.find(s => s.id === tab) || SECTIONS[0];
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <div className="kicker mb-1">Legal</div>
-        <h1 className="text-2xl font-bold text-white">เอกสารและข้อตกลง</h1>
-        <p className="text-xs text-navy-400 mt-1">ข้อกำหนดการใช้งาน • ความเป็นส่วนตัว • เล่นอย่างรับผิดชอบ</p>
+        <div className="text-xs font-semibold tracking-wider text-[var(--gold-primary)] mb-2 uppercase">Legal</div>
+        <h1 className="text-3xl font-bold text-[var(--white)] mb-2">เอกสารและข้อตกลง</h1>
+        <p className="text-sm text-[var(--muted-gray)]">ข้อกำหนดการใช้งาน • ความเป็นส่วนตัว • เล่นอย่างรับผิดชอบ</p>
       </div>
+
       <div className="flex gap-2 flex-wrap">
         {SECTIONS.map(s => (
-          <button key={s.id} onClick={() => setTab(s.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition ${tab === s.id ? 'bg-gold-500/20 border-gold-500/50 text-gold-300' : 'border-navy-700 text-navy-300 hover:border-navy-500'}`}>
+          <LuxuryButton
+            key={s.id}
+            variant={tab === s.id ? 'primary' : 'ghost'}
+            onClick={() => setTab(s.id)}
+            className="text-sm"
+          >
             {s.label}
-          </button>
+          </LuxuryButton>
         ))}
       </div>
-      <div className="bg-navy-800/70 border border-navy-700 rounded-xl p-5 space-y-4">
-        {sec.body.map(([h, p], i) => (
-          <div key={i}>
-            <h3 className="font-bold text-gold-300 text-sm mb-1">{h}</h3>
-            <p className="text-sm text-navy-300 leading-relaxed">{p}</p>
-          </div>
-        ))}
-      </div>
-      <p className="text-[11px] text-navy-500 text-center">อัปเดตล่าสุด: 18 พฤศจิกายน 2569 • เอกสารนี้มีผลบังคับใช้กับการใช้งานแพลตฟอร์มทั้งหมด</p>
+
+      <LuxuryCard goldBorder>
+        <div className="space-y-6">
+          {sec.body.map(([h, p], i) => (
+            <div key={i}>
+              <h3 className="font-bold text-[var(--gold-primary)] text-base mb-2">{h}</h3>
+              <p className="text-sm text-[var(--muted-gray)] leading-relaxed">{p}</p>
+            </div>
+          ))}
+        </div>
+      </LuxuryCard>
+
+      <p className="text-xs text-[var(--dark-gray)] text-center">
+        อัปเดตล่าสุด: 18 พฤศจิกายน 2569 • เอกสารนี้มีผลบังคับใช้กับการใช้งานแพลตฟอร์มทั้งหมด
+      </p>
     </div>
   );
 }

@@ -43,25 +43,43 @@ export default function Login() {
     navigate('/');
   };
 
-  const tabCls = (t) => `flex-1 py-2.5 text-sm font-bold rounded-lg transition ${tab === t ? 'bg-gold-500/15 text-gold-200 border border-gold-400/50' : 'text-navy-300 hover:text-white border border-transparent'}`;
+  const tabCls = (t) => {
+    const isActive = tab === t;
+    return {
+      flex: 1,
+      padding: '0.625rem',
+      fontSize: '0.875rem',
+      fontWeight: 'bold',
+      borderRadius: 'var(--radius-lg)',
+      transition: 'all var(--transition-base)',
+      border: isActive ? '1px solid var(--border-gold)' : '1px solid transparent',
+      background: isActive ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+      color: isActive ? 'var(--gold-bright)' : 'var(--muted-gray)',
+      cursor: 'pointer'
+    };
+  };
 
   return (
     <AuthShell title={needsMfa ? 'ยืนยันตัวตนสองชั้น' : 'เข้าสู่ระบบ'}>
       {needsMfa ? (
         <form onSubmit={submitMfa} className="space-y-4">
-          <p className="text-sm text-navy-200">กรอกรหัส TOTP 6 หลักจากแอป Authenticator</p>
+          <p className="text-sm" style={{ color: 'var(--light-gray)' }}>กรอกรหัส TOTP 6 หลักจากแอป Authenticator</p>
           <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
             inputClassName="text-center text-2xl tracking-[0.4em] font-mono"
             placeholder="000000" inputMode="numeric" autoComplete="one-time-code" aria-label="รหัส MFA" />
-          {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
+          {err && <div className="text-sm" style={{ color: 'var(--danger-red)' }} role="alert">{err}</div>}
           <Button disabled={busy||mfaCode.length!==6} className="w-full">{busy ? 'กำลังตรวจสอบ...' : 'ยืนยัน MFA'}</Button>
         </form>
       ) : (
         <>
           {/* tabs: ชื่อผู้ใช้+รหัสผ่าน / เบอร์+OTP */}
-          <div className="flex gap-2 bg-navy-900 border border-navy-700 rounded-xl p-1 mb-5">
-            <button type="button" onClick={() => setTab('password')} className={tabCls('password')}>ชื่อผู้ใช้</button>
-            <button type="button" onClick={() => setTab('otp')} className={tabCls('otp')}>เบอร์ + OTP</button>
+          <div className="flex gap-2 rounded-xl p-1 mb-5"
+            style={{
+              background: 'var(--bg-dark-surface)',
+              border: '1px solid var(--border-light)'
+            }}>
+            <button type="button" onClick={() => setTab('password')} style={tabCls('password')}>ชื่อผู้ใช้</button>
+            <button type="button" onClick={() => setTab('otp')} style={tabCls('otp')}>เบอร์ + OTP</button>
           </div>
 
           {tab === 'password' ? (
@@ -71,11 +89,11 @@ export default function Login() {
               <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
                 placeholder="รหัสผ่าน" autoComplete="current-password" />
               <Turnstile onVerify={setTsToken} />
-              {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
+              {err && <div className="text-sm" style={{ color: 'var(--danger-red)' }} role="alert">{err}</div>}
               <Button disabled={busy} className="w-full">{busy ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</Button>
               <div className="flex justify-between text-sm">
-                <Link to="/forgot-password" className="text-navy-300 hover:text-gold-300">ลืมรหัสผ่าน?</Link>
-                <Link to="/register" className="text-gold-300 hover:underline">สมัครสมาชิกใหม่</Link>
+                <Link to="/forgot-password" style={{ color: 'var(--muted-gray)' }} className="hover:text-gold-300">ลืมรหัสผ่าน?</Link>
+                <Link to="/register" style={{ color: 'var(--gold-primary)' }} className="hover:underline">สมัครสมาชิกใหม่</Link>
               </div>
             </form>
           ) : (
@@ -86,8 +104,8 @@ export default function Login() {
 
       {!needsMfa && (
         <div className="mt-5">
-          <div className="flex items-center gap-3 text-xs text-navy-400 mb-3">
-            <div className="flex-1 h-px bg-navy-700" />หรือ<div className="flex-1 h-px bg-navy-700" />
+          <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--dark-gray)' }}>
+            <div className="flex-1 h-px" style={{ background: 'var(--border-light)' }} />หรือ<div className="flex-1 h-px" style={{ background: 'var(--border-light)' }} />
           </div>
           <LineLoginButton />
         </div>

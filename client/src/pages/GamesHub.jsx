@@ -50,12 +50,12 @@ export default function GamesHub() {
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <h1 className="text-xl font-black text-white">🎮 เกมด่วน</h1>
-        <p className="text-xs text-navy-400 mt-1">เล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
+        <h1 className="text-xl font-black luxury-gradient-text">🎮 เกมด่วน</h1>
+        <p className="text-xs mt-1" style={{ color: 'var(--muted-gray)' }}>เล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
       </div>
 
       {!user && (
-        <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl px-4 py-3 text-sm text-amber-200 text-center">
+        <div className="rounded-xl px-4 py-3 text-sm text-center" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.4)', color: 'var(--warning-amber)' }}>
           กรุณา <Link to="/login" className="font-bold underline">เข้าสู่ระบบ</Link> ก่อนเล่นเกม
         </div>
       )}
@@ -63,13 +63,13 @@ export default function GamesHub() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {games.map(g => (
           <Link key={g.to} to={g.to}
-            className="group relative overflow-hidden rounded-2xl border border-navy-600 bg-navy-800/70 p-5 hover:bg-navy-700/70 hover:border-gold-400/50 hover:shadow-lg hover:shadow-gold-500/10 transition">
+            className="luxury-card luxury-card-gold-border group relative overflow-hidden p-5 transition">
             <div className="text-4xl mb-2">{g.icon}</div>
-            <div className="font-black text-white text-lg">{g.name}</div>
-            <div className="text-[11px] font-bold text-white/70">{g.tag}</div>
-            <p className="text-xs text-white/80 mt-2 leading-relaxed">{g.desc}</p>
-            {g.price && <div className="text-[11px] font-bold text-gold-300 mt-1">{g.price}</div>}
-            <div className="mt-3 inline-block text-xs font-black px-4 py-1.5 rounded-lg bg-white/15 text-white group-hover:bg-white/25 transition">
+            <div className="font-black text-lg" style={{ color: 'var(--white)' }}>{g.name}</div>
+            <div className="text-[11px] font-bold" style={{ color: 'var(--muted-gray)' }}>{g.tag}</div>
+            <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--light-gray)' }}>{g.desc}</p>
+            {g.price && <div className="text-[11px] font-bold mt-1" style={{ color: 'var(--gold-bright)' }}>{g.price}</div>}
+            <div className="mt-3 inline-block text-xs font-black px-4 py-1.5 rounded-lg luxury-btn">
               เล่นเลย →
             </div>
           </Link>

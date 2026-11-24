@@ -10,6 +10,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
+import '../styles/luxury-theme.css';
 
 const STATUS_TH = {
   pending: 'รอผล',
@@ -351,23 +352,23 @@ export default function MyBets() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-white">ประวัติโพยของฉัน</h1>
+        <h1 className="text-2xl font-bold text-[var(--white)]">ประวัติโพยของฉัน</h1>
         {visibleSlips.length > 0 && (
           <a href="/api/bets/export" download
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition inline-flex items-center gap-1">
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[var(--border-gold)] text-[var(--gold-primary)] hover:bg-[var(--gold-primary)]/10 transition inline-flex items-center gap-1">
             ⬇️ Export CSV
           </a>
         )}
       </div>
-      <p className="text-[11px] text-navy-400 -mt-2">
+      <p className="text-[11px] text-[var(--muted-gray)] -mt-2">
         📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนเวลาปิดรับ</p>
       {/* filter สถานะ + เรียงโพยรอผลขึ้นก่อนเสมอ */}
       <div className="flex gap-1.5 flex-wrap">
         {FILTERS.map(f => (
           <button key={f.k} onClick={() => setFilter(f.k)}
             className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filter === f.k
-              ? 'bg-gold-500/20 border-gold-500/60 text-gold-300'
-              : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
+              ? 'bg-[var(--gold-primary)]/20 border-[var(--border-gold)] text-[var(--gold-primary)]'
+              : 'border-[var(--border-light)] text-[var(--muted-gray)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-gold)]'}`}>
             {f.label}
             {f.k === 'pending' && pendingList.length > 0 && (
               <span className="ml-1 text-[10px] opacity-70">({pendingList.length})</span>
@@ -380,14 +381,14 @@ export default function MyBets() {
         return (
         <div key={g.key}>
           <button type="button" onClick={() => toggleGroup(g.key)}
-            className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-navy-800/80 border border-navy-700 hover:border-gold-500/40 transition text-left">
-            <span className="flex items-center gap-2 text-sm font-bold text-white min-w-0">
-              <span className={`text-navy-400 transition-transform shrink-0 ${isCol ? '' : 'rotate-90'}`}>▸</span>
+            className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] hover:border-[var(--border-gold)] transition text-left luxury-card">
+            <span className="flex items-center gap-2 text-sm font-bold text-[var(--white)] min-w-0">
+              <span className={`text-[var(--muted-gray)] transition-transform shrink-0 ${isCol ? '' : 'rotate-90'}`}>▸</span>
               <span className="truncate">{g.label}</span>
-              <span className="text-[11px] font-normal text-navy-400 shrink-0">{g.slips.length} โพย • {satang(g.stake)} บาท</span>
+              <span className="text-[11px] font-normal text-[var(--muted-gray)] shrink-0">{g.slips.length} โพย • {satang(g.stake)} บาท</span>
             </span>
             {g.slips.some(s => s.status === 'won') && (
-              <span className="text-[10px] font-bold text-green-300 shrink-0">🏆 มีถูกรางวัล</span>
+              <span className="text-[10px] font-bold text-[var(--success-green)] shrink-0">🏆 มีถูกรางวัล</span>
             )}
           </button>
           {!isCol && (
@@ -398,42 +399,42 @@ export default function MyBets() {
         const cardAnim = s.status === 'won' ? 'animate-win' : lost && s.status === 'lost' ? 'animate-lose' : '';
         const net = (s.total_payout || 0) - (s.total_stake || 0);
         return (
-          <div key={s.id} className={`bg-gradient-to-b from-navy-800 to-navy-900 border rounded-xl overflow-hidden hoverable ${s.status === 'won' ? 'border-green-500/40' : 'border-navy-700'} ${cardAnim}`}>
+          <div key={s.id} className={`bg-[var(--bg-card)] border rounded-xl overflow-hidden hoverable luxury-card ${s.status === 'won' ? 'border-[var(--success-green)]/40' : 'border-[var(--border-light)]'} ${cardAnim}`}>
             <div role="button" tabIndex={0}
               onClick={() => setOpen(open === s.id ? null : s.id)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(open === s.id ? null : s.id); } }}
-              className="w-full px-5 py-4 flex items-center justify-between hover:bg-navy-700/40 cursor-pointer">
+              className="w-full px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-card-hover)] cursor-pointer">
               <div className="text-left">
-                <div className="font-mono text-gold-300">{s.slip_ref}</div>
-                <div className="flex items-center gap-1.5 text-sm text-navy-300">
+                <div className="font-mono text-[var(--gold-primary)]">{s.slip_ref}</div>
+                <div className="flex items-center gap-1.5 text-sm text-[var(--muted-gray)]">
                   <FlagIcon code={s.type_code} className="w-5 h-3.5 text-[7px]" />
                   {drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}
                 </div>
-                <div className="text-[11px] text-navy-500">แทงเมื่อ {fmtDateTime(s.created_at)}</div>
+                <div className="text-[11px] text-[var(--dark-gray)]">แทงเมื่อ {fmtDateTime(s.created_at)}</div>
               </div>
               <div className="text-right flex flex-col items-end gap-1.5">
-                <div className="font-bold text-white">{satang(s.total_stake)} บาท</div>
-                <span className={`text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 ${s.status === 'won' ? 'bg-green-500/20 text-green-300' : s.status === 'lost' ? 'bg-navy-700 text-navy-300' : s.status === 'partial' ? 'bg-gold-500/20 text-gold-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                <div className="font-bold text-[var(--white)]">{satang(s.total_stake)} บาท</div>
+                <span className={`text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 luxury-badge ${s.status === 'won' ? 'luxury-badge-success' : s.status === 'lost' ? 'bg-[var(--bg-dark-surface)] text-[var(--muted-gray)]' : s.status === 'partial' ? 'luxury-badge-gold' : 'luxury-badge-info'}`}>
                   <span>{STATUS_EMOJI[s.status]}</span> {STATUS_TH[s.status]}
                 </span>
                 {/* ปุ่มลัดเห็นได้เลยไม่ต้องกางโพย — ยิงซ้ำ/ยกเลิก เฉพาะโพย pending ของรอบที่ยังเปิดรับอยู่ */}
                 {canRepeat(s) && (
                   <button onClick={(e) => { e.stopPropagation(); repeatSlip(s); }}
-                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-sky-400/50 text-sky-300 hover:bg-sky-500/15">
+                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[var(--info-blue)]/50 text-[var(--info-blue)] hover:bg-[var(--info-blue)]/15">
                     🔁 แทงซ้ำ
                   </button>
                 )}
                 {canCancel(s) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); cancelSlip(s); }}
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${cancelAsk === s.id ? 'bg-red-500 text-white border-red-500 animate-pulse' : 'border-gold-400/50 text-gold-300 hover:bg-gold-500/15'}`}>
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${cancelAsk === s.id ? 'bg-[var(--danger-red)] text-[var(--white)] border-[var(--danger-red)] animate-pulse' : 'border-[var(--gold-primary)]/50 text-[var(--gold-primary)] hover:bg-[var(--gold-primary)]/15'}`}>
                     {cancelAsk === s.id ? '⚠️ ยืนยัน?' : '🚫 ยกเลิก'}
                   </button>
                 )}
               </div>
             </div>
             {open === s.id && (
-              <div className="border-t border-navy-700 px-5 py-4 space-y-3">
+              <div className="border-t border-[var(--border-light)] px-5 py-4 space-y-3">
                 {/* โพยสไตล์กระดาษ — เลข monospace + เส้นประ + stamp ผลรางวัลเอียง */}
                 <div className="paper-slip rounded-lg px-4 py-4 pt-5 pb-6 mx-auto max-w-xl">
                   {s.status === 'won' && <div className="paper-stamp win">ถูกรางวัล</div>}
@@ -503,12 +504,12 @@ export default function MyBets() {
       })}
       {hasMore && filter !== 'pending' && (
         <button onClick={loadMore} disabled={loadingMore}
-          className="w-full py-3 rounded-xl border border-navy-600 text-navy-200 text-sm font-semibold hover:border-gold-500/50 hover:text-gold-300 transition disabled:opacity-50">
+          className="w-full py-3 rounded-xl border border-[var(--border-light)] text-[var(--muted-gray)] text-sm font-semibold hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)] transition disabled:opacity-50 luxury-btn-ghost">
           {loadingMore ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก 50 รายการ (เหลือ ${(total - slips.length).toLocaleString()})`}
         </button>
       )}
       {!loading && !loadingMore && (slips.length > 0 || pendingList.length > 0) && !visibleSlips.length && (
-        <div className="text-center text-navy-400 py-10 text-sm">ไม่มีโพยในสถานะนี้</div>
+        <div className="text-center text-[var(--muted-gray)] py-10 text-sm">ไม่มีโพยในสถานะนี้</div>
       )}
       {!loading && !slips.length && !pendingList.length && (
         <EmptyState emoji="🎟️" title="ยังไม่มีโพยที่ส่ง" hint="เลือกประเภทหวยและใส่เลขเพื่อเริ่มแทงครั้งแรก"
@@ -531,7 +532,7 @@ export default function MyBets() {
           ))}
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 text-center">
             <div className="text-5xl animate-win">🎉</div>
-            <div className="text-xl font-bold text-gold-300 mt-2 drop-shadow-lg">โพยของคุณถูกรางวัล!</div>
+            <div className="text-xl font-bold text-[var(--gold-primary)] mt-2 drop-shadow-lg">โพยของคุณถูกรางวัล!</div>
           </div>
         </div>,
         document.body

@@ -7,6 +7,7 @@ import { toast } from '../components/toast.js';
 import { getTz, setTz } from '../time.js';
 import { pushSupported, subscribePush, unsubscribePush, pushSubscriptionCount } from '../push.js';
 import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
+import '../styles/luxury-theme.css';
 
 // KYC — member ขอ verify ตัวตน (manual review โดยแอดมิน)
 function KycCard({ user }) {
@@ -25,23 +26,23 @@ function KycCard({ user }) {
     finally { setBusy(false); }
   };
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader title="ยืนยันตัวตน (KYC)" sub="ยืนยันตัวตนเพื่อปลดล็อกฟีเจอร์ที่ต้องการ identity — แอดมินตรวจสอบแบบ manual" />
       <CardBody>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="text-sm">
-            <span className={`font-semibold ${st === 'verified' ? 'text-emerald-300' : st === 'rejected' ? 'text-red-300' : st === 'pending' ? 'text-amber-300' : 'text-navy-300'}`}>{TH[st]}</span>
-            {kyc.kyc_requested_at && <span className="text-navy-400 text-xs ml-2">ส่งคำขอ {kyc.kyc_requested_at}</span>}
-            {st === 'rejected' && kyc.kyc_note && <div className="text-xs text-red-300/80 mt-1">เหตุผล: {kyc.kyc_note}</div>}
+            <span className={`font-semibold ${st === 'verified' ? 'text-[var(--success-green)]' : st === 'rejected' ? 'text-[var(--danger-red)]' : st === 'pending' ? 'text-[var(--warning-amber)]' : 'text-[var(--muted-gray)]'}`}>{TH[st]}</span>
+            {kyc.kyc_requested_at && <span className="text-[var(--muted-gray)] text-xs ml-2">ส่งคำขอ {kyc.kyc_requested_at}</span>}
+            {st === 'rejected' && kyc.kyc_note && <div className="text-xs text-[var(--danger-red)]/80 mt-1">เหตุผล: {kyc.kyc_note}</div>}
           </div>
           {(st === 'none' || st === 'rejected') && (
-            <Button size="sm" onClick={request} disabled={busy || !user?.emailVerified}>
+            <Button size="sm" onClick={request} disabled={busy || !user?.emailVerified} className="luxury-btn">
               {busy ? 'กำลังส่ง...' : st === 'rejected' ? 'ส่งคำขอใหม่' : 'ขอ verify ตัวตน'}
             </Button>
           )}
         </div>
         {!user?.emailVerified && (st === 'none' || st === 'rejected') && (
-          <div className="text-xs text-amber-300 mt-2">กรุณายืนยันอีเมลก่อนสมัคร KYC</div>
+          <div className="text-xs text-[var(--warning-amber)] mt-2">กรุณายืนยันอีเมลก่อนสมัคร KYC</div>
         )}
       </CardBody>
     </Card>
@@ -79,21 +80,21 @@ function RGCard({ user, onDone }) {
   };
 
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader title="เล่นอย่างรับผิดชอบ" sub="ตั้งวงเงินเดิมพันสูงสุดต่อวัน/เดือน และ/หรือระงับการแทงชั่วคราว — เพื่อป้องกันการเล่นเกินตัว" />
       <CardBody>
       {excluded && (
-        <div className="mb-4 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2 text-sm text-red-300 font-semibold">
+        <div className="mb-4 bg-[var(--danger-red)]/10 border border-[var(--danger-red)]/40 rounded-lg px-3 py-2 text-sm text-[var(--danger-red)] font-semibold">
           ⛔ บัญชีถูกระงับการแทง{user.selfExcludedUntil === 'permanent' ? 'ถาวร' : `ถึง ${user.selfExcludedUntil}`}
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-        <Input label="วงเงินสูงสุด/วัน (บาท — เว้นว่าง = ไม่จำกัด)" type="number" min="0" value={daily} onChange={e => setDaily(e.target.value)} placeholder="เช่น 500" inputClassName="py-2" />
-        <Input label="วงเงินสูงสุด/เดือน (บาท)" type="number" min="0" value={monthly} onChange={e => setMonthly(e.target.value)} placeholder="เช่น 5000" inputClassName="py-2" />
+        <Input label="วงเงินสูงสุด/วัน (บาท — เว้นว่าง = ไม่จำกัด)" type="number" min="0" value={daily} onChange={e => setDaily(e.target.value)} placeholder="เช่น 500" inputClassName="py-2 luxury-input" />
+        <Input label="วงเงินสูงสุด/เดือน (บาท)" type="number" min="0" value={monthly} onChange={e => setMonthly(e.target.value)} placeholder="เช่น 5000" inputClassName="py-2 luxury-input" />
       </div>
-      <Button onClick={saveLimits} size="sm" className="mb-5">บันทึกวงเงิน</Button>
+      <Button onClick={saveLimits} size="sm" className="mb-5 luxury-btn">บันทึกวงเงิน</Button>
       <div>
-        <div className="text-xs text-navy-300 mb-2">ระงับการแทง (self-exclusion — ยกเลิกเองไม่ได้):</div>
+        <div className="text-xs text-[var(--muted-gray)] mb-2">ระงับการแทง (self-exclusion — ยกเลิกเองไม่ได้):</div>
         <div className="flex flex-wrap gap-2">
           {[1, 7, 30].map(d => (
             <Button key={d} variant="danger" size="sm" onClick={() => exclude(d)} disabled={excluded}>{d} วัน</Button>
@@ -153,20 +154,20 @@ function PrefsCard() {
   };
 
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader title="การตั้งค่าบัญชี" sub="เขตเวลา • การแจ้งเตือน" />
       <CardBody>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Select label="เขตเวลา / Timezone" value={tz} onChange={e => changeTz(e.target.value)} inputClassName="py-2 text-sm">
+        <Select label="เขตเวลา / Timezone" value={tz} onChange={e => changeTz(e.target.value)} inputClassName="py-2 text-sm luxury-input">
           {TZ_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </Select>
         <div>
-          <label className="text-xs font-semibold text-navy-300 mb-1.5 block">การแจ้งเตือน Push</label>
+          <label className="text-xs font-semibold text-[var(--muted-gray)] mb-1.5 block">การแจ้งเตือน Push</label>
           <Button onClick={togglePush} disabled={pushBusy || !pushSupported()}
-            variant={pushOn ? 'accent' : 'ghost'} className="w-full">
+            variant={pushOn ? 'accent' : 'ghost'} className={`w-full ${pushOn ? 'luxury-btn' : 'luxury-btn-ghost'}`}>
             {pushBusy ? '...' : pushOn ? 'เปิดอยู่ — แตะเพื่อปิด' : 'เปิดแจ้งเตือน'}
           </Button>
-          {!pushSupported() && <div className="text-[10px] text-navy-500 mt-1">เบราว์เซอร์นี้ไม่รองรับ push</div>}
+          {!pushSupported() && <div className="text-[10px] text-[var(--muted-gray)] mt-1">เบราว์เซอร์นี้ไม่รองรับ push</div>}
         </div>
       </div>
       </CardBody>
@@ -196,22 +197,22 @@ function SessionsCard() {
   };
   if (!sessions) return null;
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader title="อุปกรณ์ที่ล็อกอิน" sub="จัดการ session ที่ใช้งานอยู่ — เพิกถอนเครื่องที่ไม่รู้จัก" />
       <CardBody>
         <div className="space-y-2 mb-3">
           {sessions.map(s => (
-            <div key={s.id} className="flex items-center justify-between bg-navy-900/60 border border-navy-700 rounded-lg px-3 py-2 text-sm">
+            <div key={s.id} className="flex items-center justify-between bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm hover:border-[var(--border-gold)] transition">
               <div className="min-w-0">
-                <div className="text-white truncate">{s.user_agent || 'unknown device'} {s.current && <span className="text-[10px] bg-gold-500/20 text-gold-300 px-1.5 py-0.5 rounded ml-1">อุปกรณ์นี้</span>}</div>
-                <div className="text-[11px] text-navy-400">IP {s.ip || '-'} • {String(s.created_at || '').slice(0, 16).replace('T', ' ')}</div>
+                <div className="text-[var(--white)] truncate">{s.user_agent || 'unknown device'} {s.current && <span className="text-[10px] bg-[var(--gold-primary)]/20 text-[var(--gold-primary)] px-1.5 py-0.5 rounded ml-1 luxury-badge-gold">อุปกรณ์นี้</span>}</div>
+                <div className="text-[11px] text-[var(--muted-gray)]">IP {s.ip || '-'} • {String(s.created_at || '').slice(0, 16).replace('T', ' ')}</div>
               </div>
-              {!s.current && <Button variant="ghost" size="sm" disabled={busy} onClick={() => revoke(s.id)}>เพิกถอน</Button>}
+              {!s.current && <Button variant="ghost" size="sm" disabled={busy} onClick={() => revoke(s.id)} className="luxury-btn-ghost">เพิกถอน</Button>}
             </div>
           ))}
-          {sessions.length === 0 && <div className="text-sm text-navy-400">ไม่มี session ที่ใช้งานอยู่</div>}
+          {sessions.length === 0 && <div className="text-sm text-[var(--muted-gray)]">ไม่มี session ที่ใช้งานอยู่</div>}
         </div>
-        {sessions.length > 1 && <Button variant="ghost" size="sm" disabled={busy} onClick={revokeOthers}>ออกจากอุปกรณ์อื่นทั้งหมด</Button>}
+        {sessions.length > 1 && <Button variant="ghost" size="sm" disabled={busy} onClick={revokeOthers} className="luxury-btn-ghost">ออกจากอุปกรณ์อื่นทั้งหมด</Button>}
       </CardBody>
     </Card>
   );
@@ -232,16 +233,16 @@ function EmailVerifyCard({ user, onDone }) {
     finally { setBusy(false); }
   };
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader title="ยืนยันอีเมล" sub="ยืนยันว่าอีเมลเป็นของคุณจริง เพื่อความปลอดภัยบัญชี" />
       <CardBody>
         {isTemp ? (
-          <p className="text-sm text-navy-300">บัญชีนี้ใช้อีเมลชั่วคราว ({user?.email}) — สมัครด้วยอีเมลจริง (แท็บ OTP → อีเมล) เพื่อรับการยืนยัน</p>
+          <p className="text-sm text-[var(--muted-gray)]">บัญชีนี้ใช้อีเมลชั่วคราว ({user?.email}) — สมัครด้วยอีเมลจริง (แท็บ OTP → อีเมล) เพื่อรับการยืนยัน</p>
         ) : (
           <>
-            <p className="text-sm text-navy-300 mb-3">อีเมลปัจจุบัน: <span className="text-white">{user?.email}</span> — ยังไม่ได้ยืนยัน</p>
-            <Button variant="ghost" size="sm" onClick={request} disabled={busy}>{busy ? 'กำลังส่ง...' : 'ส่งลิงก์ยืนยันอีเมล'}</Button>
-            {info && <div className="text-xs text-gold-300 mt-2 break-all">{info}</div>}
+            <p className="text-sm text-[var(--muted-gray)] mb-3">อีเมลปัจจุบัน: <span className="text-[var(--white)]">{user?.email}</span> — ยังไม่ได้ยืนยัน</p>
+            <Button variant="ghost" size="sm" onClick={request} disabled={busy} className="luxury-btn-ghost">{busy ? 'กำลังส่ง...' : 'ส่งลิงก์ยืนยันอีเมล'}</Button>
+            {info && <div className="text-xs text-[var(--gold-primary)] mt-2 break-all">{info}</div>}
           </>
         )}
       </CardBody>
@@ -282,14 +283,14 @@ function PrivacyCard({ onDeleted }) {
   };
 
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader title="ความเป็นส่วนตัว (PDPA)" sub="สิทธิ์ของเจ้าของข้อมูลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนตัว" />
       <CardBody>
         <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={exportData} disabled={busy}>⤓ ดาวน์โหลดข้อมูลของฉัน</Button>
+          <Button variant="ghost" size="sm" onClick={exportData} disabled={busy} className="luxury-btn-ghost">⤓ ดาวน์โหลดข้อมูลของฉัน</Button>
           <Button variant="danger" size="sm" onClick={deleteAccount} disabled={busy}>ลบบัญชีถาวร</Button>
         </div>
-        <p className="text-[11px] text-navy-500 mt-2">การลบบัญชีจะลบข้อมูลส่วนตัวทั้งหมดและระงับการใช้งานทันที — เครดิตคงเหลือและประวัติธุรกรรมจะถูกเก็บไว้เพื่อตามกฎหมาย</p>
+        <p className="text-[11px] text-[var(--muted-gray)] mt-2">การลบบัญชีจะลบข้อมูลส่วนตัวทั้งหมดและระงับการใช้งานทันที — เครดิตคงเหลือและประวัติธุรกรรมจะถูกเก็บไว้เพื่อตามกฎหมาย</p>
       </CardBody>
     </Card>
   );
@@ -332,28 +333,28 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Card>
+      <Card className="luxury-card luxury-card-gold-border">
         <CardHeader title="โปรไฟล์สมาชิก" />
         <CardBody>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <div><dt className="text-navy-300">ชื่อผู้ใช้</dt><dd className="text-white font-semibold">{user?.username}</dd></div>
-          <div><dt className="text-navy-300">ชื่อที่แสดง</dt><dd className="text-white">{user?.displayName}</dd></div>
-          <div><dt className="text-navy-300">อีเมล</dt><dd className="text-white">{user?.email}</dd></div>
-          <div><dt className="text-navy-300">บทบาท</dt><dd className="text-white">{(user?.roles || []).join(', ') || 'member'}</dd></div>
+          <div><dt className="text-[var(--muted-gray)]">ชื่อผู้ใช้</dt><dd className="text-[var(--white)] font-semibold">{user?.username}</dd></div>
+          <div><dt className="text-[var(--muted-gray)]">ชื่อที่แสดง</dt><dd className="text-[var(--white)]">{user?.displayName}</dd></div>
+          <div><dt className="text-[var(--muted-gray)]">อีเมล</dt><dd className="text-[var(--white)]">{user?.email}</dd></div>
+          <div><dt className="text-[var(--muted-gray)]">บทบาท</dt><dd className="text-[var(--white)]">{(user?.roles || []).join(', ') || 'member'}</dd></div>
         </dl>
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className="luxury-card">
         <CardHeader title="เปลี่ยนรหัสผ่าน" />
         <CardBody>
         <form onSubmit={changePw} className="space-y-3">
-          <Input type="password" required placeholder="รหัสผ่านเดิม" value={pw.oldPassword} onChange={e => setPw({...pw, oldPassword: e.target.value})} inputClassName="py-2.5" />
-          <Input type="password" required minLength={10} placeholder="รหัสผ่านใหม่ (10+ ตัว)" value={pw.newPassword} onChange={e => setPw({...pw, newPassword: e.target.value})} inputClassName="py-2.5" />
-          <Input type="password" required placeholder="ยืนยันรหัสผ่านใหม่" value={pw.confirm} onChange={e => setPw({...pw, confirm: e.target.value})} inputClassName="py-2.5" />
-          {err && <div className="text-red-400 text-sm" role="alert">{err}</div>}
-          {msg && <div className="text-green-400 text-sm" role="status">{msg}</div>}
-          <Button disabled={busy}>{busy ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}</Button>
+          <Input type="password" required placeholder="รหัสผ่านเดิม" value={pw.oldPassword} onChange={e => setPw({...pw, oldPassword: e.target.value})} inputClassName="py-2.5 luxury-input" />
+          <Input type="password" required minLength={10} placeholder="รหัสผ่านใหม่ (10+ ตัว)" value={pw.newPassword} onChange={e => setPw({...pw, newPassword: e.target.value})} inputClassName="py-2.5 luxury-input" />
+          <Input type="password" required placeholder="ยืนยันรหัสผ่านใหม่" value={pw.confirm} onChange={e => setPw({...pw, confirm: e.target.value})} inputClassName="py-2.5 luxury-input" />
+          {err && <div className="text-[var(--danger-red)] text-sm" role="alert">{err}</div>}
+          {msg && <div className="text-[var(--success-green)] text-sm" role="status">{msg}</div>}
+          <Button disabled={busy} className="luxury-btn">{busy ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}</Button>
         </form>
         </CardBody>
       </Card>
@@ -376,38 +377,38 @@ export default function Profile() {
       {/* PDPA — export + delete account */}
       <PrivacyCard onDeleted={async () => { await logout(); window.location.href = '/'; }} />
 
-      <Card>
+      <Card className="luxury-card">
         <CardHeader title="การยืนยันตัวตน 2 ชั้น (MFA/TOTP)" sub={isAdmin ? 'จำเป็นสำหรับบัญชี Admin — แนะนำสำหรับทุกคน' : 'เพิ่มความปลอดภัยบัญชีของคุณ'} />
         <CardBody>
-        <p className="text-sm text-navy-300 mb-4">{user?.mfaEnabled ? 'เปิดใช้งานแล้ว — ปลอดภัยยิ่งขึ้น' : 'ยังไม่ได้เปิดใช้งาน — แนะนำให้เปิดใช้'}</p>
+        <p className="text-sm text-[var(--muted-gray)] mb-4">{user?.mfaEnabled ? 'เปิดใช้งานแล้ว — ปลอดภัยยิ่งขึ้น' : 'ยังไม่ได้เปิดใช้งาน — แนะนำให้เปิดใช้'}</p>
         {!mfa ? (
-          <Button variant="ghost" onClick={setupMfa}>
+          <Button variant="ghost" onClick={setupMfa} className="luxury-btn-ghost">
             {user?.mfaEnabled ? 'สร้าง Secret ใหม่' : 'ตั้งค่า MFA'}
           </Button>
         ) : (
           <div className="space-y-3">
-            <div className="bg-navy-900 rounded-lg p-4 text-sm">
-              <div className="text-navy-300 mb-1">Secret (ใส่ในแอป Authenticator):</div>
-              <code className="text-gold-300 text-lg tracking-wider">{mfa.secret}</code>
-              <div className="text-navy-300 mt-2 text-xs break-all">{mfa.uri}</div>
+            <div className="bg-[var(--bg-dark-surface)] rounded-lg p-4 text-sm border border-[var(--border-light)]">
+              <div className="text-[var(--muted-gray)] mb-1">Secret (ใส่ในแอป Authenticator):</div>
+              <code className="text-[var(--gold-primary)] text-lg tracking-wider">{mfa.secret}</code>
+              <div className="text-[var(--muted-gray)] mt-2 text-xs break-all">{mfa.uri}</div>
             </div>
             <div className="flex gap-2">
               <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
-                placeholder="รหัส 6 หลัก" className="flex-1" inputClassName="text-center tracking-widest py-2.5" aria-label="รหัส MFA" />
-              <Button onClick={enableMfa}>เปิดใช้งาน</Button>
+                placeholder="รหัส 6 หลัก" className="flex-1" inputClassName="text-center tracking-widest py-2.5 luxury-input" aria-label="รหัส MFA" />
+              <Button onClick={enableMfa} className="luxury-btn">เปิดใช้งาน</Button>
             </div>
           </div>
         )}
         {user?.mfaEnabled && !mfa && (
-          <div className="mt-4 pt-4 border-t border-navy-700">
+          <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
             {!showDisable ? (
-              <Button variant="ghost" size="sm" onClick={() => setShowDisable(true)}>ปิดใช้งาน MFA</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowDisable(true)} className="luxury-btn-ghost">ปิดใช้งาน MFA</Button>
             ) : (
               <div className="flex gap-2 items-center">
                 <Input value={disableCode} onChange={e => setDisableCode(e.target.value.replace(/\D/g,'').slice(0,6))}
-                  placeholder="รหัส MFA 6 หลักเพื่อยืนยัน" className="flex-1" inputClassName="text-center tracking-widest py-2" />
+                  placeholder="รหัส MFA 6 หลักเพื่อยืนยัน" className="flex-1" inputClassName="text-center tracking-widest py-2 luxury-input" />
                 <Button variant="danger" size="sm" onClick={disableMfa} disabled={disableCode.length !== 6}>ยืนยันปิด</Button>
-                <Button variant="ghost" size="sm" onClick={() => { setShowDisable(false); setDisableCode(''); }}>ยกเลิก</Button>
+                <Button variant="ghost" size="sm" onClick={() => { setShowDisable(false); setDisableCode(''); }} className="luxury-btn-ghost">ยกเลิก</Button>
               </div>
             )}
           </div>

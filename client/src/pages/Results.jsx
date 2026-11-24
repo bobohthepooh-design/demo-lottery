@@ -9,6 +9,7 @@ import { typeAccent } from '../typeAccent.js';
 import { toast } from '../components/toast.js';
 import { satang } from '../api.js';
 import EmptyState from '../components/EmptyState.jsx';
+import '../styles/luxury-theme.css';
 
 const STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับแทง', closed: 'ปิดรับแล้ว รอผล',
@@ -157,29 +158,28 @@ export default function Results() {
         <div className="flex items-center gap-2 flex-wrap">
           <FlagIcon code={d.type_code} className="w-5 h-5 text-[9px]" />
           <span className={`text-sm font-bold ${ac.text}`}>{d.category_name_th || d.type_name_th}</span>
-          <span className="text-[11px] text-navy-400">{d.draw_code}</span>
+          <span className="text-[11px] text-gray-400">{d.draw_code}</span>
           {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
           {wonDraws.has(d.id) && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/25 border border-green-400/60 text-green-300 font-bold animate-pulse">🏆 โพยคุณถูก!</span>
+            <span className="luxury-badge luxury-badge-success font-bold animate-pulse">🏆 โพยคุณถูก!</span>
           )}
-          <span className="ml-auto text-[11px] text-navy-400">ออก {fmtDateTime(d.draw_at)}</span>
+          <span className="ml-auto text-[11px] text-gray-400">ออก {fmtDateTime(d.draw_at)}</span>
           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-            d.status === 'settled' ? 'bg-emerald-500/20 text-emerald-300'
-            : d.status === 'open' ? 'bg-blue-500/20 text-blue-300'
-            : d.status === 'closed' ? 'bg-amber-500/20 text-amber-300'
-            : 'bg-navy-700 text-navy-300'}`}>
+            d.status === 'settled' ? 'luxury-badge luxury-badge-success'
+            : d.status === 'open' ? 'luxury-badge luxury-badge-info'
+            : d.status === 'closed' ? 'luxury-badge' : 'luxury-badge'}`}>
             {STATUS_TH[d.status] || d.status}
           </span>
         </div>
         {d.status === 'settled' && (d.published_at || d.result_source) && (
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-navy-400">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-gray-400">
             <span>งวด {thaiDate(d.draw_at)}</span>
             {d.published_at && <span>· ประกาศผล {thaiTime(d.published_at)}</span>}
-            {d.result_source && <span>· แหล่งข้อมูล: <span className="text-navy-200 font-semibold">{sourceName(d.result_source)}</span></span>}
+            {d.result_source && <span>· แหล่งข้อมูล: <span className="text-gray-300 font-semibold">{sourceName(d.result_source)}</span></span>}
           </div>
         )}
         {sourceChecks.length > 0 && (
-          <div className={`mt-2 rounded-lg border px-3 py-2 text-[10px] ${hasMismatch ? 'border-amber-500/50 bg-amber-500/10 text-amber-200' : 'border-navy-700 bg-navy-900/50 text-navy-300'}`}>
+          <div className={`mt-2 rounded-lg border px-3 py-2 text-[10px] ${hasMismatch ? 'border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] text-amber-200' : 'border-[rgba(229,231,235,0.1)] bg-[#181A20] text-gray-300'}`}>
             <div className="font-semibold">
               {hasMismatch
                 ? `⚠️ แหล่งข้อมูลรายงานผลไม่ตรงกัน — ใช้ผลจาก ${d.result_source || 'แหล่งที่แสดงด้านบน'}`
@@ -199,7 +199,7 @@ export default function Results() {
                       {c.source}
                     </a>
                     {' '}· {status}
-                    {c.winning && <span className="text-navy-400"> · {compactSummary(c.winning) || 'มีผลบันทึก'}</span>}
+                    {c.winning && <span className="text-gray-400"> · {compactSummary(c.winning) || 'มีผลบันทึก'}</span>}
                   </span>
                 );
               })}
@@ -211,14 +211,14 @@ export default function Results() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {heroNumbers(d.winning).map(h => (
                 <div key={h.label} className="text-center">
-                  <div className="text-[10px] text-navy-400 font-semibold tracking-wide">{h.label}</div>
+                  <div className="text-[10px] text-gray-400 font-semibold tracking-wide">{h.label}</div>
                   <div className="announce-num text-xl sm:text-2xl leading-tight mt-0.5">{h.num}</div>
                 </div>
               ))}
             </div>
             {sum && sum.length > 0 && (
               <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
-                className="mt-2 w-full text-left text-[11px] text-navy-300 hover:text-white transition">
+                className="mt-2 w-full text-left text-[11px] text-gray-300 hover:text-white transition">
                 {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
               </button>
             )}
@@ -226,17 +226,17 @@ export default function Results() {
         )}
         {!(d.status === 'settled' && d.winning && heroNumbers(d.winning).length > 0) && sum && sum.length > 0 && (
           <button onClick={() => setExpanded(e => ({ ...e, [d.id]: !open }))}
-            className="mt-1.5 w-full text-left text-xs text-slate-100 bg-navy-900/80 hover:bg-navy-900 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide transition">
+            className="mt-1.5 w-full text-left text-xs text-white bg-[#181A20] hover:bg-[#20232B] rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide transition border border-[rgba(229,231,235,0.1)]">
             {compact || sum[0]}
             {sum.length > 1 && (
-              <span className="block text-[10px] text-navy-400 font-sans mt-0.5">
+              <span className="block text-[10px] text-gray-400 font-sans mt-0.5">
                 {open ? '▾ ย่อรายละเอียด' : '▸ ดูผลทุกรางวัล'}
               </span>
             )}
           </button>
         )}
         {open && sum && (
-          <div className="mt-1.5 text-xs text-slate-100 bg-navy-900/80 rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide">
+          <div className="mt-1.5 text-xs text-white bg-[#181A20] rounded-lg px-3 py-2 font-mono tabular-nums tracking-wide border border-[rgba(229,231,235,0.1)]">
             {sum.map((p, i) => <div key={i}>{p}</div>)}
           </div>
         )}
@@ -247,16 +247,16 @@ export default function Results() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-black text-white">ผลรางวัลและตารางออกรางวัล</h1>
-        <p className="text-sm text-navy-400 mt-1">{thaiFull(date)} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
+        <h1 className="text-2xl font-black luxury-gradient-text">ผลรางวัลและตารางออกรางวัล</h1>
+        <p className="text-sm text-gray-400 mt-1">{thaiFull(date)} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
         {/* เลือกวัน — วันนี้ + date picker (ปุ่มเมื่อวาน/พรุ่งนี้ถูกเอาออกตามที่ผู้ใช้แจ้ง) */}
         <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
           <button onClick={() => setDate(bkkTodayStr())} disabled={isToday}
-            className={`text-xs rounded-lg px-3 py-1.5 font-bold transition ${isToday ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40' : 'bg-navy-800 border border-navy-600 text-navy-200 hover:border-gold-500/50'}`}>
+            className={`text-xs rounded-lg px-3 py-1.5 font-bold transition ${isToday ? 'luxury-btn' : 'luxury-btn-ghost'}`}>
             วันนี้
           </button>
           <input type="date" value={date} onChange={e => e.target.value && setDate(e.target.value)}
-            className="text-xs bg-navy-800 border border-navy-600 rounded-lg px-2 py-1.5 text-navy-200 [color-scheme:dark]" />
+            className="text-xs luxury-input" />
         </div>
       </div>
 
@@ -284,13 +284,13 @@ export default function Results() {
           <section className="space-y-3">
             <div>
               <h2 className="text-sm font-bold text-white">🏆 ผลล่าสุดทุกตลาด</h2>
-              <p className="text-[11px] text-navy-400 mt-0.5">ผลล่าสุดของแต่ละตลาด โดยไม่ขึ้นกับวันที่เลือกด้านบน</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">ผลล่าสุดของแต่ละตลาด โดยไม่ขึ้นกับวันที่เลือกด้านบน</p>
             </div>
             {groups.map(([code, items]) => (
               <div key={code}>
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <FlagIcon code={code} className="w-4 h-4 text-[8px]" />
-                  <span className="text-xs font-bold text-navy-200">{GROUP_LABEL[code] || code}</span>
+                  <span className="text-xs font-bold text-gray-300">{GROUP_LABEL[code] || code}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {items.map(r => {
@@ -303,36 +303,36 @@ export default function Results() {
                     const open = !!cardOpen[`${r.type_code}:${r.category_code || ''}`];
                     return (
                       <div key={`${r.type_code}:${r.category_code || ''}`}
-                        className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5">
+                        className="luxury-card px-3 py-2.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <FlagIcon code={r.type_code} className="w-4 h-4 text-[8px]" />
                           <span className="text-xs font-bold text-white">{r.category_name_th || r.type_name_th}</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-bold">ออกผลแล้ว</span>
+                          <span className="luxury-badge luxury-badge-success font-bold">ออกผลแล้ว</span>
                           {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
                         </div>
-                        <div className="text-[10px] text-navy-400 mt-1">งวดวันที่ {thaiDate(r.draw_at)}</div>
+                        <div className="text-[10px] text-gray-400 mt-1">งวดวันที่ {thaiDate(r.draw_at)}</div>
                         {heroes.length > 0 && (
                           <div className="grid grid-cols-3 gap-1 mt-2">
                             {heroes.map(h => (
-                              <div key={h.label} className="text-center bg-navy-900/60 rounded-lg py-1.5 px-1">
-                                <div className="text-[8px] text-navy-400 leading-tight">{h.label}</div>
-                                <div className="font-mono font-bold text-gold-300 text-sm leading-tight mt-0.5 break-all">{h.num}</div>
+                              <div key={h.label} className="text-center bg-[#181A20] rounded-lg py-1.5 px-1 border border-[rgba(229,231,235,0.1)]">
+                                <div className="text-[8px] text-gray-400 leading-tight">{h.label}</div>
+                                <div className="font-mono font-bold text-[#F5D76E] text-sm leading-tight mt-0.5 break-all">{h.num}</div>
                               </div>
                             ))}
                           </div>
                         )}
                         {sumAll.length > 0 && (
                           <button onClick={() => setCardOpen(e => ({ ...e, [`${r.type_code}:${r.category_code || ''}`]: !open }))}
-                            className="mt-1.5 w-full text-left text-[10px] text-navy-400 hover:text-gold-300 transition">
+                            className="mt-1.5 w-full text-left text-[10px] text-gray-400 hover:text-[#F5D76E] transition">
                             {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
                           </button>
                         )}
                         {open && sumAll.length > 0 && (
-                          <div className="mt-1 text-[10px] text-navy-200 bg-navy-900/70 rounded-lg px-2 py-1.5 font-mono leading-relaxed break-all">
+                          <div className="mt-1 text-[10px] text-gray-300 bg-[#181A20] rounded-lg px-2 py-1.5 font-mono leading-relaxed break-all border border-[rgba(229,231,235,0.1)]">
                             {sumAll.map((p, i) => <div key={i}>{p}</div>)}
                           </div>
                         )}
-                        <div className="text-[9px] text-navy-500 mt-1.5">
+                        <div className="text-[9px] text-gray-500 mt-1.5">
                           แหล่ง: {sourceName(r.result_source || r.source)} · อัปเดต {thaiTime(r.published_at || r.draw_at)}{r.published_at ? '' : ' (เวลาออกรางวัล)'}
                         </div>
                       </div>
@@ -349,19 +349,19 @@ export default function Results() {
       <div className="max-w-sm mx-auto">
         <input value={q} onChange={e => setQ(e.target.value)}
           placeholder="🔍 ค้นหารหัสรอบ / ชื่อหวย เช่น HNN-20261119-00"
-          className="w-full bg-navy-800 border border-navy-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-navy-500 focus:outline-none focus:border-gold-500/60" />
+          className="w-full luxury-input text-sm" />
       </div>
 
       {/* tab กรองตามประเภทหวย — แสดงเฉพาะเมื่อมีมากกว่า 1 ประเภทในวันนี้ */}
       {typeTabs.length > 1 && (
         <div className="flex gap-1.5 flex-wrap justify-center">
           <button onClick={() => setTypeFilter('')}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${!typeFilter ? 'bg-gold-500/20 border-gold-500/60 text-gold-300' : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${!typeFilter ? 'luxury-badge luxury-badge-gold' : 'luxury-btn-ghost'}`}>
             ทั้งหมด ({draws.length})
           </button>
           {typeTabs.map(t => (
             <button key={t.code} onClick={() => setTypeFilter(typeFilter === t.code ? '' : t.code)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition inline-flex items-center gap-1.5 ${typeFilter === t.code ? 'bg-gold-500/20 border-gold-500/60 text-gold-300' : 'border-navy-600 text-navy-300 hover:bg-navy-800'}`}>
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition inline-flex items-center gap-1.5 ${typeFilter === t.code ? 'luxury-badge luxury-badge-gold' : 'luxury-btn-ghost'}`}>
               <FlagIcon code={t.code} className="w-4 h-3 text-[7px]" />
               {t.label} ({t.n})
             </button>
@@ -370,11 +370,11 @@ export default function Results() {
       )}
 
       {/* ตารางออกรางวัล — จัดกลุ่มตามตลาด พร้อมตัวนับ ออกแล้ว X/Y */}
-      <section className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-navy-700 font-bold text-navy-950">
+      <section className="luxury-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-[rgba(229,231,235,0.1)] font-bold text-white">
           📅 ตารางออกรางวัล {thaiShort(date)} ({draws.length} รอบ)
         </div>
-        {!data && <div className="p-4 text-sm text-navy-400">กำลังโหลด…</div>}
+        {!data && <div className="p-4 text-sm text-gray-400">กำลังโหลด…</div>}
         {data && !draws.length && (
           <div className="p-4">
             <EmptyState emoji="📅" title="ไม่มีรอบออกรางวัลในวันนี้"
@@ -382,26 +382,26 @@ export default function Results() {
           </div>
         )}
         {data && !visibleGroups.length && draws.length > 0 && (
-          <div className="p-4 text-sm text-navy-400 text-center">ไม่มีรอบของประเภทที่เลือก</div>
+          <div className="p-4 text-sm text-gray-400 text-center">ไม่มีรอบของประเภทที่เลือก</div>
         )}
         {visibleGroups.map(g => {
           const done = g.items.filter(d => d.status === 'settled').length;
           const ac = typeAccent(g.type_code);
           return (
             <div key={g.key}>
-              <div className="px-4 py-2 bg-navy-900/60 border-y border-navy-700/60 flex items-center gap-2">
+              <div className="px-4 py-2 bg-[#181A20] border-y border-[rgba(229,231,235,0.1)] flex items-center gap-2">
                 <FlagIcon code={g.type_code} className="w-4 h-4 text-[8px]" />
                 <span className={`text-xs font-bold ${ac.text}`}>{g.label}</span>
-                <span className="ml-auto text-[10px] text-navy-400 font-mono">ออกแล้ว {done}/{g.items.length}</span>
+                <span className="ml-auto text-[10px] text-gray-400 font-mono">ออกแล้ว {done}/{g.items.length}</span>
                 {done > 0 && (
                   <button onClick={() => {
                     const txt = `${g.label} ${thaiShort(date)}\n` + g.items.filter(d => d.status === 'settled')
                       .map(d => `• ${d.draw_code}: ${compactSummary(d.winning) || '—'}`).join('\n');
                     navigator.clipboard?.writeText(txt).then(() => toast('คัดลอกผลรางวัลแล้ว', 'success')).catch(() => toast('คัดลอกไม่สำเร็จ', 'error'));
-                  }} className="text-[10px] px-2 py-0.5 rounded border border-navy-600 text-navy-300 hover:border-gold-500/50 hover:text-gold-300" title="คัดลอกผลกลุ่มนี้">📋 คัดลอก</button>
+                  }} className="text-[10px] px-2 py-0.5 rounded border border-[rgba(229,231,235,0.1)] text-gray-300 hover:border-[rgba(212,175,55,0.3)] hover:text-[#F5D76E] transition" title="คัดลอกผลกลุ่มนี้">📋 คัดลอก</button>
                 )}
               </div>
-              <div className="divide-y divide-navy-700/60">
+              <div className="divide-y divide-[rgba(229,231,235,0.1)]">
                 {g.items.map(drawRow)}
               </div>
             </div>
@@ -413,17 +413,17 @@ export default function Results() {
 
       {/* ผู้ชนะของวันที่เลือก */}
       {dayWinners.length > 0 && (
-        <section className="bg-navy-800/70 border border-gold-500/30 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-navy-700 font-bold text-gold-300">🏆 ผู้ชนะ {thaiShort(date)} ({dayWinners.length})</div>
-          <div className="divide-y divide-navy-700/60">
+        <section className="luxury-card luxury-card-gold-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-[rgba(229,231,235,0.1)] font-bold text-[#F5D76E]">🏆 ผู้ชนะ {thaiShort(date)} ({dayWinners.length})</div>
+          <div className="divide-y divide-[rgba(229,231,235,0.1)]">
             {dayWinners.map((w, i) => (
               <div key={i} className="px-4 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-gold-400 font-bold w-6">#{i + 1}</span>
+                <span className="text-[#F5D76E] font-bold w-6">#{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-semibold truncate">{w.player} <span className="text-navy-400 font-normal text-xs">• {w.typeName}</span></div>
-                  <div className="text-[11px] text-navy-400">เลข {w.number} • {w.ruleName}{w.isTod ? ' (โต๊ด)' : ''} • {w.drawCode}</div>
+                  <div className="text-white font-semibold truncate">{w.player} <span className="text-gray-400 font-normal text-xs">• {w.typeName}</span></div>
+                  <div className="text-[11px] text-gray-400">เลข {w.number} • {w.ruleName}{w.isTod ? ' (โต๊ด)' : ''} • {w.drawCode}</div>
                 </div>
-                <div className="text-green-400 font-bold whitespace-nowrap">{satang(w.payout)} ฿</div>
+                <div className="text-[#22C55E] font-bold whitespace-nowrap">{satang(w.payout)} ฿</div>
               </div>
             ))}
           </div>
@@ -433,25 +433,25 @@ export default function Results() {
       {/* ผลล่าสุดทุกตลาดย้ายขึ้นด้านบน (LC-style cards) — section นี้ถูกแทนที่แล้ว */}
 
       {/* P3: ประวัติย้อนหลัง + สถิติความถี่เลข */}
-      <section className="bg-navy-800/70 border border-navy-700 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-navy-700 flex items-center gap-3 flex-wrap">
-          <span className="font-bold text-navy-950">📊 สถิติย้อนหลัง</span>
+      <section className="luxury-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-[rgba(229,231,235,0.1)] flex items-center gap-3 flex-wrap">
+          <span className="font-bold text-white">📊 สถิติย้อนหลัง</span>
           <select value={sel} onChange={e => setSel(e.target.value)}
-            className="text-xs bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-navy-100">
+            className="text-xs luxury-input">
             {markets.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
           </select>
           <select value={statLimit} onChange={e => setStatLimit(Number(e.target.value))}
-            className="text-xs bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-navy-100">
+            className="text-xs luxury-input">
             <option value={30}>30 งวด</option><option value={60}>60 งวด</option><option value={100}>100 งวด</option>
           </select>
         </div>
         {statErr && <div className="p-3 text-sm text-red-300">{statErr}</div>}
-        {!hist && !statErr && <div className="p-4 text-sm text-navy-400">กำลังโหลด…</div>}
+        {!hist && !statErr && <div className="p-4 text-sm text-gray-400">กำลังโหลด…</div>}
         {hist && (
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* ความถี่เลข */}
-            <div className="p-4 border-b md:border-b-0 md:border-r border-navy-700">
-              <div className="text-xs font-bold text-navy-300 mb-2">ความถี่เลข ({stats?.draws_used ?? 0} งวด)</div>
+            <div className="p-4 border-b md:border-b-0 md:border-r border-[rgba(229,231,235,0.1)]">
+              <div className="text-xs font-bold text-gray-300 mb-2">ความถี่เลข ({stats?.draws_used ?? 0} งวด)</div>
               {stats && (
                 <>
                   <div className="flex gap-1 mb-3">
@@ -460,35 +460,35 @@ export default function Results() {
                       const max = Math.max(...Object.values(stats.digit_freq), 1);
                       return (
                         <div key={d} className="flex-1 text-center">
-                          <div className="text-[9px] text-navy-400">{d}</div>
-                          <div className="bg-navy-900 rounded h-16 flex items-end overflow-hidden">
-                            <div className="w-full bg-gradient-to-t from-gold-500 to-red-500" style={{ height: `${(c / max) * 100}%` }} />
+                          <div className="text-[9px] text-gray-400">{d}</div>
+                          <div className="bg-[#181A20] rounded h-16 flex items-end overflow-hidden">
+                            <div className="w-full bg-gradient-to-t from-[#D4AF37] to-[#F5D76E]" style={{ height: `${(c / max) * 100}%` }} />
                           </div>
-                          <div className="text-[9px] text-navy-300">{c}</div>
+                          <div className="text-[9px] text-gray-300">{c}</div>
                         </div>
                       );
                     })}
                   </div>
                   {stats.top2?.length > 0 && (
-                    <div className="text-[11px] text-navy-300">
+                    <div className="text-[11px] text-gray-300">
                       <div className="font-bold mb-1">เลข 2 ตัวออกบ่อย</div>
                       <div className="flex flex-wrap gap-1">
                         {stats.top2.slice(0, 10).map(t => (
-                          <span key={t.number} className="bg-navy-900 border border-navy-600 rounded px-1.5 py-0.5 font-mono tabular-nums">
-                            {t.number} <span className="text-gold-400">×{t.count}</span>
+                          <span key={t.number} className="bg-[#181A20] border border-[rgba(229,231,235,0.1)] rounded px-1.5 py-0.5 font-mono tabular-nums">
+                            {t.number} <span className="text-[#F5D76E]">×{t.count}</span>
                           </span>
                         ))}
                       </div>
                     </div>
                   )}
                   {stats.overdue?.length > 0 && (
-                    <div className="text-[11px] text-navy-300 mt-3">
+                    <div className="text-[11px] text-gray-300 mt-3">
                       <div className="font-bold mb-1 text-amber-300">เลขค้าง (ออกนานแล้ว)</div>
                       <div className="flex flex-wrap gap-1">
                         {stats.overdue.map(o => {
                           const num = o.key.slice(o.key.indexOf(':') + 1);
                           return (
-                            <span key={o.key} className="bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 font-mono tabular-nums text-amber-200"
+                            <span key={o.key} className="bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] rounded px-1.5 py-0.5 font-mono tabular-nums text-amber-200"
                               title={`เคยออก ${o.count} ครั้ง • ห่างออก ${o.draws_ago} งวด`}>
                               {num} <span className="text-amber-400/80">-{o.draws_ago}งวด</span>
                             </span>
@@ -502,13 +502,13 @@ export default function Results() {
             </div>
             {/* ประวัติ */}
             <div className="p-4 max-h-80 overflow-y-auto">
-              <div className="text-xs font-bold text-navy-300 mb-2">ผลย้อนหลัง ({hist.draws.length} งวด)</div>
+              <div className="text-xs font-bold text-gray-300 mb-2">ผลย้อนหลัง ({hist.draws.length} งวด)</div>
               <div className="space-y-1">
                 {hist.draws.map(d => (
-                  <div key={d.id} className="flex items-center gap-2 text-[11px] bg-navy-900/60 rounded px-2 py-1">
-                    <span className="text-navy-400 w-24 shrink-0">{d.draw_at?.slice(5, 10)}</span>
-                    <span className="font-mono tabular-nums text-slate-100 flex-1 truncate">{summarizeWinning(d.winning)}</span>
-                    {d.result_source && <span className="text-[9px] text-navy-500 shrink-0">{d.result_source}</span>}
+                  <div key={d.id} className="flex items-center gap-2 text-[11px] bg-[#181A20] rounded px-2 py-1 border border-[rgba(229,231,235,0.1)]">
+                    <span className="text-gray-400 w-24 shrink-0">{d.draw_at?.slice(5, 10)}</span>
+                    <span className="font-mono tabular-nums text-white flex-1 truncate">{summarizeWinning(d.winning)}</span>
+                    {d.result_source && <span className="text-[9px] text-gray-500 shrink-0">{d.result_source}</span>}
                   </div>
                 ))}
               </div>

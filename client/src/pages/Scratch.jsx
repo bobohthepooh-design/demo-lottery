@@ -136,36 +136,36 @@ export default function Scratch() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 instant-page">
       {/* hero */}
-      <div className="relative overflow-hidden rounded-3xl border-2 border-gold-500/60 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 sm:p-8 text-center">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-gold-500/50 to-gold-600/50" />
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
+        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', right: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '1s' }} />
         <div className="text-5xl mb-2 animate-float">🎰</div>
-        <h1 className="font-display font-bold text-2xl sm:text-3xl text-gold-300">สล็อต</h1>
-        <p className="text-sm text-navy-300 mt-1">เล่นเกม → กดสปิน → 5 รีลหมุนหยุดทีละตัว → รู้ผลทันที!</p>
+        <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">สล็อต</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--muted-gray)' }}>เล่นเกม → กดสปิน → 5 รีลหมุนหยุดทีละตัว → รู้ผลทันที!</p>
         <div className="flex flex-col items-center gap-3 mt-4">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500/25 via-gold-500/10 to-gold-500/25 border border-gold-400/60 shadow-[0_0_20px_rgba(217,165,32,0.25)]">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05), rgba(212, 175, 55, 0.15))', border: '1px solid var(--border-gold)', boxShadow: 'var(--shadow-gold)' }}>
             <span className="text-sm">💰</span>
-            <span className="text-xs font-semibold text-gold-300">ราคาต่อใบ</span>
-            <span className="font-display font-bold text-2xl text-gold-300">{satang(price)} <span className="text-sm">บาท</span></span>
+            <span className="text-xs font-semibold" style={{ color: 'var(--gold-primary)' }}>ราคาต่อใบ</span>
+            <span className="font-display font-bold text-2xl" style={{ color: 'var(--gold-bright)' }}>{satang(price)} <span className="text-sm">บาท</span></span>
           </div>
-          <div className="flex items-center justify-center gap-3 text-[11px] text-navy-300 flex-wrap">
+          <div className="flex items-center justify-center gap-3 text-[11px] flex-wrap" style={{ color: 'var(--muted-gray)' }}>
             {prizes.map(p => <span key={p.icon} className="inline-flex items-center gap-0.5">{p.icon} <b>{p.name}</b> {p.max && p.max !== p.prize ? `${satang(p.prize)}–${satang(p.max)}` : satang(p.prize)} บาท</span>)}
           </div>
         </div>
-        <p className="text-[11px] text-navy-400 mt-2">ถูกเมื่อสัญลักษณ์เดิมซ้ำกันติดกันตั้งแต่รีลซ้ายอย่างน้อย 3 รีล บน 20 เพย์ไลน์ใดก็ได้ • จ่ายรวมทุกเส้นที่ถูก • เครดิตเสมือนสำหรับ Demo</p>
+        <p className="text-[11px] mt-2" style={{ color: 'var(--dark-gray)' }}>ถูกเมื่อสัญลักษณ์เดิมซ้ำกันติดกันตั้งแต่รีลซ้ายอย่างน้อย 3 รีล บน 20 เพย์ไลน์ใดก็ได้ • จ่ายรวมทุกเส้นที่ถูก • เครดิตเสมือนสำหรับ Demo</p>
       </div>
 
       {/* buy + active card */}
-      <div className="bg-navy-800 border border-navy-700 rounded-2xl p-5">
+      <div className="luxury-card p-5">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
-            <div className="font-bold text-white">บัตรของคุณ</div>
-            <div className="text-xs text-navy-400">เครดิตคงเหลือ {satang(balance)} บาท • ปุ่มซื้อ/เล่นอยู่แถบด้านล่าง</div>
+            <div className="font-bold" style={{ color: 'var(--white)' }}>บัตรของคุณ</div>
+            <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>เครดิตคงเหลือ {satang(balance)} บาท • ปุ่มซื้อ/เล่นอยู่แถบด้านล่าง</div>
           </div>
         </div>
-        {err && <div className="text-red-400 text-sm mb-3">{err}</div>}
+        {err && <div className="text-sm mb-3" style={{ color: 'var(--danger-red)' }}>{err}</div>}
         {balance < price && (
-          <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 mb-3">
+          <div className="text-xs rounded-lg px-3 py-2 mb-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: 'var(--warning-amber)' }}>
             เครดิตไม่พอ — <a href="/wallet?action=deposit" className="underline font-semibold">เติมเครดิต</a> ก่อนนะ
           </div>
         )}
@@ -173,8 +173,8 @@ export default function Scratch() {
         {active && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-navy-400 font-mono">โพย {active.slipRef} • {fmtDateTime(active.createdAt)}</div>
-              <button onClick={() => { setActive(null); setResult(null); }} className="text-xs text-navy-400 hover:text-navy-200">ปิด</button>
+              <div className="text-xs font-mono" style={{ color: 'var(--muted-gray)' }}>โพย {active.slipRef} • {fmtDateTime(active.createdAt)}</div>
+              <button onClick={() => { setActive(null); setResult(null); }} className="text-xs transition" style={{ color: 'var(--muted-gray)' }}>ปิด</button>
             </div>
             <FairnessNote fairness={result?.fairness || active.fairness}
               verify={(seed) => api('/scratch/verify', { method: 'POST', body: { seed } })} />
@@ -186,7 +186,7 @@ export default function Scratch() {
                     betLabel={`${satang(price)} บ.`} creditLabel={`${satang(balance)} บ.`}
                     onSpin={spin} spinning={spinning} spinDisabled={busy || balance < price} />
                 </div>
-                <p className="text-center text-[11px] text-navy-400">กด SPIN บนตู้ 1 ครั้งต่อบัตร — ผลถูกกำหนดฝั่ง server แล้ว เครดิตตัดตอนซื้อ</p>
+                <p className="text-center text-[11px]" style={{ color: 'var(--muted-gray)' }}>กด SPIN บนตู้ 1 ครั้งต่อบัตร — ผลถูกกำหนดฝั่ง server แล้ว เครดิตตัดตอนซื้อ</p>
               </>
             )}
 
@@ -210,7 +210,7 @@ export default function Scratch() {
 
         {!loaded && <><SkeletonCard /><SkeletonCard /></>}
         {!active && loaded && !cards.length && !busy && (
-          <div className="text-center py-8 text-navy-400">
+          <div className="text-center py-8" style={{ color: 'var(--muted-gray)' }}>
             <div className="text-4xl mb-2">🎰</div>
             ยังไม่มีเกม — กดปุ่ม "เล่นเกม" บนแถบด้านล่างเพื่อเริ่มสปินเลย!
           </div>
@@ -219,38 +219,38 @@ export default function Scratch() {
 
       {/* my cards */}
       {cards.length > 0 && (
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-navy-700 font-bold text-white flex items-center gap-2">
+        <div className="luxury-card overflow-hidden">
+          <div className="px-5 py-4 border-b font-bold flex items-center gap-2" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>
             📋 บัตรสล็อตของฉัน
-            {hidden.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">รอสปิน {hidden.length}</span>}
+            {hidden.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full luxury-badge-gold">รอสปิน {hidden.length}</span>}
           </div>
-          <div className="divide-y divide-navy-700">
+          <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
             {cards.map(c => {
               const o = c.outcome;
               const isWin = o?.win;
               return (
                 <div key={c.id} role="button" tabIndex={0}
                   onClick={() => openCard(c)} onKeyDown={e => e.key === 'Enter' && openCard(c)}
-                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-navy-700/40 text-left cursor-pointer">
+                  className="w-full flex items-center gap-3 px-5 py-3 text-left cursor-pointer transition hover:bg-navy-700/40">
                   <MiniGrid grid={c.grid} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-mono text-navy-300">{c.slipRef}</div>
-                    <div className="text-[11px] text-navy-400">{fmtDateTime(c.createdAt)}</div>
+                    <div className="text-sm font-mono" style={{ color: 'var(--light-gray)' }}>{c.slipRef}</div>
+                    <div className="text-[11px]" style={{ color: 'var(--muted-gray)' }}>{fmtDateTime(c.createdAt)}</div>
                   </div>
                   {c.status === 'hidden' ? (
                     <span className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40">รอสปิน</span>
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full luxury-badge-gold">รอสปิน</span>
                       <span role="button" tabIndex={0}
                         onClick={e => cancelCard(e, c)}
                         onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); cancelCard(e, c); } }}
-                        className="text-[10px] font-bold px-2 py-1 rounded-full bg-navy-700/60 text-navy-300 border border-navy-600 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition cursor-pointer">ยกเลิก</span>
+                        className="text-[10px] font-bold px-2 py-1 rounded-full luxury-badge-danger transition cursor-pointer">ยกเลิก</span>
                     </span>
                   ) : c.status === 'cancelled' ? (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-400 border border-navy-600">ยกเลิก</span>
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>ยกเลิก</span>
                   ) : isWin ? (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/15 text-green-300 border border-green-500/40">ถูก {o.symbol} +{satang(o.prize)} บาท</span>
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full luxury-badge-success">ถูก {o.symbol} +{satang(o.prize)} บาท</span>
                   ) : (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-navy-700/50 text-navy-300 border border-navy-600">ไม่ถูก</span>
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>ไม่ถูก</span>
                   )}
                 </div>
               );
@@ -264,21 +264,21 @@ export default function Scratch() {
         <div className="max-w-3xl mx-auto">
           {canSpin ? (
             <button onClick={buy} disabled={busy || balance < price}
-              className="w-full rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 text-navy-950 font-black py-3.5 text-sm tracking-wide shadow-lg shadow-gold-500/30 hover:brightness-105 transition disabled:opacity-50 active:scale-[0.98]">
+              className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
               {busy ? 'กำลังซื้อ...' : `＋ ซื้อบัตรเพิ่ม ${satang(price)} บาท`}
             </button>
           ) : nextHidden ? (
             <button onClick={() => openCard(nextHidden)}
-              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-navy-950 font-black py-3.5 text-sm tracking-wide shadow-lg shadow-amber-500/30 hover:brightness-105 transition active:scale-[0.98]">
+              className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide active:scale-[0.98]">
               ▶ เล่นบัตรที่รอสปิน ({hidden.length} ใบ)
             </button>
           ) : (
             <button onClick={buy} disabled={busy || balance < price}
-              className="w-full rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 text-navy-950 font-black py-3.5 text-sm tracking-wide shadow-lg shadow-gold-500/30 hover:brightness-105 transition disabled:opacity-50 active:scale-[0.98]">
+              className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
               {busy ? 'กำลังเล่น...' : `🎰 เล่นเกม ${satang(price)} บาท`}
             </button>
           )}
-          <div className="text-center text-[10px] text-navy-400 mt-1.5">เครดิต {satang(balance)} บาท • 20 เพย์ไลน์ • ผลคำนวณฝั่ง server</div>
+          <div className="text-center text-[10px] mt-1.5" style={{ color: 'var(--muted-gray)' }}>เครดิต {satang(balance)} บาท • 20 เพย์ไลน์ • ผลคำนวณฝั่ง server</div>
         </div>
       </div>
     </div>
@@ -289,16 +289,16 @@ function RevealResult({ outcome, balance, slipRef }) {
   if (!outcome) return null;
   const win = outcome.win;
   return (
-    <div className={`relative rounded-2xl border-2 p-5 text-center overflow-visible ${win ? 'border-green-500/60 bg-green-500/10' : 'border-navy-600 bg-navy-900/60'}`}>
+    <div className={`relative rounded-2xl border-2 p-5 text-center overflow-visible ${win ? 'luxury-card-gold-border' : 'luxury-card'}`}>
       {win && <WinBurst />}
       {win ? (
         <>
           <div className="text-5xl mb-2 animate-coin">🎉🏆</div>
-          <div className="text-xl font-bold text-green-400">ถูกรางวัล!</div>
-          <div className="text-3xl font-black text-green-300 mt-1">+{satang(outcome.prize)} บาท</div>
-          <div className="text-sm text-navy-300 mt-1">
+          <div className="text-xl font-bold" style={{ color: 'var(--success-green)' }}>ถูกรางวัล!</div>
+          <div className="text-3xl font-black mt-1" style={{ color: 'var(--gold-bright)' }}>+{satang(outcome.prize)} บาท</div>
+          <div className="text-sm mt-1" style={{ color: 'var(--muted-gray)' }}>
             {outcome.lines?.length > 0 && (
-              <div className="text-[11px] text-amber-300/90 mb-0.5">
+              <div className="text-[11px] mb-0.5" style={{ color: 'var(--gold-primary)' }}>
                 เพย์ไลน์ที่ถูก: {outcome.lines.map(l => `#${l.line}`).join(', ')}
               </div>
             )}
@@ -306,13 +306,13 @@ function RevealResult({ outcome, balance, slipRef }) {
               ? `ถูก ${outcome.lines.length} เพย์ไลน์ — สูงสุด ${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''}`
               : `${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''} ซ้ำ ${outcome.lines?.[0]?.count || 3} รีล`}
           </div>
-          {balance !== undefined && <div className="text-xs text-navy-400 mt-2">เครดิตคงเหลือ {satang(balance)} บาท</div>}
+          {balance !== undefined && <div className="text-xs mt-2" style={{ color: 'var(--muted-gray)' }}>เครดิตคงเหลือ {satang(balance)} บาท</div>}
         </>
       ) : (
         <>
           <div className="text-4xl mb-2">😢</div>
-          <div className="text-lg font-bold text-navy-300">ไม่ถูกรางวัลรอบนี้</div>
-          <div className="text-xs text-navy-400 mt-1">ลองเล่นเกมใหม่ — ดวงมาแล้วถูกใหญ่!</div>
+          <div className="text-lg font-bold" style={{ color: 'var(--muted-gray)' }}>ไม่ถูกรางวัลรอบนี้</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--dark-gray)' }}>ลองเล่นเกมใหม่ — ดวงมาแล้วถูกใหญ่!</div>
         </>
       )}
     </div>
