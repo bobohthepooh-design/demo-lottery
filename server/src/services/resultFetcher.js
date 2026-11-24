@@ -91,20 +91,10 @@ const pad = (n, l) => String(n).padStart(l, '0');
 export function generateHanoiResult(drawCode) {
   const rng = mulberry32(hashSeed(`hanoi:${drawCode}`));
   const special = rnd(rng, 10000, 99999);
-  const p1 = rnd(rng, 10000, 99999);
-  const p2 = rnd(rng, 10000, 99999);
-  const p7 = rnd(rng, 0, 99);
   const s5 = pad(special, 5);
   return {
     date: null,
-    winning: {
-      num4: s5.slice(0, 4),
-      top3: pad(p1, 5).slice(-3),
-      top4: pad(p1, 5).slice(-4),
-      top2: pad(p2, 5).slice(-2),
-      bottom2: pad(p7, 2),
-      db5: s5,
-    },
+    winning: { ...suffix5(s5), db5: s5 },
   };
 }
 
@@ -137,19 +127,7 @@ export function generateLaoDevResult(drawCode) {
   const base = pad(rnd(rng, 100000, 999999), 6);
   return {
     date: null,
-    winning: {
-      main: base,
-      num4: base.slice(0, 4),
-      top3: base.slice(-3),
-      top4: base.slice(-4),
-      top2: base.slice(-2),
-      last1: base.slice(-1),
-      bottom2: base.slice(-5, -3),
-      bottom1: base.slice(-3, -2),
-      last4: base.slice(-4),
-      last3: base.slice(-3),
-      last2: base.slice(-2),
-    },
+    winning: { ...suffix5(base), main: base, num4: base.slice(-4) },
   };
 }
 
@@ -223,31 +201,33 @@ const lcNum = (x, slug, len) => {
 // ทุกเลขของรางวัล (pad เป็น len หลัก)
 const lcAll = (x, slug, len) => (x.prizes[slug] || []).map(v => String(v).padStart(len, '0').slice(-len));
 
+// หวยลาว/ฮานอยตามสเปก: เลข 5/4/3/2/1 ตัว ทั้งหมดเป็นตัวท้ายของเลขรางวัลหลัก
+// (ไม่มีรางวัลแยก — ละเว้น three-digit-top/two-digit-bottom ของ LC)
+const suffix5 = (main) => {
+  const m = String(main ?? '').replace(/\D/g, '');
+  if (!m) return {};
+  const take = (n) => (m.length >= n ? m.slice(-n) : null);
+  return {
+    last5: take(5), last4: take(4), last3: take(3), last2: take(2), last1: take(1),
+    main: m.length === 6 ? m : null,
+    num4: take(4), db5: take(5),
+  };
+};
+
 function winningFor(kind, x) {
   if (kind === 'lao5') {
     const s5 = lcNum(x, 'special-prize', 5);
-    const top3 = lcNum(x, 'three-digit-top', 3);
-    const bottom2 = lcNum(x, 'two-digit-bottom', 2);
-    return {
-      last4: s5.slice(-4), num4: s5.slice(-4), db5: s5,
-      top3, last3: top3, last2: top3.slice(-2), bottom2,
-    };
+    return { ...suffix5(s5), db5: s5 };
   }
   if (kind === 'lao6') {
     const s6 = lcNum(x, 'special-prize', 6);
-    const s5 = s6.slice(-5);
-    return {
-      last4: s6.slice(-4), num4: s6.slice(-4), db5: s5,
-      top3: lcNum(x, 'three-digit-top', 3), last3: lcNum(x, 'three-digit-top', 3),
-      last2: lcNum(x, 'two-digit-bottom', 2), bottom2: lcNum(x, 'two-digit-bottom', 2),
-    };
+    return { ...suffix5(s6), main: s6 };
   }
   if (kind === 'lao-dev') {
-    // หวยลาวพัฒนา — ผลที่ประกาศคือ เลขท้าย 4/3/2 ตัวโดยตรง (ไม่ใช่ตัดจากเลขเต็ม)
+    // หวยลาวพัฒนา — ผลที่ประกาศคือ เลขท้าย 4/3/2 ตัวโดยตรง (LC ไม่มีเลข 6 หลัก)
+    // spec ต้องการ suffix จากเลขหลัก → ใช้ last4 เป็น main เท่าที่มี (backward compat)
     const l4 = lcNum(x, 'last-four-digit', 4);
-    const l3 = lcNum(x, 'last-three-digit', 3);
-    const l2 = lcNum(x, 'last-two-digit', 2);
-    return { last4: l4, num4: l4, top3: l3, last3: l3, last2: l2, bottom2: l2 };
+    return { ...suffix5(l4), last4: l4, num4: l4 };
   }
   if (kind === 'gsb') {
     // สลากออมสินพิเศษ — อันดับ 1-5 (7 หลัก, อ.3=5 เลข อ.4=10 เลข อ.5=15 เลข) + เลขท้าย 4/3 ตัว
@@ -285,16 +265,9 @@ function winningFor(kind, x) {
       bottom2, bottom1: bottom2.slice(-1),
     };
   }
-  // hn — เลข 4 ตัว = 4 ตัวท้ายของเลขพิเศษ (ไม่ใช่ 4 ตัวแรก)
+  // hn — spec: 5/4/3/2/1 ตัว ล้วนเป็นตัวท้ายของเลขพิเศษ (ĐB)
   const s5 = lcNum(x, 'special-prize', 5);
-  const h3 = lcNum(x, 'three-digit-top', 3);
-  return {
-    num4: s5.slice(-4),
-    top3: h3,
-    top2: (h3 || s5).slice(-2),
-    bottom2: lcNum(x, 'two-digit-bottom', 2),
-    db5: s5,
-  };
+  return { ...suffix5(s5), db5: s5 };
 }
 
 // ผลดิบ LC → winning ตาม kind (ใช้ร่วมกันทุก source chain)
@@ -321,17 +294,11 @@ export async function fetchHanoiResult() {
   const rows = await xsmbRows();
   const last = rows[rows.length - 1];
   const s = (n, len) => n == null ? null : String(n).padStart(len, '0').slice(-len);
-  // 베팅용 숫자는 모두 ĐB(giải đặc biệt, 5자리)에서 파생 — Vietnam "đề" 규칙과 동일
+  // 베팅용 숫자는 모두 ĐB(giải đặc biệt)에서 파생 — Vietnam "đề" 규칙과 동일
   const db = s(last.special, 5);
   return {
     date: String(last.date).slice(0, 10),
-    winning: {
-      num4: db?.slice(-4) ?? null,
-      top3: db?.slice(-3) ?? null,
-      top2: db?.slice(-2) ?? null,
-      bottom2: db?.slice(-2) ?? null,
-      db5: db,
-    },
+    winning: { ...suffix5(db), db5: db },
   };
 }
 

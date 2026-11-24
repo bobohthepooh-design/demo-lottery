@@ -15,6 +15,7 @@ const WINNING_FIELD_SPECS = {
   main:    { re: /^\d{6}$/, desc: 'เลขหลัก — 6 หลัก' },
   db5:     { re: /^\d{5}$/, desc: 'ผล DB — 5 หลัก' },
   num4:    { re: /^\d{4}$/, desc: 'เลข 4 ตัว' },
+  last5:   { re: /^\d{5}$/, desc: 'เลขท้าย 5 ตัว' },
   last4:   { re: /^\d{4}$/, desc: 'เลขท้าย 4 ตัว' },
   top3:    { re: /^\d{3}$/, desc: 'เลขบน 3 ตัว', many: true },
   front3:  { re: /^\d{3}$/, desc: 'เลขหน้า 3 ตัว', many: true },
