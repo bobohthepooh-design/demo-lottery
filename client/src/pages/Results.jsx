@@ -294,7 +294,7 @@ export default function Results() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {items.map(r => {
-                    const badge = sourceBadge(r.result_source);
+                    const badge = sourceBadge(r.result_source || r.source); // /lottery/results ส่ง field 'source'
                     // /lottery/results ส่ง winning_numbers เป็น JSON string — parse ก่อนใช้ heroNumbers
                     let w = r.winning || r.winning_numbers;
                     if (typeof w === 'string') { try { w = JSON.parse(w); } catch { w = null; } }
@@ -333,7 +333,7 @@ export default function Results() {
                           </div>
                         )}
                         <div className="text-[9px] text-navy-500 mt-1.5">
-                          แหล่ง: {sourceName(r.result_source)} · อัปเดต {thaiTime(r.published_at || r.draw_at)}{r.published_at ? '' : ' (เวลาออกรางวัล)'}
+                          แหล่ง: {sourceName(r.result_source || r.source)} · อัปเดต {thaiTime(r.published_at || r.draw_at)}{r.published_at ? '' : ' (เวลาออกรางวัล)'}
                         </div>
                       </div>
                     );
