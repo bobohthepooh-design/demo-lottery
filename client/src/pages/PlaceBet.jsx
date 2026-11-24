@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'reac
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
+import AnimatedNumber from '../components/AnimatedNumber.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { SkeletonCard } from '../components/Skeleton.jsx';
 import { typeAccent } from '../typeAccent.js';
@@ -769,11 +770,11 @@ export default function PlaceBet() {
           )}
           </div>
           <div className="border-t border-navy-700 mt-4 pt-4 space-y-1.5 text-sm">
-            <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-base sm:text-lg">{satang(totalSatang)} บาท</span></div>
+            <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-base sm:text-lg"><AnimatedNumber value={totalSatang} /> บาท</span></div>
             {slip.length > 0 && (
-              <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold">{satang(totalPotential)} บาท</span></div>
+              <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold"><AnimatedNumber value={totalPotential} /> บาท</span></div>
             )}
-            <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300">{satang(balance - totalSatang)} บาท</span></div>
+            <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300"><AnimatedNumber value={balance - totalSatang} /> บาท</span></div>
           </div>
           <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
             📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>

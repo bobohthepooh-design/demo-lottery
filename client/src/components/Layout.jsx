@@ -398,7 +398,9 @@ export default function Layout() {
       )}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 py-6 pb-24 lg:pb-6">
-        <Outlet />
+        <div key={location.pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
 
       {/* Bottom navigation — luxury style */}

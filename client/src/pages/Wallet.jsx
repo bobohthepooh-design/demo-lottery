@@ -5,6 +5,7 @@ import { api, satang, bahtToSatang, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { sfx } from '../sound.js';
 import EmptyState from '../components/EmptyState.jsx';
+import AnimatedNumber from '../components/AnimatedNumber.jsx';
 import { Card, CardHeader, StatCard, Modal, Button } from '../components/ui/index.js';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 const TYPE_TH = {
@@ -192,7 +193,7 @@ export default function Wallet() {
         {/* large balance display */}
         <div className="px-4 sm:px-5 pb-3 sm:pb-4">
           <div style={{ fontSize: '0.5625rem', fontWeight: 700, color: 'var(--muted-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>ยอดคงเหลือ</div>
-          <div style={{ fontSize: '2rem', lineHeight: 1, fontWeight: 900, background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{satang(balance)}</div>
+          <div style={{ fontSize: '2rem', lineHeight: 1, fontWeight: 900, background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}><AnimatedNumber value={balance} /></div>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--muted-gray)', marginTop: '0.125rem' }}>บาท</div>
         </div>
 
@@ -340,8 +341,8 @@ export default function Wallet() {
         <CardHeader title="ประวัติธุรกรรมเครดิต" />
         {/* มือถือ/แท็บเล็ต: การ์ดเรียงแนวตั้ง ไม่ล้นจอ */}
         <div className="md:hidden" style={{ borderBottom: '1px solid var(--border-light)' }}>
-          {txs.map(t => (
-            <div key={t.id} style={{ padding: '1rem' }}>
+          {txs.map((t, idx) => (
+            <div key={t.id} className="stagger-item" style={{ padding: '1rem', animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '0.875rem', color: 'var(--white)', fontWeight: 600 }}>{TYPE_TH[t.type] || t.type}</div>
@@ -375,8 +376,8 @@ export default function Wallet() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {txs.map(t => (
-                <TableRow key={t.id} style={{ border: '1px solid var(--border-light)' }}>
+              {txs.map((t, idx) => (
+                <TableRow key={t.id} className="stagger-item" style={{ border: '1px solid var(--border-light)', animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
                   <TableCell style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--muted-gray)' }}>{t.reference}</TableCell>
                   <TableCell style={{ color: 'var(--white)' }}>{TYPE_TH[t.type] || t.type}</TableCell>
                   <TableCell style={{ textAlign: 'right', fontWeight: 700, color: t.direction === 'credit' ? 'var(--success-green)' : 'var(--danger-red)' }}>

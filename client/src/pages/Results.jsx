@@ -293,7 +293,7 @@ export default function Results() {
                   <span className="text-xs font-bold text-gray-300">{GROUP_LABEL[code] || code}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {items.map(r => {
+                  {items.map((r, idx) => {
                     const badge = sourceBadge(r.result_source || r.source); // /lottery/results ส่ง field 'source'
                     // /lottery/results ส่ง winning_numbers เป็น JSON string — parse ก่อนใช้ heroNumbers
                     let w = r.winning || r.winning_numbers;
@@ -303,7 +303,8 @@ export default function Results() {
                     const open = !!cardOpen[`${r.type_code}:${r.category_code || ''}`];
                     return (
                       <div key={`${r.type_code}:${r.category_code || ''}`}
-                        className="luxury-card px-3 py-2.5">
+                        className="luxury-card px-3 py-2.5 stagger-item"
+                        style={{ animationDelay: `${Math.min(idx * 60, 480)}ms` }}>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <FlagIcon code={r.type_code} className="w-4 h-4 text-[8px]" />
                           <span className="text-xs font-bold text-white">{r.category_name_th || r.type_name_th}</span>

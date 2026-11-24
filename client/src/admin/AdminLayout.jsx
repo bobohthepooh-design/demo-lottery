@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ConfirmHost } from './confirm.jsx';
 import { useAuth } from '../auth.jsx';
 import { api } from '../api.js';
@@ -51,6 +51,7 @@ export const adminGroups = [
 export default function AdminLayout() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [chatUnread, setChatUnread] = useState(0);
   const [payPending, setPayPending] = useState(0); // คำขอเติม/ถอนที่รอตรวจสอบ
   const [apprPending, setApprPending] = useState(0); // คำขอ maker-checker ที่รออนุมัติ
@@ -213,7 +214,7 @@ export default function AdminLayout() {
           )}
         </div>
       </aside>
-      <div className="flex-1 min-w-0"><Outlet /></div>
+      <div className="flex-1 min-w-0"><div key={location.pathname} className="page-enter"><Outlet /></div></div>
       <ConfirmHost />
     </div>
   );
