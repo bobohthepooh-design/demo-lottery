@@ -80,11 +80,11 @@ function FlagGS() {
 const FLAGS = { TH: FlagTH, LA: FlagLA, HN: FlagVN, HR: FlagHR, GS: FlagGS };
 
 const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲' };
-export function FlagIcon({ code, className = '' }) {
+export function FlagIcon({ code, className = '', style }) {
   const F = FLAGS[code];
-  if (!F) return <span className={className}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
+  if (!F) return <span className={className} style={style}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
   return (
-    <span className={`inline-block overflow-hidden rounded-[3px] ring-1 ring-white/20 shrink-0 ${className}`}>
+    <span className={`inline-block overflow-hidden rounded-[3px] ring-1 ring-white/20 shrink-0 ${className}`} style={style}>
       <F />
     </span>
   );

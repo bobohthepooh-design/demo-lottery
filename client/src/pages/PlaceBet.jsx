@@ -392,7 +392,7 @@ export default function PlaceBet() {
                 </button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem 1rem' }} className="sm:gap-4">
-                <FlagIcon code={draw.type_code} style={{ width: '2.5rem', height: '1.875rem', fontSize: '0.75rem', borderRadius: '0.375rem', boxShadow: 'var(--shadow-md)' }} className="sm:w-12 sm:h-9" />
+                <FlagIcon code={draw.type_code} style={{ borderRadius: '0.375rem', boxShadow: 'var(--shadow-md)' }} className="w-10 h-7 sm:w-12 sm:h-9" />
                 <div style={{ minWidth: 0 }}>
                   <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: ac?.text || 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }} className="sm:text-2xl">{drawLabel(draw)}</h1>
                   <div style={{ fontSize: '0.875rem', color: 'var(--muted-gray)', fontWeight: 500, marginTop: '0.25rem' }} className="sm:text-base">
