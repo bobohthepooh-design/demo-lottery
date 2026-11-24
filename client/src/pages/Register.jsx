@@ -36,21 +36,18 @@ export default function Register() {
     navigate('/');
   };
 
-  const tabCls = (t) => {
-    const isActive = tab === t;
-    return {
-      flex: 1,
-      padding: '0.625rem',
-      fontSize: '0.875rem',
-      fontWeight: 'bold',
-      borderRadius: 'var(--radius-lg)',
-      transition: 'all var(--transition-base)',
-      border: isActive ? '1px solid var(--border-gold)' : '1px solid transparent',
-      background: isActive ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
-      color: isActive ? 'var(--gold-bright)' : 'var(--muted-gray)',
-      cursor: 'pointer'
-    };
-  };
+  const tabCls = (t) => ({
+    flex: 1,
+    padding: '0.625rem',
+    fontSize: '0.875rem',
+    fontWeight: 'bold',
+    borderRadius: 'var(--radius-lg)',
+    transition: 'all var(--transition-base)',
+    border: tab === t ? '1px solid var(--border-gold)' : '1px solid transparent',
+    background: tab === t ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+    color: tab === t ? 'var(--gold-bright)' : 'var(--muted-gray)',
+    cursor: 'pointer'
+  });
 
   return (
     <AuthShell title="สมัครสมาชิก" sub="สมัครง่ายๆ รับเครดิตฟรี 50 บาท ทันที">
