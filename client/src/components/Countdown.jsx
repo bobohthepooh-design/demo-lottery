@@ -18,15 +18,19 @@ export default function Countdown({ closeAt }) {
   if (left === null) return null;
   if (left <= 0) return <span className="text-red-400 font-bold">⏰ ปิดรับแล้ว</span>;
 
-  const h = Math.floor(left / 3600);
+  const d = Math.floor(left / 86400);
+  const h = Math.floor((left % 86400) / 3600);
   const m = Math.floor((left % 3600) / 60);
   const s = left % 60;
-  const urgent = h < 1;
-  const text = h > 0
-    ? `⏳ เหลืออีก ${h} ชม. ${m} นาที ${s} วินาที`
-    : m > 0
-      ? `⏳ เหลืออีก ${m} นาที ${s} วินาที`
-      : `⏳ เหลืออีก ${s} วินาที`;
+  const urgent = d === 0 && h < 1;
+  // ยิ่งใกล้ปิดยิ่งละเอียด — เหลือหลายวันแสดงแค่ วัน+ชม. ไม่ต้อง วินาที
+  const text = d > 0
+    ? `⏳ เหลืออีก ${d} วัน ${h} ชม.`
+    : h > 0
+      ? `⏳ เหลืออีก ${h} ชม. ${m} นาที`
+      : m > 0
+        ? `⏳ เหลืออีก ${m} นาที ${s} วินาที`
+        : `⏳ เหลืออีก ${s} วินาที`;
 
   return (
     <span className={`${urgent ? 'text-red-400 font-bold animate-pulse' : 'text-navy-200'}`}>
