@@ -13,7 +13,7 @@ import { isSoundOn, setSoundOn, initSound } from '../sound.js';
 import { Icon } from './icons.jsx';
 import { CasinoIcon } from './CasinoIcons.jsx';
 import { adminGroups } from '../admin/AdminLayout.jsx';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, useMemo } from 'react';
 import { t } from '../i18n.js';
 
 // เมนูจัดกลุ่ม: เล่นหวย | ผลรางวัล&ข้อมูล | บัญชีของฉัน | ผู้ดูแลระบบ
@@ -46,6 +46,42 @@ export default function Layout() {
   const [soundOn, setSoundOnState] = useState(isSoundOn());
   const navigate = useNavigate();
   const location = useLocation();
+
+  // สีพื้น header + bottom nav ตาม route
+  const themeColors = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith('/play')) return {
+      header: 'from-sky-900/90 via-sky-800/90 to-sky-900/90 border-sky-500/30',
+      headerLine: 'via-sky-400/70',
+      bottomNav: 'from-sky-900/95 to-sky-950/95 border-sky-400/50',
+      bottomNavLine: 'rgba(56, 189, 248, 0.9)', // sky-400
+    };
+    if (path.startsWith('/games')) return {
+      header: 'from-purple-900/90 via-purple-800/90 to-purple-900/90 border-purple-500/30',
+      headerLine: 'via-purple-400/70',
+      bottomNav: 'from-purple-900/95 to-purple-950/95 border-purple-400/50',
+      bottomNavLine: 'rgba(192, 132, 252, 0.9)', // purple-400
+    };
+    if (path.startsWith('/results')) return {
+      header: 'from-amber-900/90 via-amber-800/90 to-amber-900/90 border-amber-500/30',
+      headerLine: 'via-amber-400/70',
+      bottomNav: 'from-amber-900/95 to-amber-950/95 border-amber-400/50',
+      bottomNavLine: 'rgba(251, 191, 36, 0.9)', // amber-400
+    };
+    if (path.startsWith('/wallet')) return {
+      header: 'from-emerald-900/90 via-emerald-800/90 to-emerald-900/90 border-emerald-500/30',
+      headerLine: 'via-emerald-400/70',
+      bottomNav: 'from-emerald-900/95 to-emerald-950/95 border-emerald-400/50',
+      bottomNavLine: 'rgba(52, 211, 153, 0.9)', // emerald-400
+    };
+    // default
+    return {
+      header: 'from-[#040a14] via-[#0a1526] to-[#040a14] border-gold-500/30',
+      headerLine: 'via-gold-400/70',
+      bottomNav: 'from-[#0f1e33]/95 to-[#0a1526]/95 border-gold-400/50',
+      bottomNavLine: 'rgba(244, 201, 78, 0.9)', // gold-400
+    };
+  }, [location.pathname]);
 
   const loadMenuData = () => {
     api('/lottery/public-config').then(r => {
@@ -114,8 +150,8 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#040a14] via-[#0a1526] to-[#040a14] backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/30">
-        <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
+      <header className={`sticky top-0 z-40 bg-gradient-to-r ${themeColors.header} backdrop-blur-md border-b shadow-lg shadow-black/30`}>
+        <div className={`h-[2px] bg-gradient-to-r from-transparent ${themeColors.headerLine} to-transparent`} />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl border border-gold-400/70 bg-navy-950 flex items-center justify-center shadow-[0_0_16px_rgba(244,201,78,0.35)] overflow-hidden">
@@ -305,16 +341,17 @@ export default function Layout() {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
-        <div className="relative border-t border-gold-400/40 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
-          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-gold-400/50 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
-          {/* เส้นเรืองทองด้านบน */}
+        <div className={`relative border-t bg-gradient-to-b backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
+          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)] ${themeColors.bottomNav}`}>
+          {/* เส้นเรืองด้านบน */}
           <div className="absolute top-0 inset-x-8 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(244,201,78,0.9), transparent)' }} />
+            style={{ background: `linear-gradient(90deg, transparent, ${themeColors.bottomNavLine}, transparent)` }} />
           <div className="flex h-16">
             {[
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/play', k: 'betMenu', icon: 'lotteries', show: showBetMenu },
               { to: '/games', k: 'gamesHub', icon: 'bets', show: true },
+              { to: '/results', k: 'results', icon: 'trophy', show: true },
               ...(user ? [
                 { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
                 { to: '/profile', k: 'profile', icon: 'user', show: true },
