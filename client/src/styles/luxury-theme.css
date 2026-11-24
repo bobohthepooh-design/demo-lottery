@@ -233,6 +233,42 @@
   html {
     font-size: 14px; /* Reduce base font size on mobile */
   }
+
+  /* Touch-friendly button sizes (minimum 44x44px for iOS) */
+  .luxury-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Touch-friendly interactive elements */
+  button, a, input, select {
+    min-height: 44px;
+  }
+
+  /* Reduce spacing on mobile */
+  .luxury-card {
+    padding: 0.75rem;
+  }
+
+  .luxury-input {
+    padding: 0.625rem 0.875rem;
+  }
+}
+
+/* Small mobile (375px - 480px) */
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+
+  /* Even more compact spacing */
+  .luxury-card {
+    padding: 0.625rem;
+  }
+
+  .luxury-btn {
+    padding: 0.625rem 1rem;
+  }
 }
 
 /* Tablet (768px - 1024px) */
@@ -240,11 +276,35 @@
   html {
     font-size: 15px; /* Slightly larger base font on tablet */
   }
+
+  .luxury-card {
+    padding: 1rem;
+  }
 }
 
 /* Desktop (1024px+) */
 @media (min-width: 1025px) {
   html {
     font-size: 16px; /* Standard base font on desktop */
+  }
+
+  /* Larger spacing for desktop luxury feel */
+  .luxury-card {
+    padding: 1.25rem;
+  }
+
+  .luxury-btn {
+    padding: 0.875rem 1.5rem;
+  }
+
+  .luxury-input {
+    padding: 0.875rem 1.125rem;
+  }
+}
+
+/* Large desktop (1440px+) */
+@media (min-width: 1440px) {
+  html {
+    font-size: 17px;
   }
 }

@@ -45,8 +45,8 @@ export default function Login() {
 
   const tabCls = (t) => ({
     flex: 1,
-    padding: '0.625rem',
-    fontSize: '0.875rem',
+    padding: '0.5rem sm:0.625rem',
+    fontSize: '0.8rem sm:0.875rem',
     fontWeight: 'bold',
     borderRadius: 'var(--radius-lg)',
     transition: 'all var(--transition-base)',

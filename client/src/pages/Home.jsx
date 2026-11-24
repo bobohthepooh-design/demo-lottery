@@ -98,12 +98,12 @@ export default function Home() {
     <div className="space-y-6">
       {/* welcome — member เท่านั้น */}
       {user && (
-        <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{
+        <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3" style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border-gold)',
           boxShadow: 'var(--shadow-gold)'
         }}>
-          <span className="w-10 h-10 rounded-full font-display font-black text-lg flex items-center justify-center shrink-0" style={{
+          <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full font-display font-black text-base sm:text-lg flex items-center justify-center shrink-0" style={{
             background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
             color: 'var(--bg-deep-black)',
             boxShadow: 'var(--shadow-gold)'
@@ -111,14 +111,14 @@ export default function Home() {
             {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <div className="font-display font-bold text-base sm:text-lg" style={{ color: 'var(--white)' }}>
+            <div className="font-display font-bold text-sm sm:text-base lg:text-lg" style={{ color: 'var(--white)' }}>
               สวัสดีค่ะ {user.displayName || user.username} ~
             </div>
-            <div className="text-xs truncate" style={{ color: 'var(--muted-gray)' }}>
+            <div className="text-[10px] sm:text-xs truncate" style={{ color: 'var(--muted-gray)' }}>
               {demoNotice || 'โหมดทดลอง — ใช้เครดิตเสมือนเท่านั้น'}
             </div>
           </div>
-          <span className="shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full tracking-wider" style={{
+          <span className="shrink-0 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-0.75 sm:py-1 rounded-full tracking-wider" style={{
             background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
             color: 'var(--bg-deep-black)',
             border: '1px solid var(--border-gold)'
@@ -129,10 +129,10 @@ export default function Home() {
       )}
 
       {/* ปุ่มลัดหลัก — luxury icon tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
         {quickActions.map(a => (
           <Link key={a.label} to={a.to}
-            className="group relative rounded-2xl py-4 px-2 flex flex-col items-center gap-2 transition-all duration-200 active:scale-95"
+            className="group relative rounded-2xl py-3 sm:py-4 px-1.5 sm:px-2 flex flex-col items-center gap-1.5 sm:gap-2 transition-all duration-200 active:scale-95"
             style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border-light)'
@@ -145,10 +145,10 @@ export default function Home() {
               e.currentTarget.style.borderColor = 'var(--border-light)';
               e.currentTarget.style.boxShadow = 'none';
             }}>
-            <span className="text-2xl drop-shadow-lg">{a.icon}</span>
+            <span className="text-xl sm:text-2xl lg:text-2xl drop-shadow-lg">{a.icon}</span>
             <div className="text-center">
-              <div className="text-sm font-bold tracking-wide" style={{ color: 'var(--white)' }}>{a.label}</div>
-              <div className="text-[10px] opacity-80 font-mono truncate max-w-full px-1 mt-0.5" style={{ color: 'var(--muted-gray)' }}>{a.sub}</div>
+              <div className="text-xs sm:text-sm font-bold tracking-wide" style={{ color: 'var(--white)' }}>{a.label}</div>
+              <div className="text-[9px] sm:text-[10px] opacity-80 font-mono truncate max-w-full px-0.5 sm:px-1 mt-0.5" style={{ color: 'var(--muted-gray)' }}>{a.sub}</div>
             </div>
           </Link>
         ))}
@@ -156,18 +156,18 @@ export default function Home() {
 
       {/* โปร cashback */}
       {cashbackPct > 0 && (
-        <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm" style={{
+        <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm" style={{
           border: '1px solid var(--border-gold)',
           background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), var(--bg-card), rgba(212, 175, 55, 0.15))'
         }}>
-          <span className="text-lg">🎁</span>
+          <span className="text-base sm:text-lg">🎁</span>
           <span style={{ color: 'var(--gold-bright)' }}>โปรโมชั่น: <b>คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
         </div>
       )}
 
       {/* Responsible gambling */}
       {user && (
-        <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs" style={{
+        <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs" style={{
           border: '1px solid var(--border-light)',
           background: 'var(--bg-card)',
           color: 'var(--muted-gray)'
@@ -214,7 +214,7 @@ export default function Home() {
                 <FlagIcon code={code} className="w-4 h-4 text-[8px]" />
                 <span className="text-xs font-bold" style={{ color: 'var(--light-gray)' }}>{GROUP_LABEL[code] || code}</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2">
                 {items.map(d => {
                   let w = d.winning;
                   if (typeof w === 'string') { try { w = JSON.parse(w); } catch { w = null; } }
@@ -225,7 +225,7 @@ export default function Home() {
                   const open = !!cardOpen[ck];
                   return (
                     <div key={d.id}
-                      className="rounded-xl px-3 py-2.5 transition" style={{
+                      className="rounded-xl px-2.5 sm:px-3 py-2 sm:py-2.5 transition" style={{
                         background: 'var(--bg-card)',
                         border: '1px solid var(--border-light)'
                       }}
@@ -236,23 +236,23 @@ export default function Home() {
                         e.currentTarget.style.borderColor = 'var(--border-light)';
                       }}>
                       <Link to="/results" className="block">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
-                        <span className="text-xs font-bold" style={{ color: 'var(--white)' }}>{d.category_name_th || d.type_name_th}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{
+                      <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                        <FlagIcon code={d.type_code} className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[7px] sm:text-[8px]" />
+                        <span className="text-[10px] sm:text-xs font-bold" style={{ color: 'var(--white)' }}>{d.category_name_th || d.type_name_th}</span>
+                        <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded font-bold" style={{
                           background: 'rgba(34, 197, 94, 0.15)',
                           color: 'var(--success-green)',
                           border: '1px solid rgba(34, 197, 94, 0.3)'
                         }}>ออกผลแล้ว</span>
-                        {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
+                        {badge && <span className={`text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
                       </div>
-                      <div className="text-[10px] mt-1" style={{ color: 'var(--muted-gray)' }}>งวดวันที่ {thaiDate(d.draw_at)}</div>
+                      <div className="text-[9px] sm:text-[10px] mt-0.5 sm:mt-1" style={{ color: 'var(--muted-gray)' }}>งวดวันที่ {thaiDate(d.draw_at)}</div>
                       {heroes.length > 0 && (
-                        <div className="grid grid-cols-3 gap-1 mt-2">
+                        <div className="grid grid-cols-3 gap-0.5 sm:gap-1 mt-1.5 sm:mt-2">
                           {heroes.map(h => (
-                            <div key={h.label} className="text-center rounded-lg py-1.5 px-1" style={{ background: 'var(--bg-dark-surface)' }}>
-                              <div className="text-[8px] leading-tight" style={{ color: 'var(--muted-gray)' }}>{h.label}</div>
-                              <div className="font-mono font-bold text-sm leading-tight mt-0.5 break-all" style={{ color: 'var(--gold-bright)' }}>{h.num}</div>
+                            <div key={h.label} className="text-center rounded-lg py-1 sm:py-1.5 px-0.5 sm:px-1" style={{ background: 'var(--bg-dark-surface)' }}>
+                              <div className="text-[7px] sm:text-[8px] leading-tight" style={{ color: 'var(--muted-gray)' }}>{h.label}</div>
+                              <div className="font-mono font-bold text-xs sm:text-sm leading-tight mt-0.5 break-all" style={{ color: 'var(--gold-bright)' }}>{h.num}</div>
                             </div>
                           ))}
                         </div>
@@ -260,19 +260,19 @@ export default function Home() {
                       </Link>
                       {sumAll.length > 0 && (
                         <button onClick={() => setCardOpen(e => ({ ...e, [ck]: !open }))}
-                          className="mt-1.5 w-full text-left text-[10px] transition" style={{ color: 'var(--muted-gray)' }}>
+                          className="mt-1 sm:mt-1.5 w-full text-left text-[9px] sm:text-[10px] transition" style={{ color: 'var(--muted-gray)' }}>
                           {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
                         </button>
                       )}
                       {open && sumAll.length > 0 && (
-                        <div className="mt-1 text-[10px] font-mono leading-relaxed break-all rounded-lg px-2 py-1.5" style={{
+                        <div className="mt-0.5 sm:mt-1 text-[9px] sm:text-[10px] font-mono leading-relaxed break-all rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5" style={{
                           color: 'var(--light-gray)',
                           background: 'var(--bg-dark-surface)'
                         }}>
                           {sumAll.map((p, i) => <div key={i}>{p}</div>)}
                         </div>
                       )}
-                      <div className="text-[9px] mt-1.5" style={{ color: 'var(--dark-gray)' }}>
+                      <div className="text-[8px] sm:text-[9px] mt-1 sm:mt-1.5" style={{ color: 'var(--dark-gray)' }}>
                         แหล่ง: {sourceName(d.result_source)} · อัปเดต {thaiTime(d.published_at || d.draw_at)}
                       </div>
                     </div>

@@ -41,7 +41,7 @@ function RoundCard({ d, nowSql, nowMs }) {
       ? { background: 'var(--bg-card)', borderColor: 'var(--success-green)' }
       : { background: 'var(--bg-card)', borderColor: ac.border };
 
-  const cardCls = `border rounded p-3 flex items-center gap-3 hover:scale-[1.01] transition-transform duration-200 shadow-lg relative`;
+  const cardCls = `border rounded p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 hover:scale-[1.01] transition-transform duration-200 shadow-lg relative`;
 
   const go = () => {
     if (d.status === 'settled' || d.status === 'cancelled') {
@@ -58,11 +58,11 @@ function RoundCard({ d, nowSql, nowMs }) {
         <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
       )}
       {/* ธง + ชื่อตลาด */}
-      <div className="flex items-center gap-2">
-        <FlagIcon code={d.type_code} className="w-6 h-4 rounded-md" />
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <FlagIcon code={d.type_code} className="w-5 h-3.5 sm:w-6 sm:h-4 rounded-md" />
         <div>
-          <div className="font-bold text-sm" style={{ color: 'var(--white)' }}>{drawLabel(d)}</div>
-          <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>{d.draw_code}</div>
+          <div className="font-bold text-xs sm:text-sm" style={{ color: 'var(--white)' }}>{drawLabel(d)}</div>
+          <div className="text-[10px] sm:text-xs" style={{ color: 'var(--muted-gray)' }}>{d.draw_code}</div>
         </div>
       </div>
 
@@ -77,15 +77,15 @@ function RoundCard({ d, nowSql, nowMs }) {
         </div>
       )}
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-2 sm:gap-3">
         {/* Countdown / Status */}
         {live ? (
-          <div className="rounded p-2 text-right" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
-            <div className="text-xs mb-0.5" style={{ color: 'var(--muted-gray)' }}>ปิดใน</div>
-            <div className="font-bold text-lg" style={{ color: 'var(--success-green)' }}>{fmtHMS(closeMs)}</div>
+          <div className="rounded p-1.5 sm:p-2 text-right" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
+            <div className="text-[10px] sm:text-xs mb-0.5" style={{ color: 'var(--muted-gray)' }}>ปิดใน</div>
+            <div className="font-bold text-sm sm:text-lg" style={{ color: 'var(--success-green)' }}>{fmtHMS(closeMs)}</div>
           </div>
         ) : (
-          <div className={`text-xs font-bold px-2 py-1 rounded ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
+          <div className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
             {drawing ? '🎰 กำลังออกรางวัล…'
               : awaiting ? '🔒 รอผล'
               : blind ? `🔒 เปิด ${thaiHM(opensAt)} น.`
@@ -96,11 +96,11 @@ function RoundCard({ d, nowSql, nowMs }) {
 
         {/* ปุ่มแทง */}
         {live ? (
-          <button onClick={go} className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white font-bold text-sm transition">
+          <button onClick={go} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white font-bold text-xs sm:text-sm transition">
             แทงเลย
           </button>
         ) : (
-          <button disabled className="px-4 py-2 rounded-lg cursor-not-allowed bg-navy-700 text-navy-400 border border-navy-600 text-sm font-semibold">
+          <button disabled className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg cursor-not-allowed bg-navy-700 text-navy-400 border border-navy-600 text-xs sm:text-sm font-semibold">
             {d.status === 'settled' ? 'ดูผล' : 'รอเปิดรับ'}
           </button>
         )}
@@ -112,7 +112,7 @@ function RoundCard({ d, nowSql, nowMs }) {
 function TypeCard({ tg, onClick }) {
   const ac = typeAccent(tg.typeCode);
   return (
-    <div onClick={onClick} className="rounded-xl p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer" style={{
+    <div onClick={onClick} className="rounded-xl p-3 sm:p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer" style={{
       background: 'var(--bg-card)',
       border: `2px solid ${ac.border}`
     }}
@@ -124,11 +124,11 @@ function TypeCard({ tg, onClick }) {
       e.currentTarget.style.borderColor = ac.border;
       e.currentTarget.style.boxShadow = 'var(--shadow-md)';
     }}>
-      <FlagIcon code={tg.typeCode} className="w-12 h-8 rounded-lg mb-2" />
-      <h3 className={`text-lg font-bold mb-1`} style={{ color: ac.text }}>{tg.typeName}</h3>
-      <div className="text-sm mb-2" style={{ color: 'var(--muted-gray)' }}>{tg.totalRounds} รอบ</div>
+      <FlagIcon code={tg.typeCode} className="w-10 h-7 sm:w-12 sm:h-8 rounded-lg mb-1.5 sm:mb-2" />
+      <h3 className={`text-sm sm:text-base lg:text-lg font-bold mb-0.5 sm:mb-1`} style={{ color: ac.text }}>{tg.typeName}</h3>
+      <div className="text-xs sm:text-sm mb-1.5 sm:mb-2" style={{ color: 'var(--muted-gray)' }}>{tg.totalRounds} รอบ</div>
       {tg.liveRounds > 0 && (
-        <div className="text-xs font-bold px-2 py-1 rounded-full" style={{
+        <div className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded-full" style={{
           background: 'rgba(34, 197, 94, 0.2)',
           color: 'var(--success-green)',
           border: '1px solid rgba(34, 197, 94, 0.3)'
@@ -245,14 +245,14 @@ export default function BetHub() {
   }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql, showHidden]);
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-2 pb-4">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 pt-2 sm:pt-3 pb-4">
       {/* Hero */}
-      <div className="text-center mb-3">
+      <div className="text-center mb-2 sm:mb-3">
         <div className="kicker mb-1">Lottery Hall</div>
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-black tracking-wide bg-gradient-to-r from-gold-200 via-gold-400 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(244,201,78,0.2)]">
+        <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-black tracking-wide bg-gradient-to-r from-gold-200 via-gold-400 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(244,201,78,0.2)]">
           เลือกหวยที่ต้องการแทง
         </h1>
-        <p className="text-[11px] text-navy-300 mt-0.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
+        <p className="text-[10px] sm:text-[11px] text-navy-300 mt-0.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
       </div>
 
       {!loaded ? (
@@ -287,7 +287,7 @@ export default function BetHub() {
         </div>
       ) : (
         /* เมนูหลัก — card grid ประเภทหวย */
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
           {typeGroups.map(tg => (
             <TypeCard key={tg.typeCode} tg={tg} onClick={() => setSelectedType(tg)} />
           ))}

@@ -245,18 +245,18 @@ export default function Results() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-black luxury-gradient-text">ผลรางวัลและตารางออกรางวัล</h1>
-        <p className="text-sm text-gray-400 mt-1">{thaiFull(date)} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
+        <h1 className="text-xl sm:text-2xl font-black luxury-gradient-text">ผลรางวัลและตารางออกรางวัล</h1>
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">{thaiFull(date)} — อัปเดตอัตโนมัติทุก 60 วินาที</p>
         {/* เลือกวัน — วันนี้ + date picker (ปุ่มเมื่อวาน/พรุ่งนี้ถูกเอาออกตามที่ผู้ใช้แจ้ง) */}
-        <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 flex-wrap">
           <button onClick={() => setDate(bkkTodayStr())} disabled={isToday}
-            className={`text-xs rounded-lg px-3 py-1.5 font-bold transition ${isToday ? 'luxury-btn' : 'luxury-btn-ghost'}`}>
+            className={`text-[10px] sm:text-xs rounded-lg px-2.5 sm:px-3 py-1 sm:py-1.5 font-bold transition ${isToday ? 'luxury-btn' : 'luxury-btn-ghost'}`}>
             วันนี้
           </button>
           <input type="date" value={date} onChange={e => e.target.value && setDate(e.target.value)}
-            className="text-xs luxury-input" />
+            className="text-[10px] sm:text-xs luxury-input" />
         </div>
       </div>
 

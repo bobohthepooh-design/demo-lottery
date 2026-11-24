@@ -172,32 +172,32 @@ export default function Wallet() {
   const [withdrawHover, setWithdrawHover] = useState(false);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
       {/* HERO BALANCE CARD — Luxury Gold style */}
       <Card className="overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)' }}>
         {/* member strip — subtitle */}
-        <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <span style={{ width: '3rem', height: '3rem', borderRadius: '50%', background: 'rgba(212, 175, 55, 0.2)', color: 'var(--gold-bright)', fontWeight: 900, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-gold)', flexShrink: 0 }}>
+        <div className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 pt-4 sm:pt-5 pb-2.5 sm:pb-3">
+          <span style={{ width: '2.5rem sm:3rem', height: '2.5rem sm:3rem', borderRadius: '50%', background: 'rgba(212, 175, 55, 0.2)', color: 'var(--gold-bright)', fontWeight: 900, fontSize: '0.75rem sm:0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-gold)', flexShrink: 0 }}>
             {(user?.displayName || user?.username || 'ล').slice(0, 1).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--white)' }}>{user?.displayName || user?.username || 'สมาชิก'}</div>
-            <div className="flex items-center gap-1.5">
-              <span style={{ fontSize: '0.5625rem', fontWeight: 700, padding: '0.125rem 0.375rem', borderRadius: '0.25rem', background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>MEMBER</span>
-              <span style={{ fontSize: '0.5625rem', fontWeight: 700, padding: '0.125rem 0.375rem', borderRadius: '0.25rem', background: 'rgba(245, 158, 11, 0.9)', color: 'var(--white)' }}>DEMO</span>
+            <div style={{ fontSize: '0.75rem sm:0.875rem', fontWeight: 600, color: 'var(--white)' }}>{user?.displayName || user?.username || 'สมาชิก'}</div>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <span style={{ fontSize: '0.5rem sm:0.5625rem', fontWeight: 700, padding: '0.1rem 0.3rem sm:0.125rem 0.375rem', borderRadius: '0.25rem', background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>MEMBER</span>
+              <span style={{ fontSize: '0.5rem sm:0.5625rem', fontWeight: 700, padding: '0.1rem 0.3rem sm:0.125rem 0.375rem', borderRadius: '0.25rem', background: 'rgba(245, 158, 11, 0.9)', color: 'var(--white)' }}>DEMO</span>
             </div>
           </div>
         </div>
 
         {/* large balance display */}
-        <div className="px-5 pb-4">
-          <div style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--muted-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>ยอดคงเหลือ</div>
-          <div style={{ fontSize: '2.5rem', lineHeight: 1, fontWeight: 900, background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{satang(balance)}</div>
-          <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--muted-gray)', marginTop: '0.125rem' }}>บาท</div>
+        <div className="px-4 sm:px-5 pb-3 sm:pb-4">
+          <div style={{ fontSize: '0.5625rem sm:0.625rem', fontWeight: 700, color: 'var(--muted-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>ยอดคงเหลือ</div>
+          <div style={{ fontSize: '2rem sm:2.5rem', lineHeight: 1, fontWeight: 900, background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{satang(balance)}</div>
+          <div style={{ fontSize: '0.75rem sm:0.875rem', fontWeight: 700, color: 'var(--muted-gray)', marginTop: '0.125rem' }}>บาท</div>
         </div>
 
         {/* full-width action buttons */}
-        <div className="px-5 pb-3 space-y-2">
+        <div className="px-4 sm:px-5 pb-2.5 sm:pb-3 space-y-1.5 sm:space-y-2">
           <button
             onClick={() => { setModal('deposit'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
             onMouseEnter={() => setDepositHover(true)}
@@ -208,8 +208,8 @@ export default function Wallet() {
               background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
               color: 'var(--bg-deep-black)',
               fontWeight: 900,
-              padding: '0.75rem',
-              fontSize: '0.875rem',
+              padding: '0.65rem sm:0.75rem',
+              fontSize: '0.8rem sm:0.875rem',
               letterSpacing: '0.05em',
               border: 'none',
               cursor: 'pointer',
@@ -230,8 +230,8 @@ export default function Wallet() {
               background: 'transparent',
               color: 'var(--gold-primary)',
               fontWeight: 900,
-              padding: '0.75rem',
-              fontSize: '0.875rem',
+              padding: '0.65rem sm:0.75rem',
+              fontSize: '0.8rem sm:0.875rem',
               letterSpacing: '0.05em',
               border: '1px solid var(--gold-primary)',
               cursor: 'pointer',
@@ -329,7 +329,7 @@ export default function Wallet() {
       )}
 
       {/* สรุปยอดเดิมพัน/รางวัล */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <StatCard label="แทงวันนี้" value={`${satang(sumToday.stake)} ฿`} accent="text-lose-300" />
         <StatCard label="รางวัลวันนี้" value={`${satang(sumToday.win)} ฿`} accent="text-win-300" />
         <StatCard label="แทง 7 วัน" value={`${satang(sumWeek.stake)} ฿`} accent="text-lose-300" />
