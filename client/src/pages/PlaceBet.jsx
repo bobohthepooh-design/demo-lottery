@@ -711,7 +711,7 @@ export default function PlaceBet() {
                 </>
               )}
             </div>
-            )}
+          )}
 
             {err && <div style={{ color: 'var(--danger-red)', fontSize: '0.75rem', fontWeight: 500, background: 'rgba(239, 68, 68, 0.1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem' }} className="sm:text-sm">{err}</div>}
             <Button onClick={addItem} variant="secondary" className="w-full !py-3 sm:!py-4 text-base sm:text-lg font-bold border-gold-500/60 text-gold-300 hover:bg-navy-700"

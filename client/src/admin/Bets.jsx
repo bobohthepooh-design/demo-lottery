@@ -23,35 +23,44 @@ const SLIP_STYLE = {
   refunded: 'border-navy-700 opacity-60',
 };
 
+const LUXURY_SLIP_STYLE = {
+  won: { borderColor: 'var(--success-green)', background: 'rgba(34, 197, 94, 0.1)' },
+  lost: { borderColor: 'var(--border-light)', background: 'var(--bg-card)' },
+  partial: { borderColor: 'var(--gold-primary)', background: 'rgba(212, 175, 55, 0.1)' },
+  pending: { borderColor: 'var(--info-blue)', background: 'rgba(59, 130, 246, 0.1)' },
+  cancelled: { borderColor: 'var(--border-light)', background: 'var(--bg-card)', opacity: 0.6 },
+  refunded: { borderColor: 'var(--border-light)', background: 'var(--bg-card)', opacity: 0.6 },
+};
+
 const PAGE = 50;
 const potential = (i) => Math.floor(i.amount * Number(i.payout_multiplier || 0));
 
 function ItemRow({ i }) {
   const emoji = ITEM_EMOJI[i.status] || '⏳';
   return (
-    <div className={`flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'bg-green-500/10 border border-green-500/30' : 'bg-navy-900'}`}>
+    <div className={`flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2 ${i.status === 'won' ? 'luxury-badge-success' : ''}`} style={i.status !== 'won' ? { background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)' } : {}}>
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-lg">{emoji}</span>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <code className="text-gold-300 font-mono">{i.number}</code>
-            <span className="text-navy-300 text-xs truncate">{i.bet_name_th || i.bet_type}</span>
+            <code className="font-mono" style={{ color: 'var(--gold-primary)' }}>{i.number}</code>
+            <span className="text-xs truncate" style={{ color: 'var(--muted-gray)' }}>{i.bet_name_th || i.bet_type}</span>
           </div>
-          <div className="text-[11px] text-navy-400">เดิมพัน {satang(i.amount)} บาท</div>
+          <div style={{ color: 'var(--dark-gray)', fontSize: '11px' }}>เดิมพัน {satang(i.amount)} บาท</div>
         </div>
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
-          <div className="font-bold text-green-400">💰 จ่าย {satang(i.payout)} บาท</div>
+          <div className="font-bold" style={{ color: 'var(--success-green)' }}>💰 จ่าย {satang(i.payout)} บาท</div>
         )}
-        {i.status === 'lost' && <div className="text-navy-300 text-xs font-medium">ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร</div>}
+        {i.status === 'lost' && <div className="text-xs font-medium" style={{ color: 'var(--muted-gray)' }}>ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
-            <div className="text-blue-300">รอผล</div>
-            <div className="text-gold-300/80">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
+            <div style={{ color: 'var(--info-blue)' }}>รอผล</div>
+            <div style={{ color: 'var(--gold-primary)', opacity: 0.8 }}>ถ้าถูก ได้ {satang(potential(i))} บาท</div>
           </div>
         )}
-        {i.status === 'cancelled' && <div className="text-navy-400 text-xs">ยกเลิก</div>}
+        {i.status === 'cancelled' && <div style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>ยกเลิก</div>}
       </div>
     </div>
   );
@@ -130,15 +139,15 @@ export default function AdminBets() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-white">ตรวจสอบโพย (Bet Monitoring)</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Input value={q} onChange={e => setQ(e.target.value)}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold luxury-gradient-text">ตรวจสอบโพย (Bet Monitoring)</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="ค้นหา username / เลขโพย / รอบหวย..."
-            inputClassName="w-64 py-2 text-sm" />
+            className="luxury-input text-sm" style={{ width: '16rem', padding: '0.6rem 0.75rem' }} />
           <Select value={status || 'all'} onValueChange={v => setStatus(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-36 py-2 text-sm bg-navy-800 border-navy-600 text-white">
+            <SelectTrigger className="w-36 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }}>
               <SelectValue placeholder="ทุกสถานะ" />
             </SelectTrigger>
             <SelectContent>
@@ -146,51 +155,52 @@ export default function AdminBets() {
               {Object.entries(STATUS_TH).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button variant="ghost" size="sm" onClick={exportAll}
+          <button onClick={exportAll} className="luxury-btn-ghost text-sm px-3 py-2"
             title="ดาวน์โหลดโพยทั้งหมดที่ตรงเงื่อนไขเป็น CSV">
             ⬇ CSV
-          </Button>
+          </button>
         </div>
       </div>
-      {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>}
-      <div className="text-xs text-navy-400">ทั้งหมด {total.toLocaleString()} โพย — แสดง {slips.length.toLocaleString()} รายการ</div>
-      <div className="space-y-2">
+      {err && <div className="text-sm rounded-lg p-3" style={{ color: 'var(--danger-red)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger-red)' }}>เกิดข้อผิดพลาด: {err}</div>}
+      <div style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>ทั้งหมด {total.toLocaleString()} โพย — แสดง {slips.length.toLocaleString()} รายการ</div>
+      <div className="space-y-3">
         {slips.map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
           const settled = ['won', 'lost', 'partial'].includes(s.status);
+          const style = LUXURY_SLIP_STYLE[s.status] || LUXURY_SLIP_STYLE.lost;
           return (
-            <div key={s.id} className={`bg-navy-800 border rounded-xl overflow-hidden ${SLIP_STYLE[s.status] || 'border-navy-700'}`}>
-              <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-navy-700/40">
-                <div className="flex items-center gap-2 min-w-0">
+            <div key={s.id} className="rounded-xl overflow-hidden" style={{ background: style.background, border: `1px solid ${style.borderColor}`, opacity: style.opacity || 1 }}>
+              <button onClick={() => setOpen(open === s.id ? null : s.id)} className="w-full px-5 py-4 flex items-center justify-between text-left hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-3 min-w-0">
                   <span className="text-lg">{STATUS_EMOJI[s.status] || '📄'}</span>
                   <div className="min-w-0">
-                    <span className="font-mono text-gold-300">{s.slip_ref}</span>
-                    <span className="text-navy-300 text-sm ml-3 truncate inline-block align-middle max-w-[40vw]">
+                    <span className="font-mono" style={{ color: 'var(--gold-primary)' }}>{s.slip_ref}</span>
+                    <span className="text-sm ml-3 truncate inline-block align-middle max-w-[40vw]" style={{ color: 'var(--muted-gray)' }}>
                       {s.username} • {drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}
                     </span>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-white font-bold">{satang(s.total_stake)} บาท</span>
-                  {s.total_payout > 0 && <span className="text-green-400 text-sm ml-2">จ่าย {satang(s.total_payout)} บาท</span>}
+                  <span className="font-bold" style={{ color: 'var(--white)' }}>{satang(s.total_stake)} บาท</span>
+                  {s.total_payout > 0 && <span className="text-sm ml-2" style={{ color: 'var(--success-green)' }}>จ่าย {satang(s.total_payout)} บาท</span>}
                   {settled && (
-                    <span className={`text-sm ml-2 font-semibold ${houseNet >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className="text-sm ml-2 font-semibold" style={{ color: houseNet >= 0 ? 'var(--success-green)' : 'var(--danger-red)' }}>
                       ระบบ {houseNet >= 0 ? '+' : ''}{satang(houseNet)} บาท
                     </span>
                   )}
-                  <Badge variant="outline" className={cn('text-[10px] font-semibold shrink-0',
-                    s.status === 'won' ? 'border-emerald-500/40 text-emerald-300'
-                    : s.status === 'partial' ? 'border-gold-500/50 text-gold-300'
-                    : s.status === 'pending' ? 'border-sky-500/40 text-sky-300'
-                    : s.status === 'cancelled' || s.status === 'refunded' ? 'border-navy-500 text-navy-400'
-                    : 'border-red-500/40 text-red-300')}>
+                  <span className={cn('text-[10px] font-semibold shrink-0 px-2 py-0.5 rounded-full border',
+                    s.status === 'won' ? 'luxury-badge-success'
+                    : s.status === 'partial' ? 'luxury-badge-gold'
+                    : s.status === 'pending' ? 'luxury-badge-info'
+                    : s.status === 'cancelled' || s.status === 'refunded' ? 'luxury-badge'
+                    : 'luxury-badge-danger')}>
                     {STATUS_TH[s.status] || s.status}
-                  </Badge>
-                  <div className="text-[11px] text-navy-400">{fmtDateTime(s.created_at)}</div>
+                  </span>
+                  <div style={{ color: 'var(--dark-gray)', fontSize: '11px', marginTop: '2px' }}>{fmtDateTime(s.created_at)}</div>
                 </div>
               </button>
               {open === s.id && (
-                <div className="border-t border-navy-700 px-5 py-3 space-y-2">
+                <div style={{ borderTop: '1px solid var(--border-light)' }} className="px-5 py-4 space-y-2">
                   {(Array.isArray(s.items) ? s.items : []).map(i => <ItemRow key={i.id} i={i} />)}
                 </div>
               )}
@@ -198,11 +208,11 @@ export default function AdminBets() {
           );
         })}
         {hasMore && (
-          <Button variant="ghost" onClick={loadMore} disabled={loadingMore} className="w-full">
+          <button onClick={loadMore} disabled={loadingMore} className="luxury-btn-ghost w-full py-3 text-sm">
             {loadingMore ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${PAGE} รายการ (เหลือ ${(total - slips.length).toLocaleString()})`}
-          </Button>
+          </button>
         )}
-        {!slips.length && <div className="text-center text-navy-400 py-10">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
+        {!slips.length && <div className="text-center py-10" style={{ color: 'var(--muted-gray)' }}>{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
       </div>
     </div>
   );

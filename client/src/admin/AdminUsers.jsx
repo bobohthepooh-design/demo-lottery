@@ -3,15 +3,15 @@ import { api, fmtDateTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
-import { Card, Button, Input, Select } from '../components/ui/index.js';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { Modal } from '../components/ui/index.js';
+import '../styles/luxury-theme.css';
 
 export default function AdminUsers() {
   const { user } = useAuth();
   const [admins, setAdmins] = useState([]);
   const [meta, setMeta] = useState({});
   const [form, setForm] = useState({ username: '', password: '', displayName: '', roleName: 'admin' });
-  const [sessions, setSessions] = useState(null); // {userId, list}
+  const [sessions, setSessions] = useState(null);
   const [busy, setBusy] = useState(null);
 
   const load = useCallback(() => {
@@ -79,96 +79,184 @@ export default function AdminUsers() {
   const isSelf = (a) => a.id === user?.id;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl font-bold text-white">จัดการบัญชีผู้ดูแล</h1>
-        <span className="text-xs text-navy-400">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold luxury-gradient-text">จัดการบัญชีผู้ดูแล</h1>
+          <p className="text-sm text-[var(--muted-gray)] mt-1">สร้างและจัดการบัญชีผู้ดูแลระบบ</p>
+        </div>
+        <div className="text-xs text-[var(--muted-gray)] bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-4 py-2">
           Maker-checker: {meta.makerChecker === 'always' ? 'บังคับทุกครั้ง' : meta.makerChecker === 'off' ? 'ปิด' : `อัตโนมัติ (${meta.adminCount || 0} บัญชี)`}
-        </span>
+        </div>
       </div>
 
-      <Card>
-        <form onSubmit={create} className="p-4 grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
-          <div><label className="text-[10px] text-navy-400">Username</label>
-            <Input required value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} className="bg-navy-800 border-navy-600 text-white text-xs" placeholder="admin2" /></div>
-          <div><label className="text-[10px] text-navy-400">Password</label>
-            <Input required type="password" minLength={8} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="bg-navy-800 border-navy-600 text-white text-xs" placeholder="อย่างน้อย 8 ตัว" /></div>
-          <div><label className="text-[10px] text-navy-400">ชื่อแสดง</label>
-            <Input value={form.displayName} onChange={e => setForm({ ...form, displayName: e.target.value })} className="bg-navy-800 border-navy-600 text-white text-xs" /></div>
-          <div><label className="text-[10px] text-navy-400">Role</label>
-            <Select value={form.roleName} onChange={e => setForm({ ...form, roleName: e.target.value })} inputClassName="text-xs">
+      <div className="luxury-card p-5">
+        <form onSubmit={create} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div>
+            <label className="text-xs text-[var(--muted-gray)] mb-1 block">Username</label>
+            <input 
+              required 
+              value={form.username} 
+              onChange={e => setForm({ ...form, username: e.target.value })} 
+              className="luxury-input w-full py-2.5 text-sm" 
+              placeholder="admin2" 
+            />
+          </div>
+          <div>
+            <label className="text-xs text-[var(--muted-gray)] mb-1 block">Password</label>
+            <input 
+              required 
+              type="password" 
+              minLength={8} 
+              value={form.password} 
+              onChange={e => setForm({ ...form, password: e.target.value })} 
+              className="luxury-input w-full py-2.5 text-sm" 
+              placeholder="อย่างน้อย 8 ตัว" 
+            />
+          </div>
+          <div>
+            <label className="text-xs text-[var(--muted-gray)] mb-1 block">ชื่อแสดง</label>
+            <input 
+              value={form.displayName} 
+              onChange={e => setForm({ ...form, displayName: e.target.value })} 
+              className="luxury-input w-full py-2.5 text-sm" 
+            />
+          </div>
+          <div>
+            <label className="text-xs text-[var(--muted-gray)] mb-1 block">Role</label>
+            <select 
+              value={form.roleName} 
+              onChange={e => setForm({ ...form, roleName: e.target.value })}
+              className="luxury-input w-full py-2.5 text-sm"
+            >
               <option value="admin">admin (สิทธิ์จำกัด)</option>
               <option value="super_admin">super_admin (ทุกสิทธิ์)</option>
-            </Select></div>
-          <Button type="submit" disabled={busy === 'create'} className="bg-gold-500 hover:bg-gold-400 text-navy-950 text-xs font-bold">+ สร้างบัญชี</Button>
+            </select>
+          </div>
+          <button 
+            type="submit" 
+            disabled={busy === 'create'} 
+            className="luxury-btn text-sm font-semibold"
+          >
+            + สร้างบัญชี
+          </button>
         </form>
-      </Card>
+      </div>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-navy-700/60 hover:bg-transparent">
-              <TableHead className="text-navy-400">ID</TableHead>
-              <TableHead className="text-navy-400">Username</TableHead>
-              <TableHead className="text-navy-400">ชื่อ</TableHead>
-              <TableHead className="text-navy-400">Roles</TableHead>
-              <TableHead className="text-navy-400">MFA</TableHead>
-              <TableHead className="text-navy-400">สถานะ</TableHead>
-              <TableHead className="text-navy-400">Sessions</TableHead>
-              <TableHead className="text-navy-400">เข้าใช้ล่าสุด</TableHead>
-              <TableHead className="text-navy-400"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {admins.map(a => (
-              <TableRow key={a.id} className="border-navy-700/50 hover:bg-navy-700/30">
-                <TableCell className="text-navy-300">{a.id}</TableCell>
-                <TableCell className="text-white font-semibold">{a.username}{isSelf(a) && <span className="ml-1 text-[9px] text-gold-400">(คุณ)</span>}</TableCell>
-                <TableCell className="text-navy-300 text-xs">{a.display_name}</TableCell>
-                <TableCell className="text-xs text-navy-200">{(a.roles || []).join(', ')}</TableCell>
-                <TableCell>{a.mfa_enabled ? <span className="text-[10px] text-emerald-300">✓ เปิด</span> : <span className="text-[10px] text-amber-300">ยังไม่เปิด</span>}</TableCell>
-                <TableCell><span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${a.status === 'active' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' : 'bg-red-500/15 text-red-300 border-red-500/40'}`}>{a.status}</span></TableCell>
-                <TableCell className="text-xs text-navy-300">{a.activeSessions}</TableCell>
-                <TableCell className="text-[10px] text-navy-400 whitespace-nowrap">{a.lastLoginAt ? fmtDateTime(a.lastLoginAt) : '—'}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" className="text-[10px] px-2 py-1" onClick={() => loadSessions(a)}>sessions</Button>
-                    {!isSelf(a) && a.mfa_enabled && (
-                      <Button variant="ghost" className="text-[10px] px-2 py-1 text-amber-300" disabled={busy === `mfa-${a.id}`} onClick={() => resetMfa(a)}>reset MFA</Button>
+      <div className="luxury-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[var(--border-light)]">
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">ID</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">Username</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">ชื่อ</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">Roles</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">MFA</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">สถานะ</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">Sessions</th>
+                <th className="text-left text-xs font-semibold text-[var(--muted-gray)] px-4 py-3">เข้าใช้ล่าสุด</th>
+                <th className="text-right text-xs font-semibold text-[var(--muted-gray)] px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {admins.map(a => (
+                <tr key={a.id} className="border-b border-[var(--border-light)] hover:bg-[var(--bg-card-hover)] transition">
+                  <td className="text-[var(--muted-gray)] px-4 py-3 text-sm">{a.id}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-[var(--white)] font-semibold">{a.username}</span>
+                    {isSelf(a) && <span className="ml-1 text-[9px] text-[var(--gold-primary)]">(คุณ)</span>}
+                  </td>
+                  <td className="text-[var(--muted-gray)] px-4 py-3 text-xs">{a.display_name}</td>
+                  <td className="text-xs text-[var(--white)] px-4 py-3">{(a.roles || []).join(', ')}</td>
+                  <td className="px-4 py-3">
+                    {a.mfa_enabled ? (
+                      <span className="text-[10px] text-[var(--success-green)]">✓ เปิด</span>
+                    ) : (
+                      <span className="text-[10px] text-[var(--warning-amber)]">ยังไม่เปิด</span>
                     )}
-                    {!isSelf(a) && (
-                      <Button variant="ghost" className={`text-[10px] px-2 py-1 ${a.status === 'active' ? 'text-red-300' : 'text-emerald-300'}`} disabled={busy === `st-${a.id}`}
-                        onClick={() => setStatus(a, a.status === 'active' ? 'disabled' : 'active')}>
-                        {a.status === 'active' ? 'ปิดบัญชี' : 'เปิดบัญชี'}
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      a.status === 'active' 
+                        ? 'bg-[var(--success-green)]/15 text-[var(--success-green)] border-[var(--success-green)]/40' 
+                        : 'bg-[var(--danger-red)]/15 text-[var(--danger-red)] border-[var(--danger-red)]/40'
+                    }`}>
+                      {a.status}
+                    </span>
+                  </td>
+                  <td className="text-xs text-[var(--muted-gray)] px-4 py-3">{a.activeSessions}</td>
+                  <td className="text-[10px] text-[var(--muted-gray)] whitespace-nowrap px-4 py-3">
+                    {a.lastLoginAt ? fmtDateTime(a.lastLoginAt) : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2 justify-end">
+                      <button 
+                        onClick={() => loadSessions(a)} 
+                        className="text-[10px] text-[var(--info-blue)] hover:underline transition"
+                      >
+                        sessions
+                      </button>
+                      {!isSelf(a) && a.mfa_enabled && (
+                        <button 
+                          className="text-[10px] text-[var(--warning-amber)] hover:underline transition disabled:opacity-50" 
+                          disabled={busy === `mfa-${a.id}`} 
+                          onClick={() => resetMfa(a)}
+                        >
+                          reset MFA
+                        </button>
+                      )}
+                      {!isSelf(a) && (
+                        <button 
+                          className={`text-[10px] hover:underline transition disabled:opacity-50 ${
+                            a.status === 'active' ? 'text-[var(--danger-red)]' : 'text-[var(--success-green)]'
+                          }`} 
+                          disabled={busy === `st-${a.id}`}
+                          onClick={() => setStatus(a, a.status === 'active' ? 'disabled' : 'active')}
+                        >
+                          {a.status === 'active' ? 'ปิดบัญชี' : 'เปิดบัญชี'}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {sessions && (
-        <Card>
-          <div className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-white">Sessions ของ {sessions.username}</h2>
-              <Button variant="ghost" className="text-xs" onClick={() => setSessions(null)}>ปิด</Button>
-            </div>
-            {sessions.list.length === 0 && <div className="text-navy-400 text-sm">ไม่มี session ที่ใช้งานอยู่</div>}
-            {sessions.list.map(s => (
-              <div key={s.id} className="flex items-center justify-between text-xs bg-navy-900/50 rounded p-2">
-                <div>
-                  <div className="text-navy-200">{s.ip || '—'} • MFA {s.mfa_verified ? '✓' : '✗'}</div>
-                  <div className="text-[10px] text-navy-400 truncate max-w-[420px]">{s.user_agent || ''} • สร้าง {fmtDateTime(s.created_at)} • หมด {fmtDateTime(s.expires_at)}</div>
-                </div>
-                <Button variant="ghost" className="text-[10px] px-2 py-1 text-red-300" onClick={() => revokeSession(s.id)}>เพิกถอน</Button>
-              </div>
-            ))}
+        <div className="luxury-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-[var(--white)] text-lg">Sessions ของ {sessions.username}</h2>
+            <button 
+              onClick={() => setSessions(null)} 
+              className="text-xs text-[var(--muted-gray)] hover:text-[var(--white)] transition"
+            >
+              ปิด
+            </button>
           </div>
-        </Card>
+          {sessions.list.length === 0 && (
+            <div className="text-[var(--muted-gray)] text-sm">ไม่มี session ที่ใช้งานอยู่</div>
+          )}
+          {sessions.list.map(s => (
+            <div key={s.id} className="flex items-center justify-between text-xs bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg p-3 mb-2">
+              <div>
+                <div className="text-[var(--white)]">{s.ip || '—'} • MFA {s.mfa_verified ? '✓' : '✗'}</div>
+                <div className="text-[10px] text-[var(--muted-gray)] truncate max-w-[420px]">
+                  {s.user_agent || ''} • สร้าง {fmtDateTime(s.created_at)} • หมด {fmtDateTime(s.expires_at)}
+                </div>
+              </div>
+              <button 
+                onClick={() => revokeSession(s.id)} 
+                className="text-[10px] text-[var(--danger-red)] hover:underline transition px-2 py-1"
+              >
+                เพิกถอน
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

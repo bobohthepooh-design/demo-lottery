@@ -47,52 +47,52 @@ export default function AdminBanner() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  if (loading) return <div className="text-navy-300">กำลังโหลด...</div>;
+  if (loading) return <div style={{ color: 'var(--muted-gray)' }}>กำลังโหลด...</div>;
 
   return (
     <div className="max-w-2xl space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-white">จัดการแบนเนอร์หน้าแรก</h1>
-        <p className="text-sm text-navy-300 mt-1">แก้ไขข้อความและปุ่มบนแบนเนอร์ด้านบนของหน้าแรก — บันทแล้วมีผลทันที</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>จัดการแบนเนอร์หน้าแรก</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--light-gray)' }}>แก้ไขข้อความและปุ่มบนแบนเนอร์ด้านบนของหน้าแรก — บันทแล้วมีผลทันที</p>
       </div>
-      {msg && <div className={`text-sm rounded-lg p-3 border ${msg.startsWith('ERROR') ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-green-400 bg-green-500/10 border-green-500/30'}`}>{msg}</div>}
+      {msg && <div className={`text-sm rounded-lg p-3 border`} style={msg.startsWith('ERROR') ? { color: 'var(--danger-red)', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' } : { color: 'var(--success-green)', background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>{msg}</div>}
 
       {/* Preview */}
-      <Card variant="subtle">
+      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
         <CardBody>
-        <div className="text-xs text-navy-400 mb-2">ตัวอย่าง (ใกล้เคียงของจริง)</div>
-        <div className="rounded-xl border border-gold-500/40 bg-gradient-to-br from-navy-800 to-navy-950 px-4 py-5 text-center">
+        <div className="text-xs mb-2" style={{ color: 'var(--muted-gray)' }}>ตัวอย่าง (ใกล้เคียงของจริง)</div>
+        <div className="rounded-xl px-4 py-5 text-center" style={{ border: '1px solid var(--border-gold)', background: 'linear-gradient(to bottom right, var(--bg-dark-surface), var(--bg-deep-black))' }}>
           <div className="text-2xl mb-1">{form.emoji}</div>
-          <div className="text-lg font-black text-gold-400">{form.title}</div>
-          <div className="text-xs text-navy-300 mt-1">{form.markets}</div>
-          <div className="text-xs text-gold-300/90 mt-1">{form.promo}</div>
+          <div className="text-lg font-black" style={{ color: 'var(--gold-primary)' }}>{form.title}</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--light-gray)' }}>{form.markets}</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--gold-primary)', opacity: 0.9 }}>{form.promo}</div>
           <div className="flex justify-center gap-2 mt-3">
-            <span className="text-xs bg-gold-500 text-navy-950 font-bold px-4 py-1.5 rounded-lg">{form.cta_bet}</span>
-            <span className="text-xs border border-gold-500/50 text-gold-300 px-4 py-1.5 rounded-lg">{form.cta_register}</span>
+            <span className="text-xs font-bold px-4 py-1.5 rounded-lg" style={{ background: 'var(--gold-primary)', color: 'var(--bg-deep-black)' }}>{form.cta_bet}</span>
+            <span className="text-xs px-4 py-1.5 rounded-lg" style={{ border: '1px solid var(--border-gold)', color: 'var(--gold-primary)' }}>{form.cta_register}</span>
           </div>
         </div>
         </CardBody>
       </Card>
 
       {/* แถบประกาศวิ่ง */}
-      <Card>
+      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
         <CardBody className="space-y-3">
-        <div className="text-sm font-bold text-white">📢 แถบประกาศ (ข้อความวิ่งใต้เมนู)</div>
-        <label className="flex items-center gap-2 text-sm text-navy-200">
+        <div className="text-sm font-bold" style={{ color: 'var(--white)' }}>📢 แถบประกาศ (ข้อความวิ่งใต้เมนู)</div>
+        <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--light-gray)' }}>
           <input type="checkbox" checked={!!announce.enabled} onChange={e => setAnnounce(a => ({ ...a, enabled: e.target.checked }))}
-            className="w-5 h-5 accent-gold-500" />
+            className="w-5 h-5" style={{ accentColor: 'var(--gold-primary)' }} />
           แสดงแถบประกาศ
         </label>
         <input value={announce.text ?? ''} onChange={e => setAnnounce(a => ({ ...a, text: e.target.value }))}
           placeholder="เช่น ยินดีต้อนรับสู่ Devin Lottery —Experiences..."
-          className="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" />
+          className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
         {announce.enabled && announce.text && (
-          <div className="bg-navy-900/60 border border-gold-500/20 rounded-lg overflow-hidden">
+          <div className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-gold)' }}>
             <div className="flex items-center">
-              <span className="shrink-0 px-3 py-1 text-[10px] font-bold text-gold-300 bg-gold-500/15 border-r border-gold-500/30">📢 ประกาศ</span>
+              <span className="shrink-0 px-3 py-1 text-[10px] font-bold border-r" style={{ color: 'var(--gold-primary)', background: 'rgba(212, 175, 55, 0.15)', borderColor: 'var(--border-gold)' }}>📢 ประกาศ</span>
               <div className="overflow-hidden flex-1 py-1">
                 <div className="flex w-max animate-marquee gap-12 px-3">
-                  {[0, 1].map(n => <span key={n} className="text-[11px] text-navy-100 whitespace-nowrap">{announce.text}</span>)}
+                  {[0, 1].map(n => <span key={n} className="text-[11px] whitespace-nowrap" style={{ color: 'var(--white)' }}>{announce.text}</span>)}
                 </div>
               </div>
             </div>
@@ -101,24 +101,24 @@ export default function AdminBanner() {
         </CardBody>
       </Card>
 
-      <Card className="divide-y divide-navy-700">
+      <Card className="divide-y" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)', borderColor: 'var(--border-light)' }}>
         {FIELDS.map(f => (
-          <div key={f.key} className="p-4 flex items-center gap-4">
-            <label className="w-64 shrink-0 text-sm text-navy-200">{f.label}</label>
+          <div key={f.key} className="p-4 flex items-center gap-4" style={{ borderColor: 'var(--border-light)' }}>
+            <label className="w-64 shrink-0 text-sm" style={{ color: 'var(--light-gray)' }}>{f.label}</label>
             {f.type === 'checkbox' ? (
               <input type="checkbox" checked={!!form[f.key]} onChange={e => set(f.key, e.target.checked)}
-                className="w-5 h-5 accent-gold-500" />
+                className="w-5 h-5" style={{ accentColor: 'var(--gold-primary)' }} />
             ) : (
               <input value={form[f.key] ?? ''} onChange={e => set(f.key, e.target.value)}
-                className="flex-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2 text-sm" />
+                className="flex-1 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
             )}
           </div>
         ))}
       </Card>
 
       <div className="flex gap-3">
-        <Button onClick={save}>บันทึกแบนเนอร์</Button>
-        <Button variant="ghost" onClick={() => setForm(DEFAULT_BANNER)}>คืนค่าเริ่มต้น</Button>
+        <Button onClick={save} style={{ background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: 'var(--bg-deep-black)' }}>บันทึกแบนเนอร์</Button>
+        <Button variant="ghost" onClick={() => setForm(DEFAULT_BANNER)} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>คืนค่าเริ่มต้น</Button>
       </div>
     </div>
   );

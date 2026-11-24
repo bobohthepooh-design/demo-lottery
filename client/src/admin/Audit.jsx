@@ -87,13 +87,13 @@ export default function AdminAudit() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-white">Audit Log</h1>
-        <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>Audit Log</h1>
+        <div className="flex items-center gap-2 flex-wrap">
           <Input value={q} onChange={e => { setQ(e.target.value); setPage(0); }}
             placeholder="ค้นหา ผู้ใช้ / entity / IP / รายละเอียด..."
-            inputClassName="w-64 py-2 text-sm" />
+            inputClassName="w-64 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
           <Select value={action || 'all'} onValueChange={v => { setAction(v === 'all' ? '' : v); setPage(0); }}>
-            <SelectTrigger className="w-44 py-2 text-sm bg-navy-800 border-navy-600 text-white">
+            <SelectTrigger className="w-44 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }}>
               <SelectValue placeholder="ทุก action" />
             </SelectTrigger>
             <SelectContent>
@@ -102,66 +102,70 @@ export default function AdminAudit() {
             </SelectContent>
           </Select>
           <Input type="date" value={from} onChange={e => { setFrom(e.target.value); setPage(0); load(e.target.value, to, corr); }}
-            inputClassName="w-36 py-2 text-sm" title="จากวันที่" />
+            inputClassName="w-36 py-2 text-sm" title="จากวันที่" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
           <Input type="date" value={to} onChange={e => { setTo(e.target.value); setPage(0); load(from, e.target.value, corr); }}
-            inputClassName="w-36 py-2 text-sm" title="ถึงวันที่" />
+            inputClassName="w-36 py-2 text-sm" title="ถึงวันที่" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
           <Input value={corr} onChange={e => { setCorr(e.target.value); }}
             onKeyDown={e => e.key === 'Enter' && load(from, to, corr)}
-            placeholder="correlation id..." inputClassName="w-44 py-2 text-sm" />
-          <Button variant="ghost" size="sm" onClick={() => load(from, to, corr)}>ค้นหา</Button>
+            placeholder="correlation id..." inputClassName="w-44 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
+          <Button variant="ghost" size="sm" onClick={() => load(from, to, corr)} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>ค้นหา</Button>
           <Button variant="ghost" size="sm" onClick={runVerify} disabled={verifying}
-            title="ตรวจสอบ hash-chain ว่าไม่มีการแก้ไข/ลบ audit log ย้อนหลัง">
+            title="ตรวจสอบ hash-chain ว่าไม่มีการแก้ไข/ลบ audit log ย้อนหลัง"
+            style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>
             {verifying ? 'กำลังตรวจ...' : 'ตรวจ hash chain'}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => exportCsv(filtered, `audit-${new Date().toISOString().slice(0, 10)}.csv`)}
-            title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่เป็น CSV">
+            title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่เป็น CSV"
+            style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>
             ⬇ CSV
           </Button>
         </div>
       </div>
       {verify && (
-        <Card><CardBody className="py-3 text-sm">
-          {verify.ok
-            ? <span className="text-green-300">✓ Hash chain ถูกต้อง — ตรวจสอบ {verify.hashed} รายการที่มี hash (ทั้งหมด {verify.checked} แถว)</span>
-            : <span className="text-red-300">✗ พบความผิดปกติที่ id {verify.firstBreak?.id}: {verify.firstBreak?.reason}</span>}
-        </CardBody></Card>
+        <Card className="py-3 text-sm" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+          <CardBody className="py-3">
+            {verify.ok
+              ? <span style={{ color: 'var(--success-green)' }}>✓ Hash chain ถูกต้อง — ตรวจสอบ {verify.hashed} รายการที่มี hash (ทั้งหมด {verify.checked} แถว)</span>
+              : <span style={{ color: 'var(--danger-red)' }}>✗ พบความผิดปกติที่ id {verify.firstBreak?.id}: {verify.firstBreak?.reason}</span>}
+          </CardBody>
+        </Card>
       )}
-      <Card>
+      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
         <Table>
           <TableHeader>
-            <TableRow className="border-navy-700/60 hover:bg-transparent">
-              <TableHead className="text-navy-400">เวลา</TableHead>
-              <TableHead className="text-navy-400">ผู้ใช้</TableHead>
-              <TableHead className="text-navy-400">Action</TableHead>
-              <TableHead className="text-navy-400">Entity</TableHead>
-              <TableHead className="text-navy-400">IP</TableHead>
-              <TableHead className="text-navy-400">รายละเอียด</TableHead>
+            <TableRow style={{ borderColor: 'var(--border-light)' }} className="hover:bg-transparent">
+              <TableHead style={{ color: 'var(--muted-gray)' }}>เวลา</TableHead>
+              <TableHead style={{ color: 'var(--muted-gray)' }}>ผู้ใช้</TableHead>
+              <TableHead style={{ color: 'var(--muted-gray)' }}>Action</TableHead>
+              <TableHead style={{ color: 'var(--muted-gray)' }}>Entity</TableHead>
+              <TableHead style={{ color: 'var(--muted-gray)' }}>IP</TableHead>
+              <TableHead style={{ color: 'var(--muted-gray)' }}>รายละเอียด</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paged.map(l => (
-              <TableRow key={l.id} className="border-navy-700/50">
-                <TableCell className="text-navy-300 whitespace-nowrap">{fmtDateTime(l.created_at)}</TableCell>
-                <TableCell className="text-white">{l.username || `#${l.user_id}`}</TableCell>
+              <TableRow key={l.id} style={{ borderColor: 'var(--border-light)' }}>
+                <TableCell style={{ color: 'var(--muted-gray)' }} className="whitespace-nowrap">{fmtDateTime(l.created_at)}</TableCell>
+                <TableCell style={{ color: 'var(--white)' }}>{l.username || `#${l.user_id}`}</TableCell>
                 <TableCell>
-                  <div className="text-white">{ACTION_TH[l.action] || l.action}</div>
-                  {ACTION_TH[l.action] && <code className="text-navy-500 text-[10px]">{l.action}</code>}
+                  <div style={{ color: 'var(--white)' }}>{ACTION_TH[l.action] || l.action}</div>
+                  {ACTION_TH[l.action] && <code style={{ color: 'var(--dark-gray)', fontSize: '10px' }}>{l.action}</code>}
                 </TableCell>
-                <TableCell className="text-navy-300">{l.entity_type} {l.entity_id}</TableCell>
-                <TableCell className="text-navy-300">{l.ip}</TableCell>
-                <TableCell className="text-navy-300 max-w-[300px] truncate font-mono">{l.detail || '—'}</TableCell>
+                <TableCell style={{ color: 'var(--muted-gray)' }}>{l.entity_type} {l.entity_id}</TableCell>
+                <TableCell style={{ color: 'var(--muted-gray)' }}>{l.ip}</TableCell>
+                <TableCell style={{ color: 'var(--muted-gray)' }} className="max-w-[300px] truncate font-mono">{l.detail || '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        {!filtered.length && <div className="text-center text-navy-400 py-8 text-sm">{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
+        {!filtered.length && <div className="text-center py-8 text-sm" style={{ color: 'var(--muted-gray)' }}>{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
       </Card>
       {pageCount > 1 && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-navy-400">หน้า {page + 1}/{pageCount} • {filtered.length} รายการ</span>
+          <span style={{ color: 'var(--muted-gray)' }}>หน้า {page + 1}/{pageCount} • {filtered.length} รายการ</span>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← ก่อนหน้า</Button>
-            <Button variant="ghost" size="sm" disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)}>ถัดไป →</Button>
+            <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>← ก่อนหน้า</Button>
+            <Button variant="ghost" size="sm" disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>ถัดไป →</Button>
           </div>
         </div>
       )}

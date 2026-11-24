@@ -19,11 +19,11 @@ const age = (ts) => {
 };
 
 function Stat({ label, value, tone }) {
-  const cls = { green: 'text-green-300', red: 'text-red-300', gold: 'text-gold-300', blue: 'text-sky-300' }[tone] || 'text-white';
+  const cls = { green: 'text-[var(--success-green)]', red: 'text-[var(--danger-red)]', gold: 'text-[var(--gold-primary)]', blue: 'text-[var(--info-blue)]' }[tone] || 'text-[var(--white)]';
   return (
     <Card><CardBody className="text-center py-4">
       <div className={`text-2xl font-black ${cls}`}>{value ?? '—'}</div>
-      <div className="text-xs text-navy-400 mt-1">{label}</div>
+      <div className="text-xs text-[var(--muted-gray)] mt-1">{label}</div>
     </CardBody></Card>
   );
 }
@@ -80,22 +80,22 @@ export default function AdminHealth() {
   const staleSources = sources.filter(s => s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
   const overall = overdue.length ? 'bad' : staleSources.length ? 'warn' : 'ok';
   const banner = {
-    ok: { cls: 'border-green-500/40 bg-green-500/10 text-green-300', txt: '🟢 ระบบปกติ — ไม่มีรอบค้าง ผลทุกแหล่งอัปเดตอยู่' },
-    warn: { cls: 'border-amber-500/40 bg-amber-500/10 text-amber-300', txt: `🟡 ระบบทำงาน แต่มีแหล่งผลเงียบ >36 ชม. ${staleSources.length} แหล่ง` },
-    bad: { cls: 'border-red-500/50 bg-red-500/10 text-red-300', txt: `🔴 มีรอบค้างออกผล ${overdue.length} รอบ — ตรวจแหล่งผล/ตั้งผลเอง` },
+    ok: { cls: 'border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.1)] text-[var(--success-green)]', txt: '🟢 ระบบปกติ — ไม่มีรอบค้าง ผลทุกแหล่งอัปเดตอยู่' },
+    warn: { cls: 'border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] text-[var(--warning-amber)]', txt: `🟡 ระบบทำงาน แต่มีแหล่งผลเงียบ >36 ชม. ${staleSources.length} แหล่ง` },
+    bad: { cls: 'border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.1)] text-[var(--danger-red)]', txt: `🔴 มีรอบค้างออกผล ${overdue.length} รอบ — ตรวจแหล่งผล/ตั้งผลเอง` },
   }[overall];
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-white">สุขภาพระบบ</h1>
-          <p className="text-sm text-navy-300">แหล่งผลรางวัล • รอบค้าง • สถิติรวม — refresh อัตโนมัติทุก 30 วิ</p>
+          <h1 className="text-2xl font-bold text-[var(--white)]">สุขภาพระบบ</h1>
+          <p className="text-sm text-[var(--muted-gray)]">แหล่งผลรางวัล • รอบค้าง • สถิติรวม — refresh อัตโนมัติทุก 30 วิ</p>
         </div>
-        <div className="text-xs text-navy-400">อัปเดต {updated ? updated.toLocaleTimeString('th-TH') : '—'}</div>
+        <div className="text-xs text-[var(--muted-gray)]">อัปเดต {updated ? updated.toLocaleTimeString('th-TH') : '—'}</div>
       </div>
 
-      {err && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">โหลดไม่สำเร็จ: {err}</div>}
+      {err && <div className="text-sm text-[var(--danger-red)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] rounded-lg p-3">โหลดไม่สำเร็จ: {err}</div>}
 
       {d && (
         <>
@@ -111,17 +111,17 @@ export default function AdminHealth() {
           {/* แหล่งผลรางวัล */}
           <Card>
             <CardBody>
-              <h2 className="font-bold text-white mb-3">📡 แหล่งผลรางวัล ({sources.length})</h2>
+              <h2 className="font-bold text-[var(--white)] mb-3">📡 แหล่งผลรางวัล ({sources.length})</h2>
               <Table>
                 <TableHeader>
-                  <TableRow className="border-navy-700/60 hover:bg-transparent">
-                    <TableHead className="text-navy-400">Source</TableHead>
-                    <TableHead className="text-navy-400">Badge</TableHead>
-                    <TableHead className="text-navy-400">ผลล่าสุด</TableHead>
-                    <TableHead className="text-navy-400">อายุผล</TableHead>
-                    <TableHead className="text-navy-400">รอบล่าสุด</TableHead>
-                    <TableHead className="text-navy-400">ตลาด</TableHead>
-                    <TableHead className="text-navy-400 text-right">จำนวนผล</TableHead>
+                  <TableRow className="border-[var(--border-light)] hover:bg-transparent">
+                    <TableHead className="text-[var(--muted-gray)]">Source</TableHead>
+                    <TableHead className="text-[var(--muted-gray)]">Badge</TableHead>
+                    <TableHead className="text-[var(--muted-gray)]">ผลล่าสุด</TableHead>
+                    <TableHead className="text-[var(--muted-gray)]">อายุผล</TableHead>
+                    <TableHead className="text-[var(--muted-gray)]">รอบล่าสุด</TableHead>
+                    <TableHead className="text-[var(--muted-gray)]">ตลาด</TableHead>
+                    <TableHead className="text-[var(--muted-gray)] text-right">จำนวนผล</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -131,25 +131,25 @@ export default function AdminHealth() {
                     const stale = a && /วัน|ชม/.test(a) && !a.startsWith('0') && (s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
                     const mi = s.last ? marketInfo(s.last.type_code || '', s.last.cat_code || '') : null;
                     return (
-                      <TableRow key={s.source} className="border-navy-700/50">
-                        <TableCell className="font-mono text-xs text-navy-200">{s.source}</TableCell>
-                        <TableCell><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badge?.cls || 'bg-navy-700 text-navy-300'}`}>{badge?.short || s.source}</span></TableCell>
-                        <TableCell className={`text-xs ${stale ? 'text-amber-300' : 'text-green-300'}`}>{s.last_at ? fmtDateTime(s.last_at) : '—'}</TableCell>
-                        <TableCell className={`text-xs ${stale ? 'text-amber-300 font-bold' : 'text-navy-400'}`}>{a || '—'}{stale ? ' ⚠️' : ''}</TableCell>
-                        <TableCell className="text-xs text-navy-300">{s.last?.draw_code || '—'}</TableCell>
-                        <TableCell className="text-xs text-navy-300">
+                      <TableRow key={s.source} className="border-[var(--border-light)]">
+                        <TableCell className="font-mono text-xs text-[var(--light-gray)]">{s.source}</TableCell>
+                        <TableCell><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badge?.cls || 'bg-[var(--bg-dark-surface)] text-[var(--muted-gray)]'}`}>{badge?.short || s.source}</span></TableCell>
+                        <TableCell className={`text-xs ${stale ? 'text-[var(--warning-amber)]' : 'text-[var(--success-green)]'}`}>{s.last_at ? fmtDateTime(s.last_at) : '—'}</TableCell>
+                        <TableCell className={`text-xs ${stale ? 'text-[var(--warning-amber)] font-bold' : 'text-[var(--muted-gray)]'}`}>{a || '—'}{stale ? ' ⚠️' : ''}</TableCell>
+                        <TableCell className="text-xs text-[var(--muted-gray)]">{s.last?.draw_code || '—'}</TableCell>
+                        <TableCell className="text-xs text-[var(--muted-gray)]">
                           {s.last ? `${s.last.type_name_th || ''}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}
                           {mi && <span className={`ml-1 text-[9px] px-1 py-0.5 rounded border ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label || mi.mode}</span>}
-                          {mi && isOfficial(mi) && <span className="ml-1 text-[9px] text-emerald-300">✓ทางการ</span>}
+                          {mi && isOfficial(mi) && <span className="ml-1 text-[9px] text-[var(--success-green)]">✓ทางการ</span>}
                         </TableCell>
-                        <TableCell className="text-right text-xs text-navy-300">{s.total}</TableCell>
+                        <TableCell className="text-right text-xs text-[var(--muted-gray)]">{s.total}</TableCell>
                       </TableRow>
                     );
                   })}
-                  {!sources.length && <TableRow><TableCell colSpan={7} className="text-center text-navy-400 text-xs py-4">ยังไม่มีผลรางวัลในระบบ</TableCell></TableRow>}
+                  {!sources.length && <TableRow><TableCell colSpan={7} className="text-center text-[var(--muted-gray)] text-xs py-4">ยังไม่มีผลรางวัลในระบบ</TableCell></TableRow>}
                 </TableBody>
               </Table>
-              <div className="text-[11px] text-navy-500 mt-3">
+              <div className="text-[11px] text-[var(--dark-gray)] mt-3">
                 ⚠️ = ผลเก่าเกิน 36 ชม. — แหล่งอาจหยุดอัปเดต • ✓ทางการ = ผลจากแหล่ง government เท่านั้น
               </div>
             </CardBody>
@@ -159,16 +159,16 @@ export default function AdminHealth() {
           {(d?.fetchHealth || []).length > 0 && (
             <Card>
               <CardBody>
-                <h2 className="font-bold text-white mb-3">🔄 การดึงผลอัตโนมัติ (source chain + fallback)</h2>
+                <h2 className="font-bold text-[var(--white)] mb-3">🔄 การดึงผลอัตโนมัติ (source chain + fallback)</h2>
                 <div className="flex flex-wrap gap-2">
                   {d.fetchHealth.map(h => (
-                    <div key={h.label} className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${h.ok === false ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-green-500/30 bg-green-500/5 text-green-300'}`}>
+                    <div key={h.label} className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${h.ok === false ? 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-[var(--danger-red)]' : 'border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.05)] text-[var(--success-green)]'}`}>
                       <span className="font-bold">{h.label}</span>
-                      <span className="text-navy-400 ml-1">{h.ok === false ? `✕ ${h.lastError || 'error'}` : `✓ ${age(h.lastOkAt) || '—'}`}</span>
+                      <span className="text-[var(--muted-gray)] ml-1">{h.ok === false ? `✕ ${h.lastError || 'error'}` : `✓ ${age(h.lastOkAt) || '—'}`}</span>
                     </div>
                   ))}
                 </div>
-                <div className="text-[11px] text-navy-500 mt-2">✓ = ดึงสำเร็จล่าสุด • ✕ = ดึงล้มเหลวล่าสุด (ระบบจะลอง source ถัดไปใน chain อัตโนมัติ)</div>
+                <div className="text-[11px] text-[var(--dark-gray)] mt-2">✓ = ดึงสำเร็จล่าสุด • ✕ = ดึงล้มเหลวล่าสุด (ระบบจะลอง source ถัดไปใน chain อัตโนมัติ)</div>
               </CardBody>
             </Card>
           )}
@@ -177,16 +177,16 @@ export default function AdminHealth() {
           {infra && (
             <Card>
               <CardBody>
-                <h2 className="font-bold text-white mb-3">🖥️ โครงสร้างระบบ</h2>
+                <h2 className="font-bold text-[var(--white)] mb-3">🖥️ โครงสร้างระบบ</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Uptime</div><div className="text-white font-bold mt-1">{Math.floor(infra.uptimeSec / 3600)} ชม. {Math.floor(infra.uptimeSec % 3600 / 60)} นาที</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Node / env</div><div className="text-white font-bold mt-1">{infra.node} • {infra.env}</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">หน่วยความจำ (heap)</div><div className="text-white font-bold mt-1">{(infra.memory.heapUsed / 1048576).toFixed(0)} / {(infra.memory.heapTotal / 1048576).toFixed(0)} MB</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">ขนาดฐานข้อมูล</div><div className="text-white font-bold mt-1">{infra.dbSizeBytes ? `${(infra.dbSizeBytes / 1048576).toFixed(1)} MB` : '—'}</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Migration ล่าสุด</div><div className="text-white font-bold mt-1 font-mono text-[11px]">{infra.latestMigration?.version || '—'}</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">สมาชิก / โพย</div><div className="text-white font-bold mt-1">{infra.tableCounts?.users ?? '—'} / {infra.tableCounts?.bet_slips ?? '—'}</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">Audit / Security logs</div><div className="text-white font-bold mt-1">{infra.tableCounts?.audit_logs ?? '—'} / {infra.tableCounts?.security_events ?? '—'}</div></div>
-                  <div className="bg-navy-800/60 rounded-lg p-3"><div className="text-navy-400">คำขอรออนุมัติ</div><div className={`font-bold mt-1 ${infra.pendingApprovals ? 'text-amber-300' : 'text-green-300'}`}>{infra.pendingApprovals ?? 0}</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">Uptime</div><div className="text-[var(--white)] font-bold mt-1">{Math.floor(infra.uptimeSec / 3600)} ชม. {Math.floor(infra.uptimeSec % 3600 / 60)} นาที</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">Node / env</div><div className="text-[var(--white)] font-bold mt-1">{infra.node} • {infra.env}</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">หน่วยความจำ (heap)</div><div className="text-[var(--white)] font-bold mt-1">{(infra.memory.heapUsed / 1048576).toFixed(0)} / {(infra.memory.heapTotal / 1048576).toFixed(0)} MB</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">ขนาดฐานข้อมูล</div><div className="text-[var(--white)] font-bold mt-1">{infra.dbSizeBytes ? `${(infra.dbSizeBytes / 1048576).toFixed(1)} MB` : '—'}</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">Migration ล่าสุด</div><div className="text-[var(--white)] font-bold mt-1 font-mono text-[11px]">{infra.latestMigration?.version || '—'}</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">สมาชิก / โพย</div><div className="text-[var(--white)] font-bold mt-1">{infra.tableCounts?.users ?? '—'} / {infra.tableCounts?.bet_slips ?? '—'}</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">Audit / Security logs</div><div className="text-[var(--white)] font-bold mt-1">{infra.tableCounts?.audit_logs ?? '—'} / {infra.tableCounts?.security_events ?? '—'}</div></div>
+                  <div className="bg-[var(--bg-dark-surface)] rounded-lg p-3"><div className="text-[var(--muted-gray)]">คำขอรออนุมัติ</div><div className={`font-bold mt-1 ${infra.pendingApprovals ? 'text-[var(--warning-amber)]' : 'text-[var(--success-green)]'}`}>{infra.pendingApprovals ?? 0}</div></div>
                 </div>
               </CardBody>
             </Card>
@@ -198,50 +198,50 @@ export default function AdminHealth() {
               <Card>
                 <CardBody>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-white">💾 Backups ({backups.length})</h2>
-                    <button onClick={createBackup} className="text-xs px-3 py-1.5 rounded-lg bg-gold-500/20 text-gold-300 border border-gold-500/40 hover:bg-gold-500/30">+ สร้าง backup</button>
+                    <h2 className="font-bold text-[var(--white)]">💾 Backups ({backups.length})</h2>
+                    <button onClick={createBackup} className="text-xs px-3 py-1.5 rounded-lg bg-[rgba(212,175,55,0.2)] text-[var(--gold-primary)] border border-[var(--border-gold)] hover:bg-[rgba(212,175,55,0.3)]">+ สร้าง backup</button>
                   </div>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {backups.map(b => (
-                      <div key={b.file} className="flex justify-between text-xs bg-navy-800/60 rounded px-2.5 py-1.5">
-                        <span className="font-mono text-navy-200">{b.file}</span>
-                        <span className="text-navy-400">{(b.sizeBytes / 1024).toFixed(0)} KB • {b.createdAt?.slice(0, 16).replace('T', ' ')}</span>
+                      <div key={b.file} className="flex justify-between text-xs bg-[var(--bg-dark-surface)] rounded px-2.5 py-1.5">
+                        <span className="font-mono text-[var(--light-gray)]">{b.file}</span>
+                        <span className="text-[var(--muted-gray)]">{(b.sizeBytes / 1024).toFixed(0)} KB • {b.createdAt?.slice(0, 16).replace('T', ' ')}</span>
                       </div>
                     ))}
-                    {!backups.length && <div className="text-xs text-navy-500 py-2">ยังไม่มี backup — กดสร้าง (logical dump ทั้ง DB เป็นไฟล์ .json.gz)</div>}
+                    {!backups.length && <div className="text-xs text-[var(--dark-gray)] py-2">ยังไม่มี backup — กดสร้าง (logical dump ทั้ง DB เป็นไฟล์ .json.gz)</div>}
                   </div>
                 </CardBody>
               </Card>
             )}
             <Card>
               <CardBody>
-                <h2 className="font-bold text-white mb-3">🚨 Incidents ({incidents.filter(i => i.status !== 'resolved').length} active)</h2>
+                <h2 className="font-bold text-[var(--white)] mb-3">🚨 Incidents ({incidents.filter(i => i.status !== 'resolved').length} active)</h2>
                 <div className="flex gap-2 mb-3 flex-wrap">
                   <input value={incForm.title} onChange={e => setIncForm({ ...incForm, title: e.target.value })}
-                    placeholder="หัวข้อ incident" className="flex-1 min-w-40 bg-navy-900 border border-navy-600 rounded-lg px-3 py-1.5 text-sm" />
+                    placeholder="หัวข้อ incident" className="flex-1 min-w-40 bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-1.5 text-sm" />
                   <select value={incForm.severity} onChange={e => setIncForm({ ...incForm, severity: e.target.value })}
-                    className="bg-navy-900 border border-navy-600 rounded-lg px-2 py-1.5 text-sm">
+                    className="bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-2 py-1.5 text-sm">
                     <option value="low">low</option><option value="medium">medium</option>
                     <option value="high">high</option><option value="critical">critical</option>
                   </select>
-                  <button onClick={createIncident} className="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40">บันทึก</button>
+                  <button onClick={createIncident} className="text-xs px-3 py-1.5 rounded-lg bg-[rgba(239,68,68,0.2)] text-[var(--danger-red)] border border-[rgba(239,68,68,0.3)]">บันทึก</button>
                 </div>
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
                   {incidents.map(inc => (
-                    <div key={inc.id} className="flex items-center gap-2 bg-navy-800/60 rounded px-2.5 py-1.5 text-xs">
-                      <span className={`px-1.5 py-0.5 rounded font-bold ${inc.severity === 'critical' ? 'bg-red-500/20 text-red-300' : inc.severity === 'high' ? 'bg-orange-500/20 text-orange-300' : 'bg-navy-600 text-navy-200'}`}>{inc.severity}</span>
-                      <span className={`flex-1 ${inc.status === 'resolved' ? 'line-through text-navy-500' : 'text-white'}`}>{inc.title}</span>
-                      <span className="text-navy-500">{inc.created_by_name || ''}</span>
+                    <div key={inc.id} className="flex items-center gap-2 bg-[var(--bg-dark-surface)] rounded px-2.5 py-1.5 text-xs">
+                      <span className={`px-1.5 py-0.5 rounded font-bold ${inc.severity === 'critical' ? 'bg-[rgba(239,68,68,0.2)] text-[var(--danger-red)]' : inc.severity === 'high' ? 'bg-[rgba(249,115,22,0.2)] text-[rgba(249,115,22,1)]' : 'bg-[var(--bg-card)] text-[var(--muted-gray)]'}`}>{inc.severity}</span>
+                      <span className={`flex-1 ${inc.status === 'resolved' ? 'line-through text-[var(--dark-gray)]' : 'text-[var(--white)]'}`}>{inc.title}</span>
+                      <span className="text-[var(--dark-gray)]">{inc.created_by_name || ''}</span>
                       {inc.status !== 'resolved' && (
                         <>
-                          {inc.status === 'open' && <button onClick={() => setIncidentStatus(inc, 'mitigated')} className="text-amber-300 hover:underline">mitigate</button>}
-                          <button onClick={() => setIncidentStatus(inc, 'resolved')} className="text-green-300 hover:underline">resolve</button>
+                          {inc.status === 'open' && <button onClick={() => setIncidentStatus(inc, 'mitigated')} className="text-[var(--warning-amber)] hover:underline">mitigate</button>}
+                          <button onClick={() => setIncidentStatus(inc, 'resolved')} className="text-[var(--success-green)] hover:underline">resolve</button>
                         </>
                       )}
-                      {inc.status === 'resolved' && <span className="text-green-400">✓</span>}
+                      {inc.status === 'resolved' && <span className="text-[var(--success-green)]">✓</span>}
                     </div>
                   ))}
-                  {!incidents.length && <div className="text-xs text-navy-500 py-2">ไม่มี incident</div>}
+                  {!incidents.length && <div className="text-xs text-[var(--dark-gray)] py-2">ไม่มี incident</div>}
                 </div>
               </CardBody>
             </Card>
@@ -251,14 +251,14 @@ export default function AdminHealth() {
           {overdue.length > 0 && (
             <Card variant="danger">
               <CardBody>
-                <h2 className="font-bold text-red-300 mb-3">⚠️ รอบค้างออกผล ({overdue.length})</h2>
+                <h2 className="font-bold text-[var(--danger-red)] mb-3">⚠️ รอบค้างออกผล ({overdue.length})</h2>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-navy-700/60 hover:bg-transparent">
-                      <TableHead className="text-navy-400">รอบ</TableHead>
-                      <TableHead className="text-navy-400">ตลาด</TableHead>
-                      <TableHead className="text-navy-400">เวลาที่ควรออก</TableHead>
-                      <TableHead className="text-navy-400">สถานะ</TableHead>
+                    <TableRow className="border-[var(--border-light)] hover:bg-transparent">
+                      <TableHead className="text-[var(--muted-gray)]">รอบ</TableHead>
+                      <TableHead className="text-[var(--muted-gray)]">ตลาด</TableHead>
+                      <TableHead className="text-[var(--muted-gray)]">เวลาที่ควรออก</TableHead>
+                      <TableHead className="text-[var(--muted-gray)]">สถานะ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -266,20 +266,20 @@ export default function AdminHealth() {
                       const late = Date.now() - new Date(String(drow.draw_at).replace(' ', 'T') + 'Z').getTime();
                       const lateH = Math.floor(late / 3600e3);
                       return (
-                        <TableRow key={drow.id} className="border-navy-700/50">
-                          <TableCell className="font-mono text-xs text-navy-200">{drow.draw_code}</TableCell>
-                          <TableCell className="text-xs text-navy-200">{drow.type_name_th}{drow.cat_name_th ? ` — ${drow.cat_name_th}` : ''}</TableCell>
-                          <TableCell className="text-xs text-navy-300">{fmtDateTime(drow.draw_at)}</TableCell>
+                        <TableRow key={drow.id} className="border-[var(--border-light)]">
+                          <TableCell className="font-mono text-xs text-[var(--light-gray)]">{drow.draw_code}</TableCell>
+                          <TableCell className="text-xs text-[var(--light-gray)]">{drow.type_name_th}{drow.cat_name_th ? ` — ${drow.cat_name_th}` : ''}</TableCell>
+                          <TableCell className="text-xs text-[var(--muted-gray)]">{fmtDateTime(drow.draw_at)}</TableCell>
                           <TableCell className="text-xs">
-                            <span className="text-red-300 font-bold">ค้างมา {lateH >= 24 ? `${Math.floor(lateH / 24)} วัน ` : ''}{lateH % 24} ชม.</span>
-                            <span className="text-navy-500 ml-1">({drow.status})</span>
+                            <span className="text-[var(--danger-red)] font-bold">ค้างมา {lateH >= 24 ? `${Math.floor(lateH / 24)} วัน ` : ''}{lateH % 24} ชม.</span>
+                            <span className="text-[var(--dark-gray)] ml-1">({drow.status})</span>
                           </TableCell>
                         </TableRow>
                       );
                     })}
                   </TableBody>
                 </Table>
-                <div className="text-[11px] text-navy-400 mt-3">
+                <div className="text-[11px] text-[var(--muted-gray)] mt-3">
                   วิธีแก้: รอตัวดึงผลรอบถัดไป • ถ้าแหล่งภายนอกไม่มีผลจริง → admin กรอกผลเองที่ หน้ารอบหวย → ออกผล
                 </div>
               </CardBody>
@@ -287,7 +287,7 @@ export default function AdminHealth() {
           )}
         </>
       )}
-      {!d && !err && <div className="text-navy-300">กำลังโหลด...</div>}
+      {!d && !err && <div className="text-[var(--muted-gray)]">กำลังโหลด...</div>}
     </div>
   );
 }

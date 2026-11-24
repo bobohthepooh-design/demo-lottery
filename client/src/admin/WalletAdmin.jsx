@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
-import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
-import { Badge } from '../components/shadcn/badge.jsx';
+import { Input, Select, Button } from '../components/ui/index.js';
 import { cn } from '../lib/utils.js';
 
 const TYPE_TH = {
@@ -124,157 +122,207 @@ export default function AdminWallet() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-white">จัดการเครดิตเสมือน (Virtual Wallet)</h1>
-      <Card>
-      <CardBody>
-      <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} inputClassName="py-2.5">
-          <option value="">— เลือกสมาชิก —</option>
-          {members.map(m => <option key={m.id} value={m.id}>{m.username} ({satang(m.balance)} บาท)</option>)}
-        </Select>
-        <Input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} inputClassName="py-2.5" />
-        <Select value={form.direction} onChange={e => setForm({...form, direction: e.target.value})} inputClassName="py-2.5">
-          <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>
-        </Select>
-        <Input required placeholder="เหตุผล (บังคับ)" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} inputClassName="py-2.5" />
-        <Input placeholder="Idempotency key" value={form.idempotencyKey} onChange={e => setForm({...form, idempotencyKey: e.target.value})} inputClassName="py-2.5 font-mono text-xs" />
-        <Button className="sm:col-span-2">ปรับเครดิต</Button>
-        {msg && <div className={`sm:col-span-2 text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`} role="status">{msg}</div>}
-      </form>
-      </CardBody>
-      </Card>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>จัดการเครดิตเสมือน</h1>
+        <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+          background: 'rgba(212, 175, 55, 0.15)',
+          border: '1px solid var(--border-gold)',
+          color: 'var(--gold-primary)'
+        }}>Virtual Wallet</span>
+      </div>
 
-      {/* ปรับเครดิตหลายบัญชีพร้อมกัน */}
-      <Card>
-      <CardHeader title="ปรับเครดิตหลายบัญชี" sub="เลือกสมาชิกหลายคนหรือทั้งหมด — ใช้เหตุผลเดียวกัน ทุกบัญชีบันทึก audit แยก (สูงสุด 200 คน/ครั้ง)" />
-      <CardBody>
-        <form onSubmit={submitBulk} className="space-y-3">
+      {/* Single Adjust Form */}
+      <div className="luxury-card luxury-card-gold-border p-5">
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--gold-primary)' }}>ปรับเครดิตรายบุคคล</h2>
+        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>สมาชิก</label>
+            <Select required value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} inputClassName="py-2.5 luxury-input">
+              <option value="">— เลือกสมาชิก —</option>
+              {members.map(m => <option key={m.id} value={m.id}>{m.username} ({satang(m.balance)} บาท)</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>จำนวนเงิน (บาท)</label>
+            <Input required type="number" step="0.01" min="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} inputClassName="py-2.5 luxury-input" />
+          </div>
+          <div>
+            <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>ประเภท</label>
+            <Select value={form.direction} onChange={e => setForm({...form, direction: e.target.value})} inputClassName="py-2.5 luxury-input">
+              <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>เหตุผล (บังคับ)</label>
+            <Input required placeholder="ระบุเหตุผล" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} inputClassName="py-2.5 luxury-input" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>Idempotency Key</label>
+            <Input placeholder="Auto-generated" value={form.idempotencyKey} onChange={e => setForm({...form, idempotencyKey: e.target.value})} inputClassName="py-2.5 font-mono text-xs luxury-input" />
+          </div>
+          <div className="sm:col-span-2">
+            <button type="submit" className="luxury-btn w-full sm:w-auto px-8">ปรับเครดิต</button>
+          </div>
+          {msg && <div className={`sm:col-span-2 text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`} role="status">{msg}</div>}
+        </form>
+      </div>
+
+      {/* Bulk Adjust */}
+      <div className="luxury-card p-5">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--gold-primary)' }}>ปรับเครดิตหลายบัญชี</h2>
+        <p className="text-xs mb-4" style={{ color: 'var(--muted-gray)' }}>เลือกสมาชิกหลายคนหรือทั้งหมด — ใช้เหตุผลเดียวกัน ทุกบัญชีบันทึก audit แยก (สูงสุด 200 คน/ครั้ง)</p>
+        <form onSubmit={submitBulk} className="space-y-4">
           <div className="flex gap-2">
             <button type="button" onClick={() => setBulk(b => ({ ...b, mode: 'selected' }))}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${bulk.mode === 'selected' ? 'bg-gold-500/20 border-gold-500/60 text-gold-300' : 'border-navy-600 text-navy-300'}`}>
+              className={`text-xs font-bold px-4 py-2 rounded-lg border transition-all ${bulk.mode === 'selected' ? 'luxury-btn' : 'luxury-btn-ghost'}`}>
               เลือกสมาชิก
             </button>
             <button type="button" onClick={() => setBulk(b => ({ ...b, mode: 'all' }))}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${bulk.mode === 'all' ? 'bg-gold-500/20 border-gold-500/60 text-gold-300' : 'border-navy-600 text-navy-300'}`}>
+              className={`text-xs font-bold px-4 py-2 rounded-lg border transition-all ${bulk.mode === 'all' ? 'luxury-btn' : 'luxury-btn-ghost'}`}>
               สมาชิกทั้งหมดที่ใช้งาน
             </button>
           </div>
           {bulk.mode === 'selected' && (
-            <div className="max-h-40 overflow-y-auto bg-navy-900/60 border border-navy-700 rounded-lg p-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
+            <div className="max-h-48 overflow-y-auto p-3 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-2" style={{
+              background: 'var(--bg-dark-surface)',
+              border: '1px solid var(--border-light)'
+            }}>
               {members.map(m => (
-                <label key={m.id} className="flex items-center gap-2 text-xs text-navy-200 px-2 py-1 rounded hover:bg-navy-800 cursor-pointer">
-                  <input type="checkbox" checked={bulk.userIds.includes(m.id)} onChange={() => toggleMember(m.id)} className="accent-gold-500" />
-                  {m.username} <span className="text-navy-500">({satang(m.balance)} บาท)</span>
+                <label key={m.id} className="flex items-center gap-2 text-xs px-3 py-2 rounded cursor-pointer transition-colors" style={{
+                  color: 'var(--white)',
+                  background: bulk.userIds.includes(m.id) ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                  border: bulk.userIds.includes(m.id) ? '1px solid var(--border-gold)' : '1px solid transparent'
+                }}>
+                  <input type="checkbox" checked={bulk.userIds.includes(m.id)} onChange={() => toggleMember(m.id)} style={{ accentColor: 'var(--gold-primary)' }} />
+                  {m.username} <span style={{ color: 'var(--muted-gray)' }}>({satang(m.balance)} บาท)</span>
                 </label>
               ))}
-              {!members.length && <div className="text-navy-400 text-xs p-2">ไม่มีสมาชิก</div>}
+              {!members.length && <div className="text-center py-4 text-xs" style={{ color: 'var(--muted-gray)' }}>ไม่มีสมาชิก</div>}
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Input required type="number" step="0.01" min="0.01" placeholder="จำนวนเงิน (บาท)" value={bulk.amount} onChange={e => setBulk({ ...bulk, amount: e.target.value })} inputClassName="py-2.5" />
-            <Select value={bulk.direction} onChange={e => setBulk({ ...bulk, direction: e.target.value })} inputClassName="py-2.5">
-              <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>
-            </Select>
-            <Input required placeholder="เหตุผล (บังคับ)" value={bulk.reason} onChange={e => setBulk({ ...bulk, reason: e.target.value })} inputClassName="py-2.5" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>จำนวนเงิน (บาท)</label>
+              <Input required type="number" step="0.01" min="0.01" placeholder="0.00" value={bulk.amount} onChange={e => setBulk({ ...bulk, amount: e.target.value })} inputClassName="py-2.5 luxury-input" />
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>ประเภท</label>
+              <Select value={bulk.direction} onChange={e => setBulk({ ...bulk, direction: e.target.value })} inputClassName="py-2.5 luxury-input">
+                <option value="credit">เพิ่มเครดิต (+)</option><option value="debit">หักเครดิต (−)</option>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>เหตุผล (บังคับ)</label>
+              <Input required placeholder="ระบุเหตุผล" value={bulk.reason} onChange={e => setBulk({ ...bulk, reason: e.target.value })} inputClassName="py-2.5 luxury-input" />
+            </div>
           </div>
-          <Button disabled={bulkBusy || (bulk.mode === 'selected' && !bulk.userIds.length)}>
+          <button type="submit" disabled={bulkBusy || (bulk.mode === 'selected' && !bulk.userIds.length)} className="luxury-btn w-full sm:w-auto px-8">
             {bulkBusy ? 'กำลังปรับ…' : `ปรับเครดิตให้ ${bulk.mode === 'all' ? 'สมาชิกทั้งหมด' : `${bulk.userIds.length} คน`}`}
-          </Button>
+          </button>
           {bulkMsg && <div className={`text-sm rounded-lg p-3 ${bulkMsg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`} role="status">{bulkMsg}</div>}
         </form>
-      </CardBody>
-      </Card>
+      </div>
 
-      <Card className="overflow-x-auto">
-        <CardHeader title={`ประวัติธุรกรรมทั้งหมด (${txTotal.toLocaleString()} รายการ)`} actions={
-          <Button variant="ghost" size="sm" onClick={exportCsv}>⬇️ Export CSV (หน้านี้)</Button>
-        } />
-        <Table>
-          <TableHeader>
-            <TableRow className="border-navy-700/60 hover:bg-transparent">
-              <TableHead className="text-navy-400">Ref</TableHead>
-              <TableHead className="text-navy-400">สมาชิก</TableHead>
-              <TableHead className="text-navy-400">ประเภท</TableHead>
-              <TableHead className="text-navy-400 text-right">จำนวน</TableHead>
-              <TableHead className="text-navy-400 text-right">คงเหลือ</TableHead>
-              <TableHead className="text-navy-400">เวลา</TableHead>
-              <TableHead className="text-navy-400">รายละเอียด</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {txs.map(t => (
-              <TableRow key={t.id} className="border-navy-700/50">
-                <TableCell className="font-mono text-xs text-navy-300">{t.reference}</TableCell>
-                <TableCell className="text-white">{t.username}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={cn('text-[10px] font-semibold',
-                    t.direction === 'credit' ? 'border-emerald-500/40 text-emerald-300' : 'border-red-500/40 text-red-300')}>
-                    {TYPE_TH[t.type] || t.type}
-                  </Badge>
-                </TableCell>
-                <TableCell className={cn('text-right font-bold', t.direction === 'credit' ? 'text-green-400' : 'text-red-400')}>
-                  {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
-                </TableCell>
-                <TableCell className="text-right text-gold-300">{satang(t.balance_after)} บาท</TableCell>
-                <TableCell className="text-xs text-navy-300 whitespace-nowrap">{fmtDateTime(t.created_at)}</TableCell>
-                <TableCell className="text-xs text-navy-300 max-w-[200px] truncate">{t.description || '—'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      {/* Transactions Table */}
+      <div className="luxury-card overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--white)' }}>
+            ประวัติธุรกรรมทั้งหมด <span style={{ color: 'var(--gold-primary)' }}>({txTotal.toLocaleString()} รายการ)</span>
+          </h2>
+          <button onClick={exportCsv} className="luxury-btn-outline text-xs px-4 py-2 rounded-lg">⬇️ Export CSV (หน้านี้)</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background: 'var(--bg-dark-surface)', borderBottom: '1px solid var(--border-light)' }}>
+                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>Ref</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>สมาชิก</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>ประเภท</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>จำนวน</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>คงเหลือ</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>เวลา</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>รายละเอียด</th>
+              </tr>
+            </thead>
+            <tbody>
+              {txs.map(t => (
+                <tr key={t.id} style={{ borderBottom: '1px solid var(--border-light)' }} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--gold-primary)' }}>{t.reference}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--white)' }}>{t.username}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn('text-[10px] font-semibold px-2 py-1 rounded border', t.direction === 'credit' ? 'luxury-badge-success' : 'luxury-badge-danger')}>
+                      {TYPE_TH[t.type] || t.type}
+                    </span>
+                  </td>
+                  <td className={cn('px-4 py-3 text-right font-bold', t.direction === 'credit' ? 'text-green-400' : 'text-red-400')}>
+                    {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold" style={{ color: 'var(--gold-primary)' }}>{satang(t.balance_after)} บาท</td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--muted-gray)' }}>{fmtDateTime(t.created_at)}</td>
+                  <td className="px-4 py-3 text-xs max-w-[200px] truncate" style={{ color: 'var(--muted-gray)' }}>{t.description || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {txPageCount > 1 && (
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-navy-700/50 text-xs text-navy-300">
-            <span>หน้า {txPage + 1}/{txPageCount} — {txTotal.toLocaleString()} รายการ</span>
-            <div className="flex gap-1.5">
-              <Button variant="ghost" size="sm" disabled={txPage === 0}
-                onClick={() => { const p = txPage - 1; setTxPage(p); loadTxs(p); }}>← ก่อนหน้า</Button>
-              <Button variant="ghost" size="sm" disabled={txPage + 1 >= txPageCount}
-                onClick={() => { const p = txPage + 1; setTxPage(p); loadTxs(p); }}>ถัดไป →</Button>
+          <div className="flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'var(--border-light)' }}>
+            <span className="text-xs" style={{ color: 'var(--muted-gray)' }}>หน้า {txPage + 1}/{txPageCount} — {txTotal.toLocaleString()} รายการ</span>
+            <div className="flex gap-2">
+              <button disabled={txPage === 0} onClick={() => { const p = txPage - 1; setTxPage(p); loadTxs(p); }}
+                className="luxury-btn-ghost text-xs px-4 py-2 rounded-lg disabled:opacity-50">← ก่อนหน้า</button>
+              <button disabled={txPage + 1 >= txPageCount} onClick={() => { const p = txPage + 1; setTxPage(p); loadTxs(p); }}
+                className="luxury-btn-ghost text-xs px-4 py-2 rounded-lg disabled:opacity-50">ถัดไป →</button>
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* Double-entry ledger — ยอดบัญชีแยกประเภท + verify */}
-      <Card>
-        <CardHeader title="บัญชีแยก (Double-Entry Ledger)" sub="ทุกธุรกรรมมี journal 2 ขา (Dr/Cr เท่ากัน) — house accounts เป็นบัญชีคู่ของเครดิตเสมือน"
-          actions={<div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={verifyLedger}>ตรวจยอด</Button>
-            <Button variant="ghost" size="sm" onClick={rebuildLedger}>Backfill เก่า</Button>
-          </div>} />
-        <CardBody>
-          {ledgerVerify && (
-            <div className={`text-xs rounded-lg p-2.5 mb-3 ${ledgerVerify.ok ? 'bg-green-500/10 text-green-300' : 'bg-red-500/10 text-red-300'}`}>
-              {ledgerVerify.ok
-                ? `✓ Ledger ถูกต้อง — Dr ${satang(ledgerVerify.globalDebit)} = Cr ${satang(ledgerVerify.globalCredit)} บาท • ทุก tx มี journal ครบ`
-                : `✗ พบปัญหา: ${ledgerVerify.transactionsMissingJournal} tx ขาด journal • unbalanced ${ledgerVerify.unbalancedTransactions?.length || 0} รายการ`}
-            </div>
-          )}
-          <Table>
-            <TableHeader>
-              <TableRow className="border-navy-700/60 hover:bg-transparent">
-                <TableHead className="text-navy-400">บัญชี</TableHead>
-                <TableHead className="text-navy-400 text-right">Dr รวม</TableHead>
-                <TableHead className="text-navy-400 text-right">Cr รวม</TableHead>
-                <TableHead className="text-navy-400 text-right">ยอดคงเหลือ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      {/* Double-entry Ledger */}
+      <div className="luxury-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--gold-primary)' }}>บัญชีแยก (Double-Entry Ledger)</h2>
+            <p className="text-xs mt-1" style={{ color: 'var(--muted-gray)' }}>ทุกธุรกรรมมี journal 2 ขา (Dr/Cr เท่ากัน) — house accounts เป็นบัญชีคู่ของเครดิตเสมือน</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={verifyLedger} className="luxury-btn-outline text-xs px-4 py-2 rounded-lg">ตรวจยอด</button>
+            <button onClick={rebuildLedger} className="luxury-btn-outline text-xs px-4 py-2 rounded-lg">Backfill เก่า</button>
+          </div>
+        </div>
+        {ledgerVerify && (
+          <div className={`text-xs rounded-lg p-3 mb-4 ${ledgerVerify.ok ? 'luxury-badge-success' : 'luxury-badge-danger'}`}>
+            {ledgerVerify.ok
+              ? `✓ Ledger ถูกต้อง — Dr ${satang(ledgerVerify.globalDebit)} = Cr ${satang(ledgerVerify.globalCredit)} บาท • ทุก tx มี journal ครบ`
+              : `✗ พบปัญหา: ${ledgerVerify.transactionsMissingJournal} tx ขาด journal • unbalanced ${ledgerVerify.unbalancedTransactions?.length || 0} รายการ`}
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background: 'var(--bg-dark-surface)', borderBottom: '1px solid var(--border-light)' }}>
+                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>บัญชี</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>Dr รวม</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>Cr รวม</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>ยอดคงเหลือ</th>
+              </tr>
+            </thead>
+            <tbody>
               {ledgerAccts.map(a => (
-                <TableRow key={a.account} className="border-navy-700/50">
-                  <TableCell className="font-mono text-xs text-navy-200">{a.account}</TableCell>
-                  <TableCell className="text-right text-xs text-navy-300">{satang(a.debit_total)} บาท</TableCell>
-                  <TableCell className="text-right text-xs text-navy-300">{satang(a.credit_total)} บาท</TableCell>
-                  <TableCell className={cn('text-right text-xs font-bold', a.balance >= 0 ? 'text-green-400' : 'text-red-400')}>
+                <tr key={a.account} style={{ borderBottom: '1px solid var(--border-light)' }} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--white)' }}>{a.account}</td>
+                  <td className="px-4 py-3 text-right text-xs" style={{ color: 'var(--muted-gray)' }}>{satang(a.debit_total)} บาท</td>
+                  <td className="px-4 py-3 text-right text-xs" style={{ color: 'var(--muted-gray)' }}>{satang(a.credit_total)} บาท</td>
+                  <td className={cn('px-4 py-3 text-right text-xs font-bold', a.balance >= 0 ? 'text-green-400' : 'text-red-400')}>
                     {a.balance >= 0 ? '+' : ''}{satang(a.balance)} บาท
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))}
-              {!ledgerAccts.length && <TableRow><TableCell colSpan={4} className="text-center text-navy-400 text-xs py-4">ยังไม่มี journal entries — รอธุรกรรมใหม่ หรือกด Backfill</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
+              {!ledgerAccts.length && <tr><td colSpan={4} className="text-center py-6 text-xs" style={{ color: 'var(--muted-gray)' }}>ยังไม่มี journal entries — รอธุรกรรมใหม่ หรือกด Backfill</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

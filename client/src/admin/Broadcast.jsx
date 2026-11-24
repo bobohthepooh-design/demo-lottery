@@ -29,31 +29,31 @@ export default function AdminBroadcast() {
   return (
     <div className="max-w-xl space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-white">แจ้งเตือนสมาชิกทั้งหมด</h1>
-        <p className="text-sm text-navy-300">ส่งประกาศไปยัง notification center ของสมาชิกทุกคนที่ใช้งานอยู่ + web push (ถ้าเปิดไว้)</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>แจ้งเตือนสมาชิกทั้งหมด</h1>
+        <p className="text-sm" style={{ color: 'var(--light-gray)' }}>ส่งประกาศไปยัง notification center ของสมาชิกทุกคนที่ใช้งานอยู่ + web push (ถ้าเปิดไว้)</p>
       </div>
 
-      <Card>
+      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
         <CardBody>
           <form onSubmit={send} className="space-y-3">
             <Input label="หัวข้อ *" required maxLength={200} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-              placeholder="เช่น ผลหวยงวดพิเศษออกแล้ว" inputClassName="py-2.5" />
+              placeholder="เช่น ผลหวยงวดพิเศษออกแล้ว" inputClassName="py-2.5" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
             <div>
-              <label className="text-sm text-navy-300">รายละเอียด</label>
+              <label className="text-sm" style={{ color: 'var(--light-gray)' }}>รายละเอียด</label>
               <textarea rows={4} maxLength={500} value={form.body} onChange={e => setForm({ ...form, body: e.target.value })}
                 placeholder="ข้อความที่อยากบอกสมาชิก…"
-                className="w-full mt-1 bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-cyan-400/70" />
+                className="w-full mt-1 rounded-lg px-3 py-2.5 focus:outline-none" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
             </div>
             <Input label="ลิงก์ (ไม่บังคับ — path ภายใน เช่น /results)" maxLength={200} value={form.link} onChange={e => setForm({ ...form, link: e.target.value })}
-              placeholder="/results" inputClassName="py-2.5 font-mono text-xs" />
-            <Button disabled={busy} className="w-full">{busy ? 'กำลังส่ง…' : 'ส่งประกาศถึงสมาชิกทั้งหมด'}</Button>
-            {msg && <div className={`text-sm rounded-lg p-3 ${msg.startsWith('ERROR') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-300'}`} role="status">{msg}</div>}
+              placeholder="/results" inputClassName="py-2.5 font-mono text-xs" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
+            <Button disabled={busy} className="w-full" style={{ background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: 'var(--bg-deep-black)' }}>{busy ? 'กำลังส่ง…' : 'ส่งประกาศถึงสมาชิกทั้งหมด'}</Button>
+            {msg && <div className={`text-sm rounded-lg p-3`} style={msg.startsWith('ERROR') ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger-red)' } : { background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-green)' }} role="status">{msg}</div>}
           </form>
         </CardBody>
       </Card>
 
-      <Card variant="subtle">
-        <CardBody className="text-xs text-navy-400 space-y-1">
+      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+        <CardBody className="text-xs space-y-1" style={{ color: 'var(--muted-gray)' }}>
           <div>💡 เคล็ดลับ:</div>
           <div>• ใช้แจ้งผลรางวัลด่วน, โปรโมชัน, หรือประกาศปิดปรับปรุงระบบ</div>
           <div>• ลิงก์ใส่ path ภายในเว็บเท่านั้น (เช่น /results, /lotteries) — ลิงก์ภายนอกจะไม่ทำงาน</div>
