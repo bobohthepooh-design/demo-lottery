@@ -98,64 +98,98 @@ export default function Home() {
     <div className="space-y-6">
       {/* welcome — member เท่านั้น */}
       {user && (
-        <div className="suit-pattern flex items-center gap-3 bg-navy-800/80 border border-gold-500/40 rounded-2xl px-4 py-3 shadow-[0_0_20px_rgba(244,201,78,0.08)]">
-          <span className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-300 to-gold-600 text-navy-950 font-display font-black text-lg flex items-center justify-center shadow-md shadow-gold-500/20 shrink-0">
+        <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-gold)',
+          boxShadow: 'var(--shadow-gold)'
+        }}>
+          <span className="w-10 h-10 rounded-full font-display font-black text-lg flex items-center justify-center shrink-0" style={{
+            background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
+            color: 'var(--bg-deep-black)',
+            boxShadow: 'var(--shadow-gold)'
+          }}>
             {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <div className="font-display font-bold text-navy-950 text-base sm:text-lg">
+            <div className="font-display font-bold text-base sm:text-lg" style={{ color: 'var(--white)' }}>
               สวัสดีค่ะ {user.displayName || user.username} ~
             </div>
-            <div className="text-xs text-navy-400 truncate">
+            <div className="text-xs truncate" style={{ color: 'var(--muted-gray)' }}>
               {demoNotice || 'โหมดทดลอง — ใช้เครดิตเสมือนเท่านั้น'}
             </div>
           </div>
-          <span className="shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 text-navy-950 border border-gold-400/60 shadow-sm tracking-wider">
+          <span className="shrink-0 text-[10px] font-black px-2.5 py-1 rounded-full tracking-wider" style={{
+            background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
+            color: 'var(--bg-deep-black)',
+            border: '1px solid var(--border-gold)'
+          }}>
             DEMO MODE
           </span>
         </div>
       )}
 
-      {/* ปุ่มลัดหลัก — modern icon tiles */}
+      {/* ปุ่มลัดหลัก — luxury icon tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {quickActions.map(a => (
           <Link key={a.label} to={a.to}
-            className="group relative rounded-2xl bg-navy-800/70 border border-navy-600 py-4 px-2 flex flex-col items-center gap-2 text-white transition-all duration-200 hover:bg-navy-700/70 hover:border-gold-400/50 hover:shadow-lg hover:shadow-gold-500/10 active:scale-95">
+            className="group relative rounded-2xl py-4 px-2 flex flex-col items-center gap-2 transition-all duration-200 active:scale-95"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-light)'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--border-gold)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-gold)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'var(--border-light)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}>
             <span className="text-2xl drop-shadow-lg">{a.icon}</span>
             <div className="text-center">
-              <div className="text-sm font-bold tracking-wide">{a.label}</div>
-              <div className="text-[10px] opacity-80 font-mono truncate max-w-full px-1 mt-0.5">{a.sub}</div>
+              <div className="text-sm font-bold tracking-wide" style={{ color: 'var(--white)' }}>{a.label}</div>
+              <div className="text-[10px] opacity-80 font-mono truncate max-w-full px-1 mt-0.5" style={{ color: 'var(--muted-gray)' }}>{a.sub}</div>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* โปร cashback — แสดงเมื่อ admin เปิดใช้ */}
+      {/* โปร cashback */}
       {cashbackPct > 0 && (
-        <div className="rounded-xl border border-gold-500/40 bg-gradient-to-r from-gold-500/15 via-navy-800/60 to-gold-500/15 px-4 py-2.5 flex items-center gap-2 text-sm">
+        <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm" style={{
+          border: '1px solid var(--border-gold)',
+          background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), var(--bg-card), rgba(212, 175, 55, 0.15))'
+        }}>
           <span className="text-lg">🎁</span>
-          <span className="text-gold-200">โปรโมชั่น: <b className="text-gold-300">คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
+          <span style={{ color: 'var(--gold-bright)' }}>โปรโมชั่น: <b>คืนยอดเสีย {cashbackPct}%</b> ทุกวัน — คำนวณจากผลการแทงย้อนหลัง 24 ชม. (เครดิตเสมือนเพื่อการศึกษา)</span>
         </div>
       )}
 
-      {/* Responsible gambling — เตือนเบาๆ + ลิงก์เอกสาร */}
+      {/* Responsible gambling */}
       {user && (
-        <div className="rounded-xl border border-navy-700 bg-navy-800/50 px-4 py-2.5 flex items-center gap-2 text-xs text-navy-400">
+        <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs" style={{
+          border: '1px solid var(--border-light)',
+          background: 'var(--bg-card)',
+          color: 'var(--muted-gray)'
+        }}>
           <span>🛡️</span>
           <span className="flex-1">เล่นอย่างมีความรับผิดชอบ — ตั้งวงเงินได้ที่โปรไฟล์ • ระบบจำลองเพื่อการศึกษา</span>
-          <Link to="/legal" className="text-gold-400 hover:text-gold-300 font-semibold shrink-0">ข้อกำหนด/PDPA →</Link>
+          <Link to="/legal" style={{ color: 'var(--gold-primary)' }} className="font-semibold shrink-0">ข้อกำหนด/PDPA →</Link>
         </div>
       )}
 
-      {/* ticker ผลล่าสุดวิ่ง — Magic UI marquee */}
+      {/* ticker ผลล่าสุด */}
       {resultCards.length > 0 && (
-        <div className="rounded-xl border border-navy-700 bg-navy-900/60 overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{
+          border: '1px solid var(--border-light)',
+          background: 'var(--bg-card)'
+        }}>
           <Marquee speed={45} className="py-2 text-xs">
             {resultCards.map(g => {
               const last = g.settled[0];
               return last ? (
-                <span key={`${g.type_code}|${g.cat_code || ''}`} className="text-navy-300">
-                  🏆 {g.label}: <b className="text-gold-300">{fmtDateTime(last.draw_at)}</b>
+                <span key={`${g.type_code}|${g.cat_code || ''}`} style={{ color: 'var(--muted-gray)' }}>
+                  🏆 {g.label}: <b style={{ color: 'var(--gold-bright)' }}>{fmtDateTime(last.draw_at)}</b>
                 </span>
               ) : null;
             })}
@@ -163,22 +197,22 @@ export default function Home() {
         </div>
       )}
 
-      {/* ผลรางวัลล่าสุด — การ์ดแบบเดียวกับหน้า Results (LC-style) เฉพาะ 5-6 รายการล่าสุด */}
+      {/* ผลรางวัลล่าสุด — luxury cards */}
       {recentResults.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-end justify-between flex-wrap gap-2">
             <div>
               <div className="kicker mb-1">Latest Results</div>
-              <h2 className="text-xl font-bold text-white">ผลรางวัลล่าสุด</h2>
-              <p className="text-xs text-navy-400 mt-0.5">{recentResults.length} ตลาดล่าสุด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--white)' }}>ผลรางวัลล่าสุด</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--muted-gray)' }}>{recentResults.length} ตลาดล่าสุด — ดูย้อนหลังได้ที่หน้าผลรางวัล</p>
             </div>
-            <Link to="/results" className="text-sm text-gold-400 hover:text-gold-300 font-semibold">ผลรางวัลทั้งหมด →</Link>
+            <Link to="/results" style={{ color: 'var(--gold-primary)' }} className="text-sm font-semibold">ผลรางวัลทั้งหมด →</Link>
           </div>
           {recentGroups.map(([code, items]) => (
             <div key={code}>
               <div className="flex items-center gap-1.5 mb-1.5">
                 <FlagIcon code={code} className="w-4 h-4 text-[8px]" />
-                <span className="text-xs font-bold text-navy-200">{GROUP_LABEL[code] || code}</span>
+                <span className="text-xs font-bold" style={{ color: 'var(--light-gray)' }}>{GROUP_LABEL[code] || code}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {items.map(d => {
@@ -191,21 +225,34 @@ export default function Home() {
                   const open = !!cardOpen[ck];
                   return (
                     <div key={d.id}
-                      className="bg-navy-800/70 border border-navy-700/60 rounded-xl px-3 py-2.5 hover:border-gold-500/40 transition">
+                      className="rounded-xl px-3 py-2.5 transition" style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = 'var(--border-gold)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'var(--border-light)';
+                      }}>
                       <Link to="/results" className="block">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <FlagIcon code={d.type_code} className="w-4 h-4 text-[8px]" />
-                        <span className="text-xs font-bold text-white">{d.category_name_th || d.type_name_th}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-bold">ออกผลแล้ว</span>
+                        <span className="text-xs font-bold" style={{ color: 'var(--white)' }}>{d.category_name_th || d.type_name_th}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{
+                          background: 'rgba(34, 197, 94, 0.15)',
+                          color: 'var(--success-green)',
+                          border: '1px solid rgba(34, 197, 94, 0.3)'
+                        }}>ออกผลแล้ว</span>
                         {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.short}</span>}
                       </div>
-                      <div className="text-[10px] text-navy-400 mt-1">งวดวันที่ {thaiDate(d.draw_at)}</div>
+                      <div className="text-[10px] mt-1" style={{ color: 'var(--muted-gray)' }}>งวดวันที่ {thaiDate(d.draw_at)}</div>
                       {heroes.length > 0 && (
                         <div className="grid grid-cols-3 gap-1 mt-2">
                           {heroes.map(h => (
-                            <div key={h.label} className="text-center bg-navy-900/60 rounded-lg py-1.5 px-1">
-                              <div className="text-[8px] text-navy-400 leading-tight">{h.label}</div>
-                              <div className="font-mono font-bold text-gold-300 text-sm leading-tight mt-0.5 break-all">{h.num}</div>
+                            <div key={h.label} className="text-center rounded-lg py-1.5 px-1" style={{ background: 'var(--bg-dark-surface)' }}>
+                              <div className="text-[8px] leading-tight" style={{ color: 'var(--muted-gray)' }}>{h.label}</div>
+                              <div className="font-mono font-bold text-sm leading-tight mt-0.5 break-all" style={{ color: 'var(--gold-bright)' }}>{h.num}</div>
                             </div>
                           ))}
                         </div>
@@ -213,16 +260,19 @@ export default function Home() {
                       </Link>
                       {sumAll.length > 0 && (
                         <button onClick={() => setCardOpen(e => ({ ...e, [ck]: !open }))}
-                          className="mt-1.5 w-full text-left text-[10px] text-navy-400 hover:text-gold-300 transition">
+                          className="mt-1.5 w-full text-left text-[10px] transition" style={{ color: 'var(--muted-gray)' }}>
                           {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
                         </button>
                       )}
                       {open && sumAll.length > 0 && (
-                        <div className="mt-1 text-[10px] text-navy-200 bg-navy-900/70 rounded-lg px-2 py-1.5 font-mono leading-relaxed break-all">
+                        <div className="mt-1 text-[10px] font-mono leading-relaxed break-all rounded-lg px-2 py-1.5" style={{
+                          color: 'var(--light-gray)',
+                          background: 'var(--bg-dark-surface)'
+                        }}>
                           {sumAll.map((p, i) => <div key={i}>{p}</div>)}
                         </div>
                       )}
-                      <div className="text-[9px] text-navy-500 mt-1.5">
+                      <div className="text-[9px] mt-1.5" style={{ color: 'var(--dark-gray)' }}>
                         แหล่ง: {sourceName(d.result_source)} · อัปเดต {thaiTime(d.published_at || d.draw_at)}
                       </div>
                     </div>
