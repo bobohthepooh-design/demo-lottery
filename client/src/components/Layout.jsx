@@ -47,40 +47,15 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // สีพื้น header + bottom nav ตาม route
-  const themeColors = useMemo(() => {
+  // สีปุ่ม active ใน bottom nav ตาม route
+  const activeBtnColor = useMemo(() => {
     const path = location.pathname;
-    if (path.startsWith('/play')) return {
-      header: 'from-sky-900/90 via-sky-800/90 to-sky-900/90 border-sky-500/30',
-      headerLine: 'via-sky-400/70',
-      bottomNav: 'from-sky-900/95 to-sky-950/95 border-sky-400/50',
-      bottomNavLine: 'rgba(56, 189, 248, 0.9)', // sky-400
-    };
-    if (path.startsWith('/games')) return {
-      header: 'from-purple-900/90 via-purple-800/90 to-purple-900/90 border-purple-500/30',
-      headerLine: 'via-purple-400/70',
-      bottomNav: 'from-purple-900/95 to-purple-950/95 border-purple-400/50',
-      bottomNavLine: 'rgba(192, 132, 252, 0.9)', // purple-400
-    };
-    if (path.startsWith('/results')) return {
-      header: 'from-amber-900/90 via-amber-800/90 to-amber-900/90 border-amber-500/30',
-      headerLine: 'via-amber-400/70',
-      bottomNav: 'from-amber-900/95 to-amber-950/95 border-amber-400/50',
-      bottomNavLine: 'rgba(251, 191, 36, 0.9)', // amber-400
-    };
-    if (path.startsWith('/wallet')) return {
-      header: 'from-emerald-900/90 via-emerald-800/90 to-emerald-900/90 border-emerald-500/30',
-      headerLine: 'via-emerald-400/70',
-      bottomNav: 'from-emerald-900/95 to-emerald-950/95 border-emerald-400/50',
-      bottomNavLine: 'rgba(52, 211, 153, 0.9)', // emerald-400
-    };
-    // default
-    return {
-      header: 'from-[#040a14] via-[#0a1526] to-[#040a14] border-gold-500/30',
-      headerLine: 'via-gold-400/70',
-      bottomNav: 'from-[#0f1e33]/95 to-[#0a1526]/95 border-gold-400/50',
-      bottomNavLine: 'rgba(244, 201, 78, 0.9)', // gold-400
-    };
+    if (path.startsWith('/play')) return { bg: 'rgba(56, 189, 248, 0.30)', border: 'rgba(56, 189, 248, 0.40)', shadow: 'rgba(56, 189, 248, 0.8)' }; // sky
+    if (path.startsWith('/games')) return { bg: 'rgba(192, 132, 252, 0.30)', border: 'rgba(192, 132, 252, 0.40)', shadow: 'rgba(192, 132, 252, 0.8)' }; // purple
+    if (path.startsWith('/results')) return { bg: 'rgba(251, 191, 36, 0.30)', border: 'rgba(251, 191, 36, 0.40)', shadow: 'rgba(251, 191, 36, 0.8)' }; // amber
+    if (path.startsWith('/wallet')) return { bg: 'rgba(52, 211, 153, 0.30)', border: 'rgba(52, 211, 153, 0.40)', shadow: 'rgba(52, 211, 153, 0.8)' }; // emerald
+    // default gold
+    return { bg: 'rgba(244, 201, 78, 0.30)', border: 'rgba(244, 201, 78, 0.40)', shadow: 'rgba(244, 201, 78, 0.8)' };
   }, [location.pathname]);
 
   const loadMenuData = () => {
@@ -150,8 +125,8 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className={`sticky top-0 z-40 bg-gradient-to-r ${themeColors.header} backdrop-blur-md border-b shadow-lg shadow-black/30`}>
-        <div className={`h-[2px] bg-gradient-to-r from-transparent ${themeColors.headerLine} to-transparent`} />
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#040a14] via-[#0a1526] to-[#040a14] backdrop-blur-md border-b border-gold-500/30 shadow-lg shadow-black/30">
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl border border-gold-400/70 bg-navy-950 flex items-center justify-center shadow-[0_0_16px_rgba(244,201,78,0.35)] overflow-hidden">
@@ -317,6 +292,12 @@ export default function Layout() {
       )}
 
       <AnnouncementBar />
+      {/* Demo mode banner */}
+      <div className="max-w-7xl w-full mx-auto px-4 pt-2">
+        <div className="bg-gradient-to-r from-gold-500/20 via-gold-400/15 to-gold-500/20 border border-gold-400/50 rounded-lg px-4 py-2 text-center">
+          <span className="text-xs font-bold text-gold-200 tracking-wider">🎮 DEMO MODE — สำหรับการศึกษา • เครดิตเสมือนเท่านั้น</span>
+        </div>
+      </div>
       {/* ผลรางวัล + ผู้ชนะ ล่าสุด — แถบ LED ทองสไตล์ตารางประกาศผล (admin ปิด/เปิดได้ที่ แบนเนอร์หน้าแรก) */}
       {banner?.show_results_ticker !== false && <ResultsTicker />}
       {banner?.show_winners_ticker !== false && <WinTicker />}
@@ -341,11 +322,11 @@ export default function Layout() {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* มือถือ: เต็มความกว้าง / แท็บเล็ต: floating pill กลางจอ */}
-        <div className={`relative border-t bg-gradient-to-b backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
-          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)] ${themeColors.bottomNav}`}>
-          {/* เส้นเรืองด้านบน */}
+        <div className="relative border-t border-gold-400/40 bg-gradient-to-b from-[#0f1e33]/95 to-[#0a1526]/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
+          sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:border-gold-400/50 sm:rounded-2xl sm:overflow-hidden sm:shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+          {/* เส้นเรืองทองด้านบน */}
           <div className="absolute top-0 inset-x-8 h-px"
-            style={{ background: `linear-gradient(90deg, transparent, ${themeColors.bottomNavLine}, transparent)` }} />
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(244,201,78,0.9), transparent)' }} />
           <div className="flex h-16">
             {[
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
@@ -363,13 +344,17 @@ export default function Layout() {
                 className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors text-white/60 hover:text-white">
                 {({ isActive }) => (
                   <>
-                    {/* active: วงทองเรืองนุ่ม + ไอคอนโตกว่า (inactive = เทา) */}
+                    {/* active: วงเรืองตามสี route + ไอคอนโตกว่า (inactive = เทา) */}
                     {isActive && (
-                      <span className="absolute top-1.5 h-10 w-12 rounded-full border border-gold-400/50"
-                        style={{ background: 'radial-gradient(ellipse at center, rgba(244,201,78,0.30), rgba(244,201,78,0.06) 70%)', boxShadow: '0 0 18px rgba(244,201,78,0.4)' }} />
+                      <span className="absolute top-1.5 h-10 w-12 rounded-full border"
+                        style={{
+                          background: `radial-gradient(ellipse at center, ${activeBtnColor.bg}, ${activeBtnColor.bg.replace('0.30', '0.06')} 70%)`,
+                          borderColor: activeBtnColor.border,
+                          boxShadow: `0 0 18px ${activeBtnColor.shadow}`
+                        }} />
                     )}
                     <span className={`relative transition-transform duration-200 ${isActive ? 'scale-110 -translate-y-0.5' : 'opacity-70'}`}
-                      style={isActive ? { filter: 'drop-shadow(0 0 8px rgba(244,201,78,0.8))' } : undefined}>
+                      style={isActive ? { filter: `drop-shadow(0 0 8px ${activeBtnColor.shadow})` } : undefined}>
                       <CasinoIcon name={i.icon} tone={isActive ? 'green' : 'gray'} className="w-6 h-6" />
                     </span>
                     <span className={`relative ${isActive ? 'text-white font-bold' : ''}`}>{t(i.k)}</span>
