@@ -137,6 +137,7 @@ function CategoryTile({ cat, typeCode, expanded, onClick }) {
 
 export default function BetHub() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [draws, setDraws] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
@@ -196,7 +197,12 @@ export default function BetHub() {
 
     return [...byType.values()].map(tg => {
       const catList = [...tg.cats.values()].map(cat => {
-        cat.rounds.sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
+        // รอบที่แทงได้ขึ้นก่อน (live → รอผล → อนาคต) รอบเก่า/ออกผลแล้วอยู่ล่างสุด
+        const rank = (d) => isBettingOpen(d, nowSql) ? 0
+          : isAwaitingDraw(d, nowSql) ? 1
+          : d.draw_at > nowSql ? 2
+          : ['settled', 'cancelled'].includes(d.status) ? 4 : 3;
+        cat.rounds.sort((a, b) => rank(a) - rank(b) || String(a.draw_at).localeCompare(String(b.draw_at)));
         const pool = cat.rounds.filter(d => !['settled', 'cancelled'].includes(d.status));
         cat.liveRound = pool.find(d => isBettingOpen(d, nowSql));
         cat.next = cat.liveRound
@@ -233,6 +239,15 @@ export default function BetHub() {
   const activeType = typeGroups.find(t => t.typeCode === openType) || null;
   const activeCat = activeType?.catList.find(c => c.catCode === openCat) || null;
 
+  // รอบที่เปิดแทงอยู่ตอนนี้ทุกตลาด — ปุ่ม "แทงเลย" 1 คลิก
+  const liveNow = useMemo(() => {
+    if (!draws) return [];
+    const hiddenSet = new Set(hiddenBetTypes);
+    return draws
+      .filter(d => !INSTANT.has(d.type_code) && (isAdmin || !hiddenSet.has(d.type_code)) && isBettingOpen(d, nowSql))
+      .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)));
+  }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql]);
+
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 pb-8">
       {/* Hero */}
@@ -243,6 +258,38 @@ export default function BetHub() {
         </h1>
         <p className="text-xs sm:text-sm text-navy-300 mt-1.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
       </div>
+
+      {/* กำลังเปิดแทง — แตะแล้วเข้าแทงได้ทันที 1 คลิก ไม่ต้องเลือกประเภท/หมวด */}
+      {liveNow.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <h2 className="text-sm font-bold text-green-300">เปิดรับแทงอยู่ตอนนี้</h2>
+            <span className="text-[10px] text-navy-400">{liveNow.length} รอบ</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {liveNow.map(d => {
+              const closeMs = Date.parse(String(d.close_at).replace(' ', 'T') + 'Z') - nowMs;
+              const ann = annSummary(d);
+              return (
+                <button key={d.id} onClick={() => navigate(`/bet/${d.id}`)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-green-500/40 bg-green-500/10 hover:bg-green-500/20 hover:border-green-400/70 transition-all text-left">
+                  <FlagIcon code={d.type_code} className="w-9 h-7 rounded-md overflow-hidden shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{drawLabel(d)}</div>
+                    <div className="text-[10px] text-navy-300 truncate">
+                      ปิดใน {fmtHMS(closeMs)}{ann ? ` • ${ann.slice(0, 40)}` : ''}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-green-300 bg-green-500/20 border border-green-500/40 rounded-lg px-2.5 py-1.5 shrink-0 whitespace-nowrap">
+                    แทงเลย ›
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {!loaded ? (
         <SkeletonGrid count={6} />
