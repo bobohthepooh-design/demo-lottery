@@ -20,7 +20,7 @@ const BET_TYPE_STYLE = {
 
 // เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
 // ลำดับประเภทการแทง — เรียงตามจำนวนหลักมาก→น้อย (num5-num1 ของลาว/ฮานอย อยู่ในลำดับนี้ด้วย)
-const BET_ORDER = ['first', 'num5', 'top4', 'num4', 'last4', '3top', 'front3', 'top3', 'last3', 'num3', '2top', 'bottom2', 'last2', 'num2', 'run_top', 'run_bottom', 'num1', 'last1', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
+const BET_ORDER = ['first', 'top4', 'num4', 'last4', '3top', '3tod', 'front3', 'top3', 'last3', 'num3', '2top', 'bottom2', 'last2', 'num2', 'run_top', 'run_bottom', 'num1', 'last1', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
 
 // 12 ปีนักษัตรไทย — ต้องตรงกับ server/src/lib/zodiac.js
 const ZODIAC = ['ชวด', 'ฉลู', 'ขาล', 'เถาะ', 'มะโรง', 'มะเส็ง', 'มะเมีย', 'มะแม', 'วอก', 'ระกา', 'จอ', 'กุน'];
@@ -98,14 +98,12 @@ export default function PlaceBet() {
   const [picks, setPicks] = useState([]);   // pattana5: เลขที่เลือก 1-45
   const [zodiacPicks, setZodiacPicks] = useState([]); // หวยราศี: ราศีที่เลือกเรียงตามลำดับ (สูงสุดตาม digits ของกติกา)
   const [amount, setAmount] = useState('');
-  const [betMode, setBetMode] = useState('teng'); // 'teng' = เต็งอย่างเดียว | 'tengtod' = เต็ง+โต๊ด (ซื้อโต๊ดเพิ่มอีก 1 รายการ)
   const [recent, setRecent] = useState({}); // {digits: [num,...]} เลขที่เพิ่งแทง
   const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem('lotteryFavNums') || '{}'); } catch { return {}; } });
   const numRef = useRef(null); // auto-focus ช่องเลขหลังเพิ่มโพย — แทงต่อได้เร็ว
 
   // เปลี่ยนเนื้อหาโพย → key ใหม่ เพื่อไม่ให้โพยคนละชุดใช้ key เดียวกัน
   useEffect(() => { idemKey.current = null; }, [slip]);
-  useEffect(() => { setBetMode('teng'); }, [selRule]);
 
   const loadDraw = () => api(`/lottery/draws/${drawId}`).then(async r => {
     setDraw(r.draw);
@@ -165,9 +163,6 @@ export default function PlaceBet() {
   // แสดงกติกาทั้งหมดของรอบนี้ — ไม่จัดกลุ่ม tab (ผู้ใช้ต้องการเห็นทุกประเภทพร้อมกัน)
   const isPattana = rule?.bet_type === 'pattana5';
   const isZodiac = rule?.bet_type?.startsWith('zodiac');
-  // โต๊ด — อัตราโต๊ดฝังใน match_config ของกติกา (แสดงเป็นข้อความแจ้งเท่านั้น ผู้แทงไม่ต้องใส่เลขโต๊ด)
-  const todRate = (() => { try { const t = JSON.parse(rule?.match_config || '{}').tod; return t != null ? Number(t) : null; } catch { return null; } })();
-  const showTodHint = todRate != null && !isZodiac && !isPattana && rule?.digits >= 2 && rule?.digits <= 3;
   const zodiacDigits = rule?.digits || 1;
   const toggleZodiac = (z) => setZodiacPicks(p =>
     p.includes(z) ? p.filter(x => x !== z) : (p.length < zodiacDigits ? [...p, z] : p));
@@ -227,10 +222,6 @@ export default function PlaceBet() {
       : null;
     const mult = annEntry ? (annEntry.mult ?? Math.floor(baseMult / 2)) : baseMult;
     const items = [{ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th, number: num, stakeSatang: stake, mult, isAnn: !!annEntry }];
-    // โต๊ด — ต้องซื้อเพิ่มเป็นรายการแยก (is_tod) จ่ายอัตรา match_config.tod เมื่อเลขครบทุกหลักไม่สนลำดับ
-    if (betMode === 'tengtod' && showTodHint) {
-      items.push({ ruleId: rule.id, betType: rule.bet_type, name: rule.name_th + ' (โต๊ด)', number: num, stakeSatang: stake, mult: todRate, isTod: true });
-    }
     setSlip([...slip, ...items]);
     setNumber(''); setPicks([]); setZodiacPicks([]);
     sfx.chip(); // เสียงเหรียญตอนเพิ่มโพย
@@ -251,21 +242,31 @@ export default function PlaceBet() {
   // ---- ปุ่มลัดสไตล์ LINE: แค่ช่วยกรอก/เพิ่มเลข ยังต้องกดยืนยันโพยเหมือนเดิม ----
   const randNum = (d) => Array.from({ length: d }, () => Math.floor(Math.random() * 10)).join('');
 
-  const addRud19 = () => {
+  const addRud = (kind) => {
     setErr('');
     if (!rule || rule.digits !== 2) return;
     const num = number.trim();
-    if (!/^\d{2}$/.test(num)) return setErr('กรอกเลข 2 หลักก่อน แล้วกด "รูด 19 ประตู"');
+    if (!/^\d{2}$/.test(num)) return setErr('กรอกเลข 2 หลักก่อน แล้วกดปุ่มรูด');
     const { stake, err: amtErr } = stakeFromAmount();
     if (amtErr) return setErr(amtErr);
     const [a, b] = num.split('');
-    // รูด 19 ประตู = {a0..a9} ∪ {0b..9b} → 19 เลขพอดี (เลขกลับมีปุ่ม "กลับเลข" แยกอยู่)
-    const set = new Set();
-    for (let i = 0; i <= 9; i++) { set.add(a + i); set.add(i + b); }
-    const nums = [...set];
+    let nums;
+    if (kind === '19') {
+      // รูด 19 ประตู = {a0..a9} ∪ {0b..9b} → 19 เลขพอดี (เลขกลับมีปุ่ม "กลับเลข" แยกอยู่)
+      const set = new Set();
+      for (let i = 0; i <= 9; i++) { set.add(a + i); set.add(i + b); }
+      nums = [...set];
+    } else if (kind === 'face') {
+      // รูดหน้า = เลขหน้า (หลักสิบ) คงที่ → a0..a9 (10 เลข)
+      nums = Array.from({ length: 10 }, (_, i) => a + i);
+    } else {
+      // รูดหลัง = เลขหลัง (หลักหน่วย) คงที่ → 0b..9b (10 เลข)
+      nums = Array.from({ length: 10 }, (_, i) => i + b);
+    }
+    const label = kind === '19' ? 'รูด 19 ประตู' : kind === 'face' ? 'รูดหน้า' : 'รูดหลัง';
     const need = nums.length * stake;
     if (totalSatang + need > balance) {
-      return setErr(`เครดิตไม่พอ — รูด 19 ประตู = ${nums.length} รายการ รวม ${satang(need)} บาท (คงเหลือ ${satang(balance - totalSatang)} บาท)`);
+      return setErr(`เครดิตไม่พอ — ${label} = ${nums.length} รายการ รวม ${satang(need)} บาท (คงเหลือ ${satang(balance - totalSatang)} บาท)`);
     }
     const baseMult = Number(rule.payout_multiplier) || 0;
     setSlip([...slip, ...nums.map(n => {
@@ -283,13 +284,16 @@ export default function PlaceBet() {
     if (!rule || isZodiac || isPattana) return;
     const d = rule.digits;
     if (d < 2) return setErr('เลขตอง/เบิ้ลใช้ได้กับประเภท 2-3 หลัก');
+    if (kind === 'be' && d > 3) return setErr('เลขเบิ้ลใช้ได้กับประเภท 2-3 หลัก');
     const { stake, err: amtErr } = stakeFromAmount();
     if (amtErr) return setErr(amtErr);
     let nums;
     if (kind === 'tod') { // เลขตอง — ทุกหลักเป็นเลขเดียวกัน (10 เลข)
       nums = Array.from({ length: 10 }, (_, i) => String(i).repeat(d));
-    } else { // เลขเบิ้ล — เฉพาะ 3 หลัก: มีตัวเลขซ้ำกัน 2 ตัว (เช่น 112/121/211)
-      if (d !== 3) return setErr('เลขเบิ้ลใช้ได้กับประเภท 3 หลัก');
+    } else if (kind === 'be' && d === 2) { // เลขเบิ้ล 2 หลัก — เลขซ้ำ 00,11,...,99 (10 เลข)
+      nums = Array.from({ length: 10 }, (_, i) => String(i).repeat(2));
+    } else { // เลขเบิ้ล 3 หลัก — มีตัวเลขซ้ำกัน 2 ตัว (เช่น 112/121/211)
+      if (d !== 3) return setErr('เลขเบิ้ลใช้ได้กับประเภท 2-3 หลัก');
       nums = [];
       for (let p = 0; p <= 9; p++) for (let o = 0; o <= 9; o++) {
         if (o === p) continue;
@@ -518,24 +522,32 @@ export default function PlaceBet() {
                         className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all disabled:opacity-40">
                         🔁 กลับเลข
                       </button>
-                      {draw.type_code === 'TH' && rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
-                        <button type="button" onClick={addRud19}
-                          className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition-all">
-                          🎯 รูด 19 ประตู
-                        </button>
+                      {rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
+                        <>
+                          <button type="button" onClick={() => addRud('19')}
+                            className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-gold-500/15 border border-gold-500/50 text-gold-300 hover:bg-gold-500/25 transition-all">
+                            🎯 รูด 19 ประตู
+                          </button>
+                          <button type="button" onClick={() => addRud('face')}
+                            className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                            👈 รูดหน้า
+                          </button>
+                          <button type="button" onClick={() => addRud('back')}
+                            className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                            👉 รูดหลัง
+                          </button>
+                        </>
                       )}
-                      {rule.digits >= 2 && (
+                      {rule.digits >= 2 && rule.digits <= 3 && (
                         <>
                           <button type="button" onClick={() => addPattern('tod')}
                             className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
                             🔢 เลขตอง
                           </button>
-                          {rule.digits === 3 && (
-                            <button type="button" onClick={() => addPattern('be')}
-                              className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
-                              🔢 เลขเบิ้ล
-                            </button>
-                          )}
+                          <button type="button" onClick={() => addPattern('be')}
+                            className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                            🔢 เลขเบิ้ล
+                          </button>
                         </>
                       )}
                     </div>
@@ -591,25 +603,6 @@ export default function PlaceBet() {
                 </>
               )}
             </div>
-
-            {/* Tod Mode Selector */}
-            {showTodHint && !isZodiac && !isPattana && (
-              <div className="space-y-2">
-                <div className="text-xs text-sky-400 font-medium">💡 โต๊ด = เลขครบทุกหลักไม่สนลำดับ (รวมตรงเป๊ะ) จ่าย x{todRate}</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setBetMode('teng')}
-                    className={`text-xs sm:text-sm py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'teng' ? 'border-gold-500 bg-gold-500/15 text-gold-300 shadow-lg shadow-gold-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
-                    <div className="font-bold">เต็งอย่างเดียว</div>
-                    <div className="text-[9px] sm:text-[10px] font-normal mt-1 opacity-80">เฉพาะเลขตรงเป๊ะ • จ่าย x{rule.payout_multiplier}</div>
-                  </button>
-                  <button type="button" onClick={() => setBetMode('tengtod')}
-                    className={`text-xs sm:text-sm py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border font-semibold transition-all duration-200 text-center ${betMode === 'tengtod' ? 'border-sky-500 bg-sky-500/15 text-sky-300 shadow-lg shadow-sky-500/10' : 'border-navy-600 bg-navy-800/50 text-navy-300 hover:border-navy-500'}`}>
-                    <div className="font-bold">เต็ง + โต๊ด</div>
-                    <div className="text-[9px] sm:text-[10px] font-normal mt-1 opacity-80">ตรงเป๊ะได้ x{Number(rule.payout_multiplier) + todRate} • สลับลำดับได้ x{todRate}</div>
-                  </button>
-                </div>
-                {betMode === 'tengtod' && <div className="text-[10px] text-navy-400">ซื้อทั้งเต็งและโต๊ด — เสียเงินรวม ×2 (เช่น 100 บาท → เต็ง 100 + โต๊ด 100) • ผลตรงได้ทั้งคู่ ผลสลับได้แค่โต๊ด</div>}
-              </div>
             )}
 
             {err && <div className="text-red-400 text-xs sm:text-sm font-medium bg-red-500/10 rounded-lg px-3 py-2">{err}</div>}
