@@ -4,9 +4,9 @@ export const asList = (v) => Array.isArray(v) ? v.join(' ') : (v ?? '');
 
 // หวยลาว/ฮานอย — ทุกประเภทแทงเป็นตัวท้าย 5/4/3/2/1 ของเลขรางวัลหลัก → แสดงเลขหลัก + suffix อย่างเดียว
 // (field เก่า num4/db5/top3/bottom2 ที่ derive ซ้ำไม่ต้องแสดง)
-const isLaoHn = (w) => !!(w.db5 ?? w.main ?? w.last5) && !w.first && !w.p1 && !w.zodiac;
+const isLaoHn = (w) => !!(w.db5 ?? w.main ?? w.last5 ?? w.num4 ?? w.last4) && !w.first && !w.p1 && !w.zodiac;
 function laoHnSummary(w) {
-  const main = w.main ?? w.db5 ?? w.last5;
+  const main = w.main ?? w.db5 ?? w.last5 ?? w.num4 ?? w.last4;
   const m = String(main ?? '').replace(/\D/g, '');
   if (!m) return null;
   const parts = [`เลขรางวัล: ${m}`];
@@ -56,7 +56,7 @@ export function compactSummary(w) {
   const push = (v) => { if (v !== undefined && v !== null && v !== '') parts.push(asList(v)); };
   const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
   if (isLaoHn(w)) {
-    const m = String(w.main ?? w.db5 ?? w.last5 ?? '').replace(/\D/g, '');
+    const m = String(w.main ?? w.db5 ?? w.last5 ?? w.num4 ?? w.last4 ?? '').replace(/\D/g, '');
     return m ? [`เลขรางวัล ${m}`] : null;
   }
   if (w.first || w.p1) parts.push(`รางวัล1: ${firstOf(w.first ?? w.p1)}`);
@@ -76,7 +76,7 @@ export function heroNumbers(w) {
   const out = [];
   const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
   if (isLaoHn(w)) {
-    const m = String(w.main ?? w.db5 ?? w.last5 ?? '').replace(/\D/g, '');
+    const m = String(w.main ?? w.db5 ?? w.last5 ?? w.num4 ?? w.last4 ?? '').replace(/\D/g, '');
     if (m) out.push({ label: 'เลขรางวัล', num: m });
     return out;
   }

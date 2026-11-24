@@ -19,7 +19,8 @@ const BET_TYPE_STYLE = {
 };
 
 // เรียงประเภทการแทงตามลำดับที่คนทั่วไปคุ้นเคย
-const BET_ORDER = ['first', '2top', '3top', 'top4', 'num4', 'front3', 'front3tod', 'last4', 'top3', '3tod', 'last3', 'top2', 'top2tod', 'bottom2', 'bottom2tod', 'last2', 'run_top', 'run_bottom', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
+// ลำดับประเภทการแทง — เรียงตามจำนวนหลักมาก→น้อย (num5-num1 ของลาว/ฮานอย อยู่ในลำดับนี้ด้วย)
+const BET_ORDER = ['first', 'num5', 'top4', 'num4', 'last4', '3top', 'front3', 'top3', 'last3', 'num3', '2top', 'bottom2', 'last2', 'num2', 'run_top', 'run_bottom', 'num1', 'last1', 'zodiac', 'zodiac3top', 'zodiac2bottom', 'zodiac_run'];
 
 // 12 ปีนักษัตรไทย — ต้องตรงกับ server/src/lib/zodiac.js
 const ZODIAC = ['ชวด', 'ฉลู', 'ขาล', 'เถาะ', 'มะโรง', 'มะเส็ง', 'มะเมีย', 'มะแม', 'วอก', 'ระกา', 'จอ', 'กุน'];
@@ -112,7 +113,7 @@ export default function PlaceBet() {
       const t = await api(`/lottery/draws/${drawId}/rules`);
       const sorted = [...t.rules].sort((a, b) =>
         (BET_ORDER.indexOf(a.bet_type) === -1 ? 99 : BET_ORDER.indexOf(a.bet_type)) -
-        (BET_ORDER.indexOf(b.bet_type) === -1 ? 99 : BET_ORDER.indexOf(b.bet_type)) || a.digits - b.digits);
+        (BET_ORDER.indexOf(b.bet_type) === -1 ? 99 : BET_ORDER.indexOf(b.bet_type)) || b.digits - a.digits);
       setRules(sorted);
       // คงกติกาที่เลือกไว้ถ้ายังมี — ถ้าเพิ่งเข้าให้เลือกกติกาแรก
       setSelRule(prev => sorted.some(x => String(x.id) === prev) ? prev : (sorted[0] ? String(sorted[0].id) : ''));
