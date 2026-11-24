@@ -21,7 +21,7 @@ function fmtHMS(ms) {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
 }
 
-function RoundRow({ d, nowSql, nowMs }) {
+function RoundCard({ d, nowSql, nowMs }) {
   const navigate = useNavigate();
   const live = isBettingOpen(d, nowSql);
   const blind = isBlind(d, nowSql);
@@ -31,19 +31,15 @@ function RoundRow({ d, nowSql, nowMs }) {
   const opensMs = opensAt ? Date.parse(String(opensAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const closeMs = live ? Date.parse(String(d.close_at).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const ann = annSummary(d);
-  const badge = live
-    ? { text: `ปิดใน ${fmtHMS(closeMs)}`, cls: 'bg-green-600/20 text-green-300 border border-green-500/40', dot: 'bg-green-400' }
-    : drawing
-      ? { text: 'กำลังออกรางวัล', cls: 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40', dot: 'bg-cyan-400 animate-pulse' }
-      : awaiting
-        ? { text: '⏳ รอผล', cls: 'bg-amber-600/20 text-amber-300 border border-amber-500/40', dot: 'bg-amber-400' }
-        : blind
-          ? { text: opensMs > 0 ? `🔒 เปิด ${thaiHM(opensAt)} น.` : '🔒 ยังไม่เปิด', cls: 'bg-navy-600/30 text-navy-200 border border-navy-500/30', dot: 'bg-navy-400' }
-          : { text: d.status === 'settled' ? 'ออกผลแล้ว' : 'หมดรอบ', cls: 'bg-navy-600/30 text-navy-300 border border-navy-500/30', dot: 'bg-navy-500' };
+
+  // Card grid style — เขียวเมื่อเปิด, เทาเมื่อปิด
+  const cardBg = live
+    ? 'bg-gradient-to-br from-green-900/80 to-green-950 border-green-400/60'
+    : drawing ? 'bg-gradient-to-br from-gold-900/80 to-amber-950 border-gold-400/60 animate-pulse'
+    : 'bg-gradient-to-br from-navy-800 to-navy-900 border-navy-600/50';
+  const cardCls = `${cardBg} border rounded-2xl p-4 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-200 shadow-lg`;
 
   const go = () => {
-    // รอบที่ยังไม่ออกผล → ไปหน้าแทง (ดูรายละเอียด/กติกา/นับถอยหลังได้)
-    // รอบที่ออกผลแล้ว/ยกเลิก → ไปหน้าผลรางวัล
     if (d.status === 'settled' || d.status === 'cancelled') {
       navigate('/results');
     } else {
@@ -52,28 +48,51 @@ function RoundRow({ d, nowSql, nowMs }) {
   };
 
   return (
-    <button
-      onClick={go}
-      className={`flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-3.5 w-full text-left rounded-2xl transition-all duration-200 border ${
-        live
-          ? 'bg-navy-800/60 border-green-500/40 hover:border-green-400/60'
-          : 'bg-navy-800/40 border-navy-700/40 hover:border-navy-600/60 hover:bg-navy-800/60'
-      }`}
-    >
-      <FlagIcon code={d.type_code} className="w-8 h-10 sm:w-10 sm:h-12 shrink-0 rounded-lg overflow-hidden" />
-      <div className="flex-1 min-w-0">
-        <div className="text-base font-semibold text-white truncate">{drawLabel(d)}</div>
-        <div className="text-sm text-navy-400 mt-0.5">
-          {blind ? `ออกรางวัล ${thaiHM(d.draw_at)} น.` : `ออก ${fmtDateTime(d.draw_at)}`}
-          {ann && <span className="ml-2 text-amber-300 font-medium">📣 {ann.length > 90 ? `${ann.slice(0, 90)}…` : ann}</span>}
-        </div>
+    <div className={cardCls}>
+      {/* ธง + ชื่อตลาด */}
+      <div className="flex items-center gap-2 mb-2">
+        <FlagIcon code={d.type_code} className="w-7 h-5 text-[9px] rounded-sm" />
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full border border-green-400/60 text-green-300">{d.type_name_th}</span>
       </div>
-      <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 ${badge.cls}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-        {badge.text}
-      </span>
-      <span className="text-navy-500 text-base sm:text-lg shrink-0 hidden sm:inline">›</span>
-    </button>
+      <div className="font-black text-white text-base leading-tight mb-1 line-clamp-2">{drawLabel(d)}</div>
+      <div className="text-[10px] text-navy-400 mb-2">{d.draw_code}</div>
+
+      {/* เลขอั้น */}
+      {ann && (
+        <div className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400 text-amber-300 mb-2">
+          📣 {ann.length > 40 ? `${ann.slice(0, 40)}…` : ann}
+        </div>
+      )}
+
+      {/* Countdown / Status */}
+      <div className="mt-auto w-full">
+        {live ? (
+          <div className="bg-black/30 rounded-lg p-2 mb-3">
+            <div className="text-[10px] text-navy-400 mb-1">ปิดรับใน</div>
+            <div className="font-bold text-green-300 text-sm">{fmtHMS(closeMs)}</div>
+          </div>
+        ) : (
+          <div className={`text-xs font-bold px-3 py-2 rounded-lg mb-3 ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
+            {drawing ? '🎰 กำลังออกรางวัล…'
+              : awaiting ? '🔒 รอผล'
+              : blind ? `🔒 เปิด ${thaiHM(opensAt)} น.`
+              : d.status === 'settled' ? '🏆 ออกผลแล้ว'
+              : '🗓️ รอเปิดรับ'}
+          </div>
+        )}
+
+        {/* ปุ่มแทง */}
+        {live ? (
+          <button onClick={go} className="w-full font-bold py-2.5 rounded-lg bg-green-500 hover:bg-green-400 text-white transition">
+            แทงเลย
+          </button>
+        ) : (
+          <button disabled className="w-full font-semibold py-2.5 rounded-lg cursor-not-allowed bg-navy-700 text-navy-400 border border-navy-600">
+            {d.status === 'settled' ? 'ดูผล' : 'รอเปิดรับ'}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -83,8 +102,6 @@ export default function BetHub() {
   const [draws, setDraws] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
-  const [openType, setOpenType] = useState('');
-  const [openCat, setOpenCat] = useState('');
   const [nowMs, setNowMs] = useState(Date.now());
 
   const load = useCallback(async () => {
@@ -250,85 +267,32 @@ export default function BetHub() {
       ) : typeGroups.length === 0 ? (
         <EmptyState title="ไม่มีรอบหวยที่เปิดรับในขณะนี้" sub="ลองตรวจสอบอีกครั้งภายหลัง" />
       ) : (
-        <>
-          {/* ประเภทหวย — list section ต่อประเภท (กดหัวข้อเพื่อขยายดูหมวด/รอบ) */}
-          <div className="space-y-3">
-            {typeGroups.map(tg => {
-              const open = openType === tg.typeCode;
-              const nextBet = tg.catList.map(c => c.next).filter(Boolean).sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)))[0];
-              return (
-                <div key={tg.typeCode} className={`rounded-2xl border overflow-hidden transition-colors ${open ? 'border-gold-500/40 bg-navy-800/60' : 'border-navy-700/50 bg-navy-800/40'}`}>
-                  <button
-                    onClick={() => {
-                      if (openType === tg.typeCode) { setOpenType(''); setOpenCat(''); }
-                      else { setOpenType(tg.typeCode); setOpenCat(''); }
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-navy-800/70 transition-colors"
-                  >
-                    <FlagIcon code={tg.typeCode} className="w-9 h-7 rounded-md overflow-hidden shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-white truncate">{tg.typeName}</div>
-                      <div className="text-[11px] text-navy-400 mt-0.5">
-                        {tg.totalRounds} รอบ{tg.hasCategories ? ` • ${tg.catList.length} ตลาด` : ''}
-                        {nextBet && ` • ถัดไป ${thaiHM(nextBet.draw_at)} น.`}
-                      </div>
-                    </div>
-                    {tg.liveRounds > 0 && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-green-500/15 border border-green-500/40 text-green-300 whitespace-nowrap">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                        {tg.liveRounds} เปิด
-                      </span>
-                    )}
-                    <span className="text-navy-500 text-sm shrink-0">{open ? '▾' : '▸'}</span>
-                  </button>
+        /* ประเภทหวย — card grid ต่อประเภท (ไม่ต้องกดขยาย) */
+        <div className="space-y-8">
+        {typeGroups.map(tg => {
+          const liveCount = tg.liveRounds;
+          return (
+            <section key={tg.typeCode}>
+              <div className="flex items-center gap-3 mb-4">
+                <FlagIcon code={tg.typeCode} className="w-8 h-6 rounded-md overflow-hidden" />
+                <h2 className="text-xl font-bold text-white">{tg.typeName}</h2>
+                {liveCount > 0 && (
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-500/15 border border-green-500/40 text-green-300">
+                    {liveCount} เปิด
+                  </span>
+                )}
+              </div>
 
-                  {open && (
-                    <div className="px-3 pb-3 pt-1 space-y-2 border-t border-navy-700/40">
-                      {/* ประเภทไม่มีหมวดย่อย — แสดงรอบตรงๆ */}
-                      {!tg.hasCategories && tg.catList[0] && (
-                        tg.catList[0].rounds.map(d => (
-                          <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
-                        ))
-                      )}
-
-                      {/* มีหมวดย่อย — list หมวด แต่ละหมวดกดขยายดูรอบ */}
-                      {tg.hasCategories && tg.catList.map(cat => {
-                        const catOpen = openCat === cat.catCode;
-                        return (
-                          <div key={cat.catCode} className="rounded-xl border border-navy-700/50 bg-navy-900/40 overflow-hidden">
-                            <button
-                              onClick={() => setOpenCat(catOpen ? '' : cat.catCode)}
-                              className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-navy-800/60 transition-colors"
-                            >
-                              <FlagIcon code={tg.typeCode} className="w-6 h-4 rounded overflow-hidden shrink-0" />
-                              <span className="flex-1 text-sm font-semibold text-navy-100 truncate">{cat.catName}</span>
-                              {cat.liveCount > 0 && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40 text-green-300 whitespace-nowrap">
-                                  {cat.liveCount} เปิด
-                                </span>
-                              )}
-                              <span className="text-[10px] text-navy-400 whitespace-nowrap">
-                                {cat.next ? thaiHM(cat.next.draw_at) + ' น.' : `${cat.roundCount} รอบ`}
-                              </span>
-                              <span className="text-navy-500 text-xs shrink-0">{catOpen ? '▾' : '▸'}</span>
-                            </button>
-                            {catOpen && (
-                              <div className="px-2 pb-2 pt-1 space-y-2 border-t border-navy-700/40">
-                                {cat.rounds.map(d => (
-                                  <RoundRow key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
+              {/* แสดงรอบทั้งหมดของประเภทนี้เป็น card grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {tg.catList.flatMap(cat => cat.rounds).map(d => (
+                  <RoundCard key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
       )}
     </div>
   );
