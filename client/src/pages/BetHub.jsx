@@ -36,10 +36,10 @@ function RoundCard({ d, nowSql, nowMs }) {
 
   // Luxury card styling
   const cardStyle = drawing
-    ? { background: 'linear-gradient(135deg, #008C45, #00A652)', borderColor: '#008C45' }
-    : live
-      ? { background: '#FFFFFF', borderColor: '#008C45' }
-      : { background: '#FFFFFF', borderColor: ac.border };
+    ? { background: 'linear-gradient(135deg, var(--gold-600), var(--warning-amber))', borderColor: 'var(--gold-primary)' }
+    : live 
+      ? { background: 'var(--bg-card)', borderColor: 'var(--success-green)' }
+      : { background: 'var(--bg-card)', borderColor: ac.border };
 
   const cardCls = `border rounded p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 hover:scale-[1.01] transition-transform duration-200 shadow-lg relative`;
 
@@ -61,17 +61,17 @@ function RoundCard({ d, nowSql, nowMs }) {
       <div className="flex items-center gap-1.5 sm:gap-2">
         <FlagIcon code={d.type_code} className="w-5 h-3.5 sm:w-6 sm:h-4 rounded-md" />
         <div>
-          <div className="font-bold text-xs sm:text-sm" style={{ color: '#20252B' }}>{drawLabel(d)}</div>
-          <div className="text-[10px] sm:text-xs" style={{ color: '#6B7280' }}>{d.draw_code}</div>
+          <div className="font-bold text-xs sm:text-sm" style={{ color: 'var(--white)' }}>{drawLabel(d)}</div>
+          <div className="text-[10px] sm:text-xs" style={{ color: 'var(--muted-gray)' }}>{d.draw_code}</div>
         </div>
       </div>
 
       {/* เลขอั้น */}
       {ann && (
         <div className="text-xs font-bold px-2 py-0.5 rounded" style={{
-          background: 'rgba(0, 140, 69, 0.1)',
-          border: '1px solid #008C45',
-          color: '#008C45'
+          background: 'rgba(245, 158, 11, 0.2)',
+          border: '1px solid var(--warning-amber)',
+          color: 'var(--warning-amber)'
         }}>
           📣 {ann.length > 30 ? `${ann.slice(0, 30)}…` : ann}
         </div>
@@ -80,12 +80,12 @@ function RoundCard({ d, nowSql, nowMs }) {
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         {/* Countdown / Status */}
         {live ? (
-          <div className="rounded p-1.5 sm:p-2 text-right" style={{ background: 'rgba(0, 140, 69, 0.1)' }}>
-            <div className="text-[10px] sm:text-xs mb-0.5" style={{ color: '#6B7280' }}>ปิดใน</div>
-            <div className="font-bold text-sm sm:text-lg" style={{ color: '#008C45' }}>{fmtHMS(closeMs)}</div>
+          <div className="rounded p-1.5 sm:p-2 text-right" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
+            <div className="text-[10px] sm:text-xs mb-0.5" style={{ color: 'var(--muted-gray)' }}>ปิดใน</div>
+            <div className="font-bold text-sm sm:text-lg" style={{ color: 'var(--success-green)' }}>{fmtHMS(closeMs)}</div>
           </div>
         ) : (
-          <div className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded ${drawing ? 'bg-green-500/20 text-green-600 border border-green-500/50' : 'bg-gray-100 text-gray-500'}`}>
+          <div className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
             {drawing ? '🎰 กำลังออกรางวัล…'
               : awaiting ? '🔒 รอผล'
               : blind ? `🔒 เปิด ${thaiHM(opensAt)} น.`
@@ -96,11 +96,11 @@ function RoundCard({ d, nowSql, nowMs }) {
 
         {/* ปุ่มแทง */}
         {live ? (
-          <button onClick={go} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-bold text-xs sm:text-sm transition">
+          <button onClick={go} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white font-bold text-xs sm:text-sm transition">
             แทงเลย
           </button>
         ) : (
-          <button disabled className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg cursor-not-allowed bg-gray-200 text-gray-500 border border-gray-300 text-xs sm:text-sm font-semibold">
+          <button disabled className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg cursor-not-allowed bg-navy-700 text-navy-400 border border-navy-600 text-xs sm:text-sm font-semibold">
             {d.status === 'settled' ? 'ดูผล' : 'รอเปิดรับ'}
           </button>
         )}
@@ -113,25 +113,25 @@ function TypeCard({ tg, onClick }) {
   const ac = typeAccent(tg.typeCode);
   return (
     <div onClick={onClick} className="rounded-xl p-3 sm:p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer" style={{
-      background: '#FFFFFF',
+      background: 'var(--bg-card)',
       border: `2px solid ${ac.border}`
     }}
     onMouseEnter={e => {
-      e.currentTarget.style.borderColor = '#008C45';
-      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 140, 69, 0.2)';
+      e.currentTarget.style.borderColor = 'var(--border-gold)';
+      e.currentTarget.style.boxShadow = 'var(--shadow-gold)';
     }}
     onMouseLeave={e => {
       e.currentTarget.style.borderColor = ac.border;
-      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+      e.currentTarget.style.boxShadow = 'var(--shadow-md)';
     }}>
       <FlagIcon code={tg.typeCode} className="w-10 h-7 sm:w-12 sm:h-8 rounded-lg mb-1.5 sm:mb-2" />
       <h3 className={`text-sm sm:text-base lg:text-lg font-bold mb-0.5 sm:mb-1`} style={{ color: ac.text }}>{tg.typeName}</h3>
-      <div className="text-xs sm:text-sm mb-1.5 sm:mb-2" style={{ color: '#6B7280' }}>{tg.totalRounds} รอบ</div>
+      <div className="text-xs sm:text-sm mb-1.5 sm:mb-2" style={{ color: 'var(--muted-gray)' }}>{tg.totalRounds} รอบ</div>
       {tg.liveRounds > 0 && (
         <div className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded-full" style={{
-          background: 'rgba(0, 140, 69, 0.1)',
-          color: '#008C45',
-          border: '1px solid rgba(0, 140, 69, 0.3)'
+          background: 'rgba(34, 197, 94, 0.2)',
+          color: 'var(--success-green)',
+          border: '1px solid rgba(34, 197, 94, 0.3)'
         }}>
           {tg.liveRounds} เปิด
         </div>
@@ -249,10 +249,10 @@ export default function BetHub() {
       {/* Hero */}
       <div className="text-center mb-2 sm:mb-3">
         <div className="kicker mb-1">Lottery Hall</div>
-        <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-black tracking-wide bg-gradient-to-r from-green-600 via-green-500 to-green-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(0,140,69,0.2)]">
+        <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-black tracking-wide bg-gradient-to-r from-gold-200 via-gold-400 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(244,201,78,0.2)]">
           เลือกหวยที่ต้องการแทง
         </h1>
-        <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
+        <p className="text-[10px] sm:text-[11px] text-navy-300 mt-0.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
       </div>
 
       {!loaded ? (
@@ -264,7 +264,7 @@ export default function BetHub() {
         <div>
           <button
             onClick={() => setSelectedType(null)}
-            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 hover:text-gray-900 transition"
+            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-navy-700/50 hover:bg-navy-700 border border-navy-600 text-navy-300 hover:text-white transition"
           >
             ← กลับเลือกประเภทอื่น
           </button>

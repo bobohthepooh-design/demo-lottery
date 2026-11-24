@@ -339,11 +339,11 @@ export default function PlaceBet() {
   };
 
   if (done) return (
-    <div style={{ maxWidth: '28rem', margin: '0 auto', background: '#FFFFFF', border: '1px solid #008C45', borderRadius: '1.5rem', padding: '2rem', textAlign: 'center', boxShadow: '0 4px 12px rgba(0, 140, 69, 0.2)' }}>
+    <div style={{ maxWidth: '28rem', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--success-green)', borderRadius: '1.5rem', padding: '2rem', textAlign: 'center', boxShadow: 'var(--shadow-gold)' }}>
       <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🎉</div>
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#008C45' }}>ส่งโพยสำเร็จ!</h1>
-      <p style={{ color: '#6B7280', marginTop: '0.5rem' }}>เลขที่โพย: <code style={{ color: '#008C45' }}>{done.slipRef}</code></p>
-      <p style={{ color: '#6B7280' }}>ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
+      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--success-green)' }}>ส่งโพยสำเร็จ!</h1>
+      <p style={{ color: 'var(--muted-gray)', marginTop: '0.5rem' }}>เลขที่โพย: <code style={{ color: 'var(--gold-primary)' }}>{done.slipRef}</code></p>
+      <p style={{ color: 'var(--muted-gray)' }}>ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
       <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
         <Button to="/my-bets">ดูโพยของฉัน</Button>
         <Button to="/play" variant="secondary">เลือกตลาด/รอบอื่น</Button>
@@ -368,11 +368,11 @@ export default function PlaceBet() {
       {/* left: entry form */}
       <div style={{}} className="lg:col-span-3 space-y-3 sm:space-y-4">
         {/* Header — Draw Info + Countdown */}
-        <div style={{ background: 'linear-gradient(135deg, #FFFFFF, #F5F8F6)', border: '2px solid #008C45', borderRadius: 'var(--radius-2xl)', padding: '1.25rem 1.5rem sm:1.5rem 2rem', boxShadow: '0 4px 12px rgba(0, 140, 69, 0.15)' }} className="sm:p-6">
+        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', padding: '1.25rem 1.5rem sm:1.5rem 2rem', boxShadow: 'var(--shadow-gold-lg)' }} className="sm:p-6">
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem sm:gap-1rem' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <Link to={showHidden ? '/play?showHidden=1' : '/play'} style={{ fontSize: '0.875rem', color: '#008C45', fontWeight: 600, transition: 'all 0.2s' }} className="hover:text-[#00A652]">← เลือกตลาด/รอบอื่น</Link>
+                <Link to={showHidden ? '/play?showHidden=1' : '/play'} style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600, transition: 'all 0.2s' }} className="hover:text-[var(--gold-bright)]">← เลือกตลาด/รอบอื่น</Link>
                 <button
                   onClick={() => navigate(showHidden ? '/play' : '/play?showHidden=1')}
                   style={{
@@ -382,9 +382,9 @@ export default function PlaceBet() {
                     borderRadius: '0.625rem',
                     border: '1px solid',
                     transition: 'all 0.2s',
-                    background: showHidden ? '#F5F8F6' : 'rgba(0, 140, 69, 0.1)',
-                    color: showHidden ? '#6B7280' : '#008C45',
-                    borderColor: showHidden ? '#E5E7EB' : 'rgba(0, 140, 69, 0.3)'
+                    background: showHidden ? 'var(--bg-dark-surface)' : 'rgba(34, 197, 94, 0.15)',
+                    color: showHidden ? 'var(--muted-gray)' : 'var(--success-green)',
+                    borderColor: showHidden ? 'var(--border-light)' : 'rgba(34, 197, 94, 0.3)'
                   }}
                   className="sm:text-xs sm:px-3 sm:py-2"
                 >
@@ -392,17 +392,17 @@ export default function PlaceBet() {
                 </button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem 1rem' }} className="sm:gap-4">
-                <FlagIcon code={draw.type_code} style={{ width: '2.5rem', height: '1.875rem', fontSize: '0.75rem', borderRadius: '0.375rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} className="sm:w-12 sm:h-9" />
+                <FlagIcon code={draw.type_code} style={{ width: '2.5rem', height: '1.875rem', fontSize: '0.75rem', borderRadius: '0.375rem', boxShadow: 'var(--shadow-md)' }} className="sm:w-12 sm:h-9" />
                 <div style={{ minWidth: 0 }}>
-                  <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: ac?.text || '#20252B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }} className="sm:text-2xl">{drawLabel(draw)}</h1>
-                  <div style={{ fontSize: '0.875rem', color: '#6B7280', fontWeight: 500, marginTop: '0.25rem' }} className="sm:text-base">
+                  <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: ac?.text || 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }} className="sm:text-2xl">{drawLabel(draw)}</h1>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--muted-gray)', fontWeight: 500, marginTop: '0.25rem' }} className="sm:text-base">
                     {thaiDate(draw.draw_at)} • ปิดรับ {thaiHM(draw.close_at)} น.
-                    <span style={{ color: '#9CA3AF', fontSize: '0.75rem', marginLeft: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }} className="sm:text-xs">{draw.draw_code}</span>
+                    <span style={{ color: 'var(--dark-gray)', fontSize: '0.75rem', marginLeft: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }} className="sm:text-xs">{draw.draw_code}</span>
                   </div>
                 </div>
               </div>
               {(() => { const s = annSummary(draw.announce); return s ? (
-                <div style={{ marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, padding: '0.5rem 1.25rem', borderRadius: '0.75rem', background: 'rgba(0, 140, 69, 0.1)', border: '1px solid rgba(0, 140, 69, 0.3)', color: '#008C45', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} className="sm:text-sm sm:px-5 sm:py-2.5">
+                <div style={{ marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, padding: '0.5rem 1.25rem', borderRadius: '0.75rem', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.5)', color: 'var(--warning-amber)', boxShadow: 'var(--shadow-sm)' }} className="sm:text-sm sm:px-5 sm:py-2.5">
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
@@ -414,10 +414,10 @@ export default function PlaceBet() {
                 fontWeight: 700,
                 padding: '0.375rem 1rem',
                 borderRadius: '9999px',
-                background: closed ? '#F5F8F6' : 'rgba(0, 140, 69, 0.1)',
-                color: closed ? '#6B7280' : '#008C45',
-                border: closed ? '1px solid #E5E7EB' : '1px solid rgba(0, 140, 69, 0.3)',
-                boxShadow: closed ? 'none' : '0 2px 4px rgba(0,0,0,0.05)'
+                background: closed ? 'var(--bg-dark-surface)' : 'rgba(34, 197, 94, 0.15)',
+                color: closed ? 'var(--muted-gray)' : 'var(--success-green)',
+                border: closed ? '1px solid var(--border-light)' : '1px solid rgba(34, 197, 94, 0.3)',
+                boxShadow: closed ? 'none' : 'var(--shadow-sm)'
               }} className="sm:text-sm sm:px-5 sm:py-2">
                 {notYetOpen ? `⏳ เปิดรับ ${thaiHM(opensAt)} น.` : closed ? 'ปิดรับแล้ว' : '● รับแทงอยู่'}
               </span>
@@ -425,9 +425,9 @@ export default function PlaceBet() {
           </div>
           {/* countdown — แถวเต็มความกว้างแยกจากหัวข้อ กันข้อความยาวดันชื่อรอบจนมองไม่เห็นบนมือถือ */}
           {!closed && (
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #008C45', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.875rem', color: '#008C45', fontWeight: 600 }} className="sm:text-base">เหลือเวลา</span>
-              <span style={{ color: '#008C45', fontFamily: 'monospace', fontWeight: 800, fontSize: '1.125rem', textShadow: '0 0 20px rgba(0, 140, 69, 0.2)' }} className="sm:text-xl">
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600 }} className="sm:text-base">เหลือเวลา</span>
+              <span style={{ color: 'var(--gold-bright)', fontFamily: 'monospace', fontWeight: 800, fontSize: '1.125rem', textShadow: '0 0 20px rgba(212, 175, 55, 0.3)' }} className="sm:text-xl">
                 <Countdown closeAt={draw.close_at} />
               </span>
             </div>
@@ -435,14 +435,14 @@ export default function PlaceBet() {
         </div>
 
         {!closed && (
-          <div style={{ background: 'linear-gradient(135deg, #FFFFFF, #F5F8F6)', border: '2px solid #008C45', borderRadius: 'var(--radius-2xl)', padding: '1.5rem 1.75rem sm:1.75rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem sm:1.75rem', boxShadow: '0 4px 12px rgba(0, 140, 69, 0.15)' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', padding: '1.5rem 1.75rem sm:1.75rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem sm:1.75rem', boxShadow: 'var(--shadow-gold-lg)' }}>
             {/* Bet Type Selector — Grid layout, all visible */}
             <div>
-              <h2 style={{ fontWeight: 800, color: '#20252B', fontSize: '1.25rem sm:1.375rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
-                <span style={{ width: '0.375rem', height: '1.75rem', background: 'linear-gradient(135deg, #008C45, #00A652)', borderRadius: '9999px', boxShadow: '0 2px 8px rgba(0, 140, 69, 0.3)' }} />
+              <h2 style={{ fontWeight: 800, color: 'var(--white)', fontSize: '1.25rem sm:1.375rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+                <span style={{ width: '0.375rem', height: '1.75rem', background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', borderRadius: '9999px', boxShadow: 'var(--shadow-gold)' }} />
                 เลือกประเภทการแทง
               </h2>
-              {rule && <div style={{ fontSize: '0.875rem sm:0.9375rem', color: '#008C45', marginBottom: '1rem sm:1.25rem', marginLeft: '1.125rem', padding: '0.625rem 1rem', background: 'rgba(0, 140, 69, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(0, 140, 69, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
+              {rule && <div style={{ fontSize: '0.875rem sm:0.9375rem', color: 'var(--gold-primary)', marginBottom: '1rem sm:1.25rem', marginLeft: '1.125rem', padding: '0.625rem 1rem', background: 'rgba(212, 175, 55, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem sm:gap-0.875rem' }} className="sm:grid-cols-3 lg:grid-cols-4">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
@@ -457,15 +457,15 @@ export default function PlaceBet() {
                         border: '2px solid',
                         transition: 'all 0.2s',
                         textAlign: 'left',
-                        background: isSel ? 'linear-gradient(135deg, rgba(0, 140, 69, 0.15), rgba(0, 140, 69, 0.08))' : '#F5F8F6',
-                        borderColor: isSel ? '#008C45' : '#E5E7EB',
-                        color: isSel ? '#008C45' : '#6B7280',
-                        boxShadow: isSel ? '0 4px 12px rgba(0, 140, 69, 0.2)' : 'none',
+                        background: isSel ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))' : 'var(--bg-dark-surface)',
+                        borderColor: isSel ? 'var(--border-gold)' : 'var(--border-light)',
+                        color: isSel ? 'var(--gold-bright)' : 'var(--muted-gray)',
+                        boxShadow: isSel ? 'var(--shadow-gold)' : 'none',
                         transform: hoveredRule === r.id ? 'translateY(-3px)' : 'translateY(0)'
                       }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.8125rem sm:0.9375rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }} className="sm:text-base">
-                          {isAnn && <span style={{ fontSize: '0.625rem sm:0.6875rem', fontWeight: 700, padding: '0.25rem 0.5rem sm:0.25rem 0.625rem', borderRadius: '0.5rem', background: 'rgba(0, 140, 69, 0.1)', border: '1px solid rgba(0, 140, 69, 0.3)', color: '#008C45', flexShrink: 0 }} className="sm:text-xs">อั้น</span>}
+                          {isAnn && <span style={{ fontSize: '0.625rem sm:0.6875rem', fontWeight: 700, padding: '0.25rem 0.5rem sm:0.25rem 0.625rem', borderRadius: '0.5rem', background: 'rgba(245, 158, 11, 0.2)', border: '1px solid rgba(245, 158, 11, 0.5)', color: 'var(--warning-amber)', flexShrink: 0 }} className="sm:text-xs">อั้น</span>}
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name_th}</span>
                         </div>
                         <span style={{
@@ -475,13 +475,13 @@ export default function PlaceBet() {
                           padding: '0.25rem 0.5rem sm:0.25rem 0.625rem',
                           borderRadius: '0.5rem',
                           flexShrink: 0,
-                          background: isSel ? 'linear-gradient(135deg, #008C45, #00A652)' : 'rgba(0, 0, 0, 0.05)',
-                          color: isSel ? '#FFFFFF' : '#008C45'
+                          background: isSel ? 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))' : 'rgba(0, 0, 0, 0.3)',
+                          color: isSel ? 'var(--bg-deep-black)' : 'var(--gold-primary)'
                         }} className="sm:text-sm">x{r.payout_multiplier}</span>
                       </div>
-                      <div style={{ fontSize: '0.6875rem sm:0.75rem', color: '#6B7280', lineHeight: 1.4, fontWeight: 500 }} className="sm:text-xs">
+                      <div style={{ fontSize: '0.6875rem sm:0.75rem', color: 'var(--muted-gray)', lineHeight: 1.4, fontWeight: 500 }} className="sm:text-xs">
                         {r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : '1 ราศี') : `${r.digits} หลัก`}
-                        {isAnn && <span style={{ color: '#008C45', fontWeight: 600 }}> • ครึ่งรางวัล</span>}
+                        {isAnn && <span style={{ color: 'var(--warning-amber)', fontWeight: 600 }}> • ครึ่งรางวัล</span>}
                       </div>
                     </button>
                   );
@@ -493,7 +493,7 @@ export default function PlaceBet() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '1rem' }} className="sm:grid-cols-2">
               {isZodiac ? (
                 <div style={{}} className="sm:col-span-2">
-                  <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.5rem', display: 'block' }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
                     เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับ)` : '(1 ใน 12)'}
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.375rem' }} className="sm:grid-cols-6 sm:gap-2">

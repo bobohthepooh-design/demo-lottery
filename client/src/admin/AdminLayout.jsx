@@ -123,70 +123,70 @@ export default function AdminLayout() {
   }, [navigate, visibleGroups]);
 
   return (
-    <div className="admin-compact flex flex-col lg:flex-row gap-6" style={{ backgroundColor: 'var(--bg-light)' }}>
+    <div className="admin-compact flex flex-col lg:flex-row gap-6" style={{ backgroundColor: 'var(--bg-deep-black)' }}>
       <aside className="lg:w-60 shrink-0">
         <div className="rounded-xl lg:sticky lg:top-24 overflow-hidden" style={{
-          background: 'var(--bg-white)',
-          border: '1px solid var(--border-green)',
-          boxShadow: 'var(--shadow-lg)'
+          background: 'linear-gradient(180deg, var(--bg-card), var(--bg-dark-surface))',
+          border: '1px solid var(--border-gold)',
+          boxShadow: 'var(--shadow-pop)'
         }}>
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
             <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
-              background: 'rgba(0, 140, 69, 0.1)',
-              border: '1px solid var(--border-green)',
-              color: 'var(--green-primary)'
+              background: 'rgba(212, 175, 55, 0.2)',
+              border: '1px solid var(--border-gold)',
+              color: 'var(--gold-primary)'
             }}>
               <Icon name="settings" className="w-4 h-4" />
             </span>
             <div className="leading-tight">
-              <div className="font-display font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Admin Panel</div>
-              <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>ระบบจัดการหลังบ้าน</div>
+              <div className="font-display font-bold text-sm" style={{ color: 'var(--white)' }}>Admin Panel</div>
+              <div className="text-[10px]" style={{ color: 'var(--muted-gray)' }}>ระบบจัดการหลังบ้าน</div>
             </div>
             <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded" style={{
-              border: '1px solid var(--border-green)',
-              background: 'rgba(0, 140, 69, 0.1)',
-              color: 'var(--green-primary)'
+              border: '1px solid var(--border-gold)',
+              background: 'rgba(212, 175, 55, 0.15)',
+              color: 'var(--gold-bright)'
             }}>STAFF</span>
           </div>
           <nav className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:max-h-[calc(100vh-15rem)] p-2">
             {visibleGroups.map(g => (
               <div key={g.label} className="contents">
-                <div className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1" style={{ color: 'var(--text-secondary)' }}>
+                <div className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1" style={{ color: 'var(--muted-gray)' }}>
                   {g.label}
                 </div>
                 {g.items.map(i => (
                   <NavLink key={i.to} to={i.to} end={i.end}
                     className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors ${isActive ? 'font-semibold' : ''}`}
                     style={({ isActive }) => isActive ? {
-                      background: 'rgba(0, 140, 69, 0.1)',
-                      color: 'var(--green-primary)',
-                      border: '1px solid var(--border-green)'
+                      background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))',
+                      color: 'var(--gold-bright)',
+                      border: '1px solid var(--border-gold)'
                     } : {
-                      color: 'var(--text-primary)',
+                      color: 'var(--muted-gray)',
                       border: '1px solid transparent'
                     }}>
                     <Icon name={i.icon} className="w-4 h-4 shrink-0" />
                     {i.label}
                     {i.to === '/admin/chat' && chatUnread > 0 && (
                       <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center" style={{
-                        background: 'var(--accent-red)',
-                        color: 'var(--text-white)'
+                        background: 'var(--danger-red)',
+                        color: 'var(--white)'
                       }}>
                         {chatUnread > 99 ? '99+' : chatUnread}
                       </span>
                     )}
                     {i.to === '/admin/payments' && payPending > 0 && (
                       <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center" style={{
-                        background: 'var(--accent-orange)',
-                        color: 'var(--text-white)'
+                        background: 'var(--warning-amber)',
+                        color: 'var(--bg-deep-black)'
                       }}>
                         {payPending > 99 ? '99+' : payPending}
                       </span>
                     )}
                     {i.to === '/admin/approvals' && apprPending > 0 && (
                       <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center" style={{
-                        background: 'var(--green-primary)',
-                        color: 'var(--text-white)'
+                        background: 'var(--success-green)',
+                        color: 'var(--bg-deep-black)'
                       }}>
                         {apprPending > 99 ? '99+' : apprPending}
                       </span>
@@ -199,15 +199,15 @@ export default function AdminLayout() {
           {user && (
             <div className="hidden lg:flex items-center gap-2.5 px-4 py-3" style={{ borderTop: '1px solid var(--border-light)' }}>
               <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{
-                background: 'var(--bg-light)',
+                background: 'var(--bg-dark-surface)',
                 border: '1px solid var(--border-light)',
-                color: 'var(--green-primary)'
+                color: 'var(--gold-primary)'
               }}>
                 {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
               </span>
               <div className="leading-tight min-w-0">
-                <div className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.displayName || user.username}</div>
-                <div className="text-[10px] truncate" style={{ color: 'var(--text-secondary)' }}>{(user.roles || []).join(', ') || 'staff'}</div>
+                <div className="text-xs font-semibold truncate" style={{ color: 'var(--white)' }}>{user.displayName || user.username}</div>
+                <div className="text-[10px] truncate" style={{ color: 'var(--muted-gray)' }}>{(user.roles || []).join(', ') || 'staff'}</div>
               </div>
             </div>
           )}
