@@ -892,10 +892,10 @@ button, [role="button"], a { transition: transform var(--duration-fast, 120ms) e
 /* ================= Top nav — ให้ทุกเมนูอยู่บรรทัดเดียว ไม่ต้องเลื่อน =================
    ย่อ font/padding ของลิงก์เมนูหลักบนจอ <1536px (ยังอ่านง่าย ไม่เล็กเกิน) */
 @media (max-width: 1535px) {
-  .topnav-link { font-size: 13px; padding-left: 7px; padding-right: 7px; }
+  .topnav-link { font-size: 16px; padding-left: 8px; padding-right: 8px; }
 }
 @media (max-width: 1023px) {
-  .topnav-link { font-size: 12px; padding-left: 5px; padding-right: 5px; }
+  .topnav-link { font-size: 15px; padding-left: 6px; padding-right: 6px; }
 }
 
 /* ===== Legibility floor — ตัวหนังสือจิ๋ว (px-based ไม่ scale ตาม root)
