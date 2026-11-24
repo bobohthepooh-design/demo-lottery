@@ -224,8 +224,27 @@
    RESPONSIVE UTILITIES
    ============================================ */
 
+/* Mobile (375px - 768px) */
 @media (max-width: 768px) {
   .luxury-card {
     border-radius: var(--radius-lg);
+  }
+
+  html {
+    font-size: 14px; /* Reduce base font size on mobile */
+  }
+}
+
+/* Tablet (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  html {
+    font-size: 15px; /* Slightly larger base font on tablet */
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1025px) {
+  html {
+    font-size: 16px; /* Standard base font on desktop */
   }
 }
