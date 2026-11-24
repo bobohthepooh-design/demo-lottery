@@ -34,11 +34,11 @@ function RoundCard({ d, nowSql, nowMs }) {
   const ann = annSummary(d);
   const ac = typeAccent(d.type_code);
 
-  // Card grid style — สีตามประเภทเป็นหลัก, border เขียวเมื่อเปิด, ทองเมื่อกำลังออกรางวัล
+  // Card list style — สีตามประเภทเป็นหลัก, border เขียวเมื่อเปิด, ทองเมื่อกำลังออกรางวัล
   const cardBg = drawing
-    ? 'bg-gradient-to-br from-gold-900/80 to-amber-950 border-gold-400/60 animate-pulse'
-    : `bg-gradient-to-br from-navy-800 to-navy-900 ${live ? 'border-green-400/80' : ac.border}`;
-  const cardCls = `${cardBg} border rounded border p-1.5 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-200 shadow-lg relative`;
+    ? 'bg-gradient-to-r from-gold-900/80 to-amber-950 border-gold-400/60 animate-pulse'
+    : `bg-gradient-to-r from-navy-800 to-navy-900 ${live ? 'border-green-400/80' : ac.border}`;
+  const cardCls = `${cardBg} border rounded border p-3 flex items-center gap-3 hover:scale-[1.01] transition-transform duration-200 shadow-lg relative`;
 
   const go = () => {
     if (d.status === 'settled' || d.status === 'cancelled') {
@@ -52,32 +52,33 @@ function RoundCard({ d, nowSql, nowMs }) {
     <div className={cardCls}>
       {/* Live indicator — จุดเขียวมุมขวาบนเมื่อเปิด */}
       {live && (
-        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+        <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
       )}
       {/* ธง + ชื่อตลาด */}
-      <div className="flex items-center gap-0.5 mb-0.5">
-        <FlagIcon code={d.type_code} className="w-4 h-3 text-[6px] rounded-sm" />
-        <span className={`text-[8px] font-bold px-0.5 py-0 rounded-full border ${ac.chip}`}>{d.type_name_th}</span>
+      <div className="flex items-center gap-2">
+        <FlagIcon code={d.type_code} className="w-6 h-4 rounded-md" />
+        <div>
+          <div className="font-bold text-white text-sm">{drawLabel(d)}</div>
+          <div className="text-xs text-navy-400">{d.draw_code}</div>
+        </div>
       </div>
-      <div className="font-bold text-white text-[10px] leading-tight mb-0 line-clamp-1">{drawLabel(d)}</div>
-      <div className="text-[7px] text-navy-400 mb-0.5">{d.draw_code}</div>
 
       {/* เลขอั้น */}
       {ann && (
-        <div className="text-[6px] font-bold px-0.5 py-0 rounded bg-amber-500/20 border border-amber-400 text-amber-300 mb-0.5">
-          📣 {ann.length > 20 ? `${ann.slice(0, 20)}…` : ann}
+        <div className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400 text-amber-300">
+          📣 {ann.length > 30 ? `${ann.slice(0, 30)}…` : ann}
         </div>
       )}
 
-      {/* Countdown / Status */}
-      <div className="mt-auto w-full">
+      <div className="ml-auto flex items-center gap-3">
+        {/* Countdown / Status */}
         {live ? (
-          <div className="bg-black/30 rounded p-0.5 mb-1">
-            <div className="text-[7px] text-navy-400 mb-0">ปิดใน</div>
-            <div className="font-bold text-green-300 text-[10px]">{fmtHMS(closeMs)}</div>
+          <div className="bg-black/30 rounded p-2 text-right">
+            <div className="text-xs text-navy-400 mb-0.5">ปิดใน</div>
+            <div className="font-bold text-green-300 text-lg">{fmtHMS(closeMs)}</div>
           </div>
         ) : (
-          <div className={`text-[9px] font-bold px-1 py-0.5 rounded mb-1 ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
+          <div className={`text-xs font-bold px-2 py-1 rounded ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
             {drawing ? '🎰 กำลังออกรางวัล…'
               : awaiting ? '🔒 รอผล'
               : blind ? `🔒 เปิด ${thaiHM(opensAt)} น.`
@@ -88,15 +89,32 @@ function RoundCard({ d, nowSql, nowMs }) {
 
         {/* ปุ่มแทง */}
         {live ? (
-          <button onClick={go} className="w-full font-bold py-1 rounded bg-green-500 hover:bg-green-400 text-white text-[10px] transition">
+          <button onClick={go} className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white font-bold text-sm transition">
             แทงเลย
           </button>
         ) : (
-          <button disabled className="w-full font-semibold py-1 rounded cursor-not-allowed bg-navy-700 text-navy-400 border border-navy-600 text-[10px]">
+          <button disabled className="px-4 py-2 rounded-lg cursor-not-allowed bg-navy-700 text-navy-400 border border-navy-600 text-sm font-semibold">
             {d.status === 'settled' ? 'ดูผล' : 'รอเปิดรับ'}
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function TypeCard({ tg, onClick }) {
+  const ac = typeAccent(tg.typeCode);
+  const cardCls = `${ac.chip} border-2 rounded-xl p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer`;
+  return (
+    <div onClick={onClick} className={cardCls}>
+      <FlagIcon code={tg.typeCode} className="w-12 h-8 rounded-lg mb-2" />
+      <h3 className={`text-lg font-bold ${ac.text} mb-1`}>{tg.typeName}</h3>
+      <div className="text-sm text-navy-300 mb-2">{tg.totalRounds} รอบ</div>
+      {tg.liveRounds > 0 && (
+        <div className="text-xs font-bold px-2 py-1 rounded-full bg-green-500/20 border border-green-500/50 text-green-300">
+          {tg.liveRounds} เปิด
+        </div>
+      )}
     </div>
   );
 }
@@ -110,6 +128,7 @@ export default function BetHub() {
   const [loaded, setLoaded] = useState(false);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [selectedType, setSelectedType] = useState(null); // เลือกประเภทแล้วแสดง list รอบ
 
   const load = useCallback(async () => {
     try {
@@ -219,34 +238,39 @@ export default function BetHub() {
         <SkeletonGrid count={6} />
       ) : typeGroups.length === 0 ? (
         <EmptyState title="ไม่มีรอบหวยที่เปิดรับในขณะนี้" sub="ลองตรวจสอบอีกครั้งภายหลัง" />
-      ) : (
-        /* ประเภทหวย — card grid ต่อประเภท (ไม่ต้องกดขยาย) */
-        <div className="space-y-3">
-        {typeGroups.map(tg => {
-          const liveCount = tg.liveRounds;
-          const ac = typeAccent(tg.typeCode);
-          return (
-            <section key={tg.typeCode}>
-              <div className={`flex items-center gap-1.5 mb-1.5 px-2 py-1 rounded-lg border ${ac.chip}`}>
-                <FlagIcon code={tg.typeCode} className="w-5 h-4 rounded-md overflow-hidden" />
-                <h2 className={`text-sm font-bold ${ac.text}`}>{tg.typeName}</h2>
-                {liveCount > 0 && (
-                  <span className="text-[8px] font-bold px-1 py-0 rounded-full bg-green-500/15 border border-green-500/40 text-green-300">
-                    {liveCount} เปิด
-                  </span>
-                )}
-              </div>
+      ) : selectedType ? (
+        /* เลือกประเภทแล้ว — แสดง list รอบ */
+        <div>
+          <button
+            onClick={() => setSelectedType(null)}
+            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-navy-700/50 hover:bg-navy-700 border border-navy-600 text-navy-300 hover:text-white transition"
+          >
+            ← กลับเลือกประเภทอื่น
+          </button>
 
-              {/* แสดงรอบทั้งหมดของประเภทนี้เป็น card grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
-                {tg.catList.flatMap(cat => cat.rounds).map(d => (
-                  <RoundCard key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+          <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border ${typeAccent(selectedType.typeCode).chip}`}>
+            <FlagIcon code={selectedType.typeCode} className="w-6 h-4 rounded-md" />
+            <h2 className={`text-base font-bold ${typeAccent(selectedType.typeCode).text}`}>{selectedType.typeName}</h2>
+            {selectedType.liveRounds > 0 && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/50 text-green-300">
+                {selectedType.liveRounds} เปิด
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {selectedType.catList.flatMap(cat => cat.rounds).map(d => (
+              <RoundCard key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* เมนูหลัก — card grid ประเภทหวย */
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {typeGroups.map(tg => (
+            <TypeCard key={tg.typeCode} tg={tg} onClick={() => setSelectedType(tg)} />
+          ))}
+        </div>
       )}
     </div>
   );
