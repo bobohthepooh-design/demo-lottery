@@ -47,11 +47,11 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // สีปุ่ม active ใน bottom nav ตาม route - green theme
+  // สีปุ่ม active ใน bottom nav ตาม route - gold theme
   const activeBtnColor = useMemo(() => {
     const path = location.pathname;
-    // all routes use green primary
-    return { bg: 'rgba(0, 140, 69, 0.25)', border: 'rgba(0, 140, 69, 0.35)', shadow: 'rgba(0, 140, 69, 0.6)' };
+    // all routes use gold primary
+    return { bg: 'rgba(212, 175, 55, 0.15)', border: 'rgba(212, 175, 55, 0.3)', shadow: 'rgba(212, 175, 55, 0.5)' };
   }, [location.pathname]);
 
   const loadMenuData = () => {
