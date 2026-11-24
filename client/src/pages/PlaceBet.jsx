@@ -370,12 +370,16 @@ export default function PlaceBet() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <Link to={showHidden ? '/play?showHidden=1' : '/play'} className="text-xs sm:text-sm text-gold-400 hover:text-gold-300 font-medium">← เลือกตลาด/รอบอื่น</Link>
-                {!showHidden && (
-                  <Link to={`/play?showHidden=1`} className="text-[10px] text-navy-400 hover:text-navy-300">(แสดงรอบที่ซ่อนอยู่)</Link>
-                )}
-                {showHidden && (
-                  <Link to="/play" className="text-[10px] text-navy-400 hover:text-navy-300">(ซ่อนรอบที่ยังไม่เปิด)</Link>
-                )}
+                <button
+                  onClick={() => navigate(showHidden ? '/play' : '/play?showHidden=1')}
+                  className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all ${
+                    showHidden
+                      ? 'bg-navy-700 text-navy-300 border-navy-600 hover:bg-navy-600'
+                      : 'bg-green-500/20 text-green-300 border-green-500/40 hover:bg-green-500/30'
+                  }`}
+                >
+                  {showHidden ? '🙈 ซ่อนรอบที่ยังไม่เปิด' : '👁️ แสดงรอบที่ซ่อนอยู่'}
+                </button>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 mt-2">
                 <FlagIcon code={draw.type_code} className="w-8 h-6 sm:w-10 sm:h-7 text-[10px] sm:text-[11px] rounded-md" />

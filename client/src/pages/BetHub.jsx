@@ -7,6 +7,7 @@ import { SkeletonGrid } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { useAuth } from '../auth.jsx';
 import { annSummary } from '../ann.js';
+import { typeAccent } from '../typeAccent.js';
 // Types ที่เป็นเกมด่วน/ยี่กี — ไม่ใช่หวยใน hub นี้ (อยู่หน้าเกมด่วน)
 const INSTANT = new Set(['SC', 'HL', 'KI', 'CF']);
 
@@ -31,12 +32,13 @@ function RoundCard({ d, nowSql, nowMs }) {
   const opensMs = opensAt ? Date.parse(String(opensAt).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const closeMs = live ? Date.parse(String(d.close_at).replace(' ', 'T') + 'Z') - nowMs : NaN;
   const ann = annSummary(d);
+  const ac = typeAccent(d.type_code);
 
-  // Card grid style — เขียวเมื่อเปิด, เทาเมื่อปิด (กระชับมาก)
+  // Card grid style — สีตามประเภทเมื่อปิด, เขียวเมื่อเปิด, ทองเมื่อกำลังออกรางวัล
   const cardBg = live
     ? 'bg-gradient-to-br from-green-900/80 to-green-950 border-green-400/60'
     : drawing ? 'bg-gradient-to-br from-gold-900/80 to-amber-950 border-gold-400/60 animate-pulse'
-    : 'bg-gradient-to-br from-navy-800 to-navy-900 border-navy-600/50';
+    : `bg-gradient-to-br from-navy-800 to-navy-900 border-navy-600/50 ${ac.border}`;
   const cardCls = `${cardBg} border rounded border p-1.5 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-200 shadow-lg`;
 
   const go = () => {
@@ -219,11 +221,12 @@ export default function BetHub() {
         <div className="space-y-3">
         {typeGroups.map(tg => {
           const liveCount = tg.liveRounds;
+          const ac = typeAccent(tg.typeCode);
           return (
             <section key={tg.typeCode}>
-              <div className="flex items-center gap-1.5 mb-1.5">
+              <div className={`flex items-center gap-1.5 mb-1.5 px-2 py-1 rounded-lg border ${ac.chip}`}>
                 <FlagIcon code={tg.typeCode} className="w-5 h-4 rounded-md overflow-hidden" />
-                <h2 className="text-sm font-bold text-white">{tg.typeName}</h2>
+                <h2 className={`text-sm font-bold ${ac.text}`}>{tg.typeName}</h2>
                 {liveCount > 0 && (
                   <span className="text-[8px] font-bold px-1 py-0 rounded-full bg-green-500/15 border border-green-500/40 text-green-300">
                     {liveCount} เปิด
