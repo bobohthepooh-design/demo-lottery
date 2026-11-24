@@ -34,12 +34,11 @@ function RoundCard({ d, nowSql, nowMs }) {
   const ann = annSummary(d);
   const ac = typeAccent(d.type_code);
 
-  // Card grid style — สีตามประเภทเมื่อปิด, เขียวเมื่อเปิด, ทองเมื่อกำลังออกรางวัล
-  const cardBg = live
-    ? 'bg-gradient-to-br from-green-900/80 to-green-950 border-green-400/60'
-    : drawing ? 'bg-gradient-to-br from-gold-900/80 to-amber-950 border-gold-400/60 animate-pulse'
-    : `bg-gradient-to-br from-navy-800 to-navy-900 border-navy-600/50 ${ac.border}`;
-  const cardCls = `${cardBg} border rounded border p-1.5 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-200 shadow-lg`;
+  // Card grid style — สีตามประเภทเป็นหลัก, border เขียวเมื่อเปิด, ทองเมื่อกำลังออกรางวัล
+  const cardBg = drawing
+    ? 'bg-gradient-to-br from-gold-900/80 to-amber-950 border-gold-400/60 animate-pulse'
+    : `bg-gradient-to-br from-navy-800 to-navy-900 ${live ? 'border-green-400/80' : ac.border}`;
+  const cardCls = `${cardBg} border rounded border p-1.5 flex flex-col items-center text-center hover:scale-[1.02] transition-transform duration-200 shadow-lg relative`;
 
   const go = () => {
     if (d.status === 'settled' || d.status === 'cancelled') {
@@ -51,10 +50,14 @@ function RoundCard({ d, nowSql, nowMs }) {
 
   return (
     <div className={cardCls}>
+      {/* Live indicator — จุดเขียวมุมขวาบนเมื่อเปิด */}
+      {live && (
+        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+      )}
       {/* ธง + ชื่อตลาด */}
       <div className="flex items-center gap-0.5 mb-0.5">
         <FlagIcon code={d.type_code} className="w-4 h-3 text-[6px] rounded-sm" />
-        <span className="text-[8px] font-bold px-0.5 py-0 rounded-full border border-green-400/60 text-green-300">{d.type_name_th}</span>
+        <span className={`text-[8px] font-bold px-0.5 py-0 rounded-full border ${ac.chip}`}>{d.type_name_th}</span>
       </div>
       <div className="font-bold text-white text-[10px] leading-tight mb-0 line-clamp-1">{drawLabel(d)}</div>
       <div className="text-[7px] text-navy-400 mb-0.5">{d.draw_code}</div>
