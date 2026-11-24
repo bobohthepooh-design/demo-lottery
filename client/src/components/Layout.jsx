@@ -152,7 +152,7 @@ export default function Layout() {
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
                 className={({ isActive }) => `topnav-link shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}
-                style={isActive ? {
+                style={({ isActive }) => isActive ? {
                   background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
                   color: 'var(--bg-deep-black)',
                   boxShadow: 'var(--shadow-gold)'
@@ -167,7 +167,7 @@ export default function Layout() {
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
                       className={({ isActive }) => `topnav-link shrink-0 px-2.5 py-1.5 text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}
-                      style={isActive ? {
+                      style={({ isActive }) => isActive ? {
                         background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
                         color: 'var(--bg-deep-black)',
                         boxShadow: 'var(--shadow-gold)'
@@ -210,7 +210,7 @@ export default function Layout() {
                           {g.items.map(i => (
                             <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
                               className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'font-semibold' : ''}`}
-                              style={isActive ? {
+                              style={({ isActive }) => isActive ? {
                                 color: 'var(--gold-bright)',
                                 background: 'rgba(212, 175, 55, 0.1)',
                                 border: '1px solid var(--border-gold)'
@@ -306,7 +306,7 @@ export default function Layout() {
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'font-semibold' : ''}`}
-              style={isActive ? {
+              style={({ isActive }) => isActive ? {
                 color: 'var(--gold-bright)',
                 background: 'rgba(212, 175, 55, 0.1)',
                 border: '1px solid var(--border-gold)'
@@ -325,7 +325,7 @@ export default function Layout() {
                       {ag.items.map(i => (
                         <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setMenuOpen(false)}
                           className={({ isActive }) => `flex items-center gap-3 px-4 py-3 text-base tracking-wide rounded-xl ${isActive ? 'font-semibold' : ''}`}
-                          style={isActive ? {
+                          style={({ isActive }) => isActive ? {
                             color: 'var(--gold-bright)',
                             background: 'rgba(212, 175, 55, 0.1)',
                             border: '1px solid var(--border-gold)'
@@ -345,7 +345,7 @@ export default function Layout() {
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
                       className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 text-base tracking-wide rounded-xl ${isActive ? 'font-semibold' : ''}`}
-                      style={isActive ? {
+                      style={({ isActive }) => isActive ? {
                         color: 'var(--gold-bright)',
                         background: 'rgba(212, 175, 55, 0.1)',
                         border: '1px solid var(--border-gold)'

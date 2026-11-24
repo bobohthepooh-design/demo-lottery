@@ -157,7 +157,7 @@ export default function AdminLayout() {
                 {g.items.map(i => (
                   <NavLink key={i.to} to={i.to} end={i.end}
                     className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors ${isActive ? 'font-semibold' : ''}`}
-                    style={isActive ? {
+                    style={({ isActive }) => isActive ? {
                       background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))',
                       color: 'var(--gold-bright)',
                       border: '1px solid var(--border-gold)'
