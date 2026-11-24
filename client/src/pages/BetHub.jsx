@@ -140,6 +140,7 @@ export default function BetHub() {
     for (const d of draws) {
       if (!isAdmin && hiddenSet.has(d.type_code)) continue;
       if (INSTANT.has(d.type_code)) continue;
+      if (d.type_code === 'HR') continue; // ยกเว้นหวยราศี
 
       const tc = d.type_code;
       const cc = d.category_code || '';
@@ -194,27 +195,6 @@ export default function BetHub() {
     });
   }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql]);
 
-  // รอบที่เปิดแทงอยู่ตอนนี้ทุกตลาด — ปุ่ม "แทงเลย" 1 คลิก (ยกเว้นหวยราศี HR)
-  const liveNow = useMemo(() => {
-    if (!draws) return [];
-    const hiddenSet = new Set(hiddenBetTypes);
-    return draws
-      .filter(d => !INSTANT.has(d.type_code) && d.type_code !== 'HR'
-        && (isAdmin || !hiddenSet.has(d.type_code)) && isBettingOpen(d, nowSql))
-      .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)));
-  }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql]);
-
-  // จัดกลุ่มตามประเภทหวย — แต่ละประเภทเป็น section ของตัวเอง
-  const liveGroups = useMemo(() => {
-    const m = new Map();
-    for (const d of liveNow) {
-      const k = d.type_code;
-      if (!m.has(k)) m.set(k, { typeCode: k, typeName: d.type_name_th || k, draws: [] });
-      m.get(k).draws.push(d);
-    }
-    return [...m.values()];
-  }, [liveNow]);
-
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 pb-8">
       {/* Hero */}
@@ -225,42 +205,6 @@ export default function BetHub() {
         </h1>
         <p className="text-xs sm:text-sm text-navy-300 mt-1.5">เลือกประเภทหวย แล้วเลือกตลาดและรอบที่ต้องการ</p>
       </div>
-
-      {/* กำลังเปิดแทง — แตะแล้วเข้าแทงได้ทันที 1 คลิก ไม่ต้องเลือกประเภท/หมวด (ยกเว้นหวยราศี) */}
-      {liveGroups.length > 0 && (
-        <div className="mb-6 space-y-4">
-          {liveGroups.map(g => (
-            <div key={g.typeCode}>
-              <div className="flex items-center gap-2 mb-2">
-                <FlagIcon code={g.typeCode} className="w-6 h-4 rounded overflow-hidden" />
-                <h2 className="text-sm font-bold text-green-300">{g.typeName}</h2>
-                <span className="text-[10px] text-navy-400">{g.draws.length} รอบ</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {g.draws.map(d => {
-                  const closeMs = Date.parse(String(d.close_at).replace(' ', 'T') + 'Z') - nowMs;
-                  const ann = annSummary(d);
-                  return (
-                    <button key={d.id} onClick={() => navigate(`/bet/${d.id}`)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-green-500/40 bg-green-500/10 hover:bg-green-500/20 hover:border-green-400/70 transition-all text-left">
-                      <FlagIcon code={d.type_code} className="w-9 h-7 rounded-md overflow-hidden shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-white truncate">{drawLabel(d)}</div>
-                        <div className="text-[10px] text-navy-300 truncate">
-                          ปิดใน {fmtHMS(closeMs)}{ann ? ` • ${ann.slice(0, 40)}` : ''}
-                        </div>
-                      </div>
-                      <span className="text-[11px] font-bold text-green-300 bg-green-500/20 border border-green-500/40 rounded-lg px-2.5 py-1.5 shrink-0 whitespace-nowrap">
-                        แทงเลย ›
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {!loaded ? (
         <SkeletonGrid count={6} />
