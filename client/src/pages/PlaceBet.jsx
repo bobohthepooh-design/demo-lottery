@@ -368,7 +368,7 @@ export default function PlaceBet() {
       {/* left: entry form */}
       <div style={{}} className="lg:col-span-3 space-y-3 sm:space-y-4">
         {/* Header — Draw Info + Countdown */}
-        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', padding: '1.25rem 1.5rem', boxShadow: 'var(--shadow-gold-lg)' }} className="sm:p-6">
+        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-gold-lg)' }} className="p-4 sm:p-6">
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -435,7 +435,7 @@ export default function PlaceBet() {
         </div>
 
         {!closed && (
-          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', boxShadow: 'var(--shadow-gold-lg)' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-gold-lg)' }} className="p-4 sm:p-7 gap-5 sm:gap-7">
             {/* Bet Type Selector — Grid layout, all visible */}
             <div>
               <h2 style={{ fontWeight: 800, color: 'var(--white)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
@@ -443,7 +443,7 @@ export default function PlaceBet() {
                 เลือกประเภทการแทง
               </h2>
               {rule && <div style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', marginBottom: '1rem', marginLeft: '1.125rem', padding: '0.625rem 1rem', background: 'rgba(212, 175, 55, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
                   const isSel = selRule === String(r.id);
@@ -451,12 +451,9 @@ export default function PlaceBet() {
                     <button key={r.id} onClick={() => setSelRule(String(r.id))}
                       onMouseEnter={() => setHoveredRule(r.id)}
                       onMouseLeave={() => setHoveredRule(null)}
+                      className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-200"
                       style={{
-                        padding: '0.875rem',
-                        borderRadius: '0.875rem',
                         border: '2px solid',
-                        transition: 'all 0.2s',
-                        textAlign: 'left',
                         background: isSel ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))' : 'var(--bg-dark-surface)',
                         borderColor: isSel ? 'var(--border-gold)' : 'var(--border-light)',
                         color: isSel ? 'var(--gold-bright)' : 'var(--muted-gray)',
@@ -496,7 +493,7 @@ export default function PlaceBet() {
                   <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
                     เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับ)` : '(1 ใน 12)'}
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 sm:gap-2">
                     {ZODIAC.map(z => {
                       const idx = zodiacPicks.indexOf(z);
                       const sel = idx >= 0;
@@ -549,7 +546,7 @@ export default function PlaceBet() {
                   <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
                     เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)
                   </label>
-                  <div className="grid grid-cols-5 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5 sm:gap-2">
+                  <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5 sm:gap-2">
                     {Array.from({ length: 45 }, (_, i) => i + 1).map(n => (
                       <button key={n} type="button" onClick={() => togglePick(n)}
                         style={{
@@ -581,7 +578,7 @@ export default function PlaceBet() {
                 <>
                   {/* Quick Actions */}
                   <div style={{}} className="sm:col-span-2">
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.625rem', padding: '1rem 1.25rem', background: 'linear-gradient(135deg, var(--bg-dark-surface), var(--bg-card))', borderRadius: '1rem', border: '2px solid var(--border-gold)', boxShadow: 'var(--shadow-md)' }} className="sm:gap-2 sm:px-5 sm:py-3">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', background: 'linear-gradient(135deg, var(--bg-dark-surface), var(--bg-card))', borderRadius: '1rem', border: '2px solid var(--border-gold)', boxShadow: 'var(--shadow-md)' }} className="gap-2.5 sm:gap-2 px-4 py-3 sm:px-5 sm:py-3">
                       <span style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 700, letterSpacing: '0.02em' }} className="sm:text-base">ปุ่มลัด:</span>
                       <button type="button" onClick={() => setNumber(randNum(rule.digits))}
                         style={{ fontSize: '0.8125rem', padding: '0.5rem 0.875rem', borderRadius: '0.625rem', background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', border: 'none', color: 'var(--bg-deep-black)', fontWeight: 700, transition: 'all 0.2s', boxShadow: 'var(--shadow-gold)' }} className="sm:text-xs hover:shadow-[var(--shadow-gold-lg)] hover:-translate-y-0.5">
