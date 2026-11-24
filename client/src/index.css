@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "./styles/luxury-theme.css";
+@import "./styles/modern-green-theme.css";
 
 @theme {
   /* Ocean Blue — dark theme:'bg-navy-*' = พื้น/การ์ดน้ำเงินเข้ม, 'text-navy-*' = ข้อความสว่าง

@@ -1,0 +1,218 @@
+/* ============================================
+   MODERN GREEN LOTTO THEME
+   7-Eleven Inspired Design System
+   ============================================ */
+
+:root {
+  /* Primary Green Colors */
+  --green-primary: #008C45;
+  --green-secondary: #00A651;
+  --green-dark: #006B36;
+  --green-light: #4CAF50;
+
+  /* Background Colors */
+  --bg-white: #FFFFFF;
+  --bg-light: #F5F8F6;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F0FDF4;
+
+  /* Accent Colors */
+  --accent-red: #E32636;
+  --accent-orange: #F58220;
+  --accent-yellow: #FFC107;
+
+  /* Text Colors */
+  --text-primary: #20252B;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --text-white: #FFFFFF;
+
+  /* Border Colors */
+  --border-light: #E5E7EB;
+  --border-green: #008C45;
+  --border-green-light: #4CAF50;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-green: 0 4px 20px rgba(0, 140, 69, 0.15);
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 200ms ease-in-out;
+  --transition-slow: 300ms ease-in-out;
+}
+
+/* ============================================
+   REUSABLE COMPONENT STYLES
+   ============================================ */
+
+/* Green Card */
+.green-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+}
+
+.green-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-green-light);
+  box-shadow: var(--shadow-green);
+  transform: translateY(-2px);
+}
+
+.green-card-green-border {
+  border: 2px solid var(--green-primary);
+  box-shadow: var(--shadow-green);
+}
+
+/* Green Button */
+.green-btn {
+  background: var(--green-primary);
+  color: var(--text-white);
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-green);
+}
+
+.green-btn:hover {
+  background: var(--green-secondary);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px rgba(0, 140, 69, 0.25);
+}
+
+.green-btn:active {
+  transform: translateY(0);
+}
+
+.green-btn-outline {
+  background: transparent;
+  border: 2px solid var(--green-primary);
+  color: var(--green-primary);
+  box-shadow: none;
+}
+
+.green-btn-outline:hover {
+  background: rgba(0, 140, 69, 0.1);
+  border-color: var(--green-secondary);
+  color: var(--green-secondary);
+}
+
+.green-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+.green-btn-ghost:hover {
+  background: var(--bg-light);
+  border-color: var(--green-primary);
+  color: var(--green-primary);
+}
+
+/* Green Input */
+.green-input {
+  background: var(--bg-white);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  transition: all var(--transition-base);
+}
+
+.green-input:focus {
+  outline: none;
+  border-color: var(--green-primary);
+  box-shadow: 0 0 0 4px rgba(0, 140, 69, 0.1);
+}
+
+.green-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Green Badge */
+.green-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.green-badge-green {
+  background: rgba(0, 140, 69, 0.1);
+  color: var(--green-primary);
+  border: 1px solid var(--border-green);
+}
+
+.green-badge-red {
+  background: rgba(227, 38, 54, 0.1);
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
+}
+
+.green-badge-orange {
+  background: rgba(245, 130, 32, 0.1);
+  color: var(--accent-orange);
+  border: 1px solid var(--accent-orange);
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Mobile (375px - 768px) */
+@media (max-width: 768px) {
+  .green-card {
+    border-radius: var(--radius-lg);
+  }
+
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* Tablet (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Large Desktop (≥1440px) */
+@media (min-width: 1440px) {
+  html {
+    font-size: 17px;
+  }
+}
