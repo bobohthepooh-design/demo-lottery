@@ -722,10 +722,9 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
   if (d.length >= 4 && winningNumbers.top4 == null) winningNumbers.top4 = d.slice(-4);
   if (d.length >= 2 && winningNumbers.top2 == null) winningNumbers.top2 = d.slice(-2);
   if (d.length >= 1 && winningNumbers.last1 == null) winningNumbers.last1 = d.slice(-1);
-  // ออมสิน: เลขท้าย 3 ตัวเป็นรางวัลแยก (last3) — ห้าม derive จากอันดับ 1
-  // top3 (เลขบน/วิ่งบน) derive จากอันดับ 1 ตามกติกาฝั่งบน
-  if (winningNumbers.p1 != null) {
-    if (d.length >= 3 && winningNumbers.top3 == null) winningNumbers.top3 = d.slice(-3);
+  // top3 (เลขบน 3 ตัว) derive จากรางวัลหลัก — ไทย (first) และออมสิน (p1)
+  if ((winningNumbers.p1 != null || winningNumbers.first != null) && d.length >= 3 && winningNumbers.top3 == null) {
+    winningNumbers.top3 = d.slice(-3);
   }
   // bottom2 ของออมสิน = 2 ตัวท้ายของอันดับ 5 (ผลรางวัลของตัวเอง)
   if (winningNumbers.bottom2 == null) {
@@ -738,6 +737,19 @@ function settleDrawCommon(draw, adminId, winningNumbers, sourceLabel) {
     const b2 = Array.isArray(winningNumbers.bottom2) ? winningNumbers.bottom2[0] : winningNumbers.bottom2;
     const bd = String(b2 ?? '').replace(/\D/g, '');
     if (bd.length >= 1) winningNumbers.bottom1 = bd.slice(-1);
+  }
+  // ลาว/ฮานอย — ทุกประเภทแทงเป็นตัวท้ายของเลขรางวัลหลัก → derive last5..last1 + bottom* จาก main
+  // (bottom2/bottom1 = ค่าเดียวกับ last2/last1 — ไม่มีรางวัลล่างแยก ตามกติกา)
+  const lm = String(winningNumbers.main ?? winningNumbers.db5 ?? winningNumbers.last5 ?? '').replace(/\D/g, '');
+  if (lm.length >= 5) {
+    const take = (n) => (lm.length >= n ? lm.slice(-n) : null);
+    if (winningNumbers.last5 == null) winningNumbers.last5 = take(5);
+    if (winningNumbers.last4 == null) winningNumbers.last4 = take(4);
+    if (winningNumbers.last3 == null) winningNumbers.last3 = take(3);
+    if (winningNumbers.last2 == null) winningNumbers.last2 = take(2);
+    if (winningNumbers.last1 == null) winningNumbers.last1 = take(1);
+    if (winningNumbers.bottom2 == null) winningNumbers.bottom2 = take(2);
+    if (winningNumbers.bottom1 == null) winningNumbers.bottom1 = take(1);
   }
   return winningNumbers;
 }

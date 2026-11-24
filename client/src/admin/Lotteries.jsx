@@ -12,10 +12,12 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 
 // แปลง match_config เป็นภาษาคนอ่านง่าย
 const SOURCE_TH = {
-  first: 'รางวัลที่ 1', front3: 'เลขหน้า 3 ตัว', top3: 'เลขท้าย 3 ตัวบน', top4: 'เลขท้าย 4 ตัวบน', top2: 'เลขท้าย 2 ตัวบน', last1: 'เลขตัวสุดท้าย รางวัล 1',
-  bottom2: 'เลขท้าย 2 ตัว', last4: 'เลขท้าย 4 ตัว', last3: 'เลขท้าย 3 ตัว',
-  last2: 'เลขท้าย 2 ตัว', num4: 'เลข 4 ตัว', main: 'เลขหลัก',
-  zodiac: 'ปีนักษัตรรางวัลใหญ่', seq: 'เลขรางวัล 6 ปีนักษัตร', hilo: 'เต๋าไฮโล',
+  first: 'รางวัลที่ 1', main: 'เลขรางวัลหลัก',
+  top4: 'สี่ตัวบน (ท้าย รางวัลหลัก)', top3: 'สามตัวบน (ท้าย รางวัลหลัก)', top2: 'สองตัวบน (ท้าย รางวัลหลัก)',
+  front3: 'สามตัวหน้า', last3: 'สามตัวท้าย', last4: 'สี่ตัวบน (ท้าย เลขหลัก)',
+  last2: 'สองตัวบน (ท้าย เลขหลัก)', last5: 'เลขท้าย 5 ตัว', last1: 'ตัวสุดท้าย เลขบน',
+  bottom2: 'สองตัวล่าง', bottom1: 'ตัวสุดท้าย เลขล่าง',
+  num4: 'เลข 4 ตัว', zodiac: 'ปีนักษัตรรางวัลใหญ่', seq: 'เลขรางวัล 6 ปีนักษัตร', hilo: 'เต๋าไฮโล',
 };
 const MODE_TH = {
   exact: 'ตรงกันเป๊ะ', sorted: 'โต๊ด (สลับหลักได้)', digit_contains: 'วิ่ง (มีเลขนั้น)',
@@ -51,10 +53,10 @@ const parseCfg = (s) => { try { return JSON.parse(s || '{}') || {}; } catch { re
 
 // แหล่งผล (source) ที่ใช้ได้จริงต่อประเภทหวย — ตรงกับ winning_numbers ที่ resultFetcher สร้าง
 const CFG_SOURCES = {
-  TH:  ['first', 'front3', 'top4', 'top3', 'top2', 'last1', 'bottom2'],
-  LA:  ['last4', 'last3', 'last2', 'bottom2', 'num4', 'top3'],
-  HN:  ['num4', 'top3', 'top2', 'bottom2'],
-  GS:  ['p1', 'p2', 'p3', 'p4', 'p5', 'last4', 'last3'],
+  TH:  ['first', 'front3', 'last3', 'bottom2', 'top4', 'top3', 'top2', 'last1', 'bottom1'],
+  LA:  ['last5', 'last4', 'last3', 'last2', 'last1', 'bottom2', 'bottom1', 'main'],
+  HN:  ['last5', 'last4', 'last3', 'last2', 'last1', 'bottom2', 'bottom1', 'main'],
+  GS:  ['p1', 'p2', 'p3', 'p4', 'p5', 'top4', 'top3', 'top2', 'bottom2', 'last1', 'bottom1', 'last4', 'last3'],
   HR:  ['zodiac', 'seq'],
 };
 const CFG_MODES = ['exact', 'tail', 'head', 'sorted', 'digit_contains', 'seq_tail', 'contains', 'set5'];

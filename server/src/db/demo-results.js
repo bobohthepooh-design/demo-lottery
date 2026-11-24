@@ -23,25 +23,20 @@ const DRAWS_SQL = `
 
 function winningFor(typeCode, categoryCode) {
   if (typeCode === 'TH') {
+    // first/front3/last3/bottom2 เป็นรางวัลจริง — top3/top4/top2/last1/bottom1 derive จาก first ฝั่ง server
     return {
       first: rnd(6),
       front3: [rnd(3), rnd(3)],
-      top3: [rnd(3), rnd(3)],
+      last3: [rnd(3), rnd(3)],
       bottom2: rnd(2),
     };
   }
   if (typeCode === 'LA') {
-    const main = rnd(6);
-    if (categoryCode === 'LAD') {
-      // กติกาหวยลาวพัฒนาใช้ num4/top3/bottom2 — ต้องตรงกับ resultSchema('LA','LAD')
-      const base = rnd(6);
-      return { main: base, num4: base.slice(0, 4), top3: base.slice(-3), last2: base.slice(-2), bottom2: base.slice(-5, -3) };
-    }
-    return { main, last4: main.slice(-4), last3: main.slice(-3), last2: main.slice(-2) };
+    // ทุกประเภทแทงเป็นตัวท้ายของเลขรางวัลหลัก — ส่งแค่ main, server derive last5..last1/bottom* ให้
+    return { main: rnd(6) };
   }
   if (typeCode === 'HN') {
-    const main = rnd(6);
-    return { main, num4: rnd(4), top3: rnd(3), top2: rnd(2), bottom2: rnd(2) };
+    return { main: rnd(6) };
   }
   if (typeCode === 'HR') {
     const pool = [...ZODIAC_SIGNS];
