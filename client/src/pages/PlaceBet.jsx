@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
@@ -78,6 +78,8 @@ export default function PlaceBet() {
   const { drawId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const showHidden = searchParams.get('showHidden') === '1';
   // แทงซ้ำจากหน้าประวัติโพย — {ref, items:[{ruleId, number, amount(satang), isTod}]}
   const repeat = location.state?.repeat || null;
   const { balance, setBalance, user } = useAuth();
@@ -366,7 +368,15 @@ export default function PlaceBet() {
         <div className="bg-gradient-to-br from-navy-800 to-navy-900 border border-navy-700/60 rounded-xl p-4 sm:p-5 shadow-lg shadow-black/20">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <Link to="/play" className="text-xs sm:text-sm text-gold-400 hover:text-gold-300 font-medium">← เลือกตลาด/รอบอื่น</Link>
+              <div className="flex items-center gap-2">
+                <Link to={showHidden ? '/play?showHidden=1' : '/play'} className="text-xs sm:text-sm text-gold-400 hover:text-gold-300 font-medium">← เลือกตลาด/รอบอื่น</Link>
+                {!showHidden && (
+                  <Link to={`/play?showHidden=1`} className="text-[10px] text-navy-400 hover:text-navy-300">(แสดงรอบที่ซ่อนอยู่)</Link>
+                )}
+                {showHidden && (
+                  <Link to="/play" className="text-[10px] text-navy-400 hover:text-navy-300">(ซ่อนรอบที่ยังไม่เปิด)</Link>
+                )}
+              </div>
               <div className="flex items-center gap-2 sm:gap-3 mt-2">
                 <FlagIcon code={draw.type_code} className="w-8 h-6 sm:w-10 sm:h-7 text-[10px] sm:text-[11px] rounded-md" />
                 <div className="min-w-0">
