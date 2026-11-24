@@ -283,7 +283,7 @@ export default function PlaceBet() {
     setErr('');
     if (!rule || isZodiac || isPattana) return;
     const d = rule.digits;
-    if (d < 2) return setErr('เลขตอง/เบิ้ลใช้ได้กับประเภท 2-3 หลัก');
+    if (d < 2) return setErr('เลขตอง/เบิ้ลใช้ได้กับประเภท 2-4 หลัก');
     if (kind === 'be' && d > 3) return setErr('เลขเบิ้ลใช้ได้กับประเภท 2-3 หลัก');
     const { stake, err: amtErr } = stakeFromAmount();
     if (amtErr) return setErr(amtErr);
@@ -538,16 +538,18 @@ export default function PlaceBet() {
                           </button>
                         </>
                       )}
-                      {rule.digits >= 2 && rule.digits <= 3 && (
+                      {rule.digits >= 2 && (
                         <>
                           <button type="button" onClick={() => addPattern('tod')}
                             className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
                             🔢 เลขตอง
                           </button>
-                          <button type="button" onClick={() => addPattern('be')}
-                            className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
-                            🔢 เลขเบิ้ล
-                          </button>
+                          {rule.digits <= 3 && (
+                            <button type="button" onClick={() => addPattern('be')}
+                              className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-navy-700/50 border border-navy-600 text-navy-200 hover:border-gold-500/60 hover:text-gold-300 transition-all">
+                              🔢 เลขเบิ้ล
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
