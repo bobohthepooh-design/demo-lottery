@@ -17,10 +17,27 @@ function laoHnSummary(w) {
   return parts;
 }
 
+// หวยออมสิน — แสดงเหมือนหวยไทย: อันดับ 1 + เฉพาะ field ที่มีให้แทง (ซ่อน อ.2-5, เลขท้าย 4)
+const isGsbn = (w) => !!(w.p1 && (w.p2 || w.p5 || w.last4)) && !w.first && !w.zodiac && !w.db5 && !w.main;
+function gsbnSummary(w) {
+  const parts = [];
+  const p1 = Array.isArray(w.p1) ? w.p1[0] : w.p1;
+  if (p1) parts.push(`รางวัลที่ 1: ${p1}`);
+  if (w.top4) parts.push(`บน 4: ${w.top4}`);
+  if (w.top3) parts.push(`บน 3: ${asList(w.top3)}`);
+  if (w.last3) parts.push(`ท้าย 3: ${asList(w.last3)}`);
+  if (w.top2) parts.push(`บน 2: ${asList(w.top2)}`);
+  if (w.bottom2) parts.push(`ล่าง 2: ${asList(w.bottom2)}`);
+  if (w.last1) parts.push(`ท้าย 1: ${w.last1}`);
+  if (w.bottom1) parts.push(`ล่าง 1: ${w.bottom1}`);
+  return parts;
+}
+
 // สรุปผลทุก field ที่มี — ครบทุกประเภทการแทงของแต่ละตลาด
 export function resultSummary(w) {
   if (!w) return null;
   if (isLaoHn(w)) return laoHnSummary(w);
+  if (isGsbn(w)) return gsbnSummary(w);
   const parts = [];
   const pushArr = (label, v) => { if (v) parts.push(`${label}: ${asList(v)}`); };
   pushArr('รางวัลที่ 1', w.first ?? w.p1);
@@ -58,6 +75,16 @@ export function compactSummary(w) {
   if (isLaoHn(w)) {
     const m = String(w.main ?? w.db5 ?? w.last5 ?? w.num4 ?? w.last4 ?? '').replace(/\D/g, '');
     return m ? [`เลขรางวัล ${m}`] : null;
+  }
+  if (isGsbn(w)) {
+    const p1 = Array.isArray(w.p1) ? w.p1[0] : w.p1;
+    const out = [];
+    if (p1) out.push(`รางวัล1: ${p1}`);
+    const t3 = w.top3 ?? w.last3;
+    if (t3) out.push(`บน3 ${asList(t3)}`);
+    const b2 = w.bottom2 ?? w.top2;
+    if (b2) out.push(`ล่าง2 ${asList(b2)}`);
+    return out.length ? out : null;
   }
   if (w.first || w.p1) parts.push(`รางวัล1: ${firstOf(w.first ?? w.p1)}`);
   if (w.p2) parts.push(`อ.2 ${firstOf(w.p2)}`);
