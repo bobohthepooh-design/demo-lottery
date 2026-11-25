@@ -113,6 +113,7 @@ export default function Hilo() {
   const [showAllHist, setShowAllHist] = useState(false); // ประวัติแสดงแค่ 10 ล่าสุด — กดเพื่อดูทั้งหมด
   const [price, setPrice] = useState(5000); // สตางค์ — sync จาก server (admin ตั้งได้)
   const [mult, setMult] = useState(null);   // อัตราจ่าย ต่ำ/สูง/11 จาก server settings
+  const [betClosed, setBetClosed] = useState(false); // admin ปิด blind mode/ซ่อนประเภท HL/ปิด rule — บล็อกเฉพาะการซื้อใหม่ (ทายตั๋วเดิมยังได้)
   const playIdem = useRef(null); // {pick, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry ซื้อซ้ำ
 
   const load = () => api('/hilo/mine').then(r => { setTickets(r.tickets); setLoaded(true); }).catch(() => setLoaded(true));
@@ -120,6 +121,8 @@ export default function Hilo() {
     const p = r.instantGame?.hiloPrice;
     if (p) setPrice(p);
     if (r.instantGame?.hiloMult) setMult(r.instantGame.hiloMult);
+    const hidden = Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : [];
+    setBetClosed(r.bettingMenuEnabled === false || hidden.includes('HL') || (r.games?.hilo === false));
   }).catch(() => {});
   useEffect(() => {
     load(); loadCfg();
@@ -146,7 +149,8 @@ export default function Hilo() {
   };
 
   // ปุ่มเดียวในโซนเลือกเดิมพัน — มีตั๋ว awaiting = ทายใบเดิม, ไม่มี = ซื้อเล่นใหม่เลย
-  const pickBet = (pick) => (active?.status === 'awaiting' ? play(pick) : playNew(pick));
+  // admin ปิดระบบ → บล็อกเฉพาะการซื้อใหม่ (playNew) — ทายตั๋วที่จ่ายเงินไปแล้วยังทำได้
+  const pickBet = (pick) => (active?.status === 'awaiting' ? play(pick) : (betClosed ? setErr('ไฮโลปิดให้บริการชั่วคราวโดยผู้ดูแล') : playNew(pick)));
 
   const play = async (pick) => {
     if (!active || active.status !== 'awaiting' || revealing) return;
@@ -212,7 +216,7 @@ export default function Hilo() {
   const statCls = active?.status === 'revealed' ? (active.side === active.pick ? 'text-emerald-300' : 'text-red-400') : 'text-amber-300';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 instant-page">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
@@ -341,9 +345,9 @@ export default function Hilo() {
           </div>
         )}
 
-        {/* ปุ่มเดิมพันอยู่บนแถบล่าง (instant-betbar) — ที่นี่แสดงแค่เต๋า+ผล */}
+        {/* ปุ่มเดิมพันอยู่ก่อนประวัติ — ที่นี่แสดงแค่เต๋า+ผล */}
         {!revealing && active?.status === 'awaiting' && (
-          <p className="text-center text-[11px] text-navy-400">👇 เลือกเดิมพันจากแถบด้านล่าง — เต๋าจะเปิดเผยทันทีหลังเลือก</p>
+          <p className="text-center text-[11px] text-navy-400">👇 เลือกเดิมพันด้านล่าง — เต๋าจะเปิดเผยทันทีหลังเลือก</p>
         )}
 
         {active?.status === 'revealed' && (
@@ -351,7 +355,7 @@ export default function Hilo() {
         )}
       </div>
 
-      {/* ปุ่มเดิมพัน — วางก่อนประวัติให้เห็นก่อนเสมอ (ชุดเดียวกับแถบล่าง) */}
+      {/* ปุ่มเดิมพัน — วางก่อนประวัติให้เห็นก่อนเสมอ */}
       <div className="luxury-card p-3">
         <div className="flex gap-2">
           {bets.map(b => {
@@ -427,21 +431,6 @@ export default function Hilo() {
         </div>
       )}
 
-      {/* แถบแทงด่วน — ติดล่างจอตลอด เล่นต่อได้ทันทีไม่ต้องเลื่อนกลับ */}
-      <div className="instant-betbar px-4">
-        <div className="max-w-3xl mx-auto flex gap-2">
-          {bets.map(b => {
-            const st = PICK_STYLE[b.pick] || PICK_STYLE.low;
-            return (
-              <button key={b.pick} onClick={() => pickBet(b.pick)} disabled={busy || revealing || balance < price}
-                className={`flex-1 rounded-xl border-2 ${st.cls} py-2.5 text-center transition disabled:opacity-50 active:scale-95`}>
-                <div className={`text-sm font-black ${st.nameCls}`}>{st.icon} {st.name}</div>
-                <div className="text-[10px] text-navy-300">×{b.mult} • สูงสุด {satang(b.maxPayout)} บ.</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

@@ -92,6 +92,8 @@ export default function PlaceBet() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  const [betMenuOff, setBetMenuOff] = useState(false);   // admin blind mode — ปิดรับเดิมพันทั้งหมด
+  const [hiddenTypes, setHiddenTypes] = useState([]);    // admin ซ่อนประเภท — ปิดรับประเภทนั้น
   // idempotency key: คงเดิมตลอดการพยายามส่งโพยเดียวกัน (กันโพยซ้ำตอน retry/เน็ตหลุด)
   const idemKey = useRef(null);
   const newIdemKey = () => { idemKey.current = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`); };
@@ -132,6 +134,14 @@ export default function PlaceBet() {
   });
 
   useEffect(() => { loadDraw(); }, [drawId]);
+
+  // admin blind mode / ซ่อนประเภท → ปิดฟอร์ม (server ก็ block อยู่แล้ว)
+  useEffect(() => {
+    api('/lottery/public-config').then(r => {
+      setBetMenuOff(r.bettingMenuEnabled === false);
+      setHiddenTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
+    }).catch(() => {});
+  }, []);
 
   // admin แก้กติกา/ราคา → SSE ดันมา refetch (ราคา/อัตราจ่ายตามล่าสุดทันที)
   useEffect(() => {
@@ -360,7 +370,8 @@ export default function PlaceBet() {
   const nowSqlPB = draw.server_now || new Date().toISOString().slice(0,19).replace('T',' ');
   const opensAt = draw ? bettingOpenAtSql(draw.close_at, draw.type_code) : null;
   const notYetOpen = !!(draw && draw.status === 'open' && draw.close_at > nowSqlPB && opensAt && nowSqlPB < opensAt);
-  const closed = draw.status !== 'open' || draw.close_at <= nowSqlPB || notYetOpen || Number(draw.type_active) === 0;
+  const closed = draw.status !== 'open' || draw.close_at <= nowSqlPB || notYetOpen || Number(draw.type_active) === 0
+    || betMenuOff || hiddenTypes.includes(draw.type_code);
   const ac = draw ? typeAccent(draw.type_code) : null;
   const kb = kindBadge(draw.result_kind);
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;

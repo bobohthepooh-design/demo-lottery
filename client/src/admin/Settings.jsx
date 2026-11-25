@@ -46,12 +46,12 @@ export default function AdminSettings() {
       title: next ? 'เปิดเมนูแทงหวย' : '⚠️ ปิดเมนูแทงหวยทั้งหมด (Blind Mode)',
       message: next
         ? 'เปิดเมนูหวยให้สมาชิกเห็นอีกครั้ง ใช่หรือไม่?'
-        : 'ปิดเมนูหวยทั้งหมดสำหรับสมาชิก — เมนูประเภทหวยและปุ่มหวยจะหายไปจากหน้าเว็บ (admin ยังเห็นปกติ) ใช่หรือไม่?',
+        : 'ปิดรับเดิมพันทั้งหมดสำหรับสมาชิก — ซ่อนเมนูทุกอัน + block การแทงจริงฝั่ง server (admin ยังเห็นปกติ) ใช่หรือไม่?',
     }))) return;
     try {
       await api('/admin/settings/betting_menu_enabled', { method: 'PUT', body: { value: next } });
       setBetMenuOn(next);
-      toast(next ? 'เปิดเมนูแทงหวยแล้ว' : 'ปิดเมนูแทงหวยทั้งหมดแล้ว — สมาชิกจะไม่เห็นเมนูหวย', 'success');
+      toast(next ? 'เปิดรับเดิมพันแล้ว' : 'ปิดรับเดิมพันทั้งหมดแล้ว — สมาชิกแทงไม่ได้ทุกประเภท', 'success');
     } catch (e) { toast(e.message, 'error'); }
   };
 
@@ -60,7 +60,7 @@ export default function AdminSettings() {
     try {
       await api('/admin/settings/bet_menu_hidden_types', { method: 'PUT', body: { value: next } });
       setHiddenTypes(next);
-      toast(show ? `แสดงเมนูหวย ${code} แล้ว` : `ซ่อนเมนูหวย ${code} แล้ว — สมาชิกจะไม่เห็นประเภทนี้`, 'success');
+      toast(show ? `เปิดรับหวย ${code} แล้ว` : `ปิดหวย ${code} แล้ว — ซ่อนเมนู + บล็อกการแทงประเภทนี้`, 'success');
     } catch (e) { toast(e.message, 'error'); }
   };
 
@@ -152,10 +152,10 @@ export default function AdminSettings() {
           <div className="font-bold" style={{ color: 'var(--white)' }}>🎰 แสดงเมนูแทงหวย (Blind Mode)</div>
           <div className="text-xs mt-0.5" style={{ color: 'var(--light-gray)' }}>
             {betMenuOn
-              ? '🟢 เปิดอยู่ — สมาชิกเห็นเมนูหวยตามปกติ'
-              : '🔴 ซ่อนอยู่ — ซ่อนเฉพาะเมนู/ปุ่ม (สมาชิกยังแทงผ่านลิงก์ตรงได้ • รอบหวยยังสร้างปกติ)'}
+              ? '🟢 เปิดอยู่ — สมาชิกเห็นเมนูหวยและแทงได้ตามปกติ'
+              : '🔴 ปิดอยู่ — ซ่อนเมนูทั้งหมด + บล็อกการแทงจริงทุกประเภท (หวย+เกมด่วน) โดย admin ยังดูได้ปกติ'}
           </div>
-          <div className="text-[11px] mt-1" style={{ color: 'var(--dark-gray)' }}>⚠️ อันนี้แค่ซ่อนเมนู — ถ้าต้องการปิดตลาดจริง (หยุดสร้างรอบ/หยุดรับแทง) ไปที่ <b>ประเภทหวย &amp; กติกา → ปิดประเภท</b></div>
+          <div className="text-[11px] mt-1" style={{ color: 'var(--dark-gray)' }}>⚠️ ตอนปิด ระบบจะ block ทุกโพยใหม่ (server-side) — ผล/ประวัติ/กระเป๋ายังใช้งานได้ปกติ</div>
         </div>
         <Button onClick={toggleBetMenu} style={{ background: betMenuOn ? 'var(--danger-red)' : 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: betMenuOn ? 'var(--white)' : 'var(--bg-deep-black)' }}>
           {betMenuOn ? 'ปิดทั้งหมด' : 'เปิดทั้งหมด'}
@@ -167,8 +167,8 @@ export default function AdminSettings() {
       {betMenuOn && lotteryTypes.length > 0 && (
         <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
         <CardBody>
-          <div className="text-sm font-bold mb-1" style={{ color: 'var(--white)' }}>🎯 ซ่อนเมนูเฉพาะประเภท (แสดงผลอย่างเดียว)</div>
-          <div className="text-xs mb-1" style={{ color: 'var(--muted-gray)' }}>ติ๊ก "แสดง" = สมาชิกเห็นเมนูประเภทนั้น • ติ๊กออก = ซ่อนการ์ดเมนูเฉยๆ — <b style={{ color: 'var(--warning-amber)' }}>ระบบยังสร้างรอบและรับแทงได้ปกติ</b> (ต่างจากปิดตลาดจริงที่หน้าประเภทหวย &amp; กติกา)</div>
+          <div className="text-sm font-bold mb-1" style={{ color: 'var(--white)' }}>🎯 เปิด/ปิดเฉพาะประเภท</div>
+          <div className="text-xs mb-1" style={{ color: 'var(--muted-gray)' }}>ติ๊ก "แสดง" = สมาชิกเห็นเมนูและแทงประเภทนั้นได้ • ติ๊กออก = <b style={{ color: 'var(--danger-red)' }}>ซ่อนเมนู + บล็อกการแทงประเภทนั้นจริง</b> (รวมเกมด่วน SC/HL/KI และรอบหวยปกติ)</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {lotteryTypes.map(t => {
               const shown = !hiddenTypes.includes(t.code);

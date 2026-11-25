@@ -52,6 +52,7 @@ export default function Scratch() {
   const [showAllCards, setShowAllCards] = useState(false); // ประวัติแสดงแค่ 10 ล่าสุด — กดเพื่อดูทั้งหมด
   const [price, setPrice] = useState(5000); // สตางค์ — sync จาก server (admin ตั้งได้)
   const [prizes, setPrizes] = useState(DEFAULT_PRIZES); // ตารางรางวัลจาก server
+  const [betClosed, setBetClosed] = useState(false); // admin ปิด blind mode/ซ่อนประเภท SC/ปิด rule — ปิดปุ่มซื้อใหม่
   const reelIcons = prizes.map(p => p.icon);
 
   const load = () => api('/scratch/mine').then(r => { setCards(r.cards); setLoaded(true); }).catch(() => setLoaded(true));
@@ -61,6 +62,8 @@ export default function Scratch() {
     if (Array.isArray(r.instantGame?.scratchPrizes) && r.instantGame.scratchPrizes.length) {
       setPrizes(r.instantGame.scratchPrizes);
     }
+    const hidden = Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : [];
+    setBetClosed(r.bettingMenuEnabled === false || hidden.includes('SC') || r.games?.scratch === false);
   }).catch(() => {});
   useEffect(() => {
     load(); loadCfg();
@@ -130,12 +133,12 @@ export default function Scratch() {
 
   const hidden = cards.filter(c => c.status === 'hidden');
   const revealed = cards.filter(c => c.status === 'revealed');
-  // ปุ่มหลักบนแถบล่าง — ตามสถานะบัตรที่เปิดอยู่
+  // ปุ่มหลัก — ตามสถานะบัตรที่เปิดอยู่
   const canSpin = active?.status === 'hidden' && !result && !spinning;
   const nextHidden = hidden.find(c => c.id !== active?.id) || hidden[0];
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 instant-page">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
@@ -161,7 +164,7 @@ export default function Scratch() {
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
             <div className="font-bold" style={{ color: 'var(--white)' }}>บัตรของคุณ</div>
-            <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>เครดิตคงเหลือ {satang(balance)} บาท • ปุ่มซื้อ/เล่นอยู่แถบด้านล่าง</div>
+            <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>เครดิตคงเหลือ {satang(balance)} บาท • ปุ่มซื้อ/เล่นอยู่ด้านล่าง</div>
           </div>
         </div>
         {err && <div className="text-sm mb-3" style={{ color: 'var(--danger-red)' }}>{err}</div>}
@@ -213,15 +216,17 @@ export default function Scratch() {
         {!active && loaded && !cards.length && !busy && (
           <div className="text-center py-8" style={{ color: 'var(--muted-gray)' }}>
             <div className="text-4xl mb-2">🎰</div>
-            ยังไม่มีเกม — กดปุ่ม "เล่นเกม" บนแถบด้านล่างเพื่อเริ่มสปินเลย!
+            ยังไม่มีเกม — กดปุ่ม "เล่นเกม" ด้านล่างเพื่อเริ่มสปินเลย!
           </div>
         )}
       </div>
 
-      {/* ปุ่มเดิมพัน — วางก่อนประวัติบัตรให้เห็นก่อนเสมอ (ชุดเดียวกับแถบล่าง) */}
+      {/* ปุ่มเดิมพัน — วางก่อนประวัติบัตรให้เห็นก่อนเสมอ */}
       <div className="luxury-card p-3">
-        {canSpin ? (
-          <button onClick={buy} disabled={busy || balance < price}
+        {betClosed && !nextHidden ? (
+          <div className="text-center text-xs font-bold py-2" style={{ color: 'var(--muted-gray)' }}>🎰 สล็อตปิดให้บริการชั่วคราวโดยผู้ดูแล</div>
+        ) : canSpin ? (
+          <button onClick={buy} disabled={busy || balance < price || betClosed}
             className="w-full luxury-btn font-black py-3 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
             {busy ? 'กำลังซื้อ...' : `＋ ซื้อบัตรเพิ่ม ${satang(price)} บาท`}
           </button>
@@ -231,9 +236,9 @@ export default function Scratch() {
             ▶ เล่นบัตรที่รอสปิน ({hidden.length} ใบ)
           </button>
         ) : (
-          <button onClick={buy} disabled={busy || balance < price}
+          <button onClick={buy} disabled={busy || balance < price || betClosed}
             className="w-full luxury-btn font-black py-3 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
-            {busy ? 'กำลังเล่น...' : `🎰 เล่นเกม ${satang(price)} บาท`}
+            {busy ? 'กำลังเล่น...' : betClosed ? 'ปิดให้บริการชั่วคราว' : `🎰 เล่นเกม ${satang(price)} บาท`}
           </button>
         )}
       </div>
@@ -287,28 +292,6 @@ export default function Scratch() {
         </div>
       )}
 
-      {/* แถบปุ่มเดียว — action เดียวต่อสถานะ: ซื้อบัตรเพิ่ม / เล่นบัตรรอ / ซื้อใหม่ (ไม่ซ้ำกับ SPIN ในตู้) */}
-      <div className="instant-betbar px-4">
-        <div className="max-w-3xl mx-auto">
-          {canSpin ? (
-            <button onClick={buy} disabled={busy || balance < price}
-              className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
-              {busy ? 'กำลังซื้อ...' : `＋ ซื้อบัตรเพิ่ม ${satang(price)} บาท`}
-            </button>
-          ) : nextHidden ? (
-            <button onClick={() => openCard(nextHidden)}
-              className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide active:scale-[0.98]">
-              ▶ เล่นบัตรที่รอสปิน ({hidden.length} ใบ)
-            </button>
-          ) : (
-            <button onClick={buy} disabled={busy || balance < price}
-              className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
-              {busy ? 'กำลังเล่น...' : `🎰 เล่นเกม ${satang(price)} บาท`}
-            </button>
-          )}
-          <div className="text-center text-[10px] mt-1.5" style={{ color: 'var(--muted-gray)' }}>เครดิต {satang(balance)} บาท • 20 เพย์ไลน์ • ผลคำนวณฝั่ง server</div>
-        </div>
-      </div>
     </div>
   );
 }

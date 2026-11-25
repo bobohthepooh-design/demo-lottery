@@ -5,15 +5,17 @@ import { useAuth } from '../auth.jsx';
 
 // หน้า games — ศูนย์รวมเกมด่วน (สล็อต/ไฮโล/ยี่กี) + ทางลัดหวยราศี
 export default function GamesHub() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [cfg, setCfg] = useState(null);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
+  const [betMenuOn, setBetMenuOn] = useState(true);
   const [zodiacDraw, setZodiacDraw] = useState(null);
 
   useEffect(() => {
     api('/lottery/public-config').then(r => {
       setCfg(r);
       setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
+      setBetMenuOn(r.bettingMenuEnabled !== false);
     }).catch(() => {});
     api('/lottery/draws?upcoming=1').then(r => {
       const d = (r.draws || []).find(x => x.type_code === 'HR' && x.status !== 'settled' && x.status !== 'cancelled');
@@ -26,21 +28,23 @@ export default function GamesHub() {
   const prizeMax = sp.length ? Math.max(...sp.map(p => p.prize)) : null;
   const hm = cfg?.instantGame?.hiloMult;
 
-  // สถานะเปิด/ปิดจาก admin (type/rule is_active) — เกมที่ปิดไม่แสดงการ์ด
+  // สถานะเปิด/ปิดจาก admin (type/rule is_active + blind mode + hidden types) — เกมที่ปิดไม่แสดงการ์ด
   const en = cfg?.games || {};
-  const kiwiOn = en.kiwi !== false || en.kiwi_vip !== false || en.kiwi_dice !== false;
-  const zodiacOn = en.zodiac !== false && !hiddenBetTypes.includes('HR');
+  const showBet = betMenuOn || isAdmin; // blind mode — admin ยังเห็นการ์ด (server block การเล่นจริงให้ทุกคน)
+  const typeShown = code => showBet && !hiddenBetTypes.includes(code);
+  const kiwiOn = typeShown('KI') && (en.kiwi !== false || en.kiwi_vip !== false || en.kiwi_dice !== false);
+  const zodiacOn = typeShown('HR') && en.zodiac !== false;
 
   const games = [
     {
-      key: 'scratch', on: en.scratch !== false,
+      key: 'scratch', on: typeShown('SC') && en.scratch !== false,
       to: '/scratch', icon: '🎰', name: 'สล็อต 5 รีล', tag: '20 เพย์ไลน์',
       desc: `สปิน 5 รีล 3 แถว 20 เพย์ไลน์ — รางวัลสูงสุด ${prizeMax != null ? baht(prizeMax) : '120,000 บาท'}`,
       price: cfg?.instantGame?.scratchPrice ? `แทง ${baht(cfg.instantGame.scratchPrice)}/สปิน` : '',
       auth: true,
     },
     {
-      key: 'hilo', on: en.hilo !== false,
+      key: 'hilo', on: typeShown('HL') && en.hilo !== false,
       to: '/hilo', icon: '🎲', name: 'ไฮโล', tag: 'ทายเต๋า 3 ลูก',
       desc: `ทาย สูง/ต่ำ/11 — ${hm ? `ต่ำ ×${hm.low} • สูง ×${hm.high} • 11 ×${hm.eleven}` : 'อัตราจ่ายตามกติกา'}`,
       price: cfg?.instantGame?.hiloPrice ? `แทง ${baht(cfg.instantGame.hiloPrice)}/ครั้ง` : '',

@@ -20,7 +20,7 @@ import { t } from '../i18n.js';
 const navGroups = [
   { label: 'navBet', items: [
     { to: '/play', k: 'betMenu', icon: 'lotteries', betGate: true },
-    { to: '/games', k: 'gamesHub', icon: 'chart' },
+    { to: '/games', k: 'gamesHub', icon: 'chart', betGate: true },
   ] },
   { label: 'navInfo', items: [
     { to: '/results', k: 'results', icon: 'trophy' },
@@ -427,13 +427,13 @@ export default function Layout() {
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
               { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
-              { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: true },
+              { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: showBetMenu },
               { to: '/profile', k: 'profile', icon: 'user', show: true },
             ] : [
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/results', k: 'results', icon: 'trophy', show: true },
               { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
-              { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: true },
+              { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: showBetMenu },
               { to: '/login', k: 'login', icon: 'roles', show: true },
             ]).filter(i => i.show).map(i => i.center ? (
               <NavLink key={i.to} to={i.to} end={i.end}

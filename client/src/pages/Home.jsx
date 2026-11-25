@@ -22,6 +22,7 @@ const QUICK_ACCENT = {
 export default function Home() {
   const { user, demoNotice, isAdmin, balance } = useAuth();
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
+  const [betMenuOn, setBetMenuOn] = useState(true); // admin blind mode — ปิดแล้วซ่อนปุ่มแทงทุกอัน
   const [cashbackPct, setCashbackPct] = useState(0); // โปรคืนยอดเสีย %/วัน — 0 = ปิด
   const [todayDraws, setTodayDraws] = useState([]); // ผล+รอบวันนี้สำหรับ ticker
   const [latestResults, setLatestResults] = useState([]); // ผลล่าสุดข้ามตลาด (ไม่จำกัดวัน)
@@ -30,6 +31,7 @@ export default function Home() {
   useEffect(() => {
     api('/lottery/public-config').then(r => {
       setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
+      setBetMenuOn(r.bettingMenuEnabled !== false);
       setCashbackPct(Number(r.cashbackPercent) || 0);
     }).catch(() => {});
     const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
@@ -47,17 +49,19 @@ export default function Home() {
   const drawVisible = d => isAdmin || !hiddenSet.has(d.type_code);
 
   // ปุ่มลัดหลัก — เรียบ template เดียวกันทุกปุ่ม (พื้น navy กลาง ไม่แสบตา)
-  const quickActions = user ? [
-    { to: '/play', icon: '🎯', label: 'แทงหวย', sub: 'เลือกรอบ' },
-    { to: '/games', icon: '🎮', label: 'เล่นเกม', sub: 'ด่วน' },
+  // blind mode (betMenuOn=false) → ซ่อนทางเข้าการเดิมพันทั้งหมด ยกเว้น admin ที่เห็นปกติ
+  const showBet = betMenuOn || isAdmin;
+  const quickActions = (user ? [
+    { to: '/play', icon: '🎯', label: 'แทงหวย', sub: 'เลือกรอบ', bet: true },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', sub: 'ด่วน', bet: true },
     { to: '/results', icon: '🏆', label: 'ผลรางวัล', sub: 'ล่าสุด' },
     { to: '/wallet', icon: '💳', label: 'กระเป๋า', sub: satang(balance) },
   ] : [
-    { to: '/play', icon: '🎯', label: 'แทงหวย', sub: 'เลือกรอบ' },
-    { to: '/games', icon: '🎮', label: 'เล่นเกม', sub: 'ด่วน' },
+    { to: '/play', icon: '🎯', label: 'แทงหวย', sub: 'เลือกรอบ', bet: true },
+    { to: '/games', icon: '🎮', label: 'เล่นเกม', sub: 'ด่วน', bet: true },
     { to: '/results', icon: '🏆', label: 'ผลรางวัล', sub: 'ล่าสุด' },
     { to: '/register', icon: '👤', label: 'สมัครสมาชิก', sub: 'เริ่มต้น' },
-  ];
+  ]).filter(a => showBet || !a.bet);
 
   // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด (เฉพาะหวย ไม่รวมหวยราศี HR/เกมด่วน)
   const resultCards = (() => {

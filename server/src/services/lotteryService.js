@@ -2,7 +2,7 @@ import { txAsync, makeReference } from '../db/index.js';
 import { HttpError, audit } from '../lib/audit.js';
 import { debitForBetTx, creditTx, getBalance } from './walletService.js';
 import { notify } from './notifyService.js';
-import { getSetting } from './settingsService.js';
+import { getSetting, assertBettingAllowed } from './settingsService.js';
 import { normalizeZodiac, ZODIAC_SIGNS } from '../lib/zodiac.js';
 import { q, qGet, qRun, qInsert } from '../db/pg.js';
 
@@ -349,6 +349,7 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
         throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพยแล้ว', 'DRAW_CLOSED');
       if (Number(cur.type_active) !== 1 || Number(cur.cat_active) !== 1)
         throw new HttpError(400, 'ตลาดนี้ปิดให้บริการแล้ว', 'MARKET_CLOSED');
+      await assertBettingAllowed(cur.type_code);
 
       const cap = Number(await getSetting('exposure_cap_stake', 500000)) || 0;
       if (cap > 0) {

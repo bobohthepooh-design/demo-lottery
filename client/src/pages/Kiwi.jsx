@@ -370,20 +370,25 @@ export default function Kiwi() {
   const [spinDone, setSpinDone] = useState(true); // น้ำเต้าปูปลา: รอเต๋าหมดก่อนบอกผล
   const [spinningId, setSpinningId] = useState(null); // ticket id ที่กำลังหมุน — ซ่อนผลในประวัติ
   const [showAllHist, setShowAllHist] = useState(false); // ประวัติแสดงแค่ 10 ล่าสุด — กดเพื่อดูทั้งหมด
+  const [betClosed, setBetClosed] = useState(false); // admin ปิด blind mode/ซ่อนประเภท KI — บล็อกปุ่มเล่นใหม่
   const playIdem = useRef(null); // {sig, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry เล่นซ้ำ
 
   const g = games.find(x => x.game === game) || games[0] || null;
   const load = () => api('/kiwi/mine').then(r => { setTickets(r.tickets); setLoaded(true); }).catch(() => setLoaded(true));
   // เฉพาะเกมที่ admin เปิดไว้ (enabled=false = rule/type ถูกปิด)
   const loadInfo = () => api('/kiwi/info').then(r => setGames((r.games || []).filter(x => x.enabled !== false))).catch(() => {});
+  const loadCfg = () => api('/lottery/public-config').then(r => {
+    const hidden = Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : [];
+    setBetClosed(r.bettingMenuEnabled === false || hidden.includes('KI'));
+  }).catch(() => {});
   useEffect(() => {
-    load();
+    load(); loadCfg();
     api('/kiwi/info').then(r => {
       const en = (r.games || []).filter(x => x.enabled !== false);
       setGames(en); if (en[0]) setGame(en[0].game);
     }).catch(() => {});
     // admin แก้ราคาเกม → SSE ดันมา refetch ราคาใหม่ทันที (คงเกมที่เลือกไว้)
-    const h = () => { load(); loadInfo(); };
+    const h = () => { load(); loadInfo(); loadCfg(); };
     window.addEventListener('sys:update', h);
     return () => window.removeEventListener('sys:update', h);
   }, []);
@@ -400,6 +405,7 @@ export default function Kiwi() {
 
   const play = async () => {
     if (!ready || busy) return;
+    if (betClosed) { setErr('ยี่กีปิดให้บริการชั่วคราวโดยผู้ดูแล'); return; }
     setErr(''); setBusy(true);
     const sig = JSON.stringify([game, picks, betType]);
     if (!playIdem.current || playIdem.current.sig !== sig)
@@ -423,7 +429,7 @@ export default function Kiwi() {
       : Object.entries(g.tiers).map(([h, m]) => `ถูก ${h} = ×${m}`).join(' • ')) : '';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 instant-page">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
@@ -507,7 +513,7 @@ export default function Kiwi() {
             เครดิตไม่พอ — <a href="/wallet?action=deposit" className="underline font-semibold">เติมเครดิต</a>
           </div>
         )}
-        {/* ปุ่มเล่นอยู่บนแถบล่าง (instant-betbar) — ที่นี่แสดงแค่ตัวเลือกเลข/สัตว์ */}
+        {/* ปุ่มเล่นอยู่ก่อนประวัติ — ที่นี่แสดงแค่ตัวเลือกเลข/สัตว์ */}
       </div>
 
       {/* ผลล่าสุด — น้ำเต้าปูปลาใช้ตู้เต๋า casino, เกมเลข/สัตว์เดี่ยวใช้เฟรมรางวัล */}
@@ -525,11 +531,12 @@ export default function Kiwi() {
           }} />
       )}
 
-      {/* ปุ่มเล่น — วางก่อนประวัติให้เห็นก่อนเสมอ (ชุดเดียวกับแถบล่าง) */}
+      {/* ปุ่มเล่น — วางก่อนประวัติให้เห็นก่อนเสมอ */}
       <div className="luxury-card p-3">
-        <button onClick={play} disabled={!ready || busy || balance < (g?.price || Infinity)}
+        <button onClick={play} disabled={!ready || busy || balance < (g?.price || Infinity) || betClosed}
           className="w-full luxury-btn font-black py-3 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
-          {busy ? '🎲 กำลังสุ่มผล...' : ready
+          {busy ? '🎲 กำลังสุ่มผล...' : betClosed ? 'ปิดให้บริการชั่วคราว'
+            : ready
             ? `🎲 เล่นเลย — ${satang(g.price)} บาท${picks.length ? ` (${picks.length} เลือก)` : ''}`
             : g?.dice ? `เลือกรูปแบบ + ค่าที่ถูกต้องก่อน (${picks.length}/${betType === 'pair' ? 2 : 1})`
             : g?.symbols ? `เลือกสัตว์ 1 ตัวก่อน (${picks.length}/1)`
@@ -578,19 +585,6 @@ export default function Kiwi() {
         </div>
       )}
 
-      {/* แถบเล่นด่วน — ติดล่างจอตลอด ไม่ต้องเลื่อนกลับไปหาปุ่มเล่น */}
-      <div className="instant-betbar px-4">
-        <div className="max-w-3xl mx-auto">
-          <button onClick={play} disabled={!ready || busy || balance < (g?.price || Infinity)}
-            className="w-full luxury-btn font-black py-3.5 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
-            {busy ? '🎲 กำลังสุ่มผล...' : ready
-              ? `🎲 เล่นเลย — ${satang(g.price)} บาท${picks.length ? ` (${picks.length} เลือก)` : ''}`
-              : g?.dice ? `เลือกรูปแบบ + ค่าที่ถูกต้องก่อน (${picks.length}/${betType === 'pair' ? 2 : 1})`
-              : g?.symbols ? `เลือกสัตว์ 1 ตัวก่อน (${picks.length}/1)`
-              : `เลือกเลขให้ครบ ${g?.pickCount ?? ''} ตัวก่อน (${picks.length}/${g?.pickCount ?? '—'})`}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

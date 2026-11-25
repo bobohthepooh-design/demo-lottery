@@ -2,7 +2,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { txAsync, makeReference } from '../db/index.js';
 import { HttpError, audit } from '../lib/audit.js';
 import { debitForBetTx, creditTx, getBalance } from './walletService.js';
-import { getSetting, setSetting } from './settingsService.js';
+import { getSetting, setSetting, assertBettingAllowed } from './settingsService.js';
 import { notify } from './notifyService.js';
 import { q, qGet, qRun } from '../db/pg.js';
 
@@ -176,6 +176,7 @@ export async function buyTicket(userId, idemKey = null) {
   const rule = await hiloRule();
   if (!draw) throw new HttpError(500, 'ระบบไฮโลยังไม่พร้อมใช้งาน');
   if (!rule) throw new HttpError(403, 'เกมนี้ปิดให้บริการชั่วคราว', 'GAME_CLOSED');
+  await assertBettingAllowed('HL');
 
   const serverSeed = randomBytes(32).toString('hex');
   const commitHash = commitOf(serverSeed);
