@@ -9,6 +9,16 @@ import { Marquee } from '../components/ui/index.js';
 const GROUP_ORDER = ['TH', 'LA', 'HN', 'GS', 'HR'];
 const GROUP_LABEL = { TH: 'ไทย', LA: 'ลาว', HN: 'ฮานอย', GS: 'ออมสิน', HR: 'ราศี' };
 
+// สี accent ของปุ่มลัด 4 ปุ่มหลัก — ทำให้แต่ละอันมีตัวตนชัดเจน
+const QUICK_ACCENT = {
+  '/play':     { bg1: 'rgba(212,175,55,0.16)', border: 'rgba(212,175,55,0.55)', glow: 'rgba(212,175,55,0.22)', line: 'linear-gradient(90deg, transparent, #D4AF37, transparent)', iconBg: 'linear-gradient(135deg, rgba(212,175,55,0.35), rgba(212,175,55,0.10))', sub: '#F5D76E' },
+  '/games':    { bg1: 'rgba(168,85,247,0.14)', border: 'rgba(168,85,247,0.5)',  glow: 'rgba(168,85,247,0.2)',  line: 'linear-gradient(90deg, transparent, #a855f7, transparent)', iconBg: 'linear-gradient(135deg, rgba(168,85,247,0.35), rgba(168,85,247,0.10))', sub: '#d8b4fe' },
+  '/results':  { bg1: 'rgba(245,158,11,0.13)', border: 'rgba(245,158,11,0.5)',  glow: 'rgba(245,158,11,0.2)',  line: 'linear-gradient(90deg, transparent, #f59e0b, transparent)', iconBg: 'linear-gradient(135deg, rgba(245,158,11,0.32), rgba(245,158,11,0.08))', sub: '#fcd34d' },
+  '/wallet':   { bg1: 'rgba(52,211,153,0.13)', border: 'rgba(52,211,153,0.5)',  glow: 'rgba(52,211,153,0.2)',  line: 'linear-gradient(90deg, transparent, #34d399, transparent)', iconBg: 'linear-gradient(135deg, rgba(52,211,153,0.32), rgba(52,211,153,0.08))', sub: '#6ee7b7' },
+  '/register': { bg1: 'rgba(59,130,246,0.13)', border: 'rgba(59,130,246,0.5)',  glow: 'rgba(59,130,246,0.2)',  line: 'linear-gradient(90deg, transparent, #3b82f6, transparent)', iconBg: 'linear-gradient(135deg, rgba(59,130,246,0.32), rgba(59,130,246,0.08))', sub: '#93c5fd' },
+  default:     { bg1: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.45)', glow: 'rgba(212,175,55,0.18)', line: 'linear-gradient(90deg, transparent, #D4AF37, transparent)', iconBg: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.08))', sub: '#F5D76E' },
+};
+
 export default function Home() {
   const { user, demoNotice, isAdmin, balance } = useAuth();
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
@@ -129,34 +139,31 @@ export default function Home() {
       )}
 
 
-      {/* ปุ่มลัดหลัก — luxury icon tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
-        {quickActions.map(a => (
+      {/* ปุ่มลัดหลัก — luxury icon tiles เด่นขึ้น */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {quickActions.map(a => {
+          const ac = QUICK_ACCENT[a.to] || QUICK_ACCENT.default;
+          return (
           <Link key={a.label} to={a.to}
-            className="group relative rounded-2xl py-3 sm:py-4 px-1.5 sm:px-2 flex flex-col items-center gap-1.5 sm:gap-2 transition-all duration-200 active:scale-95"
+            className="group relative rounded-2xl py-4 sm:py-5 px-2 flex flex-col items-center gap-2 sm:gap-2.5 transition-all duration-200 hover:-translate-y-1 active:scale-95 overflow-hidden"
             style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'var(--border-gold)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-gold)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border-light)';
-              e.currentTarget.style.boxShadow = 'none';
+              background: `linear-gradient(160deg, ${ac.bg1}, var(--bg-card) 70%)`,
+              border: `1px solid ${ac.border}`,
+              boxShadow: `0 6px 18px ${ac.glow}`
             }}>
-            <span className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg sm:text-xl shrink-0 transition group-hover:scale-110" style={{
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(212, 175, 55, 0.06))',
-              border: '1px solid var(--border-gold)',
-              boxShadow: 'var(--shadow-sm)'
+            <span className="absolute top-0 inset-x-6 h-0.5 rounded-full" style={{ background: ac.line }} />
+            <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shrink-0 transition group-hover:scale-110" style={{
+              background: ac.iconBg,
+              border: `1px solid ${ac.border}`,
+              boxShadow: `0 4px 14px ${ac.glow}`
             }}>{a.icon}</span>
             <div className="text-center">
-              <div className="text-xs sm:text-sm font-bold tracking-wide" style={{ color: 'var(--white)' }}>{a.label}</div>
-              <div className="text-[9px] sm:text-[10px] opacity-80 font-mono truncate max-w-full px-0.5 sm:px-1 mt-0.5" style={{ color: 'var(--muted-gray)' }}>{a.sub}</div>
+              <div className="text-sm sm:text-base font-black tracking-wide" style={{ color: 'var(--white)' }}>{a.label}</div>
+              <div className="text-[10px] sm:text-[11px] font-bold font-mono mt-0.5" style={{ color: ac.sub }}>{a.sub}</div>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
 
       {/* โปร cashback */}
