@@ -126,7 +126,10 @@ export default function AdminLayout() {
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6" style={{ backgroundColor: 'var(--bg-deep-black)' }}>
       <aside className="lg:w-60 shrink-0">
-        <div className="rounded-xl sticky top-[3.625rem] sm:top-[4.125rem] lg:top-24 z-30 overflow-hidden" style={{
+        {/* lg: fixed — ล็อก sidebar ไว้กับจอ ไม่เลื่อนตาม content (left = ขอบ container max-w-7xl + padding) */}
+        <div className="rounded-xl sticky top-[3.625rem] sm:top-[4.125rem] z-30 overflow-hidden
+          lg:fixed lg:left-[max(1rem,calc(50vw_-_39rem))] lg:top-24 lg:bottom-6 lg:h-auto lg:w-60 lg:flex lg:flex-col"
+          style={{
           background: 'linear-gradient(180deg, var(--bg-card), var(--bg-dark-surface))',
           border: '1px solid var(--border-gold)',
           boxShadow: 'var(--shadow-pop)'
@@ -149,7 +152,7 @@ export default function AdminLayout() {
               color: 'var(--gold-bright)'
             }}>STAFF</span>
           </div>
-          <nav className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:max-h-[calc(100vh-15rem)] p-2">
+          <nav className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:flex-1 lg:min-h-0 p-2">
             {visibleGroups.map(g => (
               <div key={g.label} className="contents">
                 <div className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1" style={{ color: 'var(--muted-gray)' }}>
