@@ -12,6 +12,7 @@ import { kindBadge } from '../resultSource.js';
 import { annSummary, annEntries } from '../ann.js';
 import { bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 import { Button } from '../components/ui/index.js';
+import { X } from 'lucide-react';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน', 'top4': '4 ตัวบน',
@@ -365,14 +366,33 @@ export default function PlaceBet() {
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
-      {/* left: entry form */}
-      <div style={{}} className="lg:col-span-3 space-y-3 sm:space-y-4">
-        {/* Header — Draw Info + Countdown */}
-        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-gold-lg)' }} className="p-4 sm:p-6">
+    <div className="bet-page flex flex-col gap-2 lg:grid lg:grid-cols-5 lg:gap-6">
+      {/* left: entry form — display:contents บนมือถือให้ header/controls เป็น flex items ตรงๆ */}
+      <div className="bet-form lg:col-span-3 space-y-3 sm:space-y-4">
+        {/* Mobile top bar — ชื่อรอบ + สถานะ + เครดิต + countdown แถบเดียวกระชับ */}
+        <div className="bet-mobar lg:hidden" style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))',
+          border: '1px solid var(--border-gold)', borderRadius: '0.75rem',
+          padding: '0.5rem 0.75rem', boxShadow: 'var(--shadow-md)', flexShrink: 0
+        }}>
+          <FlagIcon code={draw.type_code} className="w-8 h-6 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="font-bold truncate" style={{ fontSize: '0.9rem', color: ac?.text || 'var(--white)' }}>{drawLabel(draw)}</div>
+            <div className="flex items-center gap-2.5 truncate" style={{ fontSize: '0.7rem', color: 'var(--muted-gray)' }}>
+              <span style={{ color: closed ? 'var(--muted-gray)' : 'var(--success-green)', fontWeight: 700, whiteSpace: 'nowrap' }}>{closed ? '🔒 ปิดรับ' : '● รับแทงอยู่'}</span>
+              <span className="truncate">💰 {satang(balance)} บาท</span>
+            </div>
+          </div>
+          <div className="shrink-0 text-right" style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem', color: 'var(--gold-bright)', whiteSpace: 'nowrap' }}>
+            {notYetOpen ? `⏳ เปิด ${thaiHM(opensAt)} น.` : <Countdown closeAt={draw.close_at} compact />}
+          </div>
+        </div>
+        {/* Header — Draw Info + Countdown (desktop; มือถือใช้ bet-mobar แทน) */}
+        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-gold-lg)' }} className="bet-top hidden lg:block p-4 sm:p-6">
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div className="bet-backrow" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <Link to={showHidden ? '/play?showHidden=1' : '/play'} style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600, transition: 'all 0.2s' }} className="hover:text-[var(--gold-bright)]">← เลือกตลาด/รอบอื่น</Link>
                 <button
                   onClick={() => navigate(showHidden ? '/play' : '/play?showHidden=1')}
@@ -408,8 +428,9 @@ export default function PlaceBet() {
                 </div>
               ) : null; })()}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem 0.75rem', flexShrink: 0 }} className="sm:gap-3">
-              {kb && <span style={{ fontSize: '0.625rem', padding: '0.375rem 0.875rem', borderRadius: '9999px', fontWeight: 700, boxShadow: 'var(--shadow-sm)' }} className={`sm:text-xs sm:px-3 sm:py-1.5 ${kb.cls}`}>{kb.label}</span>}
+            <div className="bet-badges sm:gap-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem 0.75rem', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.75rem', borderRadius: '9999px', background: 'rgba(212, 175, 55, 0.12)', border: '1px solid var(--border-gold)', color: 'var(--gold-primary)', whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)' }} className="sm:text-sm sm:px-3 sm:py-1.5">💰 {satang(balance)} บาท</span>
+              {kb && <span style={{ fontSize: '0.625rem', padding: '0.375rem 0.875rem', borderRadius: '9999px', fontWeight: 700, boxShadow: 'var(--shadow-sm)' }} className={`bet-kindbadge sm:text-xs sm:px-3 sm:py-1.5 ${kb.cls}`}>{kb.label}</span>}
               <span style={{
                 fontSize: '0.75rem',
                 fontWeight: 700,
@@ -426,9 +447,9 @@ export default function PlaceBet() {
           </div>
           {/* countdown — แถวเต็มความกว้างแยกจากหัวข้อ กันข้อความยาวดันชื่อรอบจนมองไม่เห็นบนมือถือ */}
           {!closed && (
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div className="bet-countrow" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600 }} className="sm:text-base">เหลือเวลา</span>
-              <span style={{ color: 'var(--gold-bright)', fontFamily: 'monospace', fontWeight: 800, fontSize: '1.125rem', textShadow: '0 0 20px rgba(212, 175, 55, 0.3)' }} className="sm:text-xl">
+              <span style={{ color: 'var(--gold-bright)', fontFamily: 'monospace', fontWeight: 800, fontSize: 'var(--bet-count-fs, 1.125rem)', textShadow: '0 0 20px rgba(212, 175, 55, 0.3)' }} className="sm:text-xl">
                 <Countdown closeAt={draw.close_at} />
               </span>
             </div>
@@ -436,15 +457,15 @@ export default function PlaceBet() {
         </div>
 
         {!closed && (
-          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-gold-lg)' }} className="p-4 sm:p-7 gap-5 sm:gap-7">
-            {/* Bet Type Selector — Grid layout, all visible */}
+          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-gold-lg)' }} className="bet-controls p-4 sm:p-7 gap-5 sm:gap-7">
+            {/* Bet Type Selector — scroll row บนมือถือ/แท็บเล็ต, grid บน desktop */}
             <div>
-              <h2 style={{ fontWeight: 800, color: 'var(--white)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+              <h2 style={{ fontWeight: 800, color: 'var(--white)', fontSize: 'var(--bet-h2-fs, 1.25rem)', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
                 <span style={{ width: '0.375rem', height: '1.75rem', background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', borderRadius: '9999px', boxShadow: 'var(--shadow-gold)' }} />
                 เลือกประเภทการแทง
               </h2>
               {rule && <div style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', marginBottom: '1rem', marginLeft: '1.125rem', padding: '0.625rem 1rem', background: 'rgba(212, 175, 55, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-4 lg:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
                   const isSel = selRule === String(r.id);
@@ -452,7 +473,7 @@ export default function PlaceBet() {
                     <button key={r.id} onClick={() => setSelRule(String(r.id))}
                       onMouseEnter={() => setHoveredRule(r.id)}
                       onMouseLeave={() => setHoveredRule(null)}
-                      className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-200"
+                      className="shrink-0 min-w-[6.5rem] lg:min-w-0 lg:shrink p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-200"
                       style={{
                         border: '2px solid',
                         background: isSel ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))' : 'var(--bg-dark-surface)',
@@ -634,8 +655,8 @@ export default function PlaceBet() {
                         background: 'var(--bg-dark-surface)',
                         border: '2px solid var(--border-light)',
                         borderRadius: '1rem',
-                        padding: '1rem 1.25rem',
-                        fontSize: '1.75rem',
+                        padding: 'var(--bet-input-pad, 1rem 1.25rem)',
+                        fontSize: 'var(--bet-num-fs, 1.75rem)',
                         letterSpacing: '0.35em',
                         textAlign: 'center',
                         color: 'var(--gold-primary)',
@@ -679,8 +700,8 @@ export default function PlaceBet() {
                         background: 'var(--bg-dark-surface)',
                         border: '2px solid var(--border-light)',
                         borderRadius: '1rem',
-                        padding: '1rem 1.25rem',
-                        fontSize: '1.75rem',
+                        padding: 'var(--bet-input-pad, 1rem 1.25rem)',
+                        fontSize: 'var(--bet-num-fs, 1.75rem)',
                         textAlign: 'center',
                         color: 'var(--gold-primary)',
                         fontFamily: 'monospace',
@@ -724,9 +745,9 @@ export default function PlaceBet() {
         )}
       </div>
 
-      {/* right: bet slip */}
-      <div className="lg:col-span-2">
-        <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-4 sm:p-5 sticky top-24 shadow-xl shadow-gold-500/5">
+      {/* right: bet slip — บนมือถือเป็น internal scroll zone */}
+      <div className="bet-slip lg:col-span-2">
+        <div className="bet-slip-panel bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-4 sm:p-5 sticky top-24 shadow-xl shadow-gold-500/5">
           <div className="flex items-center justify-between mb-3">
             <h2 className={`font-bold text-sm sm:text-base ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
             {slip.length > 0 && (
@@ -741,7 +762,7 @@ export default function PlaceBet() {
                 className="text-sky-400 hover:underline shrink-0 ml-2">ล้าง</button>
             </div>
           )}
-          <div className="space-y-2 max-h-80 overflow-y-auto">
+          <div className="slip-scroll space-y-2 max-h-80 overflow-y-auto">
             {slip.map((i, idx) => (
               <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm animate-slip-in">
                 <div className="min-w-0 flex-1">
@@ -753,7 +774,7 @@ export default function PlaceBet() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-gold-300 text-sm sm:text-base">{satang(i.stakeSatang)} บาท</span>
-                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} className="text-red-400 hover:text-gold-300 text-sm sm:text-base">✕</button>
+                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} aria-label="ลบรายการ" className="text-red-400 hover:text-gold-300 text-sm sm:text-base inline-flex items-center justify-center" style={{ minWidth: '28px', minHeight: '28px' }}><X size={16} strokeWidth={2.5} /></button>
                 </div>
               </div>
             ))}
@@ -769,44 +790,47 @@ export default function PlaceBet() {
             </div>
           )}
           </div>
-          <div className="border-t border-navy-700 mt-4 pt-4 space-y-1.5 text-sm">
+          <div className="bet-slip-totals border-t border-navy-700 mt-4 pt-4 space-y-1.5 text-sm">
             <div className="flex justify-between text-navy-300"><span>ยอดแทงรวม</span><span className="text-white font-bold text-base sm:text-lg"><AnimatedNumber value={totalSatang} /> บาท</span></div>
             {slip.length > 0 && (
               <div className="flex justify-between text-navy-300"><span>รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="text-green-400 font-bold"><AnimatedNumber value={totalPotential} /> บาท</span></div>
             )}
             <div className="flex justify-between text-navy-300"><span>เครดิตคงเหลือ (หลังแทง)</span><span className="text-gold-300"><AnimatedNumber value={balance - totalSatang} /> บาท</span></div>
           </div>
-          <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
+          <p className="bet-slip-note mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
             📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>
           <Button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
-            className="mt-4 w-full !py-3 sm:!py-3.5 text-sm sm:text-base font-bold">
+            className="bet-confirm-btn mt-4 w-full !py-3 sm:!py-3.5 text-sm sm:text-base font-bold">
             ตรวจสอบและยืนยันโพย
           </Button>
           {!user && <div className="text-center text-sm text-navy-300 mt-2"><Link to="/login" className="text-gold-400">เข้าสู่ระบบ</Link> เพื่อแทง</div>}
         </div>
       </div>
 
-      {/* floating bet bar — มือถือ/แท็บเล็ต (slip panel อยู่ล่างจอ) */}
-      {!closed && slip.length > 0 && !done && (
-        <div className="sm:hidden fixed bottom-16 inset-x-0 z-30 px-3">
-          <button onClick={() => setConfirming(true)} disabled={busy || totalSatang > balance}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-              color: 'var(--bg-deep-black)',
-              fontWeight: 700,
-              padding: '0.75rem',
-              borderRadius: '0.75rem',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.5rem',
-              opacity: busy || totalSatang > balance ? 0.5 : 1
-            }}>
-            <span style={{ fontSize: '0.75rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
-            <span style={{ fontSize: '0.75rem', flexShrink: 0 }}>ตรวจสอบโพย →</span>
-          </button>
+      {/* bottom action bar — มือถือ/แท็บเล็ต: ยอดรวม + ปุ่มยืนยัน อยู่ล่างจอเสมอใน single-screen layout */}
+      {!closed && (
+        <div className="bet-actions lg:hidden">
+          <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5"
+            style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '1px solid var(--border-gold)', boxShadow: 'var(--shadow-gold)' }}>
+            <div className="min-w-0">
+              <div className="font-bold uppercase" style={{ fontSize: '0.625rem', letterSpacing: '0.08em', color: 'var(--muted-gray)' }}>ยอดแทงรวม • {slip.length} รายการ</div>
+              <div className="font-black leading-tight" style={{ color: 'var(--gold-bright)', fontSize: '1.15rem' }}>
+                <AnimatedNumber value={totalSatang} /> <span style={{ fontSize: '0.75rem', color: 'var(--muted-gray)' }}>บาท</span>
+              </div>
+            </div>
+            <button type="button" onClick={() => setConfirming(true)} disabled={!slip.length || busy || totalSatang > balance}
+              className="shrink-0 rounded-xl px-5 font-bold transition active:scale-95"
+              style={{
+                minHeight: '44px',
+                background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
+                color: 'var(--bg-deep-black)',
+                fontSize: '0.9375rem',
+                opacity: (!slip.length || busy || totalSatang > balance) ? 0.5 : 1,
+                boxShadow: 'var(--shadow-gold)'
+              }}>
+              {busy ? 'กำลังส่ง...' : 'ยืนยันโพย →'}
+            </button>
+          </div>
         </div>
       )}
 

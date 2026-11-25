@@ -7,7 +7,8 @@ function remainSec(closeAt) {
 }
 
 // นับถอยหลังเวลาปิดรับ — แดงกะพริบเมื่อเหลือน้อยกว่า 1 ชั่วโมง
-export default function Countdown({ closeAt }) {
+// compact: รูปแบบย่อสำหรับ top bar แคบ (เช่น "3:45:12" / "2 วัน")
+export default function Countdown({ closeAt, compact = false }) {
   const [left, setLeft] = useState(() => remainSec(closeAt));
 
   useEffect(() => {
@@ -23,6 +24,15 @@ export default function Countdown({ closeAt }) {
   const m = Math.floor((left % 3600) / 60);
   const s = left % 60;
   const urgent = d === 0 && h < 1;
+  if (compact) {
+    const p2 = n => String(n).padStart(2, '0');
+    const ctext = d > 0 ? `${d} วัน ${h} ชม.` : h > 0 ? `${h}:${p2(m)}:${p2(s)}` : m > 0 ? `${m}:${p2(s)}` : `${s} วิ`;
+    return (
+      <span className={`${urgent ? 'text-red-400 font-bold animate-pulse' : ''}`}>
+        ⏳ {ctext}
+      </span>
+    );
+  }
   // ยิ่งใกล้ปิดยิ่งละเอียด — เหลือหลายวันแสดงแค่ วัน+ชม. ไม่ต้อง วินาที
   const text = d > 0
     ? `⏳ เหลืออีก ${d} วัน ${h} ชม.`
