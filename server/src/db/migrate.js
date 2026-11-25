@@ -38,7 +38,7 @@ async function migrateLocked(client) {
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     version BIGINT PRIMARY KEY,
     name TEXT NOT NULL,
-    applied_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+    applied_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
   )`);
   // schema_migrations เวอร์ชันเก่า (test artifact) อาจไม่มี column name — เติมให้
   await pool.query(`ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS name TEXT`);

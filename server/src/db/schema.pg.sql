@@ -12,8 +12,8 @@ CREATE TABLE users (
   locked_until TEXT,
   mfa_secret TEXT,
   mfa_enabled BIGINT NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 , withdraw_unlocked BIGINT NOT NULL DEFAULT 0, phone TEXT, self_excluded_until TEXT, daily_limit_satang BIGINT, monthly_limit_satang BIGINT, age_confirmed BIGINT DEFAULT 0, timezone TEXT, language TEXT, terms_accepted_at TEXT, terms_version TEXT, email_verified BIGINT NOT NULL DEFAULT 0, signup_ip TEXT
 , kyc_status TEXT NOT NULL DEFAULT 'none', kyc_requested_at TEXT, kyc_reviewed_by BIGINT, kyc_reviewed_at TEXT, kyc_note TEXT);
 
@@ -47,7 +47,7 @@ CREATE TABLE user_sessions (
   ip TEXT,
   user_agent TEXT,
   mfa_verified BIGINT NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   expires_at TEXT NOT NULL,
   revoked_at TEXT
 );
@@ -59,7 +59,7 @@ CREATE TABLE password_reset_tokens (
   expires_at TEXT NOT NULL,
   used_at TEXT,
   request_ip TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE virtual_wallets (
@@ -67,13 +67,13 @@ CREATE TABLE virtual_wallets (
   user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   balance BIGINT NOT NULL DEFAULT 0 CHECK (balance >= 0),
   version BIGINT NOT NULL DEFAULT 0,
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE system_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL,
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   updated_by BIGINT REFERENCES users(id)
 );
 
@@ -121,8 +121,8 @@ CREATE TABLE lottery_draws (
   close_at TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','open','closed','settled','cancelled')),
   result_numbers TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 , announce TEXT);
 
 CREATE TABLE lottery_results (
@@ -130,7 +130,7 @@ CREATE TABLE lottery_results (
   draw_id BIGINT NOT NULL UNIQUE REFERENCES lottery_draws(id),
   winning_numbers TEXT NOT NULL,
   published_by BIGINT REFERENCES users(id),
-  published_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  published_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 , source TEXT);
 
 CREATE TABLE draw_result_sources (
@@ -142,7 +142,7 @@ CREATE TABLE draw_result_sources (
   winning_numbers TEXT,
   verification_status TEXT NOT NULL CHECK (verification_status IN ('matched','mismatch','unverified','unavailable','date_mismatch')),
   error TEXT,
-  checked_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  checked_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   last_available_at TEXT,
   PRIMARY KEY (draw_id, source)
 );
@@ -155,7 +155,7 @@ CREATE TABLE bet_slips (
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','won','lost','partial','cancelled','refunded')),
   total_stake BIGINT NOT NULL DEFAULT 0,
   total_payout BIGINT NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   settled_at TEXT
 , idempotency_key TEXT);
 
@@ -170,7 +170,7 @@ CREATE TABLE bet_items (
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','won','lost','cancelled')),
   payout BIGINT NOT NULL DEFAULT 0,
   result_detail TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 , is_tod BIGINT NOT NULL DEFAULT 0, payout_multiplier REAL, match_config TEXT);
 
 CREATE TABLE hilo_tickets (
@@ -181,7 +181,7 @@ CREATE TABLE hilo_tickets (
   die2 BIGINT NOT NULL,          -- หน้าเต๋าที่ซ่อน — สุ่มตอนซื้อ เปิดเผยตอนทาย
   pick TEXT,                      -- 'high' | 'low' | NULL (ยังไม่ทาย)
   status TEXT NOT NULL DEFAULT 'awaiting',  -- awaiting | revealed
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   revealed_at TEXT
 , die3 BIGINT, server_seed TEXT, commit_hash TEXT);
 
@@ -193,7 +193,7 @@ CREATE TABLE scratch_cards (
   outcome TEXT NOT NULL,         -- JSON {win, symbol, prize} — คำนวณจาก grid ตอนเปิดเผย
   status TEXT NOT NULL DEFAULT 'hidden',  -- hidden | revealed
   revealed_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 , server_seed TEXT, commit_hash TEXT);
 
 CREATE TABLE kiwi_tickets (
@@ -208,7 +208,7 @@ CREATE TABLE kiwi_tickets (
   status TEXT NOT NULL DEFAULT 'revealed',  -- revealed (จบในคำขอเดียว)
   server_seed TEXT NOT NULL,
   commit_hash TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   revealed_at TEXT
 , bet_type TEXT);
 
@@ -220,7 +220,7 @@ CREATE TABLE notifications (
   body TEXT,
   link TEXT,                        -- path ภายใน เช่น /my-bets
   read_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE otp_codes (
@@ -233,7 +233,7 @@ CREATE TABLE otp_codes (
   attempts BIGINT NOT NULL DEFAULT 0,
   ip TEXT,
   channel TEXT NOT NULL DEFAULT 'phone',
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE push_subscriptions (
@@ -242,14 +242,14 @@ CREATE TABLE push_subscriptions (
   endpoint TEXT NOT NULL UNIQUE,
   p256dh TEXT NOT NULL,
   auth TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  last_seen_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  last_seen_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE chat_threads (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   last_msg_at TEXT
 );
 
@@ -259,7 +259,7 @@ CREATE TABLE chat_messages (
   sender_id BIGINT NOT NULL REFERENCES users(id),
   is_admin BIGINT NOT NULL DEFAULT 0,
   body TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   read_by_admin BIGINT NOT NULL DEFAULT 0,
   read_by_user BIGINT NOT NULL DEFAULT 0
 );
@@ -276,7 +276,7 @@ CREATE TABLE audit_logs (
   correlation_id TEXT,
   prev_hash TEXT,
   hash TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_audit_correlation ON audit_logs(correlation_id);
 CREATE INDEX IF NOT EXISTS idx_audit_filters ON audit_logs(action, entity_type, created_at);
@@ -288,7 +288,7 @@ CREATE TABLE security_events (
   user_id BIGINT REFERENCES users(id),
   ip TEXT,
   detail TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
@@ -306,7 +306,7 @@ CREATE TABLE "virtual_transactions" (
   idempotency_key TEXT UNIQUE,
   description TEXT,
   created_by BIGINT REFERENCES users(id),
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE INDEX idx_audit_action ON audit_logs(action, created_at);
@@ -397,8 +397,8 @@ CREATE TABLE IF NOT EXISTS payment_requests (
   admin_note TEXT,
   reviewed_by BIGINT,
   reviewed_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_payment_requests_user ON payment_requests(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status, kind);
@@ -410,7 +410,7 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   token_hash TEXT NOT NULL,
   expires_at TEXT NOT NULL,
   used_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verifications(user_id, created_at);
 
@@ -428,8 +428,8 @@ CREATE TABLE IF NOT EXISTS approval_requests (
   decided_at TEXT,
   executed_at TEXT,
   execution_result TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_approval_status ON approval_requests(status, category, id DESC);
 CREATE INDEX IF NOT EXISTS idx_approval_maker ON approval_requests(maker_id, id DESC);
@@ -441,7 +441,7 @@ CREATE TABLE IF NOT EXISTS auth_events (
   ip TEXT,
   user_agent TEXT,
   detail TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_auth_events_ip ON auth_events(ip, id DESC);
@@ -455,8 +455,8 @@ CREATE TABLE IF NOT EXISTS support_tickets (
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','resolved','closed')),
   admin_reply TEXT,
   admin_id BIGINT REFERENCES users(id),
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
   resolved_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_tickets_user ON support_tickets(user_id, id DESC);
@@ -471,8 +471,8 @@ CREATE TABLE IF NOT EXISTS promo_campaigns (
   min_satang BIGINT NOT NULL DEFAULT 100,
   active INTEGER NOT NULL DEFAULT 0 CHECK (active IN (0,1)),
   created_by BIGINT REFERENCES users(id),
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 
 CREATE TABLE IF NOT EXISTS incidents (
@@ -484,8 +484,8 @@ CREATE TABLE IF NOT EXISTS incidents (
   created_by BIGINT REFERENCES users(id),
   resolved_by BIGINT REFERENCES users(id),
   resolved_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status, id DESC);
 
@@ -496,7 +496,7 @@ CREATE TABLE IF NOT EXISTS journal_entries (
   debit BIGINT NOT NULL DEFAULT 0 CHECK (debit >= 0),
   credit BIGINT NOT NULL DEFAULT 0 CHECK (credit >= 0),
   CHECK (debit = 0 OR credit = 0),
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_journal_tx ON journal_entries(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_journal_account ON journal_entries(account);
@@ -513,9 +513,9 @@ CREATE TABLE IF NOT EXISTS risk_flags (
   created_by TEXT NOT NULL DEFAULT 'system',
   resolved_by BIGINT REFERENCES users(id),
   resolved_at TEXT,
-  last_seen_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  created_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')),
-  updated_at TEXT NOT NULL DEFAULT (to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'))
+  last_seen_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  created_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')),
+  updated_at TEXT NOT NULL DEFAULT (to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'))
 );
 CREATE INDEX IF NOT EXISTS idx_risk_flags_user ON risk_flags(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_risk_flags_status ON risk_flags(status, severity, id DESC);

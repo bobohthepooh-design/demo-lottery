@@ -70,7 +70,7 @@ if (config.env !== 'test') {
   const checkOverdue = async () => {
     try {
       const d = getDb();
-      // draw_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' — เทียบ string ตรงๆ (Postgres ไม่มี datetime())
+      // draw_at เก็บเป็น UTC 'YYYY-MM-DD HH24:MI:SS' — เทียบ string ตรงๆ (Postgres ไม่มี datetime())
       const cutoff = new Date(Date.now() - 2 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
       const rows = await d.prepare(`SELECT d.draw_code, d.draw_at, lt.name_th AS type_name, lt.code AS type_code, lt.result_mode, c.code AS cat_code, c.name_th AS cat_name
         FROM lottery_draws d JOIN lottery_types lt ON lt.id = d.lottery_type_id
@@ -127,8 +127,8 @@ if (config.env !== 'test') {
       const ev = await d.prepare(`DELETE FROM email_verifications WHERE expires_at < ${cutoff1} OR (used_at IS NOT NULL AND used_at < ${cutoff1})`).run();
       // data retention — notifications: อ่านแล้วเก็บ 30 วัน, ไม่อ่านเก็บ 180 วัน
       // (audit_logs/transactions/slips เก็บถาวร — เป็น ledger/audit trail ตามกฎหมาย)
-      const cutoff30 = `to_char((now() AT TIME ZONE 'UTC') - interval '30 days','YYYY-MM-DD HH:MM:SS')`;
-      const cutoff180 = `to_char((now() AT TIME ZONE 'UTC') - interval '180 days','YYYY-MM-DD HH:MM:SS')`;
+      const cutoff30 = `to_char((now() AT TIME ZONE 'UTC') - interval '30 days','YYYY-MM-DD HH24:MI:SS')`;
+      const cutoff180 = `to_char((now() AT TIME ZONE 'UTC') - interval '180 days','YYYY-MM-DD HH24:MI:SS')`;
       const n = await d.prepare(`DELETE FROM notifications WHERE (read_at IS NOT NULL AND read_at < ${cutoff30}) OR created_at < ${cutoff180}`).run();
       if (s.changes || o.changes || n.changes || pr.changes || ev.changes)
         console.log(`[cleanup] sessions -${s.changes}, otp -${o.changes}, reset_tokens -${pr.changes}, email_verify -${ev.changes}, notifications -${n.changes}`);

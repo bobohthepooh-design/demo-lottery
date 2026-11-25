@@ -103,7 +103,7 @@ export async function refreshUser(userId) {
   for (const f of computed) {
     const exist = open.find(o => o.code === f.code);
     if (exist) {
-      await qRun(`UPDATE risk_flags SET score=$1, detail=$2, severity=$3, last_seen_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'), updated_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS') WHERE id=$4`,
+      await qRun(`UPDATE risk_flags SET score=$1, detail=$2, severity=$3, last_seen_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'), updated_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id=$4`,
         [f.score, f.detail, f.severity, exist.id]);
     } else {
       await qRun(`INSERT INTO risk_flags (user_id, code, severity, score, detail, status) VALUES ($1,$2,$3,$4,$5,'open')`,
@@ -114,7 +114,7 @@ export async function refreshUser(userId) {
   // auto-resolve flags ที่เงื่อนไขไม่ติดแล้ว (ยกเว้น self_excluded — เป็นสถานะไม่ใช่เหตุการณ์)
   for (const o of open) {
     if (!computedCodes.has(o.code) && o.code !== 'self_excluded') {
-      await qRun(`UPDATE risk_flags SET status='resolved', resolved_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS'), note='auto: เงื่อนไขไม่ติดแล้ว', updated_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS') WHERE id=$1`, [o.id]);
+      await qRun(`UPDATE risk_flags SET status='resolved', resolved_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'), note='auto: เงื่อนไขไม่ติดแล้ว', updated_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id=$1`, [o.id]);
       resolved++;
     }
   }
@@ -125,7 +125,7 @@ export async function refreshUser(userId) {
 export async function maybeScanRisk() {
   const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
   if (await getSetting('risk_last_scan') === today) return null;
-  const cutoff = `to_char((now() AT TIME ZONE 'UTC') - interval '30 days','YYYY-MM-DD HH:MM:SS')`;
+  const cutoff = `to_char((now() AT TIME ZONE 'UTC') - interval '30 days','YYYY-MM-DD HH24:MI:SS')`;
   const users = await q(`SELECT DISTINCT user_id FROM (
       SELECT user_id FROM auth_events WHERE created_at > ${cutoff}
       UNION SELECT user_id FROM bet_slips WHERE created_at > ${cutoff}
@@ -153,8 +153,8 @@ export async function setFlagStatus(id, status, adminId, note = null) {
   if (!cur) return null;
   const resolved = status === 'resolved';
   await qRun(`UPDATE risk_flags SET status=$1, note=COALESCE($2,note), resolved_by=$3,
-    resolved_at=CASE WHEN $4 THEN to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS') ELSE resolved_at END,
-    updated_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS') WHERE id=$5`,
+    resolved_at=CASE WHEN $4 THEN to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') ELSE resolved_at END,
+    updated_at=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS') WHERE id=$5`,
     [status, note, resolved ? adminId : null, resolved, id]);
   return { ...cur, status };
 }

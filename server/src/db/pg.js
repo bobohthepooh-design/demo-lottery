@@ -37,18 +37,19 @@ export function translate(sql) {
   // placeholders ? → $n  (นับเฉพาะ ? ที่ไม่อยู่ใน string literal — codebase ไม่มี ? ใน literal)
   let i = 0;
   s = s.replace(/\?/g, () => `$${++i}`);
-  // datetime functions → TEXT รูปแบบเดียวกับ SQLite 'YYYY-MM-DD HH:MM:SS' UTC
-  s = s.replace(/datetime\('now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')");
+  // datetime functions → TEXT รูปแบบเดียวกับ SQLite 'YYYY-MM-DD HH24:MI:SS' UTC
+  // (ต้องใช้ HH24 — 'HH' ใน to_char คือชั่วโมง 1-12 ทำให้เวลา PM เพี้ยน -12 ชม.)
+  s = s.replace(/datetime\('now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')");
   s = s.replace(/datetime\('now',\s*'([+-]?\d+)\s+(minute|hour|day|month|year)s?'\)/gi,
-    (m, n, unit) => `to_char((now() AT TIME ZONE 'UTC') ${n.startsWith('-') ? '-' : '+'} interval '${n.replace('-','')} ${unit}', 'YYYY-MM-DD HH:MM:SS')`);
+    (m, n, unit) => `to_char((now() AT TIME ZONE 'UTC') ${n.startsWith('-') ? '-' : '+'} interval '${n.replace('-','')} ${unit}', 'YYYY-MM-DD HH24:MI:SS')`);
   s = s.replace(/date\('now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD')");
-  // date('now','-6 days') → text date (คอลัมน์เป็น TEXT 'YYYY-MM-DD HH:MM:SS')
+  // date('now','-6 days') → text date (คอลัมน์เป็น TEXT 'YYYY-MM-DD HH24:MI:SS')
   s = s.replace(/date\('now',\s*'([+-]?\d+)\s+(minute|hour|day|month|year)s?'\)/gi,
     (m, n, unit) => `to_char((now() AT TIME ZONE 'UTC') ${n.startsWith('-') ? '-' : '+'} interval '${n.replace('-','')} ${unit}', 'YYYY-MM-DD')`);
   // date(<col>) → 'YYYY-MM-DD' (left 10 ตัวของ TEXT ISO)
   s = s.replace(/\bdate\(([a-zA-Z_][\w.]*)\)/g, 'left($1,10)');
   // strftime('%Y-%m-%d %H:%M:%S','now') → text now (pattern ที่ใช้ใน codebase)
-  s = s.replace(/strftime\('%Y-%m-%d %H:%M:%S',\s*'now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH:MM:SS')");
+  s = s.replace(/strftime\('%Y-%m-%d %H:%M:%S',\s*'now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')");
   s = s.replace(/strftime\('%Y-%m-%d',\s*'now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD')");
   s = s.replace(/strftime\('%Y-%m',\s*'now'\)/gi, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM')");
   // strftime(fmt, <col>) → to_char(col::timestamp, fmt) — รองรับ %Y-%m / %Y-%m-%d / %Y-%m-%d %H:%M:%S
@@ -60,6 +61,10 @@ export function translate(sql) {
     s = s.replace(/^\s*INSERT\s+OR\s+IGNORE\s+INTO/i, 'INSERT INTO');
     s = s.replace(/;?\s*$/, ' ON CONFLICT DO NOTHING');
   }
+  // now() = transaction_timestamp — ถ้า tx ค้าง/open นาน timestamp เพี้ยนหลายชม.
+  // (เคยเจอ published_at/created_at เพี้ยนเป็นเวลา BEGIN ของ tx ที่หลุดค้าง)
+  // clock_timestamp() = เวลาจริง ณ statement — ถูกต้องเสมอสำหรับ audit/ledger
+  s = s.replace(/\bnow\(\)/g, 'clock_timestamp()');
   return s;
 }
 
@@ -96,15 +101,22 @@ export async function qInsert(text, params = []) {
  */
 export async function pgTx(fn) {
   const client = await getPool().connect();
+  let inTx = false;
   try {
     await client.query('BEGIN');
+    inTx = true;
     const result = await fn(client);
     await client.query('COMMIT');
+    inTx = false;
     return result;
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch { /* already rolled back */ }
+    try { await client.query('ROLLBACK'); inTx = false; } catch { /* rollback failed — finally จะลองอีกครั้ง */ }
     throw err;
   } finally {
+    // กัน client ที่ยังค้างใน transaction หลุดกลับ pool — ถ้าหลุด
+    // pgTx ถัดไปบน client เดียวกันจะไป join tx เก่า (BEGIN no-op)
+    // ทำให้ now()=transaction_timestamp เพี้ยนเป็นเวลา BEGIN ของ tx ค้าง
+    if (inTx) { try { await client.query('ROLLBACK'); } catch {} }
     client.release();
   }
 }

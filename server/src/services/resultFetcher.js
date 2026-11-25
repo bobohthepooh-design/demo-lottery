@@ -330,7 +330,7 @@ export async function fetchHanoiResult() {
 }
 
 // ---------- matching & settle ----------
-// draw_at เก็บเป็น UTC 'YYYY-MM-DD HH:MM:SS' — แปลงเป็นวันที่เวลาไทยสำหรับเทียบกับวันที่ผลจริง
+// draw_at เก็บเป็น UTC 'YYYY-MM-DD HH24:MI:SS' — แปลงเป็นวันที่เวลาไทยสำหรับเทียบกับวันที่ผลจริง
 // ---------- source verification (draw_result_sources) ----------
 // บันทึกว่าผลของแต่ละแหล่งตรงกันไหม — user/admin เห็นความน่าเชื่อถือของผลย้อนหลังได้
 
