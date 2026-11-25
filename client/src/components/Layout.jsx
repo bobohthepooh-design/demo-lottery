@@ -300,7 +300,7 @@ export default function Layout() {
 
       {/* เมนูมือถือ/แท็บเล็ต — luxury overlay */}
       {menuOpen && (
-        <div className="sm:hidden fixed inset-0 z-50 overflow-y-auto" style={{ background: 'rgba(16, 17, 20, 0.97)', backdropFilter: 'blur(10px)' }} onClick={() => setMenuOpen(false)}>
+        <div className="lg:hidden fixed inset-0 z-50 overflow-y-auto" style={{ background: 'rgba(16, 17, 20, 0.97)', backdropFilter: 'blur(10px)' }} onClick={() => setMenuOpen(false)}>
           <div className="min-h-full px-3 sm:px-4 py-3 sm:py-4 space-y-1" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-3 pt-1 pb-2 sm:pb-3 sticky top-0" style={{ background: 'rgba(16, 17, 20, 0.95)', backdropFilter: 'blur(10px)' }}>
               <span className="kicker">{t('menu')}</span>
