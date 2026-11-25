@@ -930,3 +930,17 @@ button, [role="button"], a { transition: transform var(--duration-fast, 120ms) e
 @media (prefers-reduced-motion: reduce) {
   .page-enter, .stagger-item { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
+
+/* ===== PlaceBet — compact บนมือถือ (<640px) =====
+   กระชับขึ้น ~25% แต่ยังเลื่อนจอธรรมชาติ ใช้งานเหมือนเดิม */
+@media (max-width: 639.98px) {
+  .bet-header-card { padding: 0.75rem !important; }
+  .bet-controls-card { padding: 0.75rem !important; gap: 0.75rem !important; }
+  /* ประเภทแทง 3 คอลัมน์ — ประหยัดความสูง ~30% */
+  .bet-type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 0.5rem !important; }
+  .bet-slip-box { padding: 0.75rem !important; }
+  .bet-slip-list { max-height: 15rem !important; }
+  /* ปุ่มยืนยันใน slip panel ซ้ำกับ floating bar — ซ่อนบนมือถือกันซ้อนกัน
+     (Button ใช้ inline display ต้อง !important) */
+  .bet-panel-confirm { display: none !important; }
+}

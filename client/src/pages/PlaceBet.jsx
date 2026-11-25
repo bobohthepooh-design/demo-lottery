@@ -370,7 +370,7 @@ export default function PlaceBet() {
       {/* left: entry form */}
       <div style={{}} className="lg:col-span-3 space-y-3 sm:space-y-4">
         {/* Header — Draw Info + Countdown */}
-        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-gold-lg)' }} className="p-4 sm:p-6">
+        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-gold-lg)' }} className="bet-header-card p-4 sm:p-6">
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -437,7 +437,7 @@ export default function PlaceBet() {
         </div>
 
         {!closed && (
-          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-gold-lg)' }} className="p-4 sm:p-7 gap-5 sm:gap-7">
+          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-gold-lg)' }} className="bet-controls-card p-4 sm:p-7 gap-5 sm:gap-7">
             {/* Bet Type Selector — Grid layout, all visible */}
             <div>
               <h2 style={{ fontWeight: 800, color: 'var(--white)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
@@ -445,7 +445,7 @@ export default function PlaceBet() {
                 เลือกประเภทการแทง
               </h2>
               {rule && <div style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', marginBottom: '1rem', marginLeft: '1.125rem', padding: '0.625rem 1rem', background: 'rgba(212, 175, 55, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+              <div className="bet-type-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
                   const isSel = selRule === String(r.id);
@@ -727,7 +727,7 @@ export default function PlaceBet() {
 
       {/* right: bet slip */}
       <div className="lg:col-span-2">
-        <div className="bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-4 sm:p-5 sticky top-24 shadow-xl shadow-gold-500/5">
+        <div className="bet-slip-box bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 rounded-xl p-4 sm:p-5 sticky top-24 shadow-xl shadow-gold-500/5">
           <div className="flex items-center justify-between mb-3">
             <h2 className={`font-bold text-sm sm:text-base ${ac?.text || 'text-gold-400'}`}>{headBar}โพยของฉัน ({slip.length})</h2>
             {slip.length > 0 && (
@@ -742,7 +742,7 @@ export default function PlaceBet() {
                 className="text-sky-400 hover:underline shrink-0 ml-2">ล้าง</button>
             </div>
           )}
-          <div className="space-y-2 max-h-80 overflow-y-auto">
+          <div className="bet-slip-list space-y-2 max-h-80 overflow-y-auto">
             {slip.map((i, idx) => (
               <div key={idx} className="flex items-center justify-between bg-navy-900 rounded-lg px-3 py-2 text-sm animate-slip-in">
                 <div className="min-w-0 flex-1">
@@ -780,7 +780,7 @@ export default function PlaceBet() {
           <p className="mt-3 text-[10px] text-navy-500 text-center leading-relaxed">
             📌 หากรอบหวยถูกยกเลิก ระบบคืนเครดิตเต็มจำนวนอัตโนมัติ • ยกเลิกโพยเองได้ก่อนปิดรับ •เครดิตเพื่อการศึกษา</p>
           <Button onClick={() => setConfirming(true)} disabled={!slip.length || busy || closed || totalSatang > balance}
-            className="mt-4 w-full !py-3 sm:!py-3.5 text-sm sm:text-base font-bold">
+            className="bet-panel-confirm mt-4 w-full !py-3 sm:!py-3.5 text-sm sm:text-base font-bold">
             ตรวจสอบและยืนยันโพย
           </Button>
           {!user && <div className="text-center text-sm text-navy-300 mt-2"><Link to="/login" className="text-gold-400">เข้าสู่ระบบ</Link> เพื่อแทง</div>}
