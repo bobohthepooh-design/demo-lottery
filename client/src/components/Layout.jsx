@@ -427,13 +427,13 @@ export default function Layout() {
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
               { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
-              { to: '/games', k: 'gamesHub', icon: 'bets', show: true },
+              { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: true },
               { to: '/profile', k: 'profile', icon: 'user', show: true },
             ] : [
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/results', k: 'results', icon: 'trophy', show: true },
               { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
-              { to: '/games', k: 'gamesHub', icon: 'bets', show: true },
+              { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: true },
               { to: '/login', k: 'login', icon: 'roles', show: true },
             ]).filter(i => i.show).map(i => i.center ? (
               <NavLink key={i.to} to={i.to} end={i.end}
@@ -442,7 +442,12 @@ export default function Layout() {
                 {({ isActive }) => (
                   <>
                     <span className="flex items-center justify-center rounded-full border-2 -mt-7 w-12 h-12 sm:w-14 sm:h-14"
-                      style={{
+                      style={i.accent === 'violet' ? {
+                        background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                        borderColor: 'var(--bg-deep-black)',
+                        color: '#fff',
+                        boxShadow: '0 6px 16px rgba(168,85,247,0.45), 0 0 0 4px var(--bg-deep-black)'
+                      } : {
                         background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
                         borderColor: 'var(--bg-deep-black)',
                         color: 'var(--bg-deep-black)',
@@ -450,7 +455,7 @@ export default function Layout() {
                       }}>
                       <Icon name={i.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
                     </span>
-                    <span className="mt-1 font-bold" style={{ color: isActive ? 'var(--gold-bright)' : 'var(--muted-gray)' }}>{t(i.k)}</span>
+                    <span className="mt-1 font-bold" style={{ color: isActive ? (i.accent === 'violet' ? '#c4b5fd' : 'var(--gold-bright)') : 'var(--muted-gray)' }}>{t(i.k)}</span>
                   </>
                 )}
               </NavLink>
