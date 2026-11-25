@@ -274,9 +274,16 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* มือถือ (<640px) — เวลา + กระดิ่ง + เสียง + hamburger */}
+          {/* มือถือ (<640px) — เวลา + เครดิต + กระดิ่ง + เสียง + hamburger */}
           <div className="flex items-center gap-1.5 sm:hidden">
             <div className="text-[10px] sm:text-xs font-mono font-bold" style={{ color: 'var(--gold-bright)' }}>{timeStr}</div>
+            {user && (
+              <Link to="/wallet" className="flex items-center gap-1 rounded-full px-2 py-1"
+                style={{ border: '1px solid var(--border-gold)', background: 'rgba(212,175,55,0.12)' }}>
+                <span style={{ color: 'var(--gold-primary)', display: 'inline-flex' }}><Icon name="wallet" className="w-3.5 h-3.5" /></span>
+                <span className="text-[11px] font-black font-mono" style={{ color: 'var(--gold-bright)' }}>{satang(balance)}</span>
+              </Link>
+            )}
             {user && <NotificationBell />}
             <button
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
@@ -416,18 +423,38 @@ export default function Layout() {
           <div className="absolute top-0 inset-x-8 h-px"
             style={{ background: 'linear-gradient(90deg, transparent, var(--gold-primary), transparent)' }} />
           <div className="flex h-16">
-            {[
+            {(user ? [
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
-              { to: '/play', k: 'betMenu', icon: 'lotteries', show: showBetMenu },
+              { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
+              { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
               { to: '/games', k: 'gamesHub', icon: 'bets', show: true },
+              { to: '/profile', k: 'profile', icon: 'user', show: true },
+            ] : [
+              { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/results', k: 'results', icon: 'trophy', show: true },
-              ...(user ? [
-                { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
-                { to: '/profile', k: 'profile', icon: 'user', show: true },
-              ] : [
-                { to: '/login', k: 'login', icon: 'roles', show: true },
-              ]),
-            ].filter(i => i.show).map(i => (
+              { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
+              { to: '/games', k: 'gamesHub', icon: 'bets', show: true },
+              { to: '/login', k: 'login', icon: 'roles', show: true },
+            ]).filter(i => i.show).map(i => i.center ? (
+              <NavLink key={i.to} to={i.to} end={i.end}
+                className="relative flex-1 flex flex-col items-center justify-start pt-1 text-xs sm:text-sm transition-colors"
+                style={{ color: 'var(--gold-bright)' }}>
+                {({ isActive }) => (
+                  <>
+                    <span className="flex items-center justify-center rounded-full border-2 -mt-7 w-12 h-12 sm:w-14 sm:h-14"
+                      style={{
+                        background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
+                        borderColor: 'var(--bg-deep-black)',
+                        color: 'var(--bg-deep-black)',
+                        boxShadow: '0 6px 16px rgba(212,175,55,0.45), 0 0 0 4px var(--bg-deep-black)'
+                      }}>
+                      <Icon name={i.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
+                    </span>
+                    <span className="mt-1 font-bold" style={{ color: isActive ? 'var(--gold-bright)' : 'var(--muted-gray)' }}>{t(i.k)}</span>
+                  </>
+                )}
+              </NavLink>
+            ) : (
               <NavLink key={i.to} to={i.to} end={i.end}
                 className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors"
                 style={{ color: 'var(--muted-gray)' }}>
