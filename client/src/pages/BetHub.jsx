@@ -284,11 +284,30 @@ export default function BetHub() {
             )}
           </div>
 
-          <div className="space-y-2">
-            {selectedType.catList.flatMap(cat => cat.rounds).map(d => (
-              <RoundCard key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />
-            ))}
-          </div>
+          {/* จัดหมวด: รอบที่เปิดรับอยู่ vs รอบถัดไปที่จะเปิด/รอผล */}
+          {(() => {
+            const all = selectedType.catList.flatMap(cat => cat.rounds);
+            const open = all.filter(d => isBettingOpen(d, nowSql));
+            const done = all.filter(d => ['settled', 'cancelled'].includes(d.status));
+            const upcoming = all.filter(d => !isBettingOpen(d, nowSql) && !done.includes(d));
+            const section = (title, icon, items, accent) => items.length === 0 ? null : (
+              <div key={title} className="mb-4">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="text-sm">{icon}</span>
+                  <span className="text-xs font-black tracking-wide" style={{ color: accent }}>{title}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>{items.length} รอบ</span>
+                </div>
+                <div className="space-y-2">
+                  {items.map(d => <RoundCard key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />)}
+                </div>
+              </div>
+            );
+            return (<>
+              {section('รอบที่เปิดรับอยู่', '🟢', open, 'var(--success-green)')}
+              {section('รอบถัดไป / รอผล', '🕐', upcoming, 'var(--gold-primary)')}
+              {section('ผลรางวัลแล้ว / ยกเลิก', '🏁', done, 'var(--muted-gray)')}
+            </>);
+          })()}
         </div>
       ) : (
         /* เมนูหลัก — card grid ประเภทหวย */
