@@ -5,6 +5,7 @@ import { requireAuth } from '../services/authService.js';
 import * as settings from '../services/settingsService.js';
 import * as scratchSvc from '../services/scratchService.js';
 import * as hiloSvc from '../services/hiloService.js';
+import * as kiwiSvc from '../services/kiwiService.js';
 import * as luckySvc from '../services/luckyService.js';
 import * as fetcher from '../services/resultFetcher.js';
 import { HttpError } from '../lib/audit.js';
@@ -28,6 +29,16 @@ router.get('/public-config', async (req, res) => {
       hiloPrice: await hiloSvc.hiloPrice(),
       scratchPrizes: await scratchSvc.prizeTable(),
       hiloMult: await hiloSvc.hiloMultipliers(),
+    },
+    // สถานะเปิด/ปิดเกมด่วน+ราศี — admin ปิดได้ที่หน้าประเภทหวย & กติกา (type/rule is_active)
+    // หน้าบ้านใช้ซ่อนการ์ดที่ปิด — server ก็ block การเล่นจริงอยู่แล้ว (GAME_CLOSED/MARKET_CLOSED)
+    games: {
+      scratch: await scratchSvc.gameEnabled(),
+      hilo: await hiloSvc.gameEnabled(),
+      kiwi: await kiwiSvc.gameEnabled('kiwi'),
+      kiwi_vip: await kiwiSvc.gameEnabled('kiwi_vip'),
+      kiwi_dice: await kiwiSvc.gameEnabled('kiwi_dice'),
+      zodiac: Number((await getDb().prepare(`SELECT is_active FROM lottery_types WHERE code = 'HR'`).get())?.is_active ?? 1) === 1,
     },
     // โปรโมชัน — cashback % (0 = ปิด)
     cashbackPercent: Number(await settings.getSetting('cashback_percent', 0)) || 0,

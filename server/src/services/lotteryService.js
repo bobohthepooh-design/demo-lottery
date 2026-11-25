@@ -340,15 +340,15 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
         }
       }
 
-      const cur = await d.prepare(`SELECT d.status, d.close_at, lt.code AS type_code, COALESCE(c.is_active, 1) AS cat_active
+      const cur = await d.prepare(`SELECT d.status, d.close_at, lt.code AS type_code, lt.is_active AS type_active, COALESCE(c.is_active, 1) AS cat_active
         FROM lottery_draws d
         JOIN lottery_types lt ON lt.id = d.lottery_type_id
         LEFT JOIN lottery_categories c ON c.id = d.category_id WHERE d.id = ?`).get(drawId);
       const curOpens = cur ? bettingOpensAt(cur.close_at, cur.type_code) : null;
       if (!cur || cur.status !== 'open' || cur.close_at <= nowSql() || (curOpens && nowSql() < curOpens))
         throw new HttpError(400, 'รอบหวยนี้ไม่เปิดรับโพยแล้ว', 'DRAW_CLOSED');
-      if (Number(cur.cat_active) !== 1)
-        throw new HttpError(400, 'ตลาดหวยนี้ปิดให้บริการแล้ว', 'MARKET_CLOSED');
+      if (Number(cur.type_active) !== 1 || Number(cur.cat_active) !== 1)
+        throw new HttpError(400, 'ตลาดนี้ปิดให้บริการแล้ว', 'MARKET_CLOSED');
 
       const cap = Number(await getSetting('exposure_cap_stake', 500000)) || 0;
       if (cap > 0) {

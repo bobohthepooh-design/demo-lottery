@@ -173,8 +173,15 @@ async function standingDraw() {
 }
 async function gameRule(game) {
   const draw = await standingDraw();
-  return qGet(`SELECT * FROM lottery_rules WHERE lottery_type_id = $1 AND bet_type = $2 AND is_active = 1`,
+  return qGet(`SELECT r.* FROM lottery_rules r
+    JOIN lottery_types lt ON lt.id = r.lottery_type_id
+    WHERE r.lottery_type_id = $1 AND r.bet_type = $2 AND r.is_active = 1 AND lt.is_active = 1`,
     [draw.lottery_type_id, game]);
+}
+
+// เกมเปิดให้เล่น = rule ของเกมนั้น + ประเภทหวย (KI) ยัง active — ใช้ public-config + /kiwi/info
+export async function gameEnabled(game) {
+  return !!(await gameRule(game));
 }
 
 const gamePrice = async (game) => {
@@ -189,9 +196,10 @@ export async function kiwiInfo() {
   await ensureInfra();
   const out = [];
   for (const g of KIWI_GAMES) {
-    const po = payoutsOf(await gameRule(g), g);
+    const rule = await gameRule(g);
+    const po = payoutsOf(rule, g);
     out.push({
-      game: g, label: GAMES[g].label, price: await gamePrice(g),
+      game: g, label: GAMES[g].label, price: await gamePrice(g), enabled: !!rule,
       poolSize: GAMES[g].poolSize, pickCount: GAMES[g].pickCount,
       zodiac: GAMES[g].zodiac, symbols: GAMES[g].symbols || null,
       dice: !!GAMES[g].dice, diceSymbols: GAMES[g].diceSymbols || null,
@@ -225,7 +233,8 @@ export async function playKiwi(userId, game, picks, betType = null, idemKey = nu
   const price = await gamePrice(game);
   const rule = await gameRule(game);
   const draw = await standingDraw();
-  if (!rule || !draw) throw new HttpError(500, 'ระบบยี่กียังไม่พร้อมใช้งาน');
+  if (!draw) throw new HttpError(500, 'ระบบยี่กียังไม่พร้อมใช้งาน');
+  if (!rule) throw new HttpError(403, 'เกมนี้ปิดให้บริการชั่วคราว', 'GAME_CLOSED');
 
   const serverSeed = randomBytes(32).toString('hex');
   const commitHash = commitOf(serverSeed);

@@ -110,6 +110,7 @@ export default function Hilo() {
   const [pending, setPending] = useState(null);      // ผลที่ server ส่งกลับ รอ animation ลงเต๋า
   const [diceSettled, setDiceSettled] = useState(false); // animation ลงเต๋าครบแล้ว — ไม่ต้องเด้งซ้ำตอน render ผล
   const [err, setErr] = useState('');
+  const [showAllHist, setShowAllHist] = useState(false); // ประวัติแสดงแค่ 10 ล่าสุด — กดเพื่อดูทั้งหมด
   const [price, setPrice] = useState(5000); // สตางค์ — sync จาก server (admin ตั้งได้)
   const [mult, setMult] = useState(null);   // อัตราจ่าย ต่ำ/สูง/11 จาก server settings
   const playIdem = useRef(null); // {pick, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry ซื้อซ้ำ
@@ -350,7 +351,23 @@ export default function Hilo() {
         )}
       </div>
 
-      {/* history */}
+      {/* ปุ่มเดิมพัน — วางก่อนประวัติให้เห็นก่อนเสมอ (ชุดเดียวกับแถบล่าง) */}
+      <div className="luxury-card p-3">
+        <div className="flex gap-2">
+          {bets.map(b => {
+            const st = PICK_STYLE[b.pick] || PICK_STYLE.low;
+            return (
+              <button key={b.pick} onClick={() => pickBet(b.pick)} disabled={busy || revealing || balance < price}
+                className={`flex-1 rounded-xl border-2 ${st.cls} py-2.5 text-center transition disabled:opacity-50 active:scale-95`}>
+                <div className={`text-sm font-black ${st.nameCls}`}>{st.icon} {st.name}</div>
+                <div className="text-[10px] text-navy-300">×{b.mult} • สูงสุด {satang(b.maxPayout)} บ.</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* history — แสดงแค่ 10 รายการล่าสุด ที่เหลือซ่อนไว้ */}
       {!loaded && <SkeletonCard />}
       {loaded && !tickets.length && (
         <EmptyState emoji="🎲" title="ยังไม่มีตั๋วไฮโล" hint="กดปุ่มเล่นเพื่อเริ่มเสี่ยงโชค" />
@@ -362,7 +379,7 @@ export default function Hilo() {
             {awaiting.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full luxury-badge-gold">รอเดิมพัน {awaiting.length}</span>}
           </div>
           <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-            {tickets.map(t => {
+            {(showAllHist ? tickets : tickets.slice(0, 10)).map(t => {
               const won = t.status === 'revealed' && t.side === t.pick;
               return (
                 <div key={t.id} role="button" tabIndex={0}
@@ -400,6 +417,13 @@ export default function Hilo() {
               );
             })}
           </div>
+          {tickets.length > 10 && (
+            <button onClick={() => setShowAllHist(v => !v)}
+              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40"
+              style={{ color: 'var(--gold-primary)', borderTop: '1px solid var(--border-light)' }}>
+              {showAllHist ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${tickets.length} รายการ)`}
+            </button>
+          )}
         </div>
       )}
 

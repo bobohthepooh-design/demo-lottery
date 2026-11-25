@@ -360,7 +360,7 @@ export default function PlaceBet() {
   const nowSqlPB = draw.server_now || new Date().toISOString().slice(0,19).replace('T',' ');
   const opensAt = draw ? bettingOpenAtSql(draw.close_at, draw.type_code) : null;
   const notYetOpen = !!(draw && draw.status === 'open' && draw.close_at > nowSqlPB && opensAt && nowSqlPB < opensAt);
-  const closed = draw.status !== 'open' || draw.close_at <= nowSqlPB || notYetOpen;
+  const closed = draw.status !== 'open' || draw.close_at <= nowSqlPB || notYetOpen || Number(draw.type_active) === 0;
   const ac = draw ? typeAccent(draw.type_code) : null;
   const kb = kindBadge(draw.result_kind);
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;

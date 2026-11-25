@@ -164,8 +164,15 @@ async function standingDraw() {
 }
 async function scratchRule() {
   const draw = await standingDraw();
-  return qGet(`SELECT * FROM lottery_rules WHERE lottery_type_id = $1 AND bet_type = 'scratch' AND is_active = 1`,
+  return qGet(`SELECT r.* FROM lottery_rules r
+    JOIN lottery_types lt ON lt.id = r.lottery_type_id
+    WHERE r.lottery_type_id = $1 AND r.bet_type = 'scratch' AND r.is_active = 1 AND lt.is_active = 1`,
     [draw.lottery_type_id]);
+}
+
+// เกมเปิดให้เล่น = ทั้ง rule และประเภทหวย (SC) ยัง active — ใช้ public-config + หน้าบ้านซ่อนการ์ดที่ปิด
+export async function gameEnabled() {
+  return !!(await scratchRule());
 }
 
 export async function cardPrice() {
@@ -197,7 +204,8 @@ export async function buyCard(userId, idemKey = null) {
   const price = await cardPrice();
   const draw = await standingDraw();
   const rule = await scratchRule();
-  if (!draw || !rule) throw new HttpError(500, 'ระบบสล็อตยังไม่พร้อมใช้งาน');
+  if (!draw) throw new HttpError(500, 'ระบบสล็อตยังไม่พร้อมใช้งาน');
+  if (!rule) throw new HttpError(403, 'เกมนี้ปิดให้บริการชั่วคราว', 'GAME_CLOSED');
 
   const serverSeed = randomBytes(32).toString('hex');
   const commitHash = commitOf(serverSeed);

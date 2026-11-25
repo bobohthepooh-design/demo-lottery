@@ -7,10 +7,14 @@ import { useAuth } from '../auth.jsx';
 export default function GamesHub() {
   const { user } = useAuth();
   const [cfg, setCfg] = useState(null);
+  const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
   const [zodiacDraw, setZodiacDraw] = useState(null);
 
   useEffect(() => {
-    api('/lottery/public-config').then(r => setCfg(r)).catch(() => {});
+    api('/lottery/public-config').then(r => {
+      setCfg(r);
+      setHiddenBetTypes(Array.isArray(r.hiddenBetTypes) ? r.hiddenBetTypes : []);
+    }).catch(() => {});
     api('/lottery/draws?upcoming=1').then(r => {
       const d = (r.draws || []).find(x => x.type_code === 'HR' && x.status !== 'settled' && x.status !== 'cancelled');
       setZodiacDraw(d || null);
@@ -22,30 +26,39 @@ export default function GamesHub() {
   const prizeMax = sp.length ? Math.max(...sp.map(p => p.prize)) : null;
   const hm = cfg?.instantGame?.hiloMult;
 
+  // สถานะเปิด/ปิดจาก admin (type/rule is_active) — เกมที่ปิดไม่แสดงการ์ด
+  const en = cfg?.games || {};
+  const kiwiOn = en.kiwi !== false || en.kiwi_vip !== false || en.kiwi_dice !== false;
+  const zodiacOn = en.zodiac !== false && !hiddenBetTypes.includes('HR');
+
   const games = [
     {
+      key: 'scratch', on: en.scratch !== false,
       to: '/scratch', icon: '🎰', name: 'สล็อต 5 รีล', tag: '20 เพย์ไลน์',
       desc: `สปิน 5 รีล 3 แถว 20 เพย์ไลน์ — รางวัลสูงสุด ${prizeMax != null ? baht(prizeMax) : '120,000 บาท'}`,
       price: cfg?.instantGame?.scratchPrice ? `แทง ${baht(cfg.instantGame.scratchPrice)}/สปิน` : '',
       auth: true,
     },
     {
+      key: 'hilo', on: en.hilo !== false,
       to: '/hilo', icon: '🎲', name: 'ไฮโล', tag: 'ทายเต๋า 3 ลูก',
       desc: `ทาย สูง/ต่ำ/11 — ${hm ? `ต่ำ ×${hm.low} • สูง ×${hm.high} • 11 ×${hm.eleven}` : 'อัตราจ่ายตามกติกา'}`,
       price: cfg?.instantGame?.hiloPrice ? `แทง ${baht(cfg.instantGame.hiloPrice)}/ครั้ง` : '',
       auth: true,
     },
     {
+      key: 'kiwi', on: kiwiOn,
       to: '/kiwi', icon: '🐯', name: 'ยี่กี', tag: 'เลือกเลขทายผลไว',
       desc: 'เลือกเลข 3-5 ตัว → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น มี VIP',
       price: '', auth: true,
     },
     {
+      key: 'zodiac', on: zodiacOn,
       to: zodiacDraw ? `/bet/${zodiacDraw.id}` : '/play', icon: '🔮', name: 'หวยยี่กี 12 ราศี', tag: 'ออกผลทุก 15 นาที',
       desc: zodiacDraw ? `รอบถัดไปออก ${fmtDateTime(zodiacDraw.draw_at)}` : 'เลือกได้ 4 รูปแบบการแทง',
       price: '', auth: false,
     },
-  ];
+  ].filter(g => g.on);
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -61,6 +74,11 @@ export default function GamesHub() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        {games.length === 0 && (
+          <div className="col-span-full rounded-xl px-4 py-6 text-center text-sm" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--muted-gray)' }}>
+            เกมทั้งหมดปิดให้บริการชั่วคราว — กลับมาดูใหม่อีกครั้ง
+          </div>
+        )}
         {games.map(g => (
           <Link key={g.to} to={g.to}
             className="luxury-card luxury-card-gold-border group relative overflow-hidden p-4 sm:p-5 transition">

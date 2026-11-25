@@ -49,6 +49,7 @@ export default function Scratch() {
   const [reelsDone, setReelsDone] = useState(false);
   const [spinKey, setSpinKey] = useState(0);     // เพิ่ม = เริ่มหมุนรีล
   const [err, setErr] = useState('');
+  const [showAllCards, setShowAllCards] = useState(false); // ประวัติแสดงแค่ 10 ล่าสุด — กดเพื่อดูทั้งหมด
   const [price, setPrice] = useState(5000); // สตางค์ — sync จาก server (admin ตั้งได้)
   const [prizes, setPrizes] = useState(DEFAULT_PRIZES); // ตารางรางวัลจาก server
   const reelIcons = prizes.map(p => p.icon);
@@ -217,7 +218,27 @@ export default function Scratch() {
         )}
       </div>
 
-      {/* my cards */}
+      {/* ปุ่มเดิมพัน — วางก่อนประวัติบัตรให้เห็นก่อนเสมอ (ชุดเดียวกับแถบล่าง) */}
+      <div className="luxury-card p-3">
+        {canSpin ? (
+          <button onClick={buy} disabled={busy || balance < price}
+            className="w-full luxury-btn font-black py-3 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
+            {busy ? 'กำลังซื้อ...' : `＋ ซื้อบัตรเพิ่ม ${satang(price)} บาท`}
+          </button>
+        ) : nextHidden ? (
+          <button onClick={() => openCard(nextHidden)}
+            className="w-full luxury-btn font-black py-3 text-sm tracking-wide active:scale-[0.98]">
+            ▶ เล่นบัตรที่รอสปิน ({hidden.length} ใบ)
+          </button>
+        ) : (
+          <button onClick={buy} disabled={busy || balance < price}
+            className="w-full luxury-btn font-black py-3 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
+            {busy ? 'กำลังเล่น...' : `🎰 เล่นเกม ${satang(price)} บาท`}
+          </button>
+        )}
+      </div>
+
+      {/* my cards — แสดงแค่ 10 รายการล่าสุด ที่เหลือซ่อนไว้ */}
       {cards.length > 0 && (
         <div className="luxury-card overflow-hidden">
           <div className="px-5 py-4 border-b font-bold flex items-center gap-2" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>
@@ -225,7 +246,7 @@ export default function Scratch() {
             {hidden.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full luxury-badge-gold">รอสปิน {hidden.length}</span>}
           </div>
           <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-            {cards.map(c => {
+            {(showAllCards ? cards : cards.slice(0, 10)).map(c => {
               const o = c.outcome;
               const isWin = o?.win;
               return (
@@ -256,6 +277,13 @@ export default function Scratch() {
               );
             })}
           </div>
+          {cards.length > 10 && (
+            <button onClick={() => setShowAllCards(v => !v)}
+              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40"
+              style={{ color: 'var(--gold-primary)', borderTop: '1px solid var(--border-light)' }}>
+              {showAllCards ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${cards.length} รายการ)`}
+            </button>
+          )}
         </div>
       )}
 

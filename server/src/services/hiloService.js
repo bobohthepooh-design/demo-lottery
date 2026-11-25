@@ -104,13 +104,23 @@ async function standingDraw() {
 }
 async function hiloRule() {
   const draw = await standingDraw();
-  return qGet(`SELECT * FROM lottery_rules WHERE lottery_type_id = $1 AND bet_type = 'hilo' AND is_active = 1`, [draw.lottery_type_id]);
+  return qGet(`SELECT r.* FROM lottery_rules r
+    JOIN lottery_types lt ON lt.id = r.lottery_type_id
+    WHERE r.lottery_type_id = $1 AND r.bet_type = 'hilo' AND r.is_active = 1 AND lt.is_active = 1`,
+    [draw.lottery_type_id]);
+}
+
+// เกมเปิดให้เล่น = rule ฐาน + ประเภทหวย (HL) ยัง active — ใช้ public-config + หน้าบ้านซ่อนการ์ดที่ปิด
+export async function gameEnabled() {
+  return !!(await hiloRule());
 }
 
 const PICK_RULE = { low: 'hilo_low', high: 'hilo_high', eleven: 'hilo_eleven' };
 async function pickRule(pick) {
   const draw = await standingDraw();
-  return qGet(`SELECT * FROM lottery_rules WHERE lottery_type_id = $1 AND bet_type = $2 AND is_active = 1`,
+  return qGet(`SELECT r.* FROM lottery_rules r
+    JOIN lottery_types lt ON lt.id = r.lottery_type_id
+    WHERE r.lottery_type_id = $1 AND r.bet_type = $2 AND r.is_active = 1 AND lt.is_active = 1`,
     [draw.lottery_type_id, PICK_RULE[pick]]);
 }
 async function multFor(pick) {
@@ -164,7 +174,8 @@ export async function buyTicket(userId, idemKey = null) {
   const price = await hiloPrice();
   const draw = await standingDraw();
   const rule = await hiloRule();
-  if (!draw || !rule) throw new HttpError(500, 'ระบบไฮโลยังไม่พร้อมใช้งาน');
+  if (!draw) throw new HttpError(500, 'ระบบไฮโลยังไม่พร้อมใช้งาน');
+  if (!rule) throw new HttpError(403, 'เกมนี้ปิดให้บริการชั่วคราว', 'GAME_CLOSED');
 
   const serverSeed = randomBytes(32).toString('hex');
   const commitHash = commitOf(serverSeed);
@@ -252,7 +263,10 @@ export async function guessTicket(userId, ticketId, pick) {
   const outcomeSide = hiloOutcome(dice);
   const win = outcomeSide === pick;
   const stake = t.total_stake;
-  const mult = await multFor(pick);
+  // ฝั่งที่ admin ปิด (rule is_active=0) หรือประเภทปิด → ห้ามทาย
+  const pickR = await pickRule(pick);
+  if (!pickR) throw new HttpError(403, 'รูปแบบการทายนี้ปิดให้บริการชั่วคราว', 'GAME_CLOSED');
+  const mult = Number(pickR.payout_multiplier) > 0 ? Number(pickR.payout_multiplier) : FALLBACK_MULT[pick];
   const payout = win ? Math.floor(stake * mult) : 0;
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const detail = JSON.stringify({ dice, sum, pick, mult, won: outcomeSide });

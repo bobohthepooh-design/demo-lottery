@@ -369,14 +369,19 @@ export default function Kiwi() {
   const [last, setLast] = useState(null);
   const [spinDone, setSpinDone] = useState(true); // น้ำเต้าปูปลา: รอเต๋าหมดก่อนบอกผล
   const [spinningId, setSpinningId] = useState(null); // ticket id ที่กำลังหมุน — ซ่อนผลในประวัติ
+  const [showAllHist, setShowAllHist] = useState(false); // ประวัติแสดงแค่ 10 ล่าสุด — กดเพื่อดูทั้งหมด
   const playIdem = useRef(null); // {sig, key} — คง key เดิมจนกว่าจะสำเร็จ กัน retry เล่นซ้ำ
 
   const g = games.find(x => x.game === game) || games[0] || null;
   const load = () => api('/kiwi/mine').then(r => { setTickets(r.tickets); setLoaded(true); }).catch(() => setLoaded(true));
-  const loadInfo = () => api('/kiwi/info').then(r => setGames(r.games)).catch(() => {});
+  // เฉพาะเกมที่ admin เปิดไว้ (enabled=false = rule/type ถูกปิด)
+  const loadInfo = () => api('/kiwi/info').then(r => setGames((r.games || []).filter(x => x.enabled !== false))).catch(() => {});
   useEffect(() => {
     load();
-    api('/kiwi/info').then(r => { setGames(r.games); if (r.games[0]) setGame(r.games[0].game); }).catch(() => {});
+    api('/kiwi/info').then(r => {
+      const en = (r.games || []).filter(x => x.enabled !== false);
+      setGames(en); if (en[0]) setGame(en[0].game);
+    }).catch(() => {});
     // admin แก้ราคาเกม → SSE ดันมา refetch ราคาใหม่ทันที (คงเกมที่เลือกไว้)
     const h = () => { load(); loadInfo(); };
     window.addEventListener('sys:update', h);
@@ -520,7 +525,19 @@ export default function Kiwi() {
           }} />
       )}
 
-      {/* history */}
+      {/* ปุ่มเล่น — วางก่อนประวัติให้เห็นก่อนเสมอ (ชุดเดียวกับแถบล่าง) */}
+      <div className="luxury-card p-3">
+        <button onClick={play} disabled={!ready || busy || balance < (g?.price || Infinity)}
+          className="w-full luxury-btn font-black py-3 text-sm tracking-wide disabled:opacity-50 active:scale-[0.98]">
+          {busy ? '🎲 กำลังสุ่มผล...' : ready
+            ? `🎲 เล่นเลย — ${satang(g.price)} บาท${picks.length ? ` (${picks.length} เลือก)` : ''}`
+            : g?.dice ? `เลือกรูปแบบ + ค่าที่ถูกต้องก่อน (${picks.length}/${betType === 'pair' ? 2 : 1})`
+            : g?.symbols ? `เลือกสัตว์ 1 ตัวก่อน (${picks.length}/1)`
+            : `เลือกเลขให้ครบ ${g?.pickCount ?? ''} ตัวก่อน (${picks.length}/${g?.pickCount ?? '—'})`}
+        </button>
+      </div>
+
+      {/* history — แสดงแค่ 10 รายการล่าสุด ที่เหลือซ่อนไว้ */}
       {!loaded && <SkeletonCard />}
       {loaded && !tickets.length && (
         <EmptyState emoji="🎲" title="ยังไม่มีตั๋วยี่กี" hint="กดปุ่มเล่นเพื่อเริ่มเสี่ยงโชค" />
@@ -529,7 +546,7 @@ export default function Kiwi() {
         <div className="luxury-card overflow-hidden">
           <div className="px-5 py-4 border-b font-bold" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>ประวัติยี่กี</div>
           <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-            {tickets.map(t => (
+            {(showAllHist ? tickets : tickets.slice(0, 10)).map(t => (
               <button key={t.id} onClick={() => openTicket(t)}
                 className="w-full flex items-center gap-3 px-5 py-3 text-left transition hover:bg-navy-700/40">
                 <div className="flex-1 min-w-0">
@@ -551,6 +568,13 @@ export default function Kiwi() {
               </button>
             ))}
           </div>
+          {tickets.length > 10 && (
+            <button onClick={() => setShowAllHist(v => !v)}
+              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40"
+              style={{ color: 'var(--gold-primary)', borderTop: '1px solid var(--border-light)' }}>
+              {showAllHist ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${tickets.length} รายการ)`}
+            </button>
+          )}
         </div>
       )}
 
