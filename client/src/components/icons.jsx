@@ -177,6 +177,67 @@ const PATHS = {
       <path d="M11 17.5h2" />
     </>
   ),
+  // lottery type icons — stroke style เดียวกับ nav icons
+  th: ( // หวยรัฐบาลไทย — ธงริ้ว
+    <>
+      <path d="M8 3.5v17" />
+      <path d="M8 4.5h12.5l-3 3.75 3 3.75H8z" />
+      <path d="M8 8.25h11.6M8 12h11.6" />
+    </>
+  ),
+  la: ( // หวยลาว — ธงแถบ + วงกลมขาว
+    <>
+      <path d="M8 3.5v17" />
+      <path d="M8 4.5h12.5v15H8z" />
+      <path d="M8 8h12.5M8 16h12.5" />
+      <circle cx="14.25" cy="12" r="2.75" />
+    </>
+  ),
+  hn: ( // หวยฮานอย — ธงดาว
+    <>
+      <path d="M8 3.5v17" />
+      <path d="M8 4.5h12.5l-3 3.5 3 3.5H8z" />
+      <path d="M14 6l.5 1.1 1.2.1-1 .9.3 1.2-1-.6-.9.6.3-1.2-.9-.9 1.2-.1z" />
+    </>
+  ),
+  hr: ( // หวยราศี — วงล้อนักษัตร
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" />
+      <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="2.2" />
+    </>
+  ),
+  ki: ( // เกมยี่กี — ผลกีวี
+    <>
+      <ellipse cx="12" cy="12" rx="8" ry="9" />
+      <ellipse cx="12" cy="12" rx="4.5" ry="6" />
+      <circle cx="10" cy="9" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="9" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="12" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="12" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="15" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="15" r="0.55" fill="currentColor" stroke="none" />
+    </>
+  ),
+  sc: ( // หวยขูด — ตั๋ว
+    <>
+      <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8Z" />
+      <path d="M14 7v2M14 11v2M14 15v2" strokeDasharray="1 2" />
+    </>
+  ),
+  hl: ( // ไฮโล — ลูกเต๋า
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <circle cx="9" cy="9" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="9" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="15" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="15" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
 };
 
 export function Icon({ name, className = 'w-4 h-4' }) {
