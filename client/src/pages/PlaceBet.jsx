@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { api, satang, bahtToSatang, fmtDateTime, drawLabel } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import Countdown from '../components/Countdown.jsx';
@@ -80,8 +80,6 @@ export default function PlaceBet() {
   const { drawId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const showHidden = searchParams.get('showHidden') === '1';
   // แทงซ้ำจากหน้าประวัติโพย — {ref, items:[{ruleId, number, amount(satang), isTod}]}
   const repeat = location.state?.repeat || null;
   const { balance, setBalance, user } = useAuth();
@@ -385,24 +383,7 @@ export default function PlaceBet() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <Link to={showHidden ? '/play?showHidden=1' : '/play'} style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600, transition: 'all 0.2s' }} className="hover:text-[var(--gold-bright)]">← เลือกตลาด/รอบอื่น</Link>
-                <button
-                  onClick={() => navigate(showHidden ? '/play' : '/play?showHidden=1')}
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    padding: '0.375rem 0.75rem',
-                    borderRadius: '0.625rem',
-                    border: '1px solid',
-                    transition: 'all 0.2s',
-                    background: showHidden ? 'var(--bg-dark-surface)' : 'rgba(34, 197, 94, 0.15)',
-                    color: showHidden ? 'var(--muted-gray)' : 'var(--success-green)',
-                    borderColor: showHidden ? 'var(--border-light)' : 'rgba(34, 197, 94, 0.3)'
-                  }}
-                  className="sm:text-xs sm:px-3 sm:py-2"
-                >
-                  {showHidden ? '🙈 ซ่อนรอบที่ยังไม่เปิด' : '👁️ แสดงรอบที่ซ่อนอยู่'}
-                </button>
+                <Link to="/play" style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600, transition: 'all 0.2s' }} className="hover:text-[var(--gold-bright)]">← เลือกตลาด/รอบอื่น</Link>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem 1rem' }} className="sm:gap-4">
                 <FlagIcon code={draw.type_code} style={{ borderRadius: '0.375rem', boxShadow: 'var(--shadow-md)' }} className="w-10 h-7 sm:w-12 sm:h-9" />

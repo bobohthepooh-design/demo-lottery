@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api, fmtDateTime, drawLabel } from '../api.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { isBettingOpen, bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
@@ -143,8 +143,6 @@ function TypeCard({ tg, onClick }) {
 export default function BetHub() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const showHidden = searchParams.get('showHidden') === '1';
   const [draws, setDraws] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [hiddenBetTypes, setHiddenBetTypes] = useState([]);
@@ -188,8 +186,8 @@ export default function BetHub() {
       if (!isAdmin && hiddenSet.has(d.type_code)) continue;
       if (INSTANT.has(d.type_code)) continue;
       if (d.type_code === 'HR') continue; // ยกเว้นหวยราศี
-      // ซ่อนรอบที่ยังไม่เปิด (blind) — เว้นแต่ user เลือก showHidden=1
-      if (!showHidden && isBlind(d, nowSql)) continue;
+      // แสดง "รอบถัดไป" ของทุกประเภทเสมอ — รอบที่ยังไม่เปิด (blind) เอาไว้แค่รอบแรกที่ใกล้สุดต่อหมวด
+      // (กัน list ยาว — หวยรายเดือนมีรอบล่วงหน้าเป็นเดือน)
 
       const tc = d.type_code;
       const cc = d.category_code || '';
@@ -206,6 +204,13 @@ export default function BetHub() {
 
     return [...byType.values()].map(tg => {
       const catList = [...tg.cats.values()].map(cat => {
+        // เหลือรอบ blind แค่รอบแรก (รอบถัดไป) ต่อหมวด — รอบไกลกว่านั้นไม่ต้องโชว์
+        const blinds = cat.rounds.filter(d => isBlind(d, nowSql))
+          .sort((a, b) => String(a.draw_at).localeCompare(String(b.draw_at)));
+        if (blinds.length > 1) {
+          const keep = new Set([blinds[0].id]);
+          cat.rounds = cat.rounds.filter(d => !isBlind(d, nowSql) || keep.has(d.id));
+        }
         // รอบที่แทงได้ขึ้นก่อน (live → รอผล → อนาคต) รอบเก่า/ออกผลแล้วอยู่ล่างสุด
         const rank = (d) => isBettingOpen(d, nowSql) ? 0
           : isAwaitingDraw(d, nowSql) ? 1
@@ -242,7 +247,7 @@ export default function BetHub() {
       if (aLive !== bLive) return bLive - aLive;
       return a.typeName.localeCompare(b.typeName);
     });
-  }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql, showHidden]);
+  }, [draws, hiddenBetTypes, nowMs, isAdmin, nowSql]);
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 pt-2 sm:pt-3 pb-4">
