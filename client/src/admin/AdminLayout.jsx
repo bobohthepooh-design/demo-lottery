@@ -126,12 +126,12 @@ export default function AdminLayout() {
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6" style={{ backgroundColor: 'var(--bg-deep-black)' }}>
       <aside className="lg:w-60 shrink-0">
-        <div className="rounded-xl lg:sticky lg:top-24 overflow-hidden" style={{
+        <div className="rounded-xl sticky top-[3.625rem] sm:top-[4.125rem] lg:top-24 z-30 overflow-hidden" style={{
           background: 'linear-gradient(180deg, var(--bg-card), var(--bg-dark-surface))',
           border: '1px solid var(--border-gold)',
           boxShadow: 'var(--shadow-pop)'
         }}>
-          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+          <div className="hidden lg:flex items-center gap-2.5 px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
             <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
               background: 'rgba(212, 175, 55, 0.2)',
               border: '1px solid var(--border-gold)',
