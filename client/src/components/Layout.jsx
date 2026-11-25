@@ -477,6 +477,15 @@ export default function Layout() {
                 )}
               </NavLink>
             ))}
+            {/* เพิ่มเติม — เปิดเมนูทั้งหมด (tablet/มือถือเข้าถึงทุกหน้าได้จาก bottom bar) */}
+            <button onClick={() => setMenuOpen(true)}
+              className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors"
+              style={{ color: 'var(--muted-gray)' }}>
+              <span className="relative transition-transform duration-200 opacity-70">
+                <CasinoIcon name="menu" tone="gray" className="w-6 h-6" />
+              </span>
+              <span className="relative">{t('more')}</span>
+            </button>
           </div>
         </div>
       </nav>
