@@ -277,12 +277,12 @@ export default function Home() {
                       </Link>
                       {sumAll.length > 0 && (
                         <button onClick={() => setCardOpen(e => ({ ...e, [ck]: !open }))}
-                          className="mt-1 sm:mt-1.5 w-full text-left text-[9px] sm:text-[10px] transition" style={{ color: 'var(--muted-gray)' }}>
+                          className="mt-1 sm:mt-1.5 w-full text-left text-[11px] sm:text-xs font-semibold transition" style={{ color: 'var(--muted-gray)' }}>
                           {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
                         </button>
                       )}
                       {open && sumAll.length > 0 && (
-                        <div className="mt-0.5 sm:mt-1 text-[9px] sm:text-[10px] font-mono leading-relaxed break-all rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5" style={{
+                        <div className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-mono font-semibold leading-relaxed break-all rounded-lg px-1.5 sm:px-2 py-1.5 sm:py-2" style={{
                           color: 'var(--light-gray)',
                           background: 'var(--bg-dark-surface)'
                         }}>

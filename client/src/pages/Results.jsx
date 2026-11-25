@@ -324,12 +324,12 @@ export default function Results() {
                         )}
                         {sumAll.length > 0 && (
                           <button onClick={() => setCardOpen(e => ({ ...e, [`${r.type_code}:${r.category_code || ''}`]: !open }))}
-                            className="mt-1.5 w-full text-left text-[10px] text-gray-400 hover:text-[#F5D76E] transition">
+                            className="mt-1.5 w-full text-left text-xs sm:text-sm font-semibold text-gray-300 hover:text-[#F5D76E] transition">
                             {open ? '▾ ย่อผลทุกรางวัล' : '▸ ดูผลทุกรางวัล'}
                           </button>
                         )}
                         {open && sumAll.length > 0 && (
-                          <div className="mt-1 text-[10px] text-gray-300 bg-[#181A20] rounded-lg px-2 py-1.5 font-mono leading-relaxed break-all border border-[rgba(229,231,235,0.1)]">
+                          <div className="mt-1 text-xs sm:text-sm font-semibold text-gray-200 bg-[#181A20] rounded-lg px-2 py-2 font-mono leading-relaxed break-all border border-[rgba(229,231,235,0.15)]">
                             {sumAll.map((p, i) => <div key={i}>{p}</div>)}
                           </div>
                         )}
