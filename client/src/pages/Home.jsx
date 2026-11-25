@@ -35,8 +35,9 @@ export default function Home() {
       setCashbackPct(Number(r.cashbackPercent) || 0);
     }).catch(() => {});
     const loadToday = () => api('/lottery/today').then(r => setTodayDraws(r.draws || [])).catch(() => {});
-    // ผลล่าสุด 6 รายการข้ามตลาด (1 ต่อตลาด) — server กรองเกมด่วน/ราศีออกแล้ว
-    const loadLatest = () => api('/lottery/latest-results?limit=6&exclude=SC,HL,KI,CF,HR').then(r => setLatestResults(r.draws || [])).catch(() => {});
+    // ผลล่าสุดข้ามตลาด — ดึงเผื่อๆ ไว้ 24 แล้วค่อย dedupe ตลาด+ตัด 6 การ์ด
+    // (limit=6 ตรงๆ อาจได้ตลาดซ้ำเยอะ → การ์ดจริงเหลือน้อยกว่า 6)
+    const loadLatest = () => api('/lottery/latest-results?limit=24&exclude=SC,HL,KI,CF,HR').then(r => setLatestResults(r.draws || [])).catch(() => {});
     loadToday(); loadLatest();
     const t = setInterval(() => { loadToday(); loadLatest(); }, 30000); // refresh อัตโนมัติ — ผลใหม่ขึ้นเอง
     const h = () => { loadToday(); loadLatest(); };
