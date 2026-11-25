@@ -711,6 +711,35 @@ export default function PlaceBet() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Custom numpad — มือถือเท่านั้น กันคีย์บอร์ดเด้งบังปุ่มยืนยัน (อ้างอิง portal.ruayraew) */}
+                  <div className="sm:hidden">
+                    <div className="grid grid-cols-3 gap-2">
+                      {['1','2','3','4','5','6','7','8','9'].map(d => (
+                        <button key={d} type="button"
+                          onClick={() => setNumber((number + d).slice(0, rule?.digits || 3))}
+                          className="rounded-xl font-mono font-bold text-lg"
+                          style={{ minHeight: '44px', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--gold-primary)' }}>
+                          {d}
+                        </button>
+                      ))}
+                      <button type="button" onClick={() => setNumber(number.slice(0, -1))}
+                        className="rounded-xl font-bold text-sm"
+                        style={{ minHeight: '44px', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--muted-gray)' }}>
+                        ⌫ ลบ
+                      </button>
+                      <button type="button" onClick={() => setNumber((number + '0').slice(0, rule?.digits || 3))}
+                        className="rounded-xl font-mono font-bold text-lg"
+                        style={{ minHeight: '44px', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--gold-primary)' }}>
+                        0
+                      </button>
+                      <button type="button" onClick={() => setNumber('')}
+                        className="rounded-xl font-bold text-sm"
+                        style={{ minHeight: '44px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: 'var(--danger-red)' }}>
+                        ล้าง
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
