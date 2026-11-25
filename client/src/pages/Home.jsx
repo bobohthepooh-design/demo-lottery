@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { api, fmtDateTime, satang, thaiDate, thaiTime } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { FlagIcon } from '../components/ResultLine.jsx';
-import Countdown from '../components/Countdown.jsx';
 import { sourceBadge, sourceName } from '../resultSource.js';
 import { heroNumbers, resultSummary } from '../resultFields.js';
 import { Marquee } from '../components/ui/index.js';
@@ -36,11 +35,6 @@ export default function Home() {
   // admin ซ่อนเมนูแทงหวยรายประเภทได้ (blind mode) — admin เองเห็นทั้งหมดเสมอ
   const hiddenSet = new Set(hiddenBetTypes);
   const drawVisible = d => isAdmin || !hiddenSet.has(d.type_code);
-
-  // รอบถัดไปที่เปิดรับ — แสดง countdown บน hero
-  const nextOpen = todayDraws
-    .filter(d => d.status === 'open' && drawVisible(d))
-    .sort((a, b) => String(a.close_at).localeCompare(String(b.close_at)))[0] || null;
 
   // ปุ่มลัดหลัก — เรียบ template เดียวกันทุกปุ่ม (พื้น navy กลาง ไม่แสบตา)
   const quickActions = user ? [
@@ -134,57 +128,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* hero — โต๊ะ felt 카지노 เหลี่ยมทอง (ใช้ทุกคน เห็นก่อนทุกอย่าง) */}
-      <section className="relative px-2 py-6 sm:px-6 sm:py-10 text-center">
-        <div className="relative">
-          <div className="text-[10px] sm:text-xs font-bold tracking-[0.3em] uppercase" style={{ color: 'var(--gold-primary)' }}>
-            ระบบสาธิต · Demo Lottery
-          </div>
-          <h1 className="font-display font-black leading-tight mt-2" style={{ fontSize: 'clamp(1.9rem, 6.5vw, 3.25rem)' }}>
-            <span style={{
-              background: 'linear-gradient(100deg, #F5D76E 10%, #D4AF37 50%, #F5D76E 90%)',
-              WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
-              filter: 'drop-shadow(0 2px 14px rgba(212, 175, 55, 0.35))'
-            }}>หวยออนไลน์</span>
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm md:text-base max-w-md mx-auto leading-relaxed" style={{ color: 'var(--light-gray)' }}>
-            เลือกตลาด เลือกเลข ส่งโพยในไม่กี่แตะ — ผลรางวัลอัปเดตอัตโนมัติ<br className="hidden sm:block" />
-            <span className="text-[10px] sm:text-xs" style={{ color: 'var(--muted-gray)' }}>ระบบสาธิต • ใช้เครดิตเสมือนเพื่อการศึกษาเท่านั้น</span>
-          </p>
-          {nextOpen && (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 sm:py-2" style={{
-              background: 'rgba(0,0,0,0.45)',
-              border: '1px solid var(--border-gold)',
-              boxShadow: 'var(--shadow-md)'
-            }}>
-              <span className="text-xs" style={{ color: 'var(--muted-gray)' }}>🔥 รอบถัดไปปิดรับใน</span>
-              <span style={{ color: 'var(--gold-bright)', fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem' }}>
-                <Countdown closeAt={nextOpen.close_at} />
-              </span>
-            </div>
-          )}
-          <div className="mt-5 flex flex-wrap justify-center gap-2.5 sm:gap-3">
-            <Link to="/play" className="px-6 py-2.5 sm:px-7 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition hover:-translate-y-0.5" style={{
-              background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-              color: 'var(--bg-deep-black)',
-              boxShadow: 'var(--shadow-gold-lg)'
-            }}>🎯 แทงเลย</Link>
-            <Link to="/results" className="px-6 py-2.5 sm:px-7 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition hover:-translate-y-0.5" style={{
-              border: '1px solid var(--border-gold)',
-              color: 'var(--gold-primary)',
-              background: 'rgba(0,0,0,0.35)',
-              backdropFilter: 'blur(4px)'
-            }}>🏆 ผลรางวัล</Link>
-            {!user && (
-              <Link to="/register" className="px-6 py-2.5 sm:px-7 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition hover:-translate-y-0.5" style={{
-                border: '1px solid var(--border-light)',
-                color: 'var(--white)',
-                background: 'rgba(255,255,255,0.06)'
-              }}>👤 สมัครสมาชิก</Link>
-            )}
-          </div>
-        </div>
-      </section>
 
       {/* ปุ่มลัดหลัก — luxury icon tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
