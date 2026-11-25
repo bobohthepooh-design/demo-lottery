@@ -413,7 +413,7 @@ export default function Layout() {
       {/* Bottom navigation — luxury style */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="relative sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:rounded-2xl sm:overflow-hidden"
+        <div className="relative sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:rounded-2xl"
           style={{
             borderTop: '1px solid var(--border-gold)',
             background: 'linear-gradient(180deg, var(--bg-dark-surface), var(--bg-deep-black))',
