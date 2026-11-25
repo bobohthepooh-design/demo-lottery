@@ -201,7 +201,7 @@ function SessionsCard() {
       <CardHeader title="อุปกรณ์ที่ล็อกอิน" sub="จัดการ session ที่ใช้งานอยู่ — เพิกถอนเครื่องที่ไม่รู้จัก" />
       <CardBody>
         <div className="space-y-2 mb-3">
-          {sessions.map(s => (
+          {sessions.slice(0, 10).map(s => (
             <div key={s.id} className="flex items-center justify-between bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm hover:border-[var(--border-gold)] transition">
               <div className="min-w-0">
                 <div className="text-[var(--white)] truncate">{s.user_agent || 'unknown device'} {s.current && <span className="text-[10px] bg-[var(--gold-primary)]/20 text-[var(--gold-primary)] px-1.5 py-0.5 rounded ml-1 luxury-badge-gold">อุปกรณ์นี้</span>}</div>
@@ -210,6 +210,7 @@ function SessionsCard() {
               {!s.current && <Button variant="ghost" size="sm" disabled={busy} onClick={() => revoke(s.id)} className="luxury-btn-ghost">เพิกถอน</Button>}
             </div>
           ))}
+          {sessions.length > 10 && <div className="text-[11px] text-[var(--muted-gray)] pt-1">แสดง 10 รายการล่าสุด — เพิกถอนอุปกรณ์เก่าจากรายการนี้ได้</div>}
           {sessions.length === 0 && <div className="text-sm text-[var(--muted-gray)]">ไม่มี session ที่ใช้งานอยู่</div>}
         </div>
         {sessions.length > 1 && <Button variant="ghost" size="sm" disabled={busy} onClick={revokeOthers} className="luxury-btn-ghost">ออกจากอุปกรณ์อื่นทั้งหมด</Button>}

@@ -40,13 +40,13 @@ export default function Wallet() {
   const [ppId, setPpId] = useState('');
   const [txTotal, setTxTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const TX_PAGE = 20;
+  const TX_PAGE = 10; // แสดงทีละ 10 รายการ — ที่เหลือกดโหลดเพิ่มเติม
 
   const BANKS = ['กสิกรไทย','กรุงเทพ','กรุงไทย','กรุงศรีอยุธยา','ไทยพาณิชย์','ออมสิน','ทหารไทย','แลนด์ แอนด์ เฮ้าส์','เกียรตินาคินภัทร','ซีไอเอ็มบี','ยูโอบี','พร้อมเพย์'];
 
   const [payTotal, setPayTotal] = useState(0);
   const [loadingMorePays, setLoadingMorePays] = useState(false);
-  const PAY_PAGE = 30;
+  const PAY_PAGE = 10;
   const loadPays = (offset = 0) => api(`/payments?limit=${PAY_PAGE}&offset=${offset}`).then(r => {
       setPayReqs(prev => offset === 0 ? (r.requests || []) : [...prev, ...(r.requests || [])]);
       setPayTotal(r.total ?? (r.requests || []).length);

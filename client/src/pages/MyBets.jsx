@@ -183,7 +183,7 @@ const FILTERS = [
   { k: 'refunded', label: 'คืนเงิน' },
 ];
 
-const PAGE = 50;
+const PAGE = 10; // แสดงทีละ 10 โพย — ที่เหลือกดโหลดเพิ่มเติม
 
 // กลุ่มโพยตามวันที่ออกรางวัล — key 'YYYY-MM-DD' ตาม timezone ที่ผู้ใช้เลือก
 function slipDay(s) {

@@ -259,20 +259,20 @@ export default function AdminMembers() {
 
             <Section title={`ประวัติการเข้าสู่ระบบ (${act.authEvents.length})`}>
               {act.authEvents.length === 0 && <Empty />}
-              {act.authEvents.map((e, i) => (
+              {act.authEvents.slice(0, 10).map((e, i) => (
                 <Row key={i} left={`${e.event} • ${e.ip || '—'}`} right={fmtDateTime(e.created_at)} sub={e.user_agent?.slice(0, 60)} />
               ))}
             </Section>
 
             <Section title={`Session ที่ใช้งานอยู่ (${act.sessions.length})`}>
               {act.sessions.length === 0 && <Empty />}
-              {act.sessions.map(s => (
+              {act.sessions.slice(0, 10).map(s => (
                 <Row key={s.id} left={`${s.ip || '—'} • MFA ${s.mfa_verified ? '✓' : '✗'}`} right={`หมด ${fmtDateTime(s.expires_at)}`} sub={s.user_agent?.slice(0, 60)} />
               ))}
             </Section>
 
-            <Section title="การชำระเงินล่าสุด" cols={[['ref', 'reference'], ['ประเภท', 'kind'], ['ยอด', 'amount'], ['สถานะ', 'status'], ['เวลา', 'created_at']]} rows={act.payments.map(p => ({ ...p, amount: satang(p.amount) + ' ฿' }))} />
-            <Section title="กระเป๋าเครดิตล่าสุด" cols={[['ref', 'reference'], ['ประเภท', 'type'], ['ทิศ', 'direction'], ['ยอด', 'amount'], ['หลังทำ', 'balance_after'], ['เวลา', 'created_at']]} rows={act.walletTx.map(t => ({ ...t, amount: satang(t.amount), balance_after: satang(t.balance_after) }))} />
+            <Section title="การชำระเงินล่าสุด" cols={[['ref', 'reference'], ['ประเภท', 'kind'], ['ยอด', 'amount'], ['สถานะ', 'status'], ['เวลา', 'created_at']]} rows={act.payments.slice(0, 10).map(p => ({ ...p, amount: satang(p.amount) + ' ฿' }))} />
+            <Section title="กระเป๋าเครดิตล่าสุด" cols={[['ref', 'reference'], ['ประเภท', 'type'], ['ทิศ', 'direction'], ['ยอด', 'amount'], ['หลังทำ', 'balance_after'], ['เวลา', 'created_at']]} rows={act.walletTx.slice(0, 10).map(t => ({ ...t, amount: satang(t.amount), balance_after: satang(t.balance_after) }))} />
             <Section title="โพยล่าสุด" cols={[['id', 'id'], ['draw', 'draw_id'], ['สถานะ', 'status'], ['ยอดรวม', 'total_stake'], ['รางวัล', 'total_payout'], ['เวลา', 'created_at']]} rows={act.recentBets.map(b => ({ ...b, total_stake: satang(b.total_stake), total_payout: satang(b.total_payout || 0) }))} />
             <Section title="Audit ที่เกี่ยวข้อง" cols={[['action', 'action'], ['entity', 'entity_type'], ['id', 'entity_id'], ['เวลา', 'created_at']]} rows={act.auditRows} />
           </div>

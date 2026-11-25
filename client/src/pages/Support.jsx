@@ -16,6 +16,7 @@ const STATUS_CLS = {
 
 export default function Support() {
   const [tickets, setTickets] = useState([]);
+  const [showAllTickets, setShowAllTickets] = useState(false); // แสดงแค่ 10 เรื่องล่าสุด — ที่เหลือกดขยาย
   const [form, setForm] = useState({ category: 'general', subject: '', message: '' });
   const [busy, setBusy] = useState(false);
 
@@ -98,7 +99,7 @@ export default function Support() {
               ยังไม่มีเรื่องที่ส่ง
             </div>
           )}
-          {tickets.map(t => (
+          {(showAllTickets ? tickets : tickets.slice(0, 10)).map(t => (
             <div key={t.id} className="p-4 rounded-lg border border-[var(--border-light)] bg-[var(--bg-dark-surface)] hover:border-[var(--border-gold)] transition-all">
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <span className="text-xs font-mono text-[var(--muted-gray)]">#{t.id}</span>
@@ -118,6 +119,13 @@ export default function Support() {
               )}
             </div>
           ))}
+          {tickets.length > 10 && (
+            <button onClick={() => setShowAllTickets(v => !v)}
+              className="w-full py-2 text-xs font-bold rounded-lg transition hover:bg-[var(--bg-dark-surface)]"
+              style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>
+              {showAllTickets ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${tickets.length} เรื่อง)`}
+            </button>
+          )}
         </div>
       </LuxuryCard>
     </div>
