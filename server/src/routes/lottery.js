@@ -120,11 +120,16 @@ router.get('/draws/:id/rules', requireAuth, async (req, res, next) => {
 });
 
 // provably fair — คำนวณผลซ้ำจาก seed descriptor (kind + draw_code) เพื่อตรวจสอบผลที่ระบบ generate
-router.get('/fairness/gen', (req, res, next) => {
+// เปิดเผยได้เฉพาะรอบที่ออกผลเผยแพร่แล้ว — กันคนคำนวณผลล่วงหน้าจาก draw_code ที่เห็นก่อนปิดรับ
+router.get('/fairness/gen', async (req, res, next) => {
   try {
     const kind = String(req.query.kind || '');
     const code = String(req.query.code || '').slice(0, 100);
     if (!code) throw new HttpError(400, 'ต้องระบุ code');
+    const draw = await getDb().prepare(`SELECT d.id FROM lottery_draws d
+      JOIN lottery_results lr ON lr.draw_id = d.id
+      WHERE d.draw_code = ?`).get(code);
+    if (!draw) throw new HttpError(404, 'ยังไม่มีผลเผยแพร่สำหรับรอบนี้ — ไม่สามารถคำนวณผลล่วงหน้าได้', 'NOT_PUBLISHED');
     res.json({ kind, code, winning: fetcher.generateByKind(kind, code) });
   } catch (e) { next(e); }
 });
