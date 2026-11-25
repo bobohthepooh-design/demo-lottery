@@ -135,20 +135,7 @@ export default function Home() {
       )}
 
       {/* hero — โต๊ะ felt 카지노 เหลี่ยมทอง (ใช้ทุกคน เห็นก่อนทุกอย่าง) */}
-      <section className="casino-hero-felt casino-rail relative overflow-hidden rounded-3xl px-5 py-8 sm:px-12 sm:py-14 text-center">
-        {/* เหรียญทองตกแต่งมุม — decorative เท่านั้น */}
-        <div aria-hidden className="absolute rounded-full hidden sm:block" style={{
-          width: '4.5rem', height: '4.5rem', top: '12%', left: '7%',
-          background: 'radial-gradient(circle at 35% 30%, #fde68a, #d4af37 60%, #8a6405)',
-          boxShadow: '0 8px 20px rgba(0,0,0,0.5), inset 0 0 0 4px rgba(120,85,10,0.5)',
-          opacity: 0.9
-        }} />
-        <div aria-hidden className="absolute rounded-full hidden sm:block" style={{
-          width: '3rem', height: '3rem', bottom: '14%', right: '9%',
-          background: 'radial-gradient(circle at 35% 30%, #3a3f4a, #14171f 65%, #05070c)',
-          boxShadow: '0 8px 20px rgba(0,0,0,0.5), inset 0 0 0 3px rgba(212,175,55,0.4)',
-          opacity: 0.9
-        }} />
+      <section className="relative px-2 py-6 sm:px-6 sm:py-10 text-center">
         <div className="relative">
           <div className="text-[10px] sm:text-xs font-bold tracking-[0.3em] uppercase" style={{ color: 'var(--gold-primary)' }}>
             ระบบสาธิต · Demo Lottery
