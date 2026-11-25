@@ -428,7 +428,7 @@ export default function Layout() {
               { to: '/wallet', k: 'walletShort', icon: 'wallet', show: !isAdmin },
               { to: '/play', k: 'betMenu', icon: 'lotteries', center: true, show: showBetMenu },
               { to: '/games', k: 'gamesHub', icon: 'bets', center: true, accent: 'violet', show: showBetMenu },
-              { to: '/profile', k: 'profile', icon: 'user', show: true },
+              { to: '/my-bets', k: 'mybets', icon: 'ticket', show: !isAdmin },
             ] : [
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
               { to: '/results', k: 'results', icon: 'trophy', show: true },
