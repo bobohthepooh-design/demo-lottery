@@ -126,9 +126,10 @@ export default function AdminLayout() {
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6" style={{ backgroundColor: 'var(--bg-deep-black)' }}>
       <aside className="lg:w-60 shrink-0">
-        {/* lg: fixed — ล็อก sidebar ไว้กับจอ ไม่เลื่อนตาม content (left = ขอบ container max-w-7xl + padding) */}
+        {/* lg: sticky — ติดบนตอนเลื่อนแต่ไม่คำนวณตำแหน่งจาก vw (fixed+calc(50vw) ทำให้
+            เด้งทุกครั้งที่ scrollbar โผล่/หาย) aside ยืดเต็มสูงแถว flex อยู่แล้ว */}
         <div className="rounded-xl sticky top-[3.625rem] sm:top-[4.125rem] z-30 overflow-hidden
-          lg:fixed lg:left-[max(1rem,calc(50vw_-_39rem))] lg:top-24 lg:bottom-6 lg:h-auto lg:w-60 lg:flex lg:flex-col"
+          lg:sticky lg:top-24 lg:bottom-auto lg:h-auto lg:max-h-[calc(100vh-7.5rem)] lg:w-60 lg:flex lg:flex-col"
           style={{
           background: 'linear-gradient(180deg, var(--bg-card), var(--bg-dark-surface))',
           border: '1px solid var(--border-gold)',
