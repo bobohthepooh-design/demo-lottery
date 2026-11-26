@@ -169,97 +169,60 @@ export default function Wallet() {
   };
   const sumToday = summarize(1), sumWeek = summarize(7);
 
-  const [depositHover, setDepositHover] = useState(false);
-  const [withdrawHover, setWithdrawHover] = useState(false);
-
   return (
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
       {/* HERO BALANCE CARD — Luxury Gold style */}
-      <Card className="overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '1px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)' }}>
+      <Card className="overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-dark-surface)] border border-[var(--border-gold)] rounded-2xl">
         {/* member strip — subtitle */}
         <div className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 pt-4 sm:pt-5 pb-2.5 sm:pb-3">
-          <span style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'rgba(212, 175, 55, 0.2)', color: 'var(--gold-bright)', fontWeight: 900, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-gold)', flexShrink: 0 }}>
+          <span className="w-10 h-10 rounded-full bg-[rgba(212,175,55,0.2)] text-[var(--gold-bright)] font-black text-xs flex items-center justify-center border border-[var(--border-gold)] shrink-0">
             {(user?.displayName || user?.username || 'ล').slice(0, 1).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--white)' }}>{user?.displayName || user?.username || 'สมาชิก'}</div>
+            <div className="text-xs font-semibold text-[var(--white)]">{user?.displayName || user?.username || 'สมาชิก'}</div>
             <div className="flex items-center gap-1 sm:gap-1.5">
-              <span style={{ fontSize: '0.5rem', fontWeight: 700, padding: '0.1rem 0.3rem', borderRadius: '0.25rem', background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>MEMBER</span>
-              <span style={{ fontSize: '0.5rem', fontWeight: 700, padding: '0.1rem 0.3rem', borderRadius: '0.25rem', background: 'rgba(245, 158, 11, 0.9)', color: 'var(--white)' }}>DEMO</span>
+              <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-[var(--bg-dark-surface)] text-[var(--muted-gray)] border border-[var(--border-light)]">MEMBER</span>
+              <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-500/90 text-white">DEMO</span>
             </div>
           </div>
         </div>
 
         {/* large balance display */}
         <div className="px-4 sm:px-5 pb-3 sm:pb-4">
-          <div style={{ fontSize: '0.5625rem', fontWeight: 700, color: 'var(--muted-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>ยอดคงเหลือ</div>
-          <div style={{ fontSize: '2rem', lineHeight: 1, fontWeight: 900, background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}><AnimatedNumber value={balance} /></div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--muted-gray)', marginTop: '0.125rem' }}>บาท</div>
+          <div className="text-[9px] font-bold text-[var(--muted-gray)] uppercase tracking-wider mb-1">ยอดคงเหลือ</div>
+          <div className="text-4xl font-black bg-gradient-to-br from-[var(--gold-primary)] to-[var(--gold-bright)] bg-clip-text text-transparent leading-none"><AnimatedNumber value={balance} /></div>
+          <div className="text-xs font-bold text-[var(--muted-gray)] mt-0.5">บาท</div>
         </div>
 
         {/* full-width action buttons */}
         <div className="px-4 sm:px-5 pb-2.5 sm:pb-3 space-y-1.5 sm:space-y-2">
-          <button
+          <Button
             onClick={() => { setModal('deposit'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); }}
-            onMouseEnter={() => setDepositHover(true)}
-            onMouseLeave={() => setDepositHover(false)}
-            style={{
-              width: '100%',
-              borderRadius: 'var(--radius-lg)',
-              background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-              color: 'var(--bg-deep-black)',
-              fontWeight: 900,
-              padding: '0.65rem',
-              fontSize: '0.8rem',
-              letterSpacing: '0.05em',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: depositHover ? 'var(--shadow-gold-lg)' : 'var(--shadow-gold)',
-              transform: depositHover ? 'translateY(-1px)' : 'translateY(0)',
-              transition: 'all 0.2s ease-in-out'
-            }}
+            className="w-full py-2.5 text-sm font-black tracking-wider shadow-[var(--shadow-gold)] hover:shadow-[var(--shadow-gold-lg)] hover:-translate-y-0.5 transition-all"
+            variant="primary"
           >
             ＋ ฝากเงิน
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => { setModal('withdraw'); setAmount(''); setErr(''); setDepStep('form'); setDepInfo(null); setSlipFile(null); setPpId(''); }}
-            onMouseEnter={() => setWithdrawHover(true)}
-            onMouseLeave={() => setWithdrawHover(false)}
-            style={{
-              width: '100%',
-              borderRadius: 'var(--radius-lg)',
-              background: 'transparent',
-              color: 'var(--gold-primary)',
-              fontWeight: 900,
-              padding: '0.65rem',
-              fontSize: '0.8rem',
-              letterSpacing: '0.05em',
-              border: '1px solid var(--gold-primary)',
-              cursor: 'pointer',
-              boxShadow: 'none',
-              transform: withdrawHover ? 'translateY(-1px)' : 'translateY(0)',
-              transition: 'all 0.2s ease-in-out'
-            }}
+            className="w-full py-2.5 text-sm font-black tracking-wider border border-[var(--gold-primary)] bg-transparent text-[var(--gold-primary)] hover:bg-[rgba(212,175,55,0.08)] hover:-translate-y-0.5 transition-all"
+            variant="ghost"
           >
             🏦 ถอนเงิน
-          </button>
+          </Button>
         </div>
 
         {/* withdrawable status */}
         {wd && (
-          <div style={{
-            margin: '0 1.25rem 1rem',
-            borderRadius: 'var(--radius-md)',
-            padding: '0.5rem 0.75rem',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            textAlign: 'center',
-            background: wd.pendingSlips > 0 ? 'rgba(245, 158, 11, 0.1)' : wd.unlocked ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-            color: wd.pendingSlips > 0 ? 'var(--warning-amber)' : wd.unlocked ? 'var(--success-green)' : 'var(--warning-amber)',
-            border: wd.pendingSlips > 0 ? '1px solid rgba(245, 158, 11, 0.3)' : wd.unlocked ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)'
-          }}>
+          <div className={`mx-5 mb-4 rounded-lg px-3 py-2 text-xs font-semibold text-center ${
+            wd.pendingSlips > 0
+              ? 'bg-amber-500/10 text-[var(--warning-amber)] border border-amber-500/30'
+              : wd.unlocked
+                ? 'bg-green-500/10 text-[var(--success-green)] border border-green-500/30'
+                : 'bg-amber-500/10 text-[var(--warning-amber)] border border-amber-500/30'
+          }`}>
             {wd.pendingSlips > 0 && (
-              <div style={{ marginBottom: '0.125rem' }}>⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท)</div>
+              <div className="mb-0.5">⏳ มีโพย {wd.pendingSlips} รายการค้างผล ({satang(wd.pendingStake)} บาท)</div>
             )}
             {wd.unlocked
               ? wd.override
@@ -271,24 +234,22 @@ export default function Wallet() {
           </div>
         )}
 
-        <div className="px-5 pb-5 text-center">
-          <div style={{ fontSize: '0.625rem', color: 'var(--muted-gray)', fontWeight: 600 }}>เครดิตเสมือนสำหรับการศึกษา — โปรโมชันถอนไม่ได้ เฉพาะเงินฝาก/เงินรางวัล</div>
-        </div>
+          <div className="px-5 pb-5 text-center text-[10px] text-[var(--muted-gray)] font-semibold">เครดิตเสมือนสำหรับการศึกษา — โปรโมชันถอนไม่ได้ เฉพาะเงินฝาก/เงินรางวัล</div>
       </Card>
 
       {/* ประวัติคำขอชำระเงิน — ไว้ด้านบนสุด แสดง 30 รายการ ที่เหลือซ่อนไว้ */}
       {payReqs.length > 0 && (
-        <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+        <Card className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl">
           <CardHeader title={`คำขอเติม/ถอนเงิน (${payReqs.length})`} />
-          <div style={{ borderBottom: '1px solid var(--border-light)' }}>
+          <div className="border-b border-[var(--border-light)]">
             {payReqs.map(p => (
-              <div key={p.id} style={{ padding: '0.625rem 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', fontSize: '0.875rem', borderBottom: '1px solid var(--border-light)' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, color: 'var(--white)' }}>
+              <div key={p.id} className="px-0 py-2.5 flex items-center justify-between gap-3 text-sm border-b border-[var(--border-light)]">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[var(--white)]">
                     {p.kind === 'deposit' ? '💳 เติม' : '🏦 ถอน'} ฿{satang(p.amount)}
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.6875rem', fontFamily: 'monospace', color: 'var(--muted-gray)' }}>{p.reference}</span>
+                    <span className="ml-2 text-[11px] font-mono text-[var(--muted-gray)]">{p.reference}</span>
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div className="text-[11px] text-[var(--muted-gray)] overflow-hidden text-ellipsis whitespace-nowrap">
                     {fmtDateTime(p.created_at)}
                     {p.slip_trans_ref ? ` • สลิป ${p.slip_trans_ref}` : ''}
                     {p.bank_name ? ` • ${p.bank_name} ${p.bank_account_no}` : ''}
@@ -296,15 +257,12 @@ export default function Wallet() {
                     {p.admin_note ? ` • หมายเหตุ: ${p.admin_note}` : ''}
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', flexShrink: 0 }}>
-                  <span style={{
-                    fontSize: '0.6875rem',
-                    fontWeight: 700,
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '0.25rem',
-                    background: p.status === 'approved' ? 'rgba(34, 197, 94, 0.15)' : p.status === 'rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                    color: p.status === 'approved' ? 'var(--success-green)' : p.status === 'rejected' ? 'var(--danger-red)' : 'var(--warning-amber)'
-                  }}>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`text-[11px] font-bold px-2 py-1 rounded ${
+                    p.status === 'approved' ? 'bg-green-500/15 text-[var(--success-green)]' :
+                    p.status === 'rejected' ? 'bg-red-500/15 text-[var(--danger-red)]' :
+                    'bg-amber-500/15 text-[var(--warning-amber)]'
+                  }`}>
                     {p.status === 'approved' ? '✅ สำเร็จ' : p.status === 'rejected' ? '❌ ปฏิเสธ' : p.status === 'pending_slip' ? '📤 รอสลิป' : '⏳ รอตรวจสอบ'}
                   </span>
                   {p.status === 'pending_slip' && p.kind === 'deposit' && (
@@ -312,7 +270,7 @@ export default function Wallet() {
                       setDepInfo({ id: p.id, reference: p.reference, amount: p.amount });
                       setDepStep('slip'); setSlipFile(null); setErr(''); setModal('deposit');
                     }}
-                      style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '0.25rem 0.625rem', borderRadius: '0.25rem', background: 'rgba(212, 175, 55, 0.15)', color: 'var(--gold-primary)', border: 'none', cursor: 'pointer' }}>
+                      className="text-[11px] font-bold px-2.5 py-1 rounded bg-[rgba(212,175,55,0.15)] text-[var(--gold-primary)] cursor-pointer">
                       📎 แนบสลิป
                     </button>
                   )}
@@ -322,7 +280,7 @@ export default function Wallet() {
           </div>
           {payReqs.length < payTotal && (
             <button onClick={loadMorePays} disabled={loadingMorePays}
-              style={{ width: '100%', padding: '0.625rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gold-primary)', border: 'none', borderTop: '1px solid var(--border-light)', background: 'transparent', cursor: loadingMorePays ? 'not-allowed' : 'pointer', opacity: loadingMorePays ? 0.5 : 1 }}>
+              className="w-full py-2.5 text-sm font-semibold text-[var(--gold-primary)] border-none border-t border-[var(--border-light)] bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
               {loadingMorePays ? 'กำลังโหลด...' : `▼ โหลดเพิ่มเติม (แสดง ${payReqs.length}/${payTotal})`}
             </button>
           )}
@@ -337,65 +295,65 @@ export default function Wallet() {
         <StatCard label="รางวัล 7 วัน" value={`${satang(sumWeek.win)} ฿`} accent="text-win-300" />
       </div>
 
-      <Card className="overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+      <Card className="overflow-hidden bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl">
         <CardHeader title="ประวัติธุรกรรมเครดิต" />
         {/* มือถือ/แท็บเล็ต: การ์ดเรียงแนวตั้ง ไม่ล้นจอ */}
-        <div className="md:hidden" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <div className="md:hidden border-b border-[var(--border-light)]">
           {txs.map((t, idx) => (
-            <div key={t.id} className="stagger-item" style={{ padding: '1rem', animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--white)', fontWeight: 600 }}>{TYPE_TH[t.type] || t.type}</div>
-                  <div style={{ fontSize: '0.6875rem', fontFamily: 'monospace', color: 'var(--muted-gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.reference}</div>
-                  {t.description && <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '0.125rem' }}>{t.description}</div>}
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', marginTop: '0.125rem' }}>{fmtDateTime(t.created_at)}</div>
+            <div key={t.id} className="stagger-item p-4" style={{ animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-sm text-[var(--white)] font-semibold">{TYPE_TH[t.type] || t.type}</div>
+                  <div className="text-[11px] font-mono text-[var(--muted-gray)] overflow-hidden text-ellipsis whitespace-nowrap">{t.reference}</div>
+                  {t.description && <div className="text-[11px] text-[var(--muted-gray)] overflow-hidden text-ellipsis whitespace-nowrap mt-0.5">{t.description}</div>}
+                  <div className="text-[11px] text-[var(--muted-gray)] mt-0.5">{fmtDateTime(t.created_at)}</div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontWeight: 700, color: t.direction === 'credit' ? 'var(--success-green)' : 'var(--danger-red)' }}>
+                <div className="text-right shrink-0">
+                  <div className={`font-bold ${t.direction === 'credit' ? 'text-[var(--success-green)]' : 'text-[var(--danger-red)]'}`}>
                     {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--gold-primary)' }}>คงเหลือ {satang(t.balance_after)} บาท</div>
+                  <div className="text-[11px] text-[var(--gold-primary)]">คงเหลือ {satang(t.balance_after)} บาท</div>
                 </div>
               </div>
             </div>
           ))}
-          {!loading && !txs.length && <div style={{ padding: '1rem' }}><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน — ฝาก/ถอนเป็นเครดิตเสมือน" /></div>}
-          {loading && <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{[0,1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '3.5rem', width: '100%' }} />)}</div>}
+          {!loading && !txs.length && <div className="p-4"><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน — ฝาก/ถอนเป็นเครดิตเสมือน" /></div>}
+          {loading && <div className="p-4 flex flex-col gap-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-14 w-full" />)}</div>}
         </div>
         {/* Desktop: ตารางเต็ม */}
         <div className="hidden md:block">
           <Table>
             <TableHeader>
-              <TableRow style={{ border: '1px solid var(--border-light)' }}>
-                <TableHead style={{ color: 'var(--muted-gray)' }}>อ้างอิง</TableHead>
-                <TableHead style={{ color: 'var(--muted-gray)' }}>ประเภท</TableHead>
-                <TableHead style={{ color: 'var(--muted-gray)', textAlign: 'right' }}>จำนวน</TableHead>
-                <TableHead style={{ color: 'var(--muted-gray)', textAlign: 'right' }}>คงเหลือหลังรายการ</TableHead>
-                <TableHead style={{ color: 'var(--muted-gray)' }}>เวลา</TableHead>
-                <TableHead style={{ color: 'var(--muted-gray)' }}>รายละเอียด</TableHead>
+              <TableRow className="border border-[var(--border-light)]">
+                <TableHead className="text-[var(--muted-gray)]">อ้างอิง</TableHead>
+                <TableHead className="text-[var(--muted-gray)]">ประเภท</TableHead>
+                <TableHead className="text-[var(--muted-gray)] text-right">จำนวน</TableHead>
+                <TableHead className="text-[var(--muted-gray)] text-right">คงเหลือหลังรายการ</TableHead>
+                <TableHead className="text-[var(--muted-gray)]">เวลา</TableHead>
+                <TableHead className="text-[var(--muted-gray)]">รายละเอียด</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {txs.map((t, idx) => (
-                <TableRow key={t.id} className="stagger-item" style={{ border: '1px solid var(--border-light)', animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
-                  <TableCell style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--muted-gray)' }}>{t.reference}</TableCell>
-                  <TableCell style={{ color: 'var(--white)' }}>{TYPE_TH[t.type] || t.type}</TableCell>
-                  <TableCell style={{ textAlign: 'right', fontWeight: 700, color: t.direction === 'credit' ? 'var(--success-green)' : 'var(--danger-red)' }}>
+                <TableRow key={t.id} className="stagger-item border border-[var(--border-light)]" style={{ animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
+                  <TableCell className="font-mono text-xs text-[var(--muted-gray)]">{t.reference}</TableCell>
+                  <TableCell className="text-[var(--white)]">{TYPE_TH[t.type] || t.type}</TableCell>
+                  <TableCell className={`text-right font-bold ${t.direction === 'credit' ? 'text-[var(--success-green)]' : 'text-[var(--danger-red)]'}`}>
                     {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
                   </TableCell>
-                  <TableCell style={{ textAlign: 'right', color: 'var(--gold-primary)' }}>{satang(t.balance_after)} บาท</TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', whiteSpace: 'nowrap' }}>{fmtDateTime(t.created_at)}</TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.description || '—'}</TableCell>
+                  <TableCell className="text-right text-[var(--gold-primary)]">{satang(t.balance_after)} บาท</TableCell>
+                  <TableCell className="text-xs text-[var(--muted-gray)] whitespace-nowrap">{fmtDateTime(t.created_at)}</TableCell>
+                  <TableCell className="text-xs text-[var(--muted-gray)] max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">{t.description || '—'}</TableCell>
                 </TableRow>
               ))}
               {!loading && !txs.length && <TableRow><TableCell colSpan="6"><EmptyState emoji="💳" title="ยังไม่มีธุรกรรม" hint="เติมเครดิตเพื่อเริ่มใช้งาน" /></TableCell></TableRow>}
-              {loading && <TableRow><TableCell colSpan="6"><div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem 0' }}>{[0,1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '2rem', width: '100%' }} />)}</div></TableCell></TableRow>}
+              {loading && <TableRow><TableCell colSpan="6"><div className="flex flex-col gap-2 py-2">{[0,1,2,3].map(i => <div key={i} className="skeleton h-8 w-full" />)}</div></TableCell></TableRow>}
             </TableBody>
           </Table>
         </div>
         {txs.length < txTotal && (
           <button onClick={loadMoreTxs} disabled={loadingMore}
-            style={{ width: '100%', padding: '0.625rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gold-primary)', border: 'none', borderTop: '1px solid var(--border-light)', background: 'transparent', cursor: loadingMore ? 'not-allowed' : 'pointer', opacity: loadingMore ? 0.5 : 1 }}>
+            className="w-full py-2.5 text-sm font-semibold text-[var(--gold-primary)] border-none border-t border-[var(--border-light)] bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
             {loadingMore ? 'กำลังโหลด...' : `▼ โหลดเพิ่มเติม (แสดง ${txs.length}/${txTotal})`}
           </button>
         )}
@@ -404,130 +362,123 @@ export default function Wallet() {
       {/* modal เติม/ถอนเงินจริง — PromptPay QR + สลิป / ถอนรออนุมัติ */}
       <Modal open={!!modal} onClose={() => !busy && setModal(null)}
         title={modal === 'deposit' ? (depStep === 'qr' ? 'สแกน QR พร้อมเพย์' : 'เติมเครดิต') : 'ถอนเครดิต'}>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '1rem', marginTop: '-0.25rem' }}>ยอดคงเหลือปัจจุบัน {satang(balance)} บาท{payConfigured === false ? ' • โหมด DEMO (เครดิตจำลอง)' : ''}</p>
+            <p className="text-xs text-[var(--muted-gray)] mb-4 -mt-1">ยอดคงเหลือปัจจุบัน {satang(balance)} บาท{payConfigured === false ? ' • โหมด DEMO (เครดิตจำลอง)' : ''}</p>
             {payConfigured === false && (
-              <div style={{ fontSize: '0.6875rem', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning-amber)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', marginBottom: '0.75rem' }}>
+              <div className="text-[11px] bg-amber-500/10 text-[var(--warning-amber)] rounded-lg px-3 py-2 mb-3">
                 ⚠️ ระบบเติม/ถอนเงินจริงยังไม่เปิด — ใช้เครดิตเดโมสำหรับทดสอบเท่านั้น
               </div>
             )}
             {modal === 'withdraw' && wd && (
-              <div style={{ fontSize: '0.75rem', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', marginBottom: '0.75rem', background: wd.unlocked ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)', color: wd.unlocked ? 'var(--success-green)' : 'var(--warning-amber)' }}>
+              <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${wd.unlocked ? 'bg-green-500/10 text-[var(--success-green)]' : 'bg-amber-500/10 text-[var(--warning-amber)]'}`}>
                 {wd.unlocked
                   ? `ถอนได้ ${satang(wd.withdrawable)} บาท (เฉพาะเงินรางวัล/ยอดสุทธิ — เครดิตโปรโมชั่นถอนไม่ได้)`
                   : `ยังถอนไม่ได้ — ต้องมียอดฝาก/เล่นจนถอนได้ขั้นต่ำ (ฝากแล้ว ${satang(wd.deposited)} บาท)`}
               </div>
             )}
             {modal === 'deposit' && depStep === 'slip' && depInfo ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                  <div style={{ color: 'var(--gold-primary)', fontWeight: 700, fontSize: '1.125rem' }}>฿{(depInfo.amount / 100).toLocaleString('th-TH')}</div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', marginTop: '0.25rem' }}>Ref: <span style={{ fontFamily: 'monospace', color: 'var(--gold-primary)' }}>{depInfo.reference}</span> — แนบสลิปการโอนที่ทำไปแล้ว</div>
+              <div className="flex flex-col gap-4">
+                <div className="bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg p-3 text-center text-sm">
+                  <div className="text-[var(--gold-primary)] font-bold text-lg">฿{(depInfo.amount / 100).toLocaleString('th-TH')}</div>
+                  <div className="text-[11px] text-[var(--muted-gray)] mt-1">Ref: <span className="font-mono text-[var(--gold-primary)]">{depInfo.reference}</span> — แนบสลิปการโอนที่ทำไปแล้ว</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '0.375rem' }}>แนบรูปสลิปการโอน (JPG/PNG):</div>
+                  <div className="text-xs text-[var(--muted-gray)] mb-1.5">แนบรูปสลิปการโอน (JPG/PNG):</div>
                   <input type="file" accept="image/*"
                     onChange={e => setSlipFile(e.target.files?.[0] || null)}
-                    style={{ width: '100%', fontSize: '0.875rem', color: 'var(--muted-gray)' }} />
-                  {slipFile && <div style={{ fontSize: '0.75rem', color: 'var(--success-green)', marginTop: '0.25rem' }}>✓ {slipFile.name}</div>}
+                    className="w-full text-sm text-[var(--muted-gray)]" />
+                  {slipFile && <div className="text-xs text-[var(--success-green)] mt-1">✓ {slipFile.name}</div>}
                 </div>
               </div>
             ) : modal === 'deposit' && depStep === 'qr' && depInfo ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '1rem', textAlign: 'center' }}>
-                  <img src={depInfo.qrDataUrl} alt="QR พร้อมเพย์" style={{ margin: '0 auto', borderRadius: '0.5rem', background: 'var(--white)', padding: '0.5rem' }} />
-                  <div style={{ color: 'var(--gold-primary)', fontWeight: 700, fontSize: '1.25rem', marginTop: '0.5rem' }}>฿{(depInfo.amount / 100).toLocaleString('th-TH')}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginTop: '0.25rem' }}>สแกนด้วยแอปธนาคาร → โอนยอด <b style={{ color: 'var(--white)' }}>ตรงตามจำนวน</b></div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', marginTop: '0.25rem' }}>Ref: <span style={{ fontFamily: 'monospace', color: 'var(--gold-primary)' }}>{depInfo.reference}</span></div>
+              <div className="flex flex-col gap-4">
+                <div className="bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg p-4 text-center">
+                  <img src={depInfo.qrDataUrl} alt="QR พร้อมเพย์" className="mx-auto rounded-lg bg-white p-2" />
+                  <div className="text-[var(--gold-primary)] font-bold text-xl mt-2">฿{(depInfo.amount / 100).toLocaleString('th-TH')}</div>
+                  <div className="text-xs text-[var(--muted-gray)] mt-1">สแกนด้วยแอปธนาคาร → โอนยอด <b className="text-[var(--white)]">ตรงตามจำนวน</b></div>
+                  <div className="text-[11px] text-[var(--muted-gray)] mt-1">Ref: <span className="font-mono text-[var(--gold-primary)]">{depInfo.reference}</span></div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '0.375rem' }}>แนบรูปสลิปการโอน (JPG/PNG):</div>
+                  <div className="text-xs text-[var(--muted-gray)] mb-1.5">แนบรูปสลิปการโอน (JPG/PNG):</div>
                   <input type="file" accept="image/*"
                     onChange={e => setSlipFile(e.target.files?.[0] || null)}
-                    style={{ width: '100%', fontSize: '0.875rem', color: 'var(--muted-gray)' }} />
-                  {slipFile && <div style={{ fontSize: '0.75rem', color: 'var(--success-green)', marginTop: '0.25rem' }}>✓ {slipFile.name}</div>}
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', marginTop: '0.5rem' }}>ระบบจะตรวจสอบสลิปอัตโนมัติ — ถ้าผ่าน เครดิตเข้าทันที ไม่ผ่านแอดมินจะตรวจสอบให้</div>
+                    className="w-full text-sm text-[var(--muted-gray)]" />
+                  {slipFile && <div className="text-xs text-[var(--success-green)] mt-1">✓ {slipFile.name}</div>}
+                  <div className="text-[11px] text-[var(--muted-gray)] mt-2">ระบบจะตรวจสอบสลิปอัตโนมัติ — ถ้าผ่าน เครดิตเข้าทันที ไม่ผ่านแอดมินจะตรวจสอบให้</div>
                 </div>
               </div>
             ) : modal === 'deposit' ? (
-              <div style={{ marginBottom: '0.75rem' }}>
+              <div className="mb-3">
                 {payConfigured === false ? (
-                  <div style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--muted-gray)' }}>
-                    <div style={{ color: 'var(--white)', fontWeight: 600, marginBottom: '0.25rem' }}>เติมเครดิตเดโม</div>
-                    <div style={{ color: 'var(--muted-gray)' }}>กดยืนยันแล้วเครดิตเข้าทันที — ไม่เกี่ยวกับเงินจริง</div>
+                  <div className="bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg p-3 text-xs text-[var(--muted-gray)]">
+                    <div className="text-[var(--white)] font-semibold mb-1">เติมเครดิตเดโม</div>
+                    <div className="text-[var(--muted-gray)]">กดยืนยันแล้วเครดิตเข้าทันที — ไม่เกี่ยวกับเงินจริง</div>
                   </div>
                 ) : (
                 <>
-                <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '0.375rem' }}>ช่องทาง: สแกน QR พร้อมเพย์ (แสดง QR หลังเลือกจำนวน)</div>
-                <div style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--muted-gray)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>ช่องทาง</span><span style={{ color: 'var(--white)', fontWeight: 600 }}>QR พร้อมเพย์</span></div>
-                  <div style={{ color: 'var(--muted-gray)', marginTop: '0.25rem' }}>โอนเงิน → ได้ QR → สแกนจ่าย → แนบสลิป → เครดิตเข้าทันที</div>
+                <div className="text-xs text-[var(--muted-gray)] mb-1.5">ช่องทาง: สแกน QR พร้อมเพย์ (แสดง QR หลังเลือกจำนวน)</div>
+                <div className="bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg p-3 text-xs text-[var(--muted-gray)]">
+                  <div className="flex justify-between"><span>ช่องทาง</span><span className="text-[var(--white)] font-semibold">QR พร้อมเพย์</span></div>
+                  <div className="text-[var(--muted-gray)] mt-1">โอนเงิน → ได้ QR → สแกนจ่าย → แนบสลิป → เครดิตเข้าทันที</div>
                 </div>
                 </>
                 )}
               </div>
             ) : payConfigured === false ? (
-              <div style={{ marginBottom: '0.75rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '0.375rem' }}>(เดโม) กรอกปลายทางรับเครดิตถ้าต้องการ:</div>
+              <div className="mb-3">
+                <div className="text-xs text-[var(--muted-gray)] mb-1.5">(เดโม) กรอกปลายทางรับเครดิตถ้าต้องการ:</div>
                 <input value={accountNo} onChange={e => setAccountNo(e.target.value)}
                   placeholder="เลขบัญชี/เบอร์ (ไม่บังคับ)"
-                  style={{ width: '100%', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: 'var(--white)', outline: 'none' }} />
+                  className="w-full bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm text-[var(--white)] outline-none" />
               </div>
             ) : (
-              <div style={{ marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)' }}>ข้อมูลบัญชีรับเงิน (แอดมินจะโอนให้):</div>
+              <div className="mb-3 flex flex-col gap-2">
+                <div className="text-xs text-[var(--muted-gray)]">ข้อมูลบัญชีรับเงิน (แอดมินจะโอนให้):</div>
                 <select value={bankName} onChange={e => setBankName(e.target.value)}
-                  style={{ width: '100%', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: 'var(--white)' }}>
+                  className="w-full bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm text-[var(--white)]">
                   <option value="">— เลือกธนาคาร —</option>
                   {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
                 <input value={accountNo} onChange={e => setAccountNo(e.target.value.replace(/[^\d-]/g, ''))}
                   placeholder="เลขบัญชี" inputMode="numeric"
-                  style={{ width: '100%', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: 'var(--white)', outline: 'none' }} />
+                  className="w-full bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm text-[var(--white)] outline-none" />
                 <input value={bankAccName} onChange={e => setBankAccName(e.target.value)}
                   placeholder="ชื่อบัญชี (ตามบัญชีธนาคาร)"
-                  style={{ width: '100%', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: 'var(--white)', outline: 'none' }} />
+                  className="w-full bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm text-[var(--white)] outline-none" />
                 <input value={ppId} onChange={e => setPpId(e.target.value.replace(/[^\d]/g, ''))}
                   placeholder={user?.phone ? `PromptPay ID (แนะนำ: ${user.phone} — ตรงเบอร์ที่ยืนยัน OTP)` : 'PromptPay ID (เบอร์/เลข ปชช. — ช่วยยืนยันตัวตน)'}
                   inputMode="numeric"
-                  style={{ width: '100%', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: 'var(--white)', outline: 'none' }} />
+                  className="w-full bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-3 py-2 text-sm text-[var(--white)] outline-none" />
                 {ppId && user?.phone && (
-                  <div style={{ fontSize: '0.6875rem', color: ppId === user.phone ? 'var(--success-green)' : 'var(--warning-amber)' }}>
+                  <div className={`text-[11px] ${ppId === user.phone ? 'text-[var(--success-green)]' : 'text-[var(--warning-amber)]'}`}>
                     {ppId === user.phone ? '✓ PromptPay ตรงกับเบอร์ที่ยืนยัน OTP แล้ว — เร็วต่อการอนุมัติ' : '⚠️ PromptPay ไม่ตรงเบอร์สมาชิก — แอดมินจะตรวจสอบเพิ่มเติม'}
                   </div>
                 )}
-                <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)' }}>⚠️ คำขอถอนจะรอแอดมินตรวจสอบและโอนเงินจริงให้ — ระยะเวลา 1-3 วันทำการ</div>
+                <div className="text-[11px] text-[var(--muted-gray)]">⚠️ คำขอถอนจะรอแอดมินตรวจสอบและโอนเงินจริงให้ — ระยะเวลา 1-3 วันทำการ</div>
               </div>
             )}
             {modal && depStep === 'form' && (
               <>
-                <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '0.375rem' }}>เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'} (ขั้นต่ำ {modal === 'deposit' ? '1' : '100'} บาท):</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <div className="text-xs text-[var(--muted-gray)] mb-1.5">เลือกจำนวนเงินที่ต้องการ{modal === 'deposit' ? 'เติม' : 'ถอน'} (ขั้นต่ำ {modal === 'deposit' ? '1' : '100'} บาท):</div>
+                <div className="grid grid-cols-3 gap-2 mb-3">
                   {PRESETS.map(p => (
                     <button key={p} type="button" onClick={() => setAmount(String(p))}
-                      style={{
-                        padding: '0.625rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        fontWeight: 700,
-                        border: '1px solid',
-                        transition: 'all 0.2s',
-                        background: Number(amount) === p ? 'var(--gold-primary)' : 'var(--bg-dark-surface)',
-                        color: Number(amount) === p ? 'var(--bg-deep-black)' : 'var(--muted-gray)',
-                        borderColor: Number(amount) === p ? 'var(--gold-primary)' : 'var(--border-light)',
-                        cursor: 'pointer'
-                      }}>
+                      className={`py-2.5 rounded-lg text-sm font-bold border transition-all cursor-pointer ${
+                        Number(amount) === p
+                          ? 'bg-[var(--gold-primary)] text-[var(--bg-deep-black)] border-[var(--gold-primary)]'
+                          : 'bg-[var(--bg-dark-surface)] text-[var(--muted-gray)] border-[var(--border-light)]'
+                      }`}>
                       {p.toLocaleString()} บาท
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '0.375rem' }}>หรือกรอกจำนวนเอง:</div>
+                <div className="text-xs text-[var(--muted-gray)] mb-1.5">หรือกรอกจำนวนเอง:</div>
                 <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
                   inputMode="decimal" placeholder="0.00"
-                  style={{ width: '100%', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', borderRadius: '0.5rem', padding: '0.75rem 1rem', fontSize: '1.25rem', textAlign: 'center', color: 'var(--gold-primary)', fontWeight: 700, outline: 'none' }} />
+                  className="w-full bg-[var(--bg-dark-surface)] border border-[var(--border-light)] rounded-lg px-4 py-3 text-xl text-center text-[var(--gold-primary)] font-bold outline-none" />
               </>
             )}
-            {err && <div style={{ color: 'var(--danger-red)', fontSize: '0.875rem', marginTop: '0.5rem' }}>{err}</div>}
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+            {err && <div className="text-[var(--danger-red)] text-sm mt-2">{err}</div>}
+            <div className="flex gap-3 mt-5">
               {(modal === 'deposit' && (depStep === 'qr' || depStep === 'slip')) ? (
                 <Button variant="ghost" onClick={() => { setDepStep('form'); setDepInfo(null); setSlipFile(null); setErr(''); }} disabled={busy} className="flex-1">
                   ← ย้อนกลับ
@@ -575,50 +526,27 @@ export default function Wallet() {
               ))}
             </>
           )}
-          <div style={{ minHeight: '100%', display: 'flex' }}>
-          <div style={{
-            position: 'relative',
-            margin: 'auto',
-            background: 'var(--bg-card)',
-            border: celebration.kind === 'win' ? '1px solid var(--border-gold)' : '1px solid var(--border-light)',
-            borderRadius: '1.5rem',
-            padding: '1.5rem 2rem',
-            maxWidth: '24rem',
-            width: '100%',
-            maxHeight: '92dvh',
-            overflowY: 'auto',
-            textAlign: 'center',
-            boxShadow: celebration.kind === 'win' ? 'var(--shadow-gold-lg)' : 'var(--shadow-lg)'
-          }}>
+          <div className="min-h-full flex">
+          <div className={`relative m-auto bg-[var(--bg-card)] ${celebration.kind === 'win' ? 'border border-[var(--border-gold)]' : 'border border-[var(--border-light)]'} rounded-3xl px-8 py-6 max-w-md w-full max-h-[92dvh] overflow-y-auto text-center ${celebration.kind === 'win' ? 'shadow-[var(--shadow-gold-lg)]' : 'shadow-[var(--shadow-lg)]'}`}>
             {celebration.kind === 'win' ? (
               <>
-                <div style={{ fontSize: '3.75rem', marginBottom: '0.5rem' }}>🎉🏆</div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '0.25rem' }}>ยินดีด้วย!</h2>
-                <p style={{ fontSize: '0.875rem', color: 'var(--muted-gray)', marginBottom: '0.75rem' }}>โพย <span style={{ fontFamily: 'monospace', color: 'var(--gold-primary)' }}>{celebration.slip.slip_ref}</span> ถูกรางวัล</p>
-                <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--success-green)', marginBottom: '0.25rem' }}>+{satang(celebration.slip.total_payout)} บาท</div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '1.25rem' }}>เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — แลกได้หลังปลดล็อก</p>
+                <div className="text-6xl mb-2">🎉🏆</div>
+                <h2 className="text-2xl font-bold bg-gradient-to-br from-[var(--gold-primary)] to-[var(--gold-bright)] bg-clip-text text-transparent mb-1">ยินดีด้วย!</h2>
+                <p className="text-sm text-[var(--muted-gray)] mb-3">โพย <span className="font-mono text-[var(--gold-primary)]">{celebration.slip.slip_ref}</span> ถูกรางวัล</p>
+                <div className="text-3xl font-bold text-[var(--success-green)] mb-1">+{satang(celebration.slip.total_payout)} บาท</div>
+                <p className="text-xs text-[var(--muted-gray)] mb-5">เงินรางวัลเข้ากระเป๋าเครดิตแล้ว — แลกได้หลังปลดล็อก</p>
               </>
             ) : (
               <>
-                <div style={{ fontSize: '3.75rem', marginBottom: '0.5rem' }}>😢💧</div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--info-blue)', marginBottom: '0.25rem' }}>เสียใจด้วย...</h2>
-                <p style={{ fontSize: '0.875rem', color: 'var(--muted-gray)', marginBottom: '0.75rem' }}>โพย <span style={{ fontFamily: 'monospace', color: 'var(--gold-primary)' }}>{celebration.slip.slip_ref}</span> ไม่ถูกรางวัลรอบนี้</p>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--danger-red)', marginBottom: '0.25rem' }}>เสีย {satang(celebration.slip.total_stake)} บาท</div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--muted-gray)', marginBottom: '1.25rem' }}>เก็บเครดิตไว้ลองใหม่นะ — ห้องยังเปิดรับแทงทุกวัน</p>
+                <div className="text-6xl mb-2">😢💧</div>
+                <h2 className="text-2xl font-bold text-[var(--info-blue)] mb-1">เสียใจด้วย...</h2>
+                <p className="text-sm text-[var(--muted-gray)] mb-3">โพย <span className="font-mono text-[var(--gold-primary)]">{celebration.slip.slip_ref}</span> ไม่ถูกรางวัลรอบนี้</p>
+                <div className="text-xl font-bold text-[var(--danger-red)] mb-1">เสีย {satang(celebration.slip.total_stake)} บาท</div>
+                <p className="text-xs text-[var(--muted-gray)] mb-5">เก็บเครดิตไว้ลองใหม่นะ — ห้องยังเปิดรับแทงทุกวัน</p>
               </>
             )}
             <button onClick={() => setCelebration(null)}
-              style={{
-                width: '100%',
-                fontWeight: 700,
-                padding: '0.75rem',
-                borderRadius: '0.75rem',
-                background: celebration.kind === 'win' ? 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))' : 'var(--info-blue)',
-                color: celebration.kind === 'win' ? 'var(--bg-deep-black)' : 'var(--white)',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: celebration.kind === 'win' ? 'var(--shadow-gold)' : 'none'
-              }}>
+              className={`w-full font-bold py-3 rounded-xl border-none cursor-pointer ${celebration.kind === 'win' ? 'bg-gradient-to-br from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)] text-[var(--bg-deep-black)] shadow-[var(--shadow-gold)]' : 'bg-[var(--info-blue)] text-white'}`}>
               {celebration.kind === 'win' ? 'รับทราบ ขอบคุณ! 🎊' : 'เป็นกำลังใจให้นะ 💙'}
               </button>
           </div>
