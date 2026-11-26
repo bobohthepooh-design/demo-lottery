@@ -169,9 +169,9 @@ export default function AdminDraws() {
             ))}
           </select>
           <input required placeholder="รหัสรอบ (เช่น TH-2026-1101)" value={form.draw_code} onChange={e => setForm({...form, draw_code: e.target.value})} className="luxury-input" />
-          <div><label style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>เวลาออกรางวัล</label>
+          <div><label className="[color:var(--muted-gray)] [font-size:12px]">เวลาออกรางวัล</label>
             <input required type="datetime-local" value={form.draw_at} onChange={e => setForm({...form, draw_at: e.target.value})} className="luxury-input w-full mt-1" /></div>
-          <div><label style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>เวลาปิดรับโพย</label>
+          <div><label className="[color:var(--muted-gray)] [font-size:12px]">เวลาปิดรับโพย</label>
             <input required type="datetime-local" value={form.close_at} onChange={e => setForm({...form, close_at: e.target.value})} className="luxury-input w-full mt-1" /></div>
           <button type="submit" className="luxury-btn sm:col-span-2">สร้างรอบ</button>
         </form>
@@ -183,7 +183,7 @@ export default function AdminDraws() {
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
             <h2 className="font-bold text-sm luxury-gradient-text">ตารางออกรางวัล (5 รอบถัดไปต่อตลาด)</h2>
-            <p style={{ color: 'var(--muted-gray)', fontSize: '11px' }}>ระบบสร้างรอบอัตโนมัติทุก 1 นาที — กดปุ่มเพื่อบังคับเติมทันที</p>
+            <p className="[color:var(--muted-gray)] [font-size:11px]">ระบบสร้างรอบอัตโนมัติทุก 1 นาที — กดปุ่มเพื่อบังคับเติมทันที</p>
           </div>
           <div className="flex items-center gap-2">
             {seedMsg && <span className={`text-xs ${seedMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{seedMsg}</span>}
@@ -202,11 +202,11 @@ export default function AdminDraws() {
           return (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {Object.values(groups).map(g => (
-                <div key={g.label} className="rounded-lg p-4" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)' }}>
-                  <div className="text-xs font-bold mb-2 truncate" style={{ color: 'var(--white)' }}>{g.label}</div>
+                <div key={g.label} className="rounded-lg p-4 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">
+                  <div className="text-xs font-bold mb-2 truncate [color:var(--white)]">{g.label}</div>
                   <div className="space-y-2">
                     {g.items.slice(0, 5).map(s => (
-                      <div key={s.drawCode} className="flex justify-between text-[11px]" style={{ color: 'var(--muted-gray)' }}>
+                      <div key={s.drawCode} className="flex justify-between text-[11px] [color:var(--muted-gray)]">
                         <span className="font-mono">{s.drawCode}</span>
                         <span>ออก {fmtDateTime(s.drawAt)} • ปิด {fmtDateTime(s.closeAt)}</span>
                       </div>
@@ -224,48 +224,48 @@ export default function AdminDraws() {
 
       {/* ตัวกรองรอบหวย — สถานะ / ประเภท / หมวด */}
       <div className="flex items-center gap-3 flex-wrap">
-        <select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})} className="luxury-input text-sm" style={{ padding: '0.5rem 0.75rem' }}>
+        <select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
           <option value="">ทุกสถานะ</option>
           {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value, category: ''})} className="luxury-input text-sm" style={{ padding: '0.5rem 0.75rem' }}>
+        <select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value, category: ''})} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
           <option value="">ทุกประเภท</option>
           {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
         </select>
-        <select value={filter.category} onChange={e => setFilter({...filter, category: e.target.value})} className="luxury-input text-sm" style={{ padding: '0.5rem 0.75rem' }}>
+        <select value={filter.category} onChange={e => setFilter({...filter, category: e.target.value})} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
           <option value="">ทุกหมวด</option>
           <option value="null">ไม่มีหมวด</option>
           {cats.filter(c => !filter.type || String(c.lottery_type_id) === String(filter.type)).map(c => (
             <option key={c.id} value={c.id}>{c.name_th}</option>
           ))}
         </select>
-        <span style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>ทั้งหมด {drawsTotal.toLocaleString()} รอบ — แสดง {draws.length.toLocaleString()} รอบ</span>
+        <span className="[color:var(--muted-gray)] [font-size:12px]">ทั้งหมด {drawsTotal.toLocaleString()} รอบ — แสดง {draws.length.toLocaleString()} รอบ</span>
       </div>
 
       <div className="luxury-card">
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent" style={{ borderBottom: '1px solid var(--border-light)' }}>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>รอบ</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>ประเภท</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>ออกรางวัล</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>ปิดรับ</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>สถานะ</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>จัดการ</TableHead>
+            <TableRow className="hover:bg-transparent [border-bottom:1px_solid_var(--border-light)]">
+              <TableHead className="[color:var(--muted-gray)]">รอบ</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">ประเภท</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">ออกรางวัล</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">ปิดรับ</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">สถานะ</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">จัดการ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {draws.map(d => (
-              <TableRow key={d.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                <TableCell className="font-mono" style={{ color: 'var(--gold-primary)' }}>
+              <TableRow key={d.id} className="[border-bottom:1px_solid_var(--border-light)]">
+                <TableCell className="font-mono [color:var(--gold-primary)]">
                   {d.draw_code}
                   {(() => { const s = annSummary(d.announce); return s ? (
-                    <div className="text-[10px] font-sans mt-0.5" style={{ color: 'var(--warning-amber)' }}>เลขอั้น: {s}</div>
+                    <div className="text-[10px] font-sans mt-0.5 [color:var(--warning-amber)]">เลขอั้น: {s}</div>
                   ) : null; })()}
                 </TableCell>
-                <TableCell style={{ color: 'var(--white)' }}>{d.type_name_th}{d.category_name_th ? <span style={{ color: 'var(--muted-gray)', fontSize: '12px' }}> — {d.category_name_th}</span> : null}</TableCell>
-                <TableCell style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>{fmtDateTime(d.draw_at)}</TableCell>
-                <TableCell style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>{fmtDateTime(d.close_at)}</TableCell>
+                <TableCell className="[color:var(--white)]">{d.type_name_th}{d.category_name_th ? <span className="[color:var(--muted-gray)] [font-size:12px]"> — {d.category_name_th}</span> : null}</TableCell>
+                <TableCell className="[color:var(--muted-gray)] [font-size:12px]">{fmtDateTime(d.draw_at)}</TableCell>
+                <TableCell className="[color:var(--muted-gray)] [font-size:12px]">{fmtDateTime(d.close_at)}</TableCell>
                 <TableCell>
                   <span className={cn('text-[10px] font-semibold', STATUS_BADGE[d.status] || 'luxury-badge')}>
                     {STATUS_TH[d.status]}
@@ -274,10 +274,10 @@ export default function AdminDraws() {
                 <TableCell>
                   {d.status !== 'settled' && d.status !== 'cancelled' && (
                     <div className="flex gap-2">
-                      {d.status !== 'open' && <button onClick={() => setStatus(d.id, 'open')} className="text-xs font-semibold hover:underline" style={{ color: 'var(--success-green)' }}>เปิด</button>}
-                      {d.status === 'open' && <button onClick={() => setStatus(d.id, 'closed')} className="text-xs font-semibold hover:underline" style={{ color: 'var(--muted-gray)' }}>ปิด</button>}
-                      <button onClick={() => setStatus(d.id, 'cancelled')} className="text-xs font-semibold hover:underline" style={{ color: 'var(--danger-red)' }}>ยกเลิก</button>
-                      <button onClick={() => openEdit(d)} className="text-xs font-semibold hover:underline" style={{ color: 'var(--gold-primary)' }}>แก้ไข</button>
+                      {d.status !== 'open' && <button onClick={() => setStatus(d.id, 'open')} className="text-xs font-semibold hover:underline [color:var(--success-green)]">เปิด</button>}
+                      {d.status === 'open' && <button onClick={() => setStatus(d.id, 'closed')} className="text-xs font-semibold hover:underline [color:var(--muted-gray)]">ปิด</button>}
+                      <button onClick={() => setStatus(d.id, 'cancelled')} className="text-xs font-semibold hover:underline [color:var(--danger-red)]">ยกเลิก</button>
+                      <button onClick={() => openEdit(d)} className="text-xs font-semibold hover:underline [color:var(--gold-primary)]">แก้ไข</button>
                     </div>
                   )}
                 </TableCell>
@@ -295,19 +295,19 @@ export default function AdminDraws() {
       {editDraw && (
         <Modal open onClose={() => setEditDraw(null)} title={`แก้ไขรอบหวย: ${editDraw.draw_code}`}>
           <div className="space-y-4 text-sm">
-            <div><label style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>รหัสรอบ</label>
+            <div><label className="[color:var(--muted-gray)] [font-size:12px]">รหัสรอบ</label>
               <input value={editDraw.draw_code} onChange={e => setEditDraw({...editDraw, draw_code: e.target.value})} className="luxury-input w-full mt-1 font-mono" /></div>
-            <div><label style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>เวลาออกรางวัล</label>
+            <div><label className="[color:var(--muted-gray)] [font-size:12px]">เวลาออกรางวัล</label>
               <input type="datetime-local" value={editDraw.draw_at} onChange={e => setEditDraw({...editDraw, draw_at: e.target.value})} className="luxury-input w-full mt-1" /></div>
-            <div><label style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>เวลาปิดรับโพย (ต้องก่อนเวลาออกรางวัล)</label>
+            <div><label className="[color:var(--muted-gray)] [font-size:12px]">เวลาปิดรับโพย (ต้องก่อนเวลาออกรางวัล)</label>
               <input type="datetime-local" value={editDraw.close_at} onChange={e => setEditDraw({...editDraw, close_at: e.target.value})} className="luxury-input w-full mt-1" /></div>
-            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem' }}>
-              <label className="text-xs font-semibold" style={{ color: 'var(--warning-amber)' }}>เลขอั้น (ประกาศล่วงหน้าให้ผู้แทงเห็น)</label>
+            <div className="[border-top:1px_solid_var(--border-light)] [padding-top:1rem]">
+              <label className="text-xs font-semibold [color:var(--warning-amber)]">เลขอั้น (ประกาศล่วงหน้าให้ผู้แทงเห็น)</label>
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <input placeholder="เลขบน เช่น 123:400, 456" value={editDraw.announce_top || ''} onChange={e => setEditDraw({...editDraw, announce_top: e.target.value})} className="luxury-input font-mono" />
                 <input placeholder="เลขล่าง เช่น 45:50, 67" value={editDraw.announce_bottom || ''} onChange={e => setEditDraw({...editDraw, announce_bottom: e.target.value})} className="luxury-input font-mono" />
               </div>
-              <p style={{ color: 'var(--dark-gray)', fontSize: '10px', marginTop: '4px' }}>
+              <p className="[color:var(--dark-gray)] [font-size:10px] [margin-top:4px]">
                 หลายเลขคั่นด้วย , • <code>เลข:ตัวคูณ</code> = อัตราจ่ายเฉพาะรายเลข (เช่น 123:400 จ่าย x400) • เว้นว่างตัวคูณ = ใช้ค่าเริ่มต้น (ครึ่งรางวัลหลัก)
                 • ผู้แทงจะเห็นในหน้ารอบหวยและหน้แทง และ<strong>แทงได้เฉพาะเลขที่ประกาศ</strong>
               </p>
@@ -352,36 +352,36 @@ function BulkAnnounce({ types, cats, onDone }) {
     finally { setBusy(false); }
   };
   if (!open) return (
-    <button onClick={() => setOpen(true)} className="text-xs px-3 py-1.5 rounded-lg luxury-badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning-amber)', border: '1px solid var(--warning-amber)' }}>
+    <button onClick={() => setOpen(true)} className="text-xs px-3 py-1.5 rounded-lg luxury-badge [background:rgba(245,_158,_11,_0.15)] [color:var(--warning-amber)] [border:1px_solid_var(--warning-amber)]">
       ⚠ ตั้งเลขอั้นหลายรอบ
     </button>
   );
   return (
-    <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid var(--warning-amber)' }}>
+    <div className="rounded-xl p-4 space-y-3 [background:rgba(245,_158,_11,_0.05)] [border:1px_solid_var(--warning-amber)]">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold" style={{ color: 'var(--warning-amber)' }}>ตั้งเลขอั้นครอบคลุมหลายรอบ</div>
-        <button onClick={() => setOpen(false)} className="text-xs hover:text-white" style={{ color: 'var(--muted-gray)' }}>✕</button>
+        <div className="text-sm font-bold [color:var(--warning-amber)]">ตั้งเลขอั้นครอบคลุมหลายรอบ</div>
+        <button onClick={() => setOpen(false)} className="text-xs hover:text-white [color:var(--muted-gray)]">✕</button>
       </div>
-      <p style={{ color: 'var(--muted-gray)', fontSize: '11px' }}>ใช้กับทุกรอบ status=open/scheduled ที่ยังไม่ถึงเวลาออกรางวัลของตลาดที่เลือก — ใช้เมื่อต้องการประกาศเลขอั้นชุดเดียวกันหลายงวด</p>
+      <p className="[color:var(--muted-gray)] [font-size:11px]">ใช้กับทุกรอบ status=open/scheduled ที่ยังไม่ถึงเวลาออกรางวัลของตลาดที่เลือก — ใช้เมื่อต้องการประกาศเลขอั้นชุดเดียวกันหลายงวด</p>
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <select value={f.type_id} onChange={e => setF({...f, type_id: e.target.value, category_id: ''})}
-          className="luxury-input text-xs" style={{ padding: '0.5rem 0.75rem' }}>
+          className="luxury-input text-xs [padding:0.5rem_0.75rem]">
           <option value="">ประเภทหวย *</option>
           {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
         </select>
         <select value={f.category_id} onChange={e => setF({...f, category_id: e.target.value})}
-          className="luxury-input text-xs" style={{ padding: '0.5rem 0.75rem' }}>
+          className="luxury-input text-xs [padding:0.5rem_0.75rem]">
           <option value="">ทุกหมวด</option>
           <option value="null">ไม่มีหมวด</option>
           {cats.filter(c => !f.type_id || String(c.lottery_type_id) === String(f.type_id)).map(c => <option key={c.id} value={c.id}>{c.name_th}</option>)}
         </select>
         <input placeholder="เลขบน เช่น 123,456:400" value={f.top} onChange={e => setF({...f, top: e.target.value})}
-          className="luxury-input text-xs font-mono" style={{ padding: '0.5rem 0.75rem' }} />
+          className="luxury-input text-xs font-mono [padding:0.5rem_0.75rem]" />
         <input placeholder="เลขล่าง เช่น 45,67" value={f.bottom} onChange={e => setF({...f, bottom: e.target.value})}
-          className="luxury-input text-xs font-mono" style={{ padding: '0.5rem 0.75rem' }} />
+          className="luxury-input text-xs font-mono [padding:0.5rem_0.75rem]" />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={submit} disabled={busy} className="luxury-btn text-xs px-4 py-2" style={{ background: 'linear-gradient(135deg, var(--warning-amber), #F59E0B)', color: 'var(--bg-deep-black)' }}>
+        <button onClick={submit} disabled={busy} className="luxury-btn text-xs px-4 py-2 [background:linear-gradient(135deg,_var(--warning-amber),_#F59E0B)] [color:var(--bg-deep-black)]">
           {busy ? 'กำลังตั้ง…' : 'ยืนยันตั้งเลขอั้น'}
         </button>
         {msg && <span className={`text-xs ${msg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{msg}</span>}

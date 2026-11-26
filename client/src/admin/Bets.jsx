@@ -43,24 +43,24 @@ function ItemRow({ i }) {
         <span className="text-lg">{emoji}</span>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <code className="font-mono" style={{ color: 'var(--gold-primary)' }}>{i.number}</code>
-            <span className="text-xs truncate" style={{ color: 'var(--muted-gray)' }}>{i.bet_name_th || i.bet_type}</span>
+            <code className="font-mono [color:var(--gold-primary)]">{i.number}</code>
+            <span className="text-xs truncate [color:var(--muted-gray)]">{i.bet_name_th || i.bet_type}</span>
           </div>
-          <div style={{ color: 'var(--dark-gray)', fontSize: '11px' }}>เดิมพัน {satang(i.amount)} บาท</div>
+          <div className="[color:var(--dark-gray)] [font-size:11px]">เดิมพัน {satang(i.amount)} บาท</div>
         </div>
       </div>
       <div className="text-right shrink-0">
         {i.status === 'won' && (
-          <div className="font-bold" style={{ color: 'var(--success-green)' }}>💰 จ่าย {satang(i.payout)} บาท</div>
+          <div className="font-bold [color:var(--success-green)]">💰 จ่าย {satang(i.payout)} บาท</div>
         )}
-        {i.status === 'lost' && <div className="text-xs font-medium" style={{ color: 'var(--muted-gray)' }}>ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร</div>}
+        {i.status === 'lost' && <div className="text-xs font-medium [color:var(--muted-gray)]">ผู้เล่นเสีย {satang(i.amount)} บาท — ระบบได้กำไร</div>}
         {i.status === 'pending' && (
           <div className="text-[11px]">
-            <div style={{ color: 'var(--info-blue)' }}>รอผล</div>
-            <div style={{ color: 'var(--gold-primary)', opacity: 0.8 }}>ถ้าถูก ได้ {satang(potential(i))} บาท</div>
+            <div className="[color:var(--info-blue)]">รอผล</div>
+            <div className="[color:var(--gold-primary)] [opacity:0.8]">ถ้าถูก ได้ {satang(potential(i))} บาท</div>
           </div>
         )}
-        {i.status === 'cancelled' && <div style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>ยกเลิก</div>}
+        {i.status === 'cancelled' && <div className="[color:var(--muted-gray)] [font-size:12px]">ยกเลิก</div>}
       </div>
     </div>
   );
@@ -145,9 +145,9 @@ export default function AdminBets() {
         <div className="flex items-center gap-3 flex-wrap">
           <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="ค้นหา username / เลขโพย / รอบหวย..."
-            className="luxury-input text-sm" style={{ width: '16rem', padding: '0.6rem 0.75rem' }} />
+            className="luxury-input text-sm [width:16rem] [padding:0.6rem_0.75rem]" />
           <Select value={status || 'all'} onValueChange={v => setStatus(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-36 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }}>
+            <SelectTrigger className="w-36 py-2 text-sm [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]">
               <SelectValue placeholder="ทุกสถานะ" />
             </SelectTrigger>
             <SelectContent>
@@ -161,8 +161,8 @@ export default function AdminBets() {
           </button>
         </div>
       </div>
-      {err && <div className="text-sm rounded-lg p-3" style={{ color: 'var(--danger-red)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger-red)' }}>เกิดข้อผิดพลาด: {err}</div>}
-      <div style={{ color: 'var(--muted-gray)', fontSize: '12px' }}>ทั้งหมด {total.toLocaleString()} โพย — แสดง {slips.length.toLocaleString()} รายการ</div>
+      {err && <div className="text-sm rounded-lg p-3 [color:var(--danger-red)] [background:rgba(239,_68,_68,_0.1)] [border:1px_solid_var(--danger-red)]">เกิดข้อผิดพลาด: {err}</div>}
+      <div className="[color:var(--muted-gray)] [font-size:12px]">ทั้งหมด {total.toLocaleString()} โพย — แสดง {slips.length.toLocaleString()} รายการ</div>
       <div className="space-y-3">
         {slips.map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
@@ -174,15 +174,15 @@ export default function AdminBets() {
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-lg">{STATUS_EMOJI[s.status] || '📄'}</span>
                   <div className="min-w-0">
-                    <span className="font-mono" style={{ color: 'var(--gold-primary)' }}>{s.slip_ref}</span>
-                    <span className="text-sm ml-3 truncate inline-block align-middle max-w-[40vw]" style={{ color: 'var(--muted-gray)' }}>
+                    <span className="font-mono [color:var(--gold-primary)]">{s.slip_ref}</span>
+                    <span className="text-sm ml-3 truncate inline-block align-middle max-w-[40vw] [color:var(--muted-gray)]">
                       {s.username} • {drawLabel(s) || `${s.type_name_th} • ${s.draw_code}`}
                     </span>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-bold" style={{ color: 'var(--white)' }}>{satang(s.total_stake)} บาท</span>
-                  {s.total_payout > 0 && <span className="text-sm ml-2" style={{ color: 'var(--success-green)' }}>จ่าย {satang(s.total_payout)} บาท</span>}
+                  <span className="font-bold [color:var(--white)]">{satang(s.total_stake)} บาท</span>
+                  {s.total_payout > 0 && <span className="text-sm ml-2 [color:var(--success-green)]">จ่าย {satang(s.total_payout)} บาท</span>}
                   {settled && (
                     <span className="text-sm ml-2 font-semibold" style={{ color: houseNet >= 0 ? 'var(--success-green)' : 'var(--danger-red)' }}>
                       ระบบ {houseNet >= 0 ? '+' : ''}{satang(houseNet)} บาท
@@ -196,11 +196,11 @@ export default function AdminBets() {
                     : 'luxury-badge-danger')}>
                     {STATUS_TH[s.status] || s.status}
                   </span>
-                  <div style={{ color: 'var(--dark-gray)', fontSize: '11px', marginTop: '2px' }}>{fmtDateTime(s.created_at)}</div>
+                  <div className="[color:var(--dark-gray)] [font-size:11px] [margin-top:2px]">{fmtDateTime(s.created_at)}</div>
                 </div>
               </button>
               {open === s.id && (
-                <div style={{ borderTop: '1px solid var(--border-light)' }} className="px-5 py-4 space-y-2">
+                <div className="px-5 py-4 space-y-2 [border-top:1px_solid_var(--border-light)]">
                   {(Array.isArray(s.items) ? s.items : []).map(i => <ItemRow key={i.id} i={i} />)}
                 </div>
               )}
@@ -212,7 +212,7 @@ export default function AdminBets() {
             {loadingMore ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${PAGE} รายการ (เหลือ ${(total - slips.length).toLocaleString()})`}
           </button>
         )}
-        {!slips.length && <div className="text-center py-10" style={{ color: 'var(--muted-gray)' }}>{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
+        {!slips.length && <div className="text-center py-10 [color:var(--muted-gray)]">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
       </div>
     </div>
   );

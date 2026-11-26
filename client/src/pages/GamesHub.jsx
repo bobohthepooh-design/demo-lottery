@@ -68,18 +68,18 @@ export default function GamesHub() {
     <div className="space-y-4 sm:space-y-5">
       <div className="text-center">
         <h1 className="text-lg sm:text-xl font-black luxury-gradient-text">🎮 เกมด่วน</h1>
-        <p className="text-[10px] sm:text-xs mt-1" style={{ color: 'var(--muted-gray)' }}>เล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
+        <p className="text-[10px] sm:text-xs mt-1 [color:var(--muted-gray)]">เล่นได้ทันทีไม่ต้องรอผลออกรางวัล — เปิดตลอด 24 ชม.</p>
       </div>
 
       {!user && (
-        <div className="rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-center" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.4)', color: 'var(--warning-amber)' }}>
+        <div className="rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-center [background:rgba(245,_158,_11,_0.1)] [border:1px_solid_rgba(245,_158,_11,_0.4)] [color:var(--warning-amber)]">
           กรุณา <Link to="/login" className="font-bold underline">เข้าสู่ระบบ</Link> ก่อนเล่นเกม
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {games.length === 0 && (
-          <div className="col-span-full rounded-xl px-4 py-6 text-center text-sm" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--muted-gray)' }}>
+          <div className="col-span-full rounded-xl px-4 py-6 text-center text-sm [background:var(--bg-card)] [border:1px_solid_var(--border-light)] [color:var(--muted-gray)]">
             เกมทั้งหมดปิดให้บริการชั่วคราว — กลับมาดูใหม่อีกครั้ง
           </div>
         )}
@@ -87,10 +87,10 @@ export default function GamesHub() {
           <Link key={g.to} to={g.to}
             className="luxury-card luxury-card-gold-border group relative overflow-hidden p-4 sm:p-5 transition">
             <div className="text-3xl sm:text-4xl mb-1.5 sm:mb-2">{g.icon}</div>
-            <div className="font-black text-base sm:text-lg" style={{ color: 'var(--white)' }}>{g.name}</div>
-            <div className="text-[10px] sm:text-[11px] font-bold" style={{ color: 'var(--muted-gray)' }}>{g.tag}</div>
-            <p className="text-[10px] sm:text-xs mt-1.5 sm:mt-2 leading-relaxed" style={{ color: 'var(--light-gray)' }}>{g.desc}</p>
-            {g.price && <div className="text-[10px] sm:text-[11px] font-bold mt-0.5 sm:mt-1" style={{ color: 'var(--gold-bright)' }}>{g.price}</div>}
+            <div className="font-black text-base sm:text-lg [color:var(--white)]">{g.name}</div>
+            <div className="text-[10px] sm:text-[11px] font-bold [color:var(--muted-gray)]">{g.tag}</div>
+            <p className="text-[10px] sm:text-xs mt-1.5 sm:mt-2 leading-relaxed [color:var(--light-gray)]">{g.desc}</p>
+            {g.price && <div className="text-[10px] sm:text-[11px] font-bold mt-0.5 sm:mt-1 [color:var(--gold-bright)]">{g.price}</div>}
             <div className="mt-2 sm:mt-3 inline-block text-[10px] sm:text-xs font-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg luxury-btn">
               เล่นเลย →
             </div>

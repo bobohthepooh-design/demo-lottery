@@ -52,11 +52,8 @@ export default function Register() {
   return (
     <AuthShell title="สมัครสมาชิก" sub="สมัครง่ายๆ รับเครดิตฟรี 50 บาท ทันที">
       {/* tabs: เบอร์+OTP (แนะนำ) / ชื่อผู้ใช้+รหัสผ่าน */}
-      <div className="flex gap-2 rounded-xl p-1 mb-5"
-        style={{
-          background: 'var(--bg-dark-surface)',
-          border: '1px solid var(--border-light)'
-        }}>
+      <div className="flex gap-2 rounded-xl p-1 mb-5 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]"
+>
         <button type="button" onClick={() => setTab('otp')} style={tabCls('otp')}>เบอร์โทร + OTP</button>
         <button type="button" onClick={() => setTab('password')} style={tabCls('password')}>ชื่อผู้ใช้</button>
       </div>
@@ -75,30 +72,30 @@ export default function Register() {
             <Input required type={showPw ? 'text' : 'password'} minLength={10} value={form.password} onChange={e => setForm({...form, password: e.target.value})}
               placeholder="รหัสผ่าน (อย่างน้อย 10 ตัว)" autoComplete="new-password" inputClassName="pr-16" />
             <button type="button" onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
-              style={{ color: 'var(--muted-gray)' }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs [color:var(--muted-gray)]"
+
               onMouseEnter={(e) => e.target.style.color = 'var(--gold-primary)'}
               onMouseLeave={(e) => e.target.style.color = 'var(--muted-gray)'}>
               {showPw ? 'ซ่อน' : 'แสดง'}
             </button>
           </div>
-          <label className="flex items-start gap-2 text-xs cursor-pointer" style={{ color: 'var(--muted-gray)' }}>
+          <label className="flex items-start gap-2 text-xs cursor-pointer [color:var(--muted-gray)]">
             <input type="checkbox" required checked={form.ageConfirmed}
               onChange={e => setForm({...form, ageConfirmed: e.target.checked})}
-              className="mt-0.5"
-              style={{ accentColor: 'var(--gold-primary)' }} />
-            <span>ฉันยืนยันว่ามีอายุ <b style={{ color: 'var(--gold-primary)' }}>18 ปีขึ้นไป</b> ยอมรับ<a href="/legal" target="_blank" className="underline" style={{ color: 'var(--gold-primary)' }}>ข้อกำหนด</a> และ<a href="/legal" target="_blank" className="underline" style={{ color: 'var(--gold-primary)' }}>นโยบายความเป็นส่วนตัว (PDPA)</a> (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
+              className="mt-0.5 [accent-color:var(--gold-primary)]"
+ />
+            <span>ฉันยืนยันว่ามีอายุ <b className="[color:var(--gold-primary)]">18 ปีขึ้นไป</b> ยอมรับ<a href="/legal" target="_blank" className="underline [color:var(--gold-primary)]">ข้อกำหนด</a> และ<a href="/legal" target="_blank" className="underline [color:var(--gold-primary)]">นโยบายความเป็นส่วนตัว (PDPA)</a> (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
           </label>
           <Turnstile onVerify={setTsToken} />
-          {err && <div className="text-sm" style={{ color: 'var(--danger-red)' }} role="alert">{err}</div>}
+          {err && <div className="text-sm [color:var(--danger-red)]" role="alert">{err}</div>}
           <Button disabled={busy} className="w-full">{busy ? 'กำลังสมัคร...' : 'สมัครและเข้าใช้งานเลย'}</Button>
         </form>
       )}
 
-      <div className="text-center text-sm mt-5" style={{ color: 'var(--muted-gray)' }}>มีบัญชีแล้ว? <Link to="/login" style={{ color: 'var(--gold-primary)' }}>เข้าสู่ระบบ</Link></div>
+      <div className="text-center text-sm mt-5 [color:var(--muted-gray)]">มีบัญชีแล้ว? <Link to="/login" className="[color:var(--gold-primary)]">เข้าสู่ระบบ</Link></div>
       <div className="mt-5">
-        <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--dark-gray)' }}>
-          <div className="flex-1 h-px" style={{ background: 'var(--border-light)' }} />หรือ<div className="flex-1 h-px" style={{ background: 'var(--border-light)' }} />
+        <div className="flex items-center gap-3 text-xs mb-3 [color:var(--dark-gray)]">
+          <div className="flex-1 h-px [background:var(--border-light)]" />หรือ<div className="flex-1 h-px [background:var(--border-light)]" />
         </div>
         <LineLoginButton label="สมัคร/เข้าสู่ระบบด้วย LINE" />
       </div>

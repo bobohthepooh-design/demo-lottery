@@ -90,11 +90,11 @@ function Tile({ bg, className = '', style, children }) {
       style={{ background: bg, boxShadow: TILE_SHADOW, ...style }}>
       {children}
       {/* gloss — แสงสะท้อนครึ่งบน */}
-      <span className="absolute inset-x-0 top-0 h-[55%] pointer-events-none"
-        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.05) 70%, transparent)' }} />
+      <span className="absolute inset-x-0 top-0 h-[55%] pointer-events-none [background:linear-gradient(180deg,_rgba(255,255,255,.32),_rgba(255,255,255,.05)_70%,_transparent)]"
+ />
       {/* ขอบล่างเข้ม — ความหนา */}
-      <span className="absolute inset-x-0 bottom-0 h-[28%] pointer-events-none"
-        style={{ background: 'linear-gradient(0deg, rgba(0,0,0,.22), transparent)' }} />
+      <span className="absolute inset-x-0 bottom-0 h-[28%] pointer-events-none [background:linear-gradient(0deg,_rgba(0,0,0,.22),_transparent)]"
+ />
     </span>
   );
 }
@@ -106,7 +106,7 @@ export function FlagIcon({ code, className = '', style }) {
   if (F) {
     return (
       <Tile bg={FLAG_BG[code] || TYPE_BG.HR} className={className} style={style}>
-        <span className="flex items-center justify-center w-[88%] relative z-[1]" style={{ aspectRatio: '3/2' }}>
+        <span className="flex items-center justify-center w-[88%] relative z-[1] [aspect-ratio:3/2]">
           <F />
         </span>
       </Tile>

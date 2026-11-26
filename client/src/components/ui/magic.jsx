@@ -21,8 +21,8 @@ export function BorderBeam({ className = '', size = 120, duration = 6 }) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 rounded-2xl ${className}`}
-      style={{ padding: 1.5 }}
+      className={`pointer-events-none absolute inset-0 rounded-2xl ${className} [padding:1.5]`}
+
     >
       <div
         className="absolute inset-[-100%]"

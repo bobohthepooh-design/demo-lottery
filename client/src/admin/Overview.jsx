@@ -192,7 +192,7 @@ export default function AdminOverview() {
         <div className="flex items-end gap-2 h-40">
           {daily.map(x => (
             <div key={x.day} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-              <div className="w-full flex gap-0.5 items-end justify-center" style={{ height: '120px' }}>
+              <div className="w-full flex gap-0.5 items-end justify-center [height:120px]">
                 <div className="w-1/2 bg-[rgba(34,197,94,0.7)] rounded-t" style={{ height: `${Math.max(2, (x.inn / maxDaily) * 100)}%` }} title={`เข้า ${satang(x.inn)} บาท`} />
                 <div className="w-1/2 bg-[rgba(239,68,68,0.7)] rounded-t" style={{ height: `${Math.max(2, (x.out / maxDaily) * 100)}%` }} title={`ออก ${satang(x.out)} บาท`} />
               </div>

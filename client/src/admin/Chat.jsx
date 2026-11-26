@@ -53,9 +53,9 @@ export default function AdminChat() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>แชทสมาชิก</h1>
+        <h1 className="text-2xl font-bold [color:var(--white)]">แชทสมาชิก</h1>
         {totalUnread > 0 && (
-          <span className="text-xs rounded-full px-3 py-1 font-bold" style={{ background: 'rgba(212, 175, 55, 0.15)', border: '1px solid var(--border-gold)', color: 'var(--gold-primary)' }}>
+          <span className="text-xs rounded-full px-3 py-1 font-bold [background:rgba(212,_175,_55,_0.15)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">
             ยังไม่อ่าน {totalUnread} ข้อความ
           </span>
         )}
@@ -63,11 +63,11 @@ export default function AdminChat() {
 
       {/* แถบแจ้งเตือน — สมาชิกส่งข้อความมา ยังไม่อ่าน */}
       {unreadThreads.length > 0 && (
-        <div className="rounded-xl px-4 py-2.5 flex flex-wrap items-center gap-2" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
-          <span className="text-sm font-bold" style={{ color: 'var(--warning-amber)' }}>📩 มีข้อความใหม่จากสมาชิก:</span>
+        <div className="rounded-xl px-4 py-2.5 flex flex-wrap items-center gap-2 [background:rgba(245,_158,_11,_0.1)] [border:1px_solid_rgba(245,_158,_11,_0.4)]">
+          <span className="text-sm font-bold [color:var(--warning-amber)]">📩 มีข้อความใหม่จากสมาชิก:</span>
           {unreadThreads.map(t => (
             <button key={t.threadId} onClick={() => setSel(t.userId)}
-              className="text-xs rounded-full px-3 py-1 font-semibold transition" style={{ background: 'rgba(245, 158, 11, 0.2)', border: '1px solid rgba(245, 158, 11, 0.4)', color: 'var(--light-gray)' }}>
+              className="text-xs rounded-full px-3 py-1 font-semibold transition [background:rgba(245,_158,_11,_0.2)] [border:1px_solid_rgba(245,_158,_11,_0.4)] [color:var(--light-gray)]">
               {t.displayName || t.username} ({t.unread} ข้อความ) — กดเพื่ออ่าน
             </button>
           ))}
@@ -76,10 +76,10 @@ export default function AdminChat() {
 
       <div className="flex gap-4 h-[calc(100vh-13rem)] min-h-[420px]">
         {/* รายการ thread */}
-        <div className={`w-full md:w-80 shrink-0 flex-col rounded-xl overflow-hidden ${sel ? 'hidden md:flex' : 'flex'}`} style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)' }}>
-          <div className="px-3 py-2.5 text-xs font-bold uppercase tracking-wide" style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--muted-gray)' }}>บทสนทนา ({threads.length})</div>
-          <div className="flex-1 overflow-y-auto" style={{ borderColor: 'var(--border-light)' }}>
-            {threads.length === 0 && <div className="p-6 text-center text-xs" style={{ color: 'var(--muted-gray)' }}>ยังไม่มีข้อความจากสมาชิก</div>}
+        <div className={`w-full md:w-80 shrink-0 flex-col rounded-xl overflow-hidden ${sel ? 'hidden md:flex' : 'flex'} [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]`}>
+          <div className="px-3 py-2.5 text-xs font-bold uppercase tracking-wide [border-bottom:1px_solid_var(--border-light)] [color:var(--muted-gray)]">บทสนทนา ({threads.length})</div>
+          <div className="flex-1 overflow-y-auto [border-color:var(--border-light)]">
+            {threads.length === 0 && <div className="p-6 text-center text-xs [color:var(--muted-gray)]">ยังไม่มีข้อความจากสมาชิก</div>}
             {threads.map(t => (
               <button key={t.threadId} onClick={() => setSel(t.userId)}
                 className="w-full text-left px-3 py-2.5 transition"
@@ -87,19 +87,19 @@ export default function AdminChat() {
                 onMouseEnter={e => { if (sel !== t.userId) e.currentTarget.style.background = 'var(--bg-card-hover)'; }}
                 onMouseLeave={e => { if (sel !== t.userId) e.currentTarget.style.background = 'transparent'; }}>
                 <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--gold-primary)' }}>
+                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 [background:var(--bg-card)] [border:1px_solid_var(--border-light)] [color:var(--gold-primary)]">
                     {(t.displayName || t.username || '?').slice(0, 1).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold truncate" style={{ color: 'var(--white)' }}>{t.displayName || t.username}</span>
-                      <span className="text-[10px] shrink-0" style={{ color: 'var(--dark-gray)' }}>{t.lastMsgAt ? fmtDateTime(t.lastMsgAt).slice(0, 10) : ''}</span>
+                      <span className="text-sm font-semibold truncate [color:var(--white)]">{t.displayName || t.username}</span>
+                      <span className="text-[10px] shrink-0 [color:var(--dark-gray)]">{t.lastMsgAt ? fmtDateTime(t.lastMsgAt).slice(0, 10) : ''}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className={`text-xs truncate`} style={{ color: t.lastIsAdmin ? 'var(--muted-gray)' : 'var(--light-gray)' }}>
                         {t.lastIsAdmin ? 'คุณ: ' : ''}{t.lastBody || '—'}
                       </span>
-                      {t.unread > 0 && <span className="min-w-4 h-4 px-1 rounded-full text-white text-[9px] font-black flex items-center justify-center shrink-0" style={{ background: 'var(--danger-red)' }}>{t.unread}</span>}
+                      {t.unread > 0 && <span className="min-w-4 h-4 px-1 rounded-full text-white text-[9px] font-black flex items-center justify-center shrink-0 [background:var(--danger-red)]">{t.unread}</span>}
                     </div>
                   </div>
                 </div>
@@ -109,17 +109,17 @@ export default function AdminChat() {
         </div>
 
         {/* หน้าต่างแชท */}
-        <div className={`flex-1 flex-col rounded-xl overflow-hidden ${sel ? 'flex' : 'hidden md:flex'}`} style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)' }}>
+        <div className={`flex-1 flex-col rounded-xl overflow-hidden ${sel ? 'flex' : 'hidden md:flex'} [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]`}>
           {!sel ? (
-            <div className="flex-1 flex items-center justify-center text-sm" style={{ color: 'var(--muted-gray)' }}>เลือกบทสนทนาจากรายการด้านซ้าย</div>
+            <div className="flex-1 flex items-center justify-center text-sm [color:var(--muted-gray)]">เลือกบทสนทนาจากรายการด้านซ้าย</div>
           ) : (
             <>
-              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
-                <button onClick={() => setSel(null)} className="md:hidden mr-1" style={{ color: 'var(--muted-gray)' }}>←</button>
-                <span className="font-bold" style={{ color: 'var(--white)' }}>{selThread?.displayName || selThread?.username || `User #${sel}`}</span>
-                <span className="text-xs" style={{ color: 'var(--muted-gray)' }}>@{selThread?.username}</span>
+              <div className="flex items-center gap-2 px-4 py-3 [border-bottom:1px_solid_var(--border-light)] [background:var(--bg-card)]">
+                <button onClick={() => setSel(null)} className="md:hidden mr-1 [color:var(--muted-gray)]">←</button>
+                <span className="font-bold [color:var(--white)]">{selThread?.displayName || selThread?.username || `User #${sel}`}</span>
+                <span className="text-xs [color:var(--muted-gray)]">@{selThread?.username}</span>
               </div>
-              <ScrollArea className="flex-1 min-h-0 px-4 py-3" style={{ background: 'var(--bg-deep-black)' }}>
+              <ScrollArea className="flex-1 min-h-0 px-4 py-3 [background:var(--bg-deep-black)]">
                 <div className="space-y-2 min-h-full flex flex-col">
                 {msgs.map(m => (
                   <div key={m.id} className={`flex ${m.isAdmin ? 'justify-end' : 'justify-start'}`}>
@@ -136,12 +136,12 @@ export default function AdminChat() {
                 <div ref={bottomRef} />
                 </div>
               </ScrollArea>
-              <div className="p-3 flex gap-2" style={{ borderTop: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
+              <div className="p-3 flex gap-2 [border-top:1px_solid_var(--border-light)] [background:var(--bg-card)]">
                 <input value={input} onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                   maxLength={500} placeholder={`ตอบกลับ ${selThread?.displayName || selThread?.username || ''}...`}
-                  className="flex-1 rounded-xl px-3 py-2 text-sm focus:outline-none" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
-                <Button onClick={send} disabled={busy || !input.trim()} size="md" className="px-4" style={{ background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: 'var(--bg-deep-black)' }}>
+                  className="flex-1 rounded-xl px-3 py-2 text-sm focus:outline-none [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" />
+                <Button onClick={send} disabled={busy || !input.trim()} size="md" className="px-4 [background:linear-gradient(135deg,_var(--gold-gradient-start),_var(--gold-gradient-end))] [color:var(--bg-deep-black)]">
                   ส่ง
                 </Button>
               </div>

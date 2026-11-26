@@ -68,8 +68,8 @@ function SeqSigns({ raw }) {
     <span className="inline-flex gap-0.5 flex-wrap justify-center">
       {signs.map((s, i) => (
         <span key={i} className="inline-flex flex-col items-center">
-          <span className="w-7 h-8 rounded-md text-lg font-black flex items-center justify-center text-navy-950"
-            style={{ background: 'linear-gradient(180deg,#fde68a,#f59e0b)' }}>
+          <span className="w-7 h-8 rounded-md text-lg font-black flex items-center justify-center text-navy-950 [background:linear-gradient(180deg,#fde68a,#f59e0b)]"
+>
             {isZodiacEmoji(s)
               ? <span className="leading-none text-xl">{zodiacGlyph(s)}</span>
               : <span className="leading-none">{zodiacGlyph(s)}</span>}

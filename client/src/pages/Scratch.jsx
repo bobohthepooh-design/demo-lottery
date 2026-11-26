@@ -142,7 +142,7 @@ export default function Scratch() {
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite]" style={{ bottom: '-4%', right: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '1s' }} />
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite] [bottom:-4%] [right:6%] [background:radial-gradient(circle_at_35%_30%,_#fff3c4,_#e2a812_60%,_#92600a)] [animation-delay:1s]" />
         <div className="text-5xl mb-2 animate-float">🎰</div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">สล็อต</h1>
         <p className="text-sm mt-1 text-[var(--muted-gray)]">เล่นเกม → กดสปิน → 5 รีลหมุนหยุดทีละตัว → รู้ผลทันที!</p>

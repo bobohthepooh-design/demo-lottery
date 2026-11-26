@@ -31,7 +31,7 @@ export const Input = forwardRef(function Input({ label, hint, error, className =
 
   return (
     <div className={className}>
-      {label && <label htmlFor={inputId} className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--muted-gray)' }}>{label}</label>}
+      {label && <label htmlFor={inputId} className="block text-xs font-semibold mb-1.5 [color:var(--muted-gray)]">{label}</label>}
       <input
         ref={ref}
         id={inputId}
@@ -53,8 +53,8 @@ export const Input = forwardRef(function Input({ label, hint, error, className =
         }}
         {...rest}
       />
-      {error ? <div className="text-xs mt-1.5" style={{ color: 'var(--danger-red)' }} role="alert">{error}</div>
-        : hint && <div className="text-xs mt-1.5" style={{ color: 'var(--dark-gray)' }}>{hint}</div>}
+      {error ? <div className="text-xs mt-1.5 [color:var(--danger-red)]" role="alert">{error}</div>
+        : hint && <div className="text-xs mt-1.5 [color:var(--dark-gray)]">{hint}</div>}
     </div>
   );
 });
@@ -69,7 +69,7 @@ export function Select({ label, hint, error, className = '', inputClassName = ''
 
   return (
     <div className={className}>
-      {label && <label htmlFor={inputId} className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--muted-gray)' }}>{label}</label>}
+      {label && <label htmlFor={inputId} className="block text-xs font-semibold mb-1.5 [color:var(--muted-gray)]">{label}</label>}
       <select
         id={inputId}
         className={inputClassName}
@@ -90,8 +90,8 @@ export function Select({ label, hint, error, className = '', inputClassName = ''
         }}
         {...rest}
       >{children}</select>
-      {error ? <div className="text-xs mt-1.5" style={{ color: 'var(--danger-red)' }} role="alert">{error}</div>
-        : hint && <div className="text-xs mt-1.5" style={{ color: 'var(--dark-gray)' }}>{hint}</div>}
+      {error ? <div className="text-xs mt-1.5 [color:var(--danger-red)]" role="alert">{error}</div>
+        : hint && <div className="text-xs mt-1.5 [color:var(--dark-gray)]">{hint}</div>}
     </div>
   );
 }

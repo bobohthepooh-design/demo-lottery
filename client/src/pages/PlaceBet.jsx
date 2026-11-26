@@ -351,12 +351,12 @@ export default function PlaceBet() {
   };
 
   if (done) return (
-    <div style={{ maxWidth: '28rem', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--success-green)', borderRadius: '1.5rem', padding: '2rem', textAlign: 'center', boxShadow: 'var(--shadow-gold)' }}>
-      <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🎉</div>
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--success-green)' }}>ส่งโพยสำเร็จ!</h1>
-      <p style={{ color: 'var(--muted-gray)', marginTop: '0.5rem' }}>เลขที่โพย: <code style={{ color: 'var(--gold-primary)' }}>{done.slipRef}</code></p>
-      <p style={{ color: 'var(--muted-gray)' }}>ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
-      <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+    <div className="[max-width:28rem] [margin:0_auto] [background:var(--bg-card)] [border:1px_solid_var(--success-green)] [border-radius:1.5rem] [padding:2rem] [text-align:center] [box-shadow:var(--shadow-gold)]">
+      <div className="[font-size:3rem] [margin-bottom:0.75rem]">🎉</div>
+      <h1 className="[font-size:1.25rem] [font-weight:700] [color:var(--success-green)]">ส่งโพยสำเร็จ!</h1>
+      <p className="[color:var(--muted-gray)] [margin-top:0.5rem]">เลขที่โพย: <code className="[color:var(--gold-primary)]">{done.slipRef}</code></p>
+      <p className="[color:var(--muted-gray)]">ยอดแทงรวม {satang(done.totalStake)} บาท • ยอดเครดิตคงเหลือ {satang(done.balance)} บาท</p>
+      <div className="[margin-top:1.5rem] [display:flex] [gap:0.75rem] [justify-content:center]">
         <Button to="/my-bets">ดูโพยของฉัน</Button>
         <Button to="/play" variant="secondary">เลือกตลาด/รอบอื่น</Button>
       </div>
@@ -379,24 +379,11 @@ export default function PlaceBet() {
   // ช่องจำนวนเงิน — ใช้ร่วมกันทุกประเภทแทง (เลขปกติ / หวยราศี / pattana)
   const amountField = (
     <div>
-      <label style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--gold-primary)', marginBottom: '0.5rem', display: 'block', letterSpacing: '0.02em' }} className="sm:text-base">จำนวนเงิน (บาท)</label>
+      <label className="sm:text-base [font-size:1rem] [font-weight:700] [color:var(--gold-primary)] [margin-bottom:0.5rem] [display:block] [letter-spacing:0.02em]">จำนวนเงิน (บาท)</label>
       <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
         inputMode="decimal" placeholder="0.00"
-        style={{
-          width: '100%',
-          background: 'var(--bg-dark-surface)',
-          border: '2px solid var(--border-light)',
-          borderRadius: '1rem',
-          padding: '0.85rem 1rem',
-          fontSize: '1.5rem',
-          textAlign: 'center',
-          color: 'var(--gold-primary)',
-          fontFamily: 'monospace',
-          fontWeight: 800,
-          outline: 'none',
-          transition: 'all 0.2s'
-        }} className="sm:px-5 sm:py-5 sm:text-3xl focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]" />
+ className="sm:px-5 sm:py-5 sm:text-3xl focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)] [width:100%] [background:var(--bg-dark-surface)] [border:2px_solid_var(--border-light)] [border-radius:1rem] [padding:0.85rem_1rem] [font-size:1.5rem] [text-align:center] [color:var(--gold-primary)] [font-family:monospace] [font-weight:800] [outline:none] [transition:all_0.2s]" />
       <div className="grid grid-cols-4 gap-2 sm:gap-3 mt-3">
         {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
           <button key={v} type="button" onClick={() => setAmount(String(v))}
@@ -424,32 +411,32 @@ export default function PlaceBet() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 lg:gap-5">
       {/* left: entry form */}
-      <div style={{}} className="lg:col-span-3 space-y-2.5 sm:space-y-3">
+      <div className="lg:col-span-3 space-y-2.5 sm:space-y-3">
         {/* Header — Draw Info + Countdown */}
-        <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-gold-lg)' }} className="bet-header-card p-3 sm:p-5 lg:p-6">
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <Link to="/play" style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600, transition: 'all 0.2s' }} className="hover:text-[var(--gold-bright)]">← เลือกตลาด/รอบอื่น</Link>
+        <div className="bet-header-card p-3 sm:p-5 lg:p-6 [background:linear-gradient(135deg,_var(--bg-card),_var(--bg-dark-surface))] [border:2px_solid_var(--border-gold)] [border-radius:var(--radius-2xl)] [box-shadow:var(--shadow-gold-lg)]">
+          <div className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:0.75rem]">
+            <div className="[flex:1] [min-width:0]">
+              <div className="[display:flex] [align-items:center] [gap:0.75rem] [margin-bottom:0.75rem]">
+                <Link to="/play" className="hover:text-[var(--gold-bright)] [font-size:0.875rem] [color:var(--gold-primary)] [font-weight:600] [transition:all_0.2s]">← เลือกตลาด/รอบอื่น</Link>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem 1rem' }} className="sm:gap-4">
-                <FlagIcon code={draw.type_code} style={{ borderRadius: '0.375rem', boxShadow: 'var(--shadow-md)' }} className="w-10 h-7 sm:w-12 sm:h-9" />
-                <div style={{ minWidth: 0 }}>
+              <div className="sm:gap-4 [display:flex] [align-items:center] [gap:0.75rem_1rem]">
+                <FlagIcon code={draw.type_code} className="w-10 h-7 sm:w-12 sm:h-9 [border-radius:0.375rem] [box-shadow:var(--shadow-md)]" />
+                <div className="[min-width:0]">
                   <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: ac?.text || 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }} className="sm:text-2xl">{drawLabel(draw)}</h1>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--muted-gray)', fontWeight: 500, marginTop: '0.25rem' }} className="sm:text-base">
+                  <div className="sm:text-base [font-size:0.875rem] [color:var(--muted-gray)] [font-weight:500] [margin-top:0.25rem]">
                     {thaiDate(draw.draw_at)} • ปิดรับ {thaiHM(draw.close_at)} น.
-                    <span style={{ color: 'var(--dark-gray)', fontSize: '0.75rem', marginLeft: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }} className="sm:text-xs">{draw.draw_code}</span>
+                    <span className="sm:text-xs [color:var(--dark-gray)] [font-size:0.75rem] [margin-left:0.75rem] [font-family:monospace] [font-weight:600]">{draw.draw_code}</span>
                   </div>
                 </div>
               </div>
               {(() => { const s = annSummary(draw.announce); return s ? (
-                <div style={{ marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, padding: '0.5rem 1.25rem', borderRadius: '0.75rem', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.5)', color: 'var(--warning-amber)', boxShadow: 'var(--shadow-sm)' }} className="sm:text-sm sm:px-5 sm:py-2.5">
+                <div className="sm:text-sm sm:px-5 sm:py-2.5 [margin-top:0.75rem] [display:inline-flex] [align-items:center] [gap:0.5rem_0.75rem] [font-size:0.75rem] [font-weight:700] [padding:0.5rem_1.25rem] [border-radius:0.75rem] [background:rgba(245,_158,_11,_0.15)] [border:1px_solid_rgba(245,_158,_11,_0.5)] [color:var(--warning-amber)] [box-shadow:var(--shadow-sm)]">
                   📣 เลขอั้น: {s}
                 </div>
               ) : null; })()}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem 0.75rem', flexShrink: 0 }} className="sm:gap-3">
-              {kb && <span style={{ fontSize: '0.625rem', padding: '0.375rem 0.875rem', borderRadius: '9999px', fontWeight: 700, boxShadow: 'var(--shadow-sm)' }} className={`sm:text-xs sm:px-3 sm:py-1.5 ${kb.cls}`}>{kb.label}</span>}
+            <div className="sm:gap-3 [display:flex] [flex-direction:column] [align-items:flex-end] [gap:0.5rem_0.75rem] [flex-shrink:0]">
+              {kb && <span className={`sm:text-xs sm:px-3 sm:py-1.5 ${kb.cls} [font-size:0.625rem] [padding:0.375rem_0.875rem] [border-radius:9999px] [font-weight:700] [box-shadow:var(--shadow-sm)]`}>{kb.label}</span>}
               <span style={{
                 fontSize: '0.75rem',
                 fontWeight: 700,
@@ -466,9 +453,9 @@ export default function PlaceBet() {
           </div>
           {/* countdown — แถวเต็มความกว้างแยกจากหัวข้อ กันข้อความยาวดันชื่อรอบจนมองไม่เห็นบนมือถือ */}
           {!closed && (
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 600 }} className="sm:text-base">เหลือเวลา</span>
-              <span style={{ color: 'var(--gold-bright)', fontFamily: 'monospace', fontWeight: 800, fontSize: '1.125rem', textShadow: '0 0 20px rgba(212, 175, 55, 0.3)' }} className="sm:text-xl">
+            <div className="[margin-top:1rem] [padding-top:1rem] [border-top:1px_solid_var(--border-gold)] [display:flex] [align-items:center] [justify-content:space-between] [gap:0.75rem] [flex-wrap:wrap]">
+              <span className="sm:text-base [font-size:0.875rem] [color:var(--gold-primary)] [font-weight:600]">เหลือเวลา</span>
+              <span className="sm:text-xl [color:var(--gold-bright)] [font-family:monospace] [font-weight:800] [font-size:1.125rem] [text-shadow:0_0_20px_rgba(212,_175,_55,_0.3)]">
                 <Countdown closeAt={draw.close_at} />
               </span>
             </div>
@@ -476,14 +463,14 @@ export default function PlaceBet() {
         </div>
 
         {!closed && (
-          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-dark-surface))', border: '2px solid var(--border-gold)', borderRadius: 'var(--radius-2xl)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-gold-lg)' }} className="bet-controls-card p-3 sm:p-5 gap-3 sm:gap-5">
+          <div className="bet-controls-card p-3 sm:p-5 gap-3 sm:gap-5 [background:linear-gradient(135deg,_var(--bg-card),_var(--bg-dark-surface))] [border:2px_solid_var(--border-gold)] [border-radius:var(--radius-2xl)] [display:flex] [flex-direction:column] [box-shadow:var(--shadow-gold-lg)]">
             {/* Bet Type Selector — Grid layout, all visible */}
             <div>
-              <h2 style={{ fontWeight: 800, color: 'var(--white)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', letterSpacing: '0.01em' }}>
-                <span style={{ width: '0.375rem', height: '1.75rem', background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', borderRadius: '9999px', boxShadow: 'var(--shadow-gold)' }} />
+              <h2 className="[font-weight:800] [color:var(--white)] [font-size:1.25rem] [display:flex] [align-items:center] [gap:0.75rem] [margin-bottom:0.5rem] [letter-spacing:0.01em]">
+                <span className="[width:0.375rem] [height:1.75rem] [background:linear-gradient(135deg,_var(--gold-gradient-start),_var(--gold-gradient-end))] [border-radius:9999px] [box-shadow:var(--shadow-gold)]" />
                 เลือกประเภทการแทง
               </h2>
-              {rule && <div style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', marginBottom: '0.75rem', marginLeft: '1.125rem', padding: '0.5rem 0.875rem', background: 'rgba(212, 175, 55, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
+              {rule && <div className="sm:text-base [font-size:0.875rem] [color:var(--gold-primary)] [margin-bottom:0.75rem] [margin-left:1.125rem] [padding:0.5rem_0.875rem] [background:rgba(212,_175,_55,_0.08)] [border-radius:0.75rem] [border:1px_solid_rgba(212,_175,_55,_0.2)] [font-weight:500]">💡 {ruleHint(rule)}</div>}
               <div className="bet-type-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
@@ -501,10 +488,10 @@ export default function PlaceBet() {
                         boxShadow: isSel ? 'var(--shadow-gold)' : 'none',
                         transform: hoveredRule === r.id ? 'translateY(-3px)' : 'translateY(0)'
                       }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.375rem' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }} className="sm:text-base">
-                          {isAnn && <span style={{ fontSize: '0.625rem', fontWeight: 700, padding: '0.25rem 0.5rem', borderRadius: '0.5rem', background: 'rgba(245, 158, 11, 0.2)', border: '1px solid rgba(245, 158, 11, 0.5)', color: 'var(--warning-amber)', flexShrink: 0 }} className="sm:text-xs">อั้น</span>}
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name_th}</span>
+                      <div className="[display:flex] [align-items:center] [justify-content:space-between] [gap:0.5rem] [margin-bottom:0.375rem]">
+                        <div className="sm:text-base [font-weight:700] [font-size:0.8125rem] [overflow:hidden] [text-overflow:ellipsis] [white-space:nowrap] [display:flex] [align-items:center] [gap:0.5rem] [min-width:0]">
+                          {isAnn && <span className="sm:text-xs [font-size:0.625rem] [font-weight:700] [padding:0.25rem_0.5rem] [border-radius:0.5rem] [background:rgba(245,_158,_11,_0.2)] [border:1px_solid_rgba(245,_158,_11,_0.5)] [color:var(--warning-amber)] [flex-shrink:0]">อั้น</span>}
+                          <span className="[overflow:hidden] [text-overflow:ellipsis] [white-space:nowrap]">{r.name_th}</span>
                         </div>
                         <span style={{
                           fontSize: '0.75rem',
@@ -517,9 +504,9 @@ export default function PlaceBet() {
                           color: isSel ? 'var(--bg-deep-black)' : 'var(--gold-primary)'
                         }} className="sm:text-sm">x{r.payout_multiplier}</span>
                       </div>
-                      <div style={{ fontSize: '0.6875rem', color: 'var(--muted-gray)', lineHeight: 1.4, fontWeight: 500 }} className="sm:text-xs">
+                      <div className="sm:text-xs [font-size:0.6875rem] [color:var(--muted-gray)] [line-height:1.4] [font-weight:500]">
                         {r.bet_type === 'pattana5' ? 'เลือก 5 เลข 1-45' : r.bet_type?.startsWith('zodiac') ? (r.digits > 1 ? `${r.digits} ราศี` : '1 ราศี') : `${r.digits} หลัก`}
-                        {isAnn && <span style={{ color: 'var(--warning-amber)', fontWeight: 600 }}> • ครึ่งรางวัล</span>}
+                        {isAnn && <span className="[color:var(--warning-amber)] [font-weight:600]"> • ครึ่งรางวัล</span>}
                       </div>
                     </button>
                   );
@@ -530,8 +517,8 @@ export default function PlaceBet() {
             {/* Number Input Area */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {isZodiac ? (<>
-                <div style={{}} className="sm:col-span-2">
-                  <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
+                <div className="sm:col-span-2">
+                  <label className="[font-size:0.875rem] [font-weight:600] [color:var(--muted-gray)] [margin-bottom:0.5rem] [display:block]">
                     เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับ)` : '(1 ใน 12)'}
                   </label>
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 sm:gap-2">
@@ -557,35 +544,35 @@ export default function PlaceBet() {
                             boxShadow: sel ? '0 10px 15px -3px rgba(59, 130, 246, 0.2)' : 'none',
                             opacity: full ? 0.4 : 1
                           }}>
-                          <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{ZODIAC_EMOJI[z]}</span>
+                          <span className="[font-size:1.5rem] [line-height:1]">{ZODIAC_EMOJI[z]}</span>
                           <span style={{ fontSize: '0.625rem', lineHeight: 1.25, color: sel ? 'var(--white)' : 'var(--muted-gray)' }}>{sel ? `${idx + 1}. ${z}` : z}</span>
                         </button>
                       );
                     })}
                   </div>
                   {zodiacPicks.length > 0 && (
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', fontFamily: 'monospace', color: 'var(--info-blue)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem' }}>
+                    <div className="[margin-top:0.75rem] [font-size:0.875rem] [font-family:monospace] [color:var(--info-blue)] [display:flex] [align-items:center] [gap:0.5rem] [flex-wrap:wrap] [background:rgba(59,_130,_246,_0.1)] [border-radius:0.5rem] [padding:0.5rem_0.75rem]">
                       ผล: {zodiacPicks.map((z, i) => (
-                        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                          {i > 0 && <span style={{ color: 'var(--dark-gray)' }}>→</span>}
-                          <span style={{ fontSize: '1.125rem', lineHeight: 1 }}>{ZODIAC_EMOJI[z]}</span>{z}
+                        <span key={i} className="[display:inline-flex] [align-items:center] [gap:0.25rem]">
+                          {i > 0 && <span className="[color:var(--dark-gray)]">→</span>}
+                          <span className="[font-size:1.125rem] [line-height:1]">{ZODIAC_EMOJI[z]}</span>{z}
                         </span>
                       ))}
                     </div>
                   )}
-                  <div style={{ marginTop: '0.75rem', borderRadius: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '1rem', fontSize: '0.75rem', color: 'var(--muted-gray)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--info-blue)' }}>📖 ผลรางวัล = ปีนักษัตร 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
-                    <div>เช่น <span style={{ fontFamily: 'monospace', color: 'var(--gold-primary)' }}>ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม</span></div>
+                  <div className="[margin-top:0.75rem] [border-radius:0.5rem] [background:rgba(59,_130,_246,_0.1)] [border:1px_solid_rgba(59,_130,_246,_0.3)] [padding:1rem] [font-size:0.75rem] [color:var(--muted-gray)] [display:flex] [flex-direction:column] [gap:0.25rem]">
+                    <div className="[font-weight:600] [color:var(--info-blue)]">📖 ผลรางวัล = ปีนักษัตร 6 ตัวไม่ซ้ำ เรียงลำดับ</div>
+                    <div>เช่น <span className="[font-family:monospace] [color:var(--gold-primary)]">ขาล-เถาะ-มะโรง-มะเส็ง-มะเมีย-มะแม</span></div>
                     <div>① ตัวแรก = รางวัลใหญ่ • ④⑤⑥ สามตัวท้าย = 3 บน • ⑤⑥ สองตัวท้าย = 2 ล่าง • ปีนักษัตรไหนก็ได้ = วิ่ง</div>
                     {rule?.bet_type && ZODIAC_HINT[rule.bet_type] && (
-                      <div style={{ color: 'var(--info-blue)', fontWeight: 500 }}>→ {ZODIAC_HINT[rule.bet_type]}</div>
+                      <div className="[color:var(--info-blue)] [font-weight:500]">→ {ZODIAC_HINT[rule.bet_type]}</div>
                     )}
                   </div>
                 </div>
                 {amountField}
               </>) : isPattana ? (<>
-                <div style={{}} className="sm:col-span-2">
-                  <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
+                <div className="sm:col-span-2">
+                  <label className="[font-size:0.875rem] [font-weight:600] [color:var(--muted-gray)] [margin-bottom:0.5rem] [display:block]">
                     เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)
                   </label>
                   <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-[repeat(15,minmax(0,1fr))] gap-1.5 sm:gap-2">
@@ -609,14 +596,14 @@ export default function PlaceBet() {
                     ))}
                   </div>
                   {picks.length > 0 && (
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', fontFamily: 'monospace', color: 'var(--gold-primary)', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem' }}>
+                    <div className="[margin-top:0.75rem] [font-size:0.875rem] [font-family:monospace] [color:var(--gold-primary)] [background:rgba(212,_175,_55,_0.1)] [border-radius:0.5rem] [padding:0.5rem_0.75rem]">
                       เลือก: {[...picks].sort((a,b)=>a-b).map(n=>String(n).padStart(2,'0')).join('-')}
                     </div>
                   )}
                 </div>
                 {amountField}
               </>) : !rule ? (
-                <div className="sm:col-span-2" style={{ color: 'var(--muted-gray)', fontSize: '0.875rem', padding: '2rem 0', textAlign: 'center' }}>กำลังโหลดประเภทการแทง...</div>
+                <div className="sm:col-span-2 [color:var(--muted-gray)] [font-size:0.875rem] [padding:2rem_0] [text-align:center]">กำลังโหลดประเภทการแทง...</div>
               ) : (
                 <>
                   {/* Number Input */}
@@ -628,22 +615,8 @@ export default function PlaceBet() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                       inputMode="numeric"
                       placeholder={rule ? '0'.repeat(rule.digits) : ''}
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-dark-surface)',
-                        border: '2px solid var(--border-light)',
-                        borderRadius: '1rem',
-                        padding: '0.85rem 1rem',
-                        fontSize: '1.5rem',
-                        letterSpacing: '0.35em',
-                        textAlign: 'center',
-                        color: 'var(--gold-primary)',
-                        fontFamily: 'monospace',
-                        fontWeight: 800,
-                        outline: 'none',
-                        transition: 'all 0.2s'
-                      }}
-                      className="sm:px-5 sm:py-5 sm:text-4xl sm:tracking-[0.5em] focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]"
+
+                      className="sm:px-5 sm:py-5 sm:text-4xl sm:tracking-[0.5em] focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)] [width:100%] [background:var(--bg-dark-surface)] [border:2px_solid_var(--border-light)] [border-radius:1rem] [padding:0.85rem_1rem] [font-size:1.5rem] [letter-spacing:0.35em] [text-align:center] [color:var(--gold-primary)] [font-family:monospace] [font-weight:800] [outline:none] [transition:all_0.2s]"
                     />
 
                     {/* Quick Actions - Horizontal row like the reference image */}
@@ -682,8 +655,8 @@ export default function PlaceBet() {
                             onClick={() => addPattern('tod')}
                             variant="secondary"
                             size="sm"
-                            style={{ background: 'var(--info-blue)', borderColor: 'var(--info-blue)', color: 'var(--white)' }}
-                            className="text-xs font-bold"
+
+                            className="text-xs font-bold [background:var(--info-blue)] [border-color:var(--info-blue)] [color:var(--white)]"
                           >
                             เลขตอง
                           </Button>
@@ -692,15 +665,15 @@ export default function PlaceBet() {
                     </div>
 
                     {favKey > 0 && (
-                      <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="[margin-top:0.75rem] [display:flex] [flex-wrap:wrap] [align-items:center] [gap:0.5rem]">
                         {favList.map(f => (
                           <button key={f} type="button" onClick={() => pickFav(f)}
-                            style={{ fontSize: '0.875rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-gold)', color: 'var(--gold-primary)', fontFamily: 'monospace', transition: 'all 0.2s', fontWeight: 600 }} className="hover:bg-[rgba(212,175,55,0.1)]">{f}</button>
+ className="hover:bg-[rgba(212,175,55,0.1)] [font-size:0.875rem] [padding:0.4375rem_0.75rem] [border-radius:0.625rem] [background:var(--bg-dark-surface)] [border:2px_solid_var(--border-gold)] [color:var(--gold-primary)] [font-family:monospace] [transition:all_0.2s] [font-weight:600]">{f}</button>
                         ))}
-                        {favList.length === 0 && recentList.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--dark-gray)' }}>เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
+                        {favList.length === 0 && recentList.length === 0 && <span className="[font-size:0.75rem] [color:var(--dark-gray)]">เลขโปรดที่บันทึกไว้จะแสดงที่นี่</span>}
                         {new RegExp(`^\\d{${favKey}}$`).test(number) && !favList.includes(number) && (
                           <button type="button" onClick={() => saveFav(number)}
-                            style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem', borderRadius: '0.625rem', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', transition: 'all 0.2s', fontWeight: 600 }} className="hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">⭐ บันทึกเลขนี้</button>
+ className="hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)] [font-size:0.75rem] [padding:0.375rem_0.75rem] [border-radius:0.625rem] [border:2px_solid_var(--border-light)] [color:var(--muted-gray)] [transition:all_0.2s] [font-weight:600]">⭐ บันทึกเลขนี้</button>
                         )}
                       </div>
                     )}
@@ -714,9 +687,9 @@ export default function PlaceBet() {
               )}
             </div>
 
-          {err && <div style={{ color: 'var(--danger-red)', fontSize: '0.75rem', fontWeight: 500, background: 'rgba(239, 68, 68, 0.1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem' }} className="sm:text-sm">{err}</div>}
-          <Button onClick={addItem} variant="secondary" className="w-full !py-2.5 sm:!py-3 text-base sm:text-lg font-bold hover:border-[var(--border-gold-hover)] hover:text-[var(--gold-bright)] hover:bg-[rgba(212,175,55,0.08)]"
-            style={{ border: '2px solid var(--border-gold)', color: 'var(--gold-primary)', background: 'var(--bg-dark-surface)' }}>
+          {err && <div className="sm:text-sm [color:var(--danger-red)] [font-size:0.75rem] [font-weight:500] [background:rgba(239,_68,_68,_0.1)] [border-radius:0.5rem] [padding:0.5rem_0.75rem]">{err}</div>}
+          <Button onClick={addItem} variant="secondary" className="w-full !py-2.5 sm:!py-3 text-base sm:text-lg font-bold hover:border-[var(--border-gold-hover)] hover:text-[var(--gold-bright)] hover:bg-[rgba(212,175,55,0.08)] [border:2px_solid_var(--border-gold)] [color:var(--gold-primary)] [background:var(--bg-dark-surface)]"
+>
             + เพิ่มลงโพย
           </Button>
         </div>
@@ -752,7 +725,7 @@ export default function PlaceBet() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-gold-300 text-sm sm:text-base">{satang(i.stakeSatang)} บาท</span>
-                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} aria-label="ลบรายการ" className="text-red-400 hover:text-gold-300 text-sm sm:text-base inline-flex items-center justify-center" style={{ minWidth: '28px', minHeight: '28px' }}><X size={16} strokeWidth={2.5} /></button>
+                  <button onClick={() => setSlip(slip.filter((_, j) => j !== idx))} aria-label="ลบรายการ" className="text-red-400 hover:text-gold-300 text-sm sm:text-base inline-flex items-center justify-center [min-width:28px] [min-height:28px]"><X size={16} strokeWidth={2.5} /></button>
                 </div>
               </div>
             ))}
@@ -803,8 +776,8 @@ export default function PlaceBet() {
               gap: '0.5rem',
               opacity: busy || totalSatang > balance ? 0.5 : 1
             }}>
-            <span style={{ fontSize: '0.75rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
-            <span style={{ fontSize: '0.75rem', flexShrink: 0 }}>ตรวจสอบโพย →</span>
+            <span className="[font-size:0.75rem] [min-width:0] [overflow:hidden] [text-overflow:ellipsis] [white-space:nowrap]">🧾 {slip.length} รายการ • {satang(totalSatang)} บาท</span>
+            <span className="[font-size:0.75rem] [flex-shrink:0]">ตรวจสอบโพย →</span>
           </button>
         </div>
       )}

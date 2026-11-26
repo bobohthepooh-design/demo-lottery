@@ -60,21 +60,18 @@ export default function Login() {
     <AuthShell title={needsMfa ? 'ยืนยันตัวตนสองชั้น' : 'เข้าสู่ระบบ'}>
       {needsMfa ? (
         <form onSubmit={submitMfa} className="space-y-4">
-          <p className="text-sm" style={{ color: 'var(--light-gray)' }}>กรอกรหัส TOTP 6 หลักจากแอป Authenticator</p>
+          <p className="text-sm [color:var(--light-gray)]">กรอกรหัส TOTP 6 หลักจากแอป Authenticator</p>
           <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
             inputClassName="text-center text-2xl tracking-[0.4em] font-mono"
             placeholder="000000" inputMode="numeric" autoComplete="one-time-code" aria-label="รหัส MFA" />
-          {err && <div className="text-sm" style={{ color: 'var(--danger-red)' }} role="alert">{err}</div>}
+          {err && <div className="text-sm [color:var(--danger-red)]" role="alert">{err}</div>}
           <Button disabled={busy||mfaCode.length!==6} className="w-full">{busy ? 'กำลังตรวจสอบ...' : 'ยืนยัน MFA'}</Button>
         </form>
       ) : (
         <>
           {/* tabs: ชื่อผู้ใช้+รหัสผ่าน / เบอร์+OTP */}
-          <div className="flex gap-2 rounded-xl p-1 mb-5"
-            style={{
-              background: 'var(--bg-dark-surface)',
-              border: '1px solid var(--border-light)'
-            }}>
+          <div className="flex gap-2 rounded-xl p-1 mb-5 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]"
+>
             <button type="button" onClick={() => setTab('password')} style={tabCls('password')}>ชื่อผู้ใช้</button>
             <button type="button" onClick={() => setTab('otp')} style={tabCls('otp')}>เบอร์ + OTP</button>
           </div>
@@ -86,11 +83,11 @@ export default function Login() {
               <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
                 placeholder="รหัสผ่าน" autoComplete="current-password" />
               <Turnstile onVerify={setTsToken} />
-              {err && <div className="text-sm" style={{ color: 'var(--danger-red)' }} role="alert">{err}</div>}
+              {err && <div className="text-sm [color:var(--danger-red)]" role="alert">{err}</div>}
               <Button disabled={busy} className="w-full">{busy ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</Button>
               <div className="flex justify-between text-sm">
-                <Link to="/forgot-password" style={{ color: 'var(--muted-gray)' }} className="hover:text-gold-300">ลืมรหัสผ่าน?</Link>
-                <Link to="/register" style={{ color: 'var(--gold-primary)' }} className="hover:underline">สมัครสมาชิกใหม่</Link>
+                <Link to="/forgot-password" className="hover:text-gold-300 [color:var(--muted-gray)]">ลืมรหัสผ่าน?</Link>
+                <Link to="/register" className="hover:underline [color:var(--gold-primary)]">สมัครสมาชิกใหม่</Link>
               </div>
             </form>
           ) : (
@@ -101,8 +98,8 @@ export default function Login() {
 
       {!needsMfa && (
         <div className="mt-5">
-          <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--dark-gray)' }}>
-            <div className="flex-1 h-px" style={{ background: 'var(--border-light)' }} />หรือ<div className="flex-1 h-px" style={{ background: 'var(--border-light)' }} />
+          <div className="flex items-center gap-3 text-xs mb-3 [color:var(--dark-gray)]">
+            <div className="flex-1 h-px [background:var(--border-light)]" />หรือ<div className="flex-1 h-px [background:var(--border-light)]" />
           </div>
           <LineLoginButton />
         </div>

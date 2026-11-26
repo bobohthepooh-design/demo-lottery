@@ -52,14 +52,14 @@ export default function AdminSecurity() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>Security Monitoring</h1>
+      <h1 className="text-2xl font-bold [color:var(--white)]">Security Monitoring</h1>
 
       {/* Risk flags — rule engine per member */}
-      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+      <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <div>
-            <div className="font-bold" style={{ color: 'var(--white)' }}>⚠️ Risk Flags ({flags.length})</div>
-            <div className="text-[11px]" style={{ color: 'var(--muted-gray)' }}>สัญญาณเฝ้าระวังจาก rule-based heuristics — daily scan อัตโนมัติ + คำนวณสดใน Member 360</div>
+            <div className="font-bold [color:var(--white)]">⚠️ Risk Flags ({flags.length})</div>
+            <div className="text-[11px] [color:var(--muted-gray)]">สัญญาณเฝ้าระวังจาก rule-based heuristics — daily scan อัตโนมัติ + คำนวณสดใน Member 360</div>
           </div>
           <div className="flex gap-1">
             {['open', 'acknowledged', 'resolved'].map(s => (
@@ -72,69 +72,69 @@ export default function AdminSecurity() {
         </div>
         <Table>
           <TableHeader>
-            <TableRow style={{ borderColor: 'var(--border-light)' }} className="hover:bg-transparent">
-              <TableHead style={{ color: 'var(--muted-gray)' }}>สมาชิก</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>Flag</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>ระดับ</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)', textAlign: 'right' }}>Score</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>รายละเอียด</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>พบล่าสุด</TableHead>
-              {flagStatus !== 'resolved' && <TableHead style={{ color: 'var(--muted-gray)' }}>จัดการ</TableHead>}
+            <TableRow className="hover:bg-transparent [border-color:var(--border-light)]">
+              <TableHead className="[color:var(--muted-gray)]">สมาชิก</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">Flag</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">ระดับ</TableHead>
+              <TableHead className="[color:var(--muted-gray)] [text-align:right]">Score</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">รายละเอียด</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">พบล่าสุด</TableHead>
+              {flagStatus !== 'resolved' && <TableHead className="[color:var(--muted-gray)]">จัดการ</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {flags.map(f => (
-              <TableRow key={f.id} style={{ borderColor: 'var(--border-light)' }}>
-                <TableCell className="text-xs" style={{ color: 'var(--white)' }}>{f.username}<div className="text-[10px]" style={{ color: 'var(--dark-gray)' }}>{f.display_name || ''}</div></TableCell>
-                <TableCell className="text-xs" style={{ color: 'var(--light-gray)' }}>{f.code}<div className="text-[10px]" style={{ color: 'var(--muted-gray)' }}>{f.detail || ''}</div></TableCell>
+              <TableRow key={f.id} className="[border-color:var(--border-light)]">
+                <TableCell className="text-xs [color:var(--white)]">{f.username}<div className="text-[10px] [color:var(--dark-gray)]">{f.display_name || ''}</div></TableCell>
+                <TableCell className="text-xs [color:var(--light-gray)]">{f.code}<div className="text-[10px] [color:var(--muted-gray)]">{f.detail || ''}</div></TableCell>
                 <TableCell><Badge variant="outline" className={cn('text-[10px] font-bold uppercase', FLAG_SEV[f.severity])}>{SEV_LABEL[f.severity] || f.severity}</Badge></TableCell>
-                <TableCell className="text-xs font-bold" style={{ color: 'var(--gold-primary)', textAlign: 'right' }}>{f.score}</TableCell>
-                <TableCell className="text-[11px] max-w-[220px] truncate" style={{ color: 'var(--muted-gray)' }}>{f.note || '—'}</TableCell>
-                <TableCell className="text-xs whitespace-nowrap" style={{ color: 'var(--muted-gray)' }}>{fmtDateTime(f.last_seen_at)}</TableCell>
+                <TableCell className="text-xs font-bold [color:var(--gold-primary)] [text-align:right]">{f.score}</TableCell>
+                <TableCell className="text-[11px] max-w-[220px] truncate [color:var(--muted-gray)]">{f.note || '—'}</TableCell>
+                <TableCell className="text-xs whitespace-nowrap [color:var(--muted-gray)]">{fmtDateTime(f.last_seen_at)}</TableCell>
                 {flagStatus !== 'resolved' && (
                   <TableCell>
                     <div className="flex gap-1.5">
-                      {f.status === 'open' && <button onClick={() => setFlag(f, 'acknowledged')} className="text-[11px] hover:underline" style={{ color: 'var(--info-blue)' }}>รับทราบ</button>}
-                      <button onClick={() => setFlag(f, 'resolved')} className="text-[11px] hover:underline" style={{ color: 'var(--success-green)' }}>ปิด</button>
+                      {f.status === 'open' && <button onClick={() => setFlag(f, 'acknowledged')} className="text-[11px] hover:underline [color:var(--info-blue)]">รับทราบ</button>}
+                      <button onClick={() => setFlag(f, 'resolved')} className="text-[11px] hover:underline [color:var(--success-green)]">ปิด</button>
                     </div>
                   </TableCell>
                 )}
               </TableRow>
             ))}
-            {!flags.length && <TableRow><TableCell colSpan="7" className="text-center py-6 text-xs" style={{ color: 'var(--muted-gray)' }}>ไม่มี risk flag ในสถานะนี้</TableCell></TableRow>}
+            {!flags.length && <TableRow><TableCell colSpan="7" className="text-center py-6 text-xs [color:var(--muted-gray)]">ไม่มี risk flag ในสถานะนี้</TableCell></TableRow>}
           </TableBody>
         </Table>
       </Card>
 
-      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+      <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
         <Table>
           <TableHeader>
-            <TableRow style={{ borderColor: 'var(--border-light)' }} className="hover:bg-transparent">
-              <TableHead style={{ color: 'var(--muted-gray)' }}>เวลา</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>เหตุการณ์</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>ระดับ</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>ผู้ใช้</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>IP</TableHead>
-              <TableHead style={{ color: 'var(--muted-gray)' }}>รายละเอียด</TableHead>
+            <TableRow className="hover:bg-transparent [border-color:var(--border-light)]">
+              <TableHead className="[color:var(--muted-gray)]">เวลา</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">เหตุการณ์</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">ระดับ</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">ผู้ใช้</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">IP</TableHead>
+              <TableHead className="[color:var(--muted-gray)]">รายละเอียด</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {events.map(e => (
-              <TableRow key={e.id} style={{ borderColor: 'var(--border-light)' }}>
-                <TableCell className="text-xs whitespace-nowrap" style={{ color: 'var(--muted-gray)' }}>{fmtDateTime(e.created_at)}</TableCell>
+              <TableRow key={e.id} className="[border-color:var(--border-light)]">
+                <TableCell className="text-xs whitespace-nowrap [color:var(--muted-gray)]">{fmtDateTime(e.created_at)}</TableCell>
                 <TableCell>
-                  <div className="text-xs" style={{ color: 'var(--white)' }}>{EVENT_TH[e.event_type] || e.event_type}</div>
-                  {EVENT_TH[e.event_type] && <code className="text-[10px]" style={{ color: 'var(--dark-gray)' }}>{e.event_type}</code>}
+                  <div className="text-xs [color:var(--white)]">{EVENT_TH[e.event_type] || e.event_type}</div>
+                  {EVENT_TH[e.event_type] && <code className="text-[10px] [color:var(--dark-gray)]">{e.event_type}</code>}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={cn('text-[10px] font-bold uppercase', SEV[e.severity])}>{e.severity}</Badge>
                 </TableCell>
-                <TableCell className="text-xs" style={{ color: 'var(--muted-gray)' }}>{e.username || '—'}</TableCell>
-                <TableCell className="text-xs" style={{ color: 'var(--muted-gray)' }}>{e.ip}</TableCell>
-                <TableCell className="text-xs max-w-[300px] truncate font-mono" style={{ color: 'var(--muted-gray)' }}>{e.detail || '—'}</TableCell>
+                <TableCell className="text-xs [color:var(--muted-gray)]">{e.username || '—'}</TableCell>
+                <TableCell className="text-xs [color:var(--muted-gray)]">{e.ip}</TableCell>
+                <TableCell className="text-xs max-w-[300px] truncate font-mono [color:var(--muted-gray)]">{e.detail || '—'}</TableCell>
               </TableRow>
             ))}
-            {!events.length && <TableRow><TableCell colSpan="6" className="text-center py-8" style={{ color: 'var(--muted-gray)' }}>ไม่มีเหตุการณ์</TableCell></TableRow>}
+            {!events.length && <TableRow><TableCell colSpan="6" className="text-center py-8 [color:var(--muted-gray)]">ไม่มีเหตุการณ์</TableCell></TableRow>}
           </TableBody>
         </Table>
       </Card>

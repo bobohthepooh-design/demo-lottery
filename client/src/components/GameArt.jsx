@@ -87,7 +87,7 @@ const SCENES = {
       <ellipse cx="26" cy="27" rx="6" ry="4" fill="#ffffff" opacity="0.35" transform="rotate(-25 26 27)" />
       {/* สัตว์ชวดเรืองในลูกแก้ว */}
       <text x="32" y="42" textAnchor="middle" fontSize="15"
-        style={{ filter: 'drop-shadow(0 0 4px #f5c542)' }}>🐀</text>
+        className="[filter:drop-shadow(0_0_4px_#f5c542)]">🐀</text>
       {/* วงล้อนักษัตรรอบนอก — จุดเล็ก 12 จุด */}
       {Array.from({ length: 12 }, (_, i) => {
         const a = (i / 12) * Math.PI * 2 - Math.PI / 2;

@@ -121,8 +121,8 @@ export default function Support() {
           ))}
           {tickets.length > 10 && (
             <button onClick={() => setShowAllTickets(v => !v)}
-              className="w-full py-2 text-xs font-bold rounded-lg transition hover:bg-[var(--bg-dark-surface)]"
-              style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>
+              className="w-full py-2 text-xs font-bold rounded-lg transition hover:bg-[var(--bg-dark-surface)] [color:var(--gold-primary)] [border:1px_solid_var(--border-light)]"
+>
               {showAllTickets ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${tickets.length} เรื่อง)`}
             </button>
           )}

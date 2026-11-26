@@ -220,8 +220,8 @@ export default function Hilo() {
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite]" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '0.6s' }} />
-        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite]" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite] [bottom:-4%] [left:6%] [background:radial-gradient(circle_at_35%_30%,_#fde68a,_#d9a520_60%,_#8a6405)] [animation-delay:0.6s]" />
+        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite] [top:-4%] [right:8%] [background:radial-gradient(circle_at_35%_30%,_#1f2937,_#111827_65%,_#030712)] [animation-delay:2s]" />
         <div className="flex justify-center gap-3 mb-4">
           <DieFace value={3} /><DieFace value={4} /><DieFace value={5} />
         </div>

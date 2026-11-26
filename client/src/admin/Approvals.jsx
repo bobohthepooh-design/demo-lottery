@@ -76,21 +76,13 @@ export default function Approvals() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--white)' }}>ศูนย์อนุมัติ</h1>
-          <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
-            background: 'rgba(212, 175, 55, 0.15)',
-            border: '1px solid var(--border-gold)',
-            color: 'var(--gold-primary)'
-          }}>Maker-Checker</span>
+          <h1 className="text-xl font-bold [color:var(--white)]">ศูนย์อนุมัติ</h1>
+          <span className="px-3 py-1 rounded-full text-xs font-bold [background:rgba(212,_175,_55,_0.15)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">Maker-Checker</span>
         </div>
-        <span className="text-xs px-3 py-1 rounded-lg" style={{
-          background: 'rgba(34, 197, 94, 0.15)',
-          border: '1px solid rgba(34, 197, 94, 0.3)',
-          color: 'var(--success-green)'
-        }}>คำขอที่รออนุมัติ: {status === 'pending' ? total : '—'}</span>
+        <span className="text-xs px-3 py-1 rounded-lg [background:rgba(34,_197,_94,_0.15)] [border:1px_solid_rgba(34,_197,_94,_0.3)] [color:var(--success-green)]">คำขอที่รออนุมัติ: {status === 'pending' ? total : '—'}</span>
       </div>
       <div className="luxury-card overflow-hidden">
-        <div className="flex flex-wrap gap-2 p-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
+        <div className="flex flex-wrap gap-2 p-4 border-b [border-color:var(--border-light)]">
           <Select value={status || 'all'} onValueChange={v => setStatus(v === 'all' ? '' : v)}>
             <SelectTrigger className="w-36 luxury-input text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -110,28 +102,28 @@ export default function Approvals() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: 'var(--bg-dark-surface)', borderBottom: '1px solid var(--border-light)' }}>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>Ref</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>หมวด</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>คำอธิบาย</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>ผู้สร้าง</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>ผู้อนุมัติ</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>สถานะ</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}>เวลา</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--muted-gray)' }}></th>
+              <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">Ref</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">หมวด</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">คำอธิบาย</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">ผู้สร้าง</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">ผู้อนุมัติ</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">สถานะ</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]">เวลา</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold [color:var(--muted-gray)]"></th>
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-xs" style={{ color: 'var(--muted-gray)' }}>ไม่มีคำขอ</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-xs [color:var(--muted-gray)]">ไม่มีคำขอ</td></tr>}
               {rows.map(r => (
-                <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }} className="hover:bg-[var(--bg-card-hover)] transition-colors">
-                  <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--gold-primary)' }}>{r.reference}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--white)' }}>{CAT_TH[r.category] || r.category}</td>
-                  <td className="px-4 py-3 text-xs max-w-[260px] truncate" style={{ color: 'var(--muted-gray)' }}>{r.summary}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted-gray)' }}>{r.maker_name || `#${r.maker_id}`}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted-gray)' }}>{r.checker_name || '—'}</td>
+                <tr key={r.id} className="hover:bg-[var(--bg-card-hover)] transition-colors [border-bottom:1px_solid_var(--border-light)]">
+                  <td className="px-4 py-3 text-xs font-mono [color:var(--gold-primary)]">{r.reference}</td>
+                  <td className="px-4 py-3 text-xs [color:var(--white)]">{CAT_TH[r.category] || r.category}</td>
+                  <td className="px-4 py-3 text-xs max-w-[260px] truncate [color:var(--muted-gray)]">{r.summary}</td>
+                  <td className="px-4 py-3 text-xs [color:var(--muted-gray)]">{r.maker_name || `#${r.maker_id}`}</td>
+                  <td className="px-4 py-3 text-xs [color:var(--muted-gray)]">{r.checker_name || '—'}</td>
                   <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded border ${STATUS_CLS[r.status] || ''}`}>{STATUS_TH[r.status] || r.status}</span></td>
-                  <td className="px-4 py-3 text-[10px] whitespace-nowrap" style={{ color: 'var(--muted-gray)' }}>{fmtDateTime(r.created_at)}</td>
+                  <td className="px-4 py-3 text-[10px] whitespace-nowrap [color:var(--muted-gray)]">{fmtDateTime(r.created_at)}</td>
                   <td className="px-4 py-3"><button className="luxury-btn-ghost text-xs px-3 py-1 rounded-lg" onClick={() => openDetail(r.id)}>ดู</button></td>
                 </tr>
               ))}
@@ -143,43 +135,35 @@ export default function Approvals() {
       {detail && (
         <div className="luxury-card luxury-card-gold-border p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold" style={{ color: 'var(--white)' }}>
-              รายละเอียดคำขอ <span className="font-mono text-sm" style={{ color: 'var(--gold-primary)' }}>{detail.reference}</span>
+            <h2 className="font-bold [color:var(--white)]">
+              รายละเอียดคำขอ <span className="font-mono text-sm [color:var(--gold-primary)]">{detail.reference}</span>
             </h2>
             <button className="luxury-btn-ghost text-xs px-4 py-2 rounded-lg" onClick={() => setDetail(null)}>ปิด</button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mb-4">
-            <div><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>หมวด</div><div style={{ color: 'var(--white)' }}>{CAT_TH[detail.category] || detail.category}</div></div>
-            <div><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>ผู้สร้าง</div><div style={{ color: 'var(--white)' }}>{detail.maker_name || `#${detail.maker_id}`}</div></div>
-            <div><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>ผู้อนุมัติ</div><div style={{ color: 'var(--white)' }}>{detail.checker_name || '—'}</div></div>
-            <div><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>สถานะ</div><div style={{ color: 'var(--white)' }}>{STATUS_TH[detail.status] || detail.status}</div></div>
-            <div className="col-span-2"><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>คำอธิบาย</div><div style={{ color: 'var(--white)' }}>{detail.summary}</div></div>
-            {detail.checker_note && <div className="col-span-2"><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>หมายเหตุผู้อนุมัติ</div><div style={{ color: 'var(--white)' }}>{detail.checker_note}</div></div>}
-            {detail.execution_result && <div className="col-span-2"><div className="mb-1" style={{ color: 'var(--muted-gray)' }}>ผลการดำเนินการ</div><pre className="text-[10px] p-3 rounded-lg overflow-x-auto" style={{ color: 'var(--muted-gray)', background: 'var(--bg-dark-surface)' }}>{detail.execution_result}</pre></div>}
+            <div><div className="mb-1 [color:var(--muted-gray)]">หมวด</div><div className="[color:var(--white)]">{CAT_TH[detail.category] || detail.category}</div></div>
+            <div><div className="mb-1 [color:var(--muted-gray)]">ผู้สร้าง</div><div className="[color:var(--white)]">{detail.maker_name || `#${detail.maker_id}`}</div></div>
+            <div><div className="mb-1 [color:var(--muted-gray)]">ผู้อนุมัติ</div><div className="[color:var(--white)]">{detail.checker_name || '—'}</div></div>
+            <div><div className="mb-1 [color:var(--muted-gray)]">สถานะ</div><div className="[color:var(--white)]">{STATUS_TH[detail.status] || detail.status}</div></div>
+            <div className="col-span-2"><div className="mb-1 [color:var(--muted-gray)]">คำอธิบาย</div><div className="[color:var(--white)]">{detail.summary}</div></div>
+            {detail.checker_note && <div className="col-span-2"><div className="mb-1 [color:var(--muted-gray)]">หมายเหตุผู้อนุมัติ</div><div className="[color:var(--white)]">{detail.checker_note}</div></div>}
+            {detail.execution_result && <div className="col-span-2"><div className="mb-1 [color:var(--muted-gray)]">ผลการดำเนินการ</div><pre className="text-[10px] p-3 rounded-lg overflow-x-auto [color:var(--muted-gray)] [background:var(--bg-dark-surface)]">{detail.execution_result}</pre></div>}
           </div>
           <details className="text-xs mb-4">
-            <summary className="cursor-pointer" style={{ color: 'var(--gold-primary)' }}>Payload (JSON)</summary>
-            <pre className="mt-2 text-[10px] p-3 rounded-lg overflow-x-auto" style={{ color: 'var(--muted-gray)', background: 'var(--bg-dark-surface)' }}>{detail.payload}</pre>
+            <summary className="cursor-pointer [color:var(--gold-primary)]">Payload (JSON)</summary>
+            <pre className="mt-2 text-[10px] p-3 rounded-lg overflow-x-auto [color:var(--muted-gray)] [background:var(--bg-dark-surface)]">{detail.payload}</pre>
           </details>
           {detail.status === 'pending' && (
-            <div className="flex flex-wrap items-center gap-3 pt-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
+            <div className="flex flex-wrap items-center gap-3 pt-4 border-t [border-color:var(--border-light)]">
               {canApprove && !isMine(detail) && (
                 <>
                   <Input value={note} onChange={e => setNote(e.target.value)} placeholder="หมายเหตุ (จำเป็นเมื่อต้องปฏิเสธ)" className="flex-1 min-w-[200px] luxury-input text-xs" />
                   <button onClick={() => act(detail.id, 'approve')} disabled={busy === detail.id} className="luxury-btn text-xs px-6 py-2">อนุมัติ</button>
-                  <button onClick={() => act(detail.id, 'reject')} disabled={busy === detail.id} className="text-xs px-6 py-2 rounded-lg border font-semibold transition-all" style={{
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    borderColor: 'rgba(239, 68, 68, 0.3)',
-                    color: 'var(--danger-red)'
-                  }}>ปฏิเสธ</button>
+                  <button onClick={() => act(detail.id, 'reject')} disabled={busy === detail.id} className="text-xs px-6 py-2 rounded-lg border font-semibold transition-all [background:rgba(239,_68,_68,_0.15)] [border-color:rgba(239,_68,_68,_0.3)] [color:var(--danger-red)]">ปฏิเสธ</button>
                 </>
               )}
               {isMine(detail) && canApprove && (
-                <span className="text-xs px-3 py-2 rounded-lg" style={{
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                  color: 'var(--warning-amber)'
-                }}>คุณเป็นผู้สร้างคำขอนี้ — ต้องให้ admin อีกคนอนุมัติ (maker ≠ checker)</span>
+                <span className="text-xs px-3 py-2 rounded-lg [background:rgba(245,_158,_11,_0.15)] [border:1px_solid_rgba(245,_158,_11,_0.3)] [color:var(--warning-amber)]">คุณเป็นผู้สร้างคำขอนี้ — ต้องให้ admin อีกคนอนุมัติ (maker ≠ checker)</span>
               )}
               {isMine(detail) && (
                 <button onClick={() => act(detail.id, 'cancel')} disabled={busy === detail.id} className="luxury-btn-ghost text-xs px-6 py-2 rounded-lg">ยกเลิกคำขอ</button>

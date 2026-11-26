@@ -142,20 +142,20 @@ export default function AdminSettings() {
 
   return (
     <div className="max-w-3xl space-y-4">
-      <h1 className="text-2xl font-bold" style={{ color: 'var(--white)' }}>ตั้งค่าระบบ (System Configuration)</h1>
-      {msg && <div className="text-sm p-3 rounded-lg" style={{ color: 'var(--gold-primary)', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)' }}>{msg}</div>}
+      <h1 className="text-2xl font-bold [color:var(--white)]">ตั้งค่าระบบ (System Configuration)</h1>
+      {msg && <div className="text-sm p-3 rounded-lg [color:var(--gold-primary)] [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">{msg}</div>}
 
       {/* Blind mode — ซ่อนเมนูแทงหวยจากสมาชิก */}
       <Card style={{ background: 'var(--bg-card)', border: `1px solid ${betMenuOn ? 'var(--border-light)' : 'var(--danger-red)'}`, borderRadius: 'var(--radius-xl)' }}>
       <CardBody className="flex items-center gap-4">
         <div className="flex-1">
-          <div className="font-bold" style={{ color: 'var(--white)' }}>🎰 แสดงเมนูแทงหวย (Blind Mode)</div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--light-gray)' }}>
+          <div className="font-bold [color:var(--white)]">🎰 แสดงเมนูแทงหวย (Blind Mode)</div>
+          <div className="text-xs mt-0.5 [color:var(--light-gray)]">
             {betMenuOn
               ? '🟢 เปิดอยู่ — สมาชิกเห็นเมนูหวยและแทงได้ตามปกติ'
               : '🔴 ปิดอยู่ — ซ่อนเมนูทั้งหมด + บล็อกการแทงจริงทุกประเภท (หวย+เกมด่วน) โดย admin ยังดูได้ปกติ'}
           </div>
-          <div className="text-[11px] mt-1" style={{ color: 'var(--dark-gray)' }}>⚠️ ตอนปิด ระบบจะ block ทุกโพยใหม่ (server-side) — ผล/ประวัติ/กระเป๋ายังใช้งานได้ปกติ</div>
+          <div className="text-[11px] mt-1 [color:var(--dark-gray)]">⚠️ ตอนปิด ระบบจะ block ทุกโพยใหม่ (server-side) — ผล/ประวัติ/กระเป๋ายังใช้งานได้ปกติ</div>
         </div>
         <Button onClick={toggleBetMenu} style={{ background: betMenuOn ? 'var(--danger-red)' : 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: betMenuOn ? 'var(--white)' : 'var(--bg-deep-black)' }}>
           {betMenuOn ? 'ปิดทั้งหมด' : 'เปิดทั้งหมด'}
@@ -165,20 +165,20 @@ export default function AdminSettings() {
 
       {/* เลือกซ่อนรายประเภท — มีผลเมื่อเปิดเมนูรวมอยู่ */}
       {betMenuOn && lotteryTypes.length > 0 && (
-        <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+        <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
         <CardBody>
-          <div className="text-sm font-bold mb-1" style={{ color: 'var(--white)' }}>🎯 เปิด/ปิดเฉพาะประเภท</div>
-          <div className="text-xs mb-1" style={{ color: 'var(--muted-gray)' }}>ติ๊ก "แสดง" = สมาชิกเห็นเมนูและแทงประเภทนั้นได้ • ติ๊กออก = <b style={{ color: 'var(--danger-red)' }}>ซ่อนเมนู + บล็อกการแทงประเภทนั้นจริง</b> (รวมเกมด่วน SC/HL/KI และรอบหวยปกติ)</div>
+          <div className="text-sm font-bold mb-1 [color:var(--white)]">🎯 เปิด/ปิดเฉพาะประเภท</div>
+          <div className="text-xs mb-1 [color:var(--muted-gray)]">ติ๊ก "แสดง" = สมาชิกเห็นเมนูและแทงประเภทนั้นได้ • ติ๊กออก = <b className="[color:var(--danger-red)]">ซ่อนเมนู + บล็อกการแทงประเภทนั้นจริง</b> (รวมเกมด่วน SC/HL/KI และรอบหวยปกติ)</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {lotteryTypes.map(t => {
               const shown = !hiddenTypes.includes(t.code);
               return (
                 <label key={t.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition ${shown ? '' : 'border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.1)]'}`} style={shown ? { borderColor: 'var(--border-light)', background: 'var(--bg-dark-surface)' } : {}}>
                   <input type="checkbox" checked={shown} onChange={e => toggleTypeMenu(t.code, e.target.checked)}
-                    className="w-5 h-5" style={{ accentColor: 'var(--gold-primary)' }} />
-                  <span className="flex-1 text-sm font-semibold" style={{ color: 'var(--white)' }}>{t.name_th}</span>
-                  <code className="text-[10px]" style={{ color: 'var(--muted-gray)' }}>{t.code}</code>
-                  {!shown && <span className="text-[10px] font-bold" style={{ color: 'var(--danger-red)' }}>ซ่อนอยู่</span>}
+                    className="w-5 h-5 [accent-color:var(--gold-primary)]" />
+                  <span className="flex-1 text-sm font-semibold [color:var(--white)]">{t.name_th}</span>
+                  <code className="text-[10px] [color:var(--muted-gray)]">{t.code}</code>
+                  {!shown && <span className="text-[10px] font-bold [color:var(--danger-red)]">ซ่อนอยู่</span>}
                 </label>
               );
             })}
@@ -188,25 +188,25 @@ export default function AdminSettings() {
       )}
 
       {/* Cashback promotion — คืนยอดเสียให้สมาชิก */}
-      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+      <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
         <CardBody>
-        <div className="text-sm font-bold mb-1" style={{ color: 'var(--white)' }}>🎁 Cashback — คืนยอดเสีย</div>
-        <div className="text-xs mb-3" style={{ color: 'var(--muted-gray)' }}>
+        <div className="text-sm font-bold mb-1 [color:var(--white)]">🎁 Cashback — คืนยอดเสีย</div>
+        <div className="text-xs mb-3 [color:var(--muted-gray)]">
           คืนเครดิต % ของยอดเสียสุทธิ (เดิมพัน − รางวัล) ย้อนหลัง 24 ชม. • รันอัตโนมัติวันละครั้ง หรือกดจ่ายเองได้ • เครดิตเสมือนเพื่อการศึกษา
         </div>
         <div className="flex items-end gap-3 flex-wrap">
           <label className="block">
-            <span className="text-[11px]" style={{ color: 'var(--light-gray)' }}>คืนยอดเสีย (%)</span>
+            <span className="text-[11px] [color:var(--light-gray)]">คืนยอดเสีย (%)</span>
             <input value={cashbackPct} onChange={e => setCashbackPct(e.target.value)}
-              className="w-28 mt-1 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} placeholder="0" />
+              className="w-28 mt-1 rounded-lg px-3 py-2 text-sm [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" placeholder="0" />
           </label>
-          <Button onClick={saveCashback} size="sm" style={{ background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: 'var(--bg-deep-black)' }}>บันทึก %</Button>
-          <Button variant="ghost" size="sm" onClick={() => cashbackAction('preview')} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>ดูยอดที่จะจ่าย</Button>
-          <Button size="sm" onClick={() => cashbackAction('run')} style={{ background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: 'var(--bg-deep-black)' }}>จ่ายเลย</Button>
+          <Button onClick={saveCashback} size="sm" className="[background:linear-gradient(135deg,_var(--gold-gradient-start),_var(--gold-gradient-end))] [color:var(--bg-deep-black)]">บันทึก %</Button>
+          <Button variant="ghost" size="sm" onClick={() => cashbackAction('preview')} className="[color:var(--gold-primary)] [border:1px_solid_var(--border-light)]">ดูยอดที่จะจ่าย</Button>
+          <Button size="sm" onClick={() => cashbackAction('run')} className="[background:linear-gradient(135deg,_var(--gold-gradient-start),_var(--gold-gradient-end))] [color:var(--bg-deep-black)]">จ่ายเลย</Button>
         </div>
         {cashbackPreview && (
-          <div className="mt-3 text-xs rounded-lg px-3 py-2" style={{ color: 'var(--light-gray)', background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)' }}>
-            ย้อนหลัง 24 ชม.: {cashbackPreview.percent}% → จะคืนให้ <b style={{ color: 'var(--gold-primary)' }}>{cashbackPreview.users}</b> คน รวม <b style={{ color: 'var(--gold-primary)' }}>{(cashbackPreview.total / 100).toLocaleString('th-TH')} บาท</b>
+          <div className="mt-3 text-xs rounded-lg px-3 py-2 [color:var(--light-gray)] [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">
+            ย้อนหลัง 24 ชม.: {cashbackPreview.percent}% → จะคืนให้ <b className="[color:var(--gold-primary)]">{cashbackPreview.users}</b> คน รวม <b className="[color:var(--gold-primary)]">{(cashbackPreview.total / 100).toLocaleString('th-TH')} บาท</b>
           </div>
         )}
         {cashbackMsg && <div className={`text-xs mt-3`} style={{ color: cashbackMsg.startsWith('ERROR') ? 'var(--danger-red)' : 'var(--success-green)' }}>{cashbackMsg}</div>}
@@ -214,63 +214,63 @@ export default function AdminSettings() {
       </Card>
 
       {/* Promotion campaigns — cashback แบบมีชื่อ/เงื่อนไข ของตัวเอง */}
-      <Card style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)' }}>
+      <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
         <CardBody>
-        <div className="text-sm font-bold mb-1" style={{ color: 'var(--white)' }}>📣 แคมเปญโปรโมชัน (Cashback)</div>
-        <div className="text-xs mb-3" style={{ color: 'var(--muted-gray)' }}>
+        <div className="text-sm font-bold mb-1 [color:var(--white)]">📣 แคมเปญโปรโมชัน (Cashback)</div>
+        <div className="text-xs mb-3 [color:var(--muted-gray)]">
           แคมเปญที่ active จะถูกใช้แทน % ในการตั้งค่าด้านบนตอนรันรายวัน • เปิดได้ครั้งละ 1 แคมเปญ • รันเองได้ทุกเมื่อ (idempotent)
         </div>
         <div className="flex items-end gap-2 flex-wrap mb-3">
           <input value={campForm.name} onChange={e => setCampForm({ ...campForm, name: e.target.value })}
-            placeholder="ชื่อแคมเปญ" className="rounded-lg px-3 py-2 text-sm w-44" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
-          <label className="text-[11px]" style={{ color: 'var(--light-gray)' }}>คืน (%)
+            placeholder="ชื่อแคมเปญ" className="rounded-lg px-3 py-2 text-sm w-44 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" />
+          <label className="text-[11px] [color:var(--light-gray)]">คืน (%)
             <input value={campForm.percent} onChange={e => setCampForm({ ...campForm, percent: e.target.value })}
-              className="block mt-1 rounded-lg px-3 py-2 text-sm w-20" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} placeholder="5" />
+              className="block mt-1 rounded-lg px-3 py-2 text-sm w-20 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" placeholder="5" />
           </label>
-          <label className="text-[11px]" style={{ color: 'var(--light-gray)' }}>ย้อนหลัง (ชม.)
+          <label className="text-[11px] [color:var(--light-gray)]">ย้อนหลัง (ชม.)
             <input value={campForm.window_hours} onChange={e => setCampForm({ ...campForm, window_hours: e.target.value })}
-              className="block mt-1 rounded-lg px-3 py-2 text-sm w-20" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
+              className="block mt-1 rounded-lg px-3 py-2 text-sm w-20 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" />
           </label>
-          <label className="text-[11px]" style={{ color: 'var(--light-gray)' }}>ขั้นต่ำ (บาท)
+          <label className="text-[11px] [color:var(--light-gray)]">ขั้นต่ำ (บาท)
             <input value={campForm.min_satang} onChange={e => setCampForm({ ...campForm, min_satang: e.target.value })}
-              className="block mt-1 rounded-lg px-3 py-2 text-sm w-24" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
+              className="block mt-1 rounded-lg px-3 py-2 text-sm w-24 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" />
           </label>
-          <Button size="sm" onClick={createCampaign} style={{ background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: 'var(--bg-deep-black)' }}>+ สร้างแคมเปญ</Button>
+          <Button size="sm" onClick={createCampaign} className="[background:linear-gradient(135deg,_var(--gold-gradient-start),_var(--gold-gradient-end))] [color:var(--bg-deep-black)]">+ สร้างแคมเปญ</Button>
         </div>
         <div className="space-y-2">
           {campaigns.map(c => (
             <div key={c.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5`} style={c.active ? { borderColor: 'var(--border-gold)', background: 'rgba(212, 175, 55, 0.05)' } : { borderColor: 'var(--border-light)', background: 'var(--bg-dark-surface)' }}>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate" style={{ color: 'var(--white)' }}>{c.name}
-                  {c.active ? <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(212, 175, 55, 0.2)', color: 'var(--gold-primary)', border: '1px solid var(--border-gold)' }}>ACTIVE</span> : null}
+                <div className="text-sm font-semibold truncate [color:var(--white)]">{c.name}
+                  {c.active ? <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded [background:rgba(212,_175,_55,_0.2)] [color:var(--gold-primary)] [border:1px_solid_var(--border-gold)]">ACTIVE</span> : null}
                 </div>
-                <div className="text-[11px]" style={{ color: 'var(--muted-gray)' }}>คืน {c.percent}% • ย้อนหลัง {c.window_hours} ชม. • ขั้นต่ำ {(c.min_satang / 100).toLocaleString('th-TH')} บาท{c.created_by_name ? ` • โดย ${c.created_by_name}` : ''}</div>
+                <div className="text-[11px] [color:var(--muted-gray)]">คืน {c.percent}% • ย้อนหลัง {c.window_hours} ชม. • ขั้นต่ำ {(c.min_satang / 100).toLocaleString('th-TH')} บาท{c.created_by_name ? ` • โดย ${c.created_by_name}` : ''}</div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => runCampaign(c)} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>รันเลย</Button>
+              <Button variant="ghost" size="sm" onClick={() => runCampaign(c)} className="[color:var(--gold-primary)] [border:1px_solid_var(--border-light)]">รันเลย</Button>
               <Button size="sm" onClick={() => toggleCampaign(c)} style={{ background: c.active ? 'var(--danger-red)' : 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', color: c.active ? 'var(--white)' : 'var(--bg-deep-black)' }}>{c.active ? 'ปิด' : 'เปิด'}</Button>
             </div>
           ))}
-          {!campaigns.length && <div className="text-xs py-2" style={{ color: 'var(--dark-gray)' }}>ยังไม่มีแคมเปญ — สร้างด้านบน</div>}
+          {!campaigns.length && <div className="text-xs py-2 [color:var(--dark-gray)]">ยังไม่มีแคมเปญ — สร้างด้านบน</div>}
         </div>
         </CardBody>
       </Card>
 
-      <Card className="divide-y" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-xl)', borderColor: 'var(--border-light)' }}>
+      <Card className="divide-y [background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)] [border-color:var(--border-light)]">
         {settings.filter(s => s.key !== 'betting_menu_enabled' && s.key !== 'bet_menu_hidden_types' && !GAME_KEYS.includes(s.key) && !['cashback_percent', 'cashback_last_run'].includes(s.key)).map(s => (
-          <div key={s.key} className="p-4 flex items-center gap-4" style={{ borderColor: 'var(--border-light)' }}>
+          <div key={s.key} className="p-4 flex items-center gap-4 [border-color:var(--border-light)]">
             <div className="w-56 shrink-0">
-              <code className="text-sm" style={{ color: 'var(--gold-primary)' }}>{s.key}</code>
-              {SUPER_ONLY_KEYS.includes(s.key) && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger-red)', border: '1px solid rgba(239, 68, 68, 0.4)' }}>SUPER</span>}
-              <div className="text-[10px]" style={{ color: 'var(--muted-gray)' }}>updated {s.updatedAt}</div>
+              <code className="text-sm [color:var(--gold-primary)]">{s.key}</code>
+              {SUPER_ONLY_KEYS.includes(s.key) && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded [background:rgba(239,_68,_68,_0.15)] [color:var(--danger-red)] [border:1px_solid_rgba(239,_68,_68,_0.4)]">SUPER</span>}
+              <div className="text-[10px] [color:var(--muted-gray)]">updated {s.updatedAt}</div>
             </div>
             <input value={edits[s.key] ?? ''} onChange={e => setEdits({...edits, [s.key]: e.target.value})}
-              className="flex-1 rounded-lg px-3 py-2 text-sm font-mono" style={{ background: 'var(--bg-dark-surface)', border: '1px solid var(--border-light)', color: 'var(--white)' }} />
-            <Button variant="ghost" size="sm" onClick={() => save(s.key)} style={{ color: 'var(--gold-primary)', border: '1px solid var(--border-light)' }}>บันทึก</Button>
+              className="flex-1 rounded-lg px-3 py-2 text-sm font-mono [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" />
+            <Button variant="ghost" size="sm" onClick={() => save(s.key)} className="[color:var(--gold-primary)] [border:1px_solid_var(--border-light)]">บันทึก</Button>
           </div>
         ))}
-        {!settings.length && <div className="p-6 text-center" style={{ color: 'var(--muted-gray)' }}>ไม่มีการตั้งค่า</div>}
+        {!settings.length && <div className="p-6 text-center [color:var(--muted-gray)]">ไม่มีการตั้งค่า</div>}
       </Card>
-      <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>หมายเหตุ: การตั้งค่าเช่น initial_credit มีผลกับสมาชิกใหม่เท่านั้น</div>
+      <div className="text-xs [color:var(--muted-gray)]">หมายเหตุ: การตั้งค่าเช่น initial_credit มีผลกับสมาชิกใหม่เท่านั้น</div>
     </div>
   );
 }

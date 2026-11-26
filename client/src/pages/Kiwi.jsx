@@ -132,7 +132,7 @@ function DiceRoll({ drawn, symbols, onDone }) {
     <span key={i}
       className={stopped[i] ? 'animate-dice-settle' : 'animate-animal-roll'}
       style={{ animationDelay: stopped[i] ? `${i * 0.05}s` : undefined }}>
-      <span className="lotto-ball" style={{ fontSize: '1.4em', minWidth: '2.2em', height: '2.2em', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span className="lotto-ball [font-size:1.4em] [min-width:2.2em] [height:2.2em] [display:inline-flex] [align-items:center] [justify-content:center]">
         <AnimalGlyph name={symbols?.[v - 1]} size="1.4em" />
       </span>
     </span>
@@ -144,7 +144,7 @@ function DiceResult({ drawn, symbols }) {
   return (
     <div className="flex items-center justify-center gap-2 flex-wrap">
       {drawn.map((d, i) => (
-        <span key={i} className="lotto-ball" style={{ fontSize: '1.4em', minWidth: '2.2em', height: '2.2em', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span key={i} className="lotto-ball [font-size:1.4em] [min-width:2.2em] [height:2.2em] [display:inline-flex] [align-items:center] [justify-content:center]">
           <AnimalGlyph name={symbols?.[d - 1]} size="1.4em" />
         </span>
       ))}
@@ -274,8 +274,8 @@ function KiwiDrawMachine({ last, g, game, onDone }) {
       <span key={i}
         className={`${hidden ? '' : hit ? 'animate-dice-land' : 'animate-digit'} inline-flex`}
         style={hidden ? {} : { animationDelay: `${i * 0.05}s` }}>
-        <span className={`lotto-ball inline-flex items-center justify-center ${hit ? 'outline-[3px] outline-[#34d399] shadow-[0_0_14px_rgba(52,211,153,0.8)]' : ''} ${hidden ? 'opacity-35' : ''}`}
-          style={{ fontSize: '1.5em', minWidth: '2.4em', height: '2.4em' }}>{hidden ? '?' : label}</span>
+        <span className={`lotto-ball inline-flex items-center justify-center ${hit ? 'outline-[3px] outline-[#34d399] shadow-[0_0_14px_rgba(52,211,153,0.8)]' : ''} ${hidden ? 'opacity-35' : ''} [font-size:1.5em] [min-width:2.4em] [height:2.4em]`}
+>{hidden ? '?' : label}</span>
       </span>
     );
   };
@@ -428,8 +428,8 @@ export default function Kiwi() {
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite]" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.6s' }} />
-        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite]" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite] [bottom:-4%] [left:6%] [background:radial-gradient(circle_at_35%_30%,_#fff3c4,_#e2a812_60%,_#92600a)] [animation-delay:0.6s]" />
+        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite] [top:-4%] [right:8%] [background:radial-gradient(circle_at_35%_30%,_#1f2937,_#111827_65%,_#030712)] [animation-delay:2s]" />
         <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">หวยยี่กี</h1>
         <p className="text-sm mt-1 text-[var(--muted-gray)]">{g?.dice ? 'ลูกเต๋า 3 ลูก → สุ่มผลทันที → แทงสัตว์เดี่ยว / คู่ / ตอง!' : g?.symbols ? 'เลือกสัตว์ 1 ตัว → สุ่มผลทันที → ถูกรับรางวัลทันที!' : `เลือกเลข ${g ? `${g.pickCount} ตัว` : ''} → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น!`}</p>
         <div className="flex flex-col items-center gap-2.5 mt-3">
