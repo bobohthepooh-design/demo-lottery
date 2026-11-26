@@ -32,12 +32,28 @@ export default function AdminOverview() {
   const [d, setD] = useState(null);
   const [health, setHealth] = useState(null);
   const [err, setErr] = useState('');
+  const [updatedAt, setUpdatedAt] = useState(null); // เวลาที่ข้อมูล refresh ล่าสุด (สำหรับแสดง "อัปเดตล่าสุด")
   const load = useCallback(() => {
     setErr('');
-    api('/admin/overview').then(setD).catch(e => setErr(e.message));
+    api('/admin/overview').then(x => { setD(x); setUpdatedAt(new Date()); }).catch(e => setErr(e.message));
     api('/admin/health').then(setHealth).catch(() => {});
   }, []);
-  useEffect(() => { load(); }, [load]);
+  // auto-refresh: poll 30 วิ + refresh เมื่อ SSE แจ้ง sys:update + reload เมื่อ tab กลับมา visible
+  // ข้ามทุก trigger ตอน document.hidden เพื่อไม่ยิง API ตอน tab ซ่อน (visibilitychange จะ reload ตอนกลับมา)
+  useEffect(() => {
+    load();
+    const visible = () => !document.hidden;
+    const t = setInterval(() => { if (visible()) load(); }, 30000);
+    const onVis = () => { if (visible()) load(); };
+    const onSys = () => { if (visible()) load(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('sys:update', onSys);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('sys:update', onSys);
+    };
+  }, [load]);
   if (err) return <AdminError message={err} onRetry={load} />;
   if (!d) return <AdminLoading label="กำลังโหลดภาพรวม..." />;
 
@@ -53,7 +69,7 @@ export default function AdminOverview() {
           <p className="text-sm text-[var(--muted-gray)]">ภาพรวมระบบ • เครดิตจำลอง (demo)</p>
         </div>
         <div className="text-xs text-[var(--muted-gray)] bg-[var(--bg-card)] border border-[var(--border-light)] rounded-lg px-3 py-1.5">
-          อัปเดต {new Date().toLocaleString('th-TH')}
+          อัปเดตล่าสุด {updatedAt ? updatedAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '—'}
         </div>
       </div>
 
