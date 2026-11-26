@@ -52,7 +52,7 @@ function AnimalGlyph({ name, size = '1.6em' }) {
       </svg>
     );
   }
-  return <span style={{ fontSize: size, lineHeight: 1 }}>{ANIMAL_EMOJI[name] || '🐾'}</span>;
+  return <span className="leading-none" style={{ fontSize: size }}>{ANIMAL_EMOJI[name] || '🐾'}</span>;
 }
 
 function AnimalPicker({ symbols, picks, setPicks, disabled }) {
@@ -274,13 +274,8 @@ function KiwiDrawMachine({ last, g, game, onDone }) {
       <span key={i}
         className={`${hidden ? '' : hit ? 'animate-dice-land' : 'animate-digit'} inline-flex`}
         style={hidden ? {} : { animationDelay: `${i * 0.05}s` }}>
-        <span className="lotto-ball" style={{
-          fontSize: '1.5em', minWidth: '2.4em', height: '2.4em',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          outline: hit ? '3px solid #34d399' : undefined,
-          boxShadow: hit ? '0 0 14px rgba(52,211,153,0.8)' : undefined,
-          opacity: hidden ? 0.35 : 1,
-        }}>{hidden ? '?' : label}</span>
+        <span className={`lotto-ball inline-flex items-center justify-center ${hit ? 'outline-[3px] outline-[#34d399] shadow-[0_0_14px_rgba(52,211,153,0.8)]' : ''} ${hidden ? 'opacity-35' : ''}`}
+          style={{ fontSize: '1.5em', minWidth: '2.4em', height: '2.4em' }}>{hidden ? '?' : label}</span>
       </span>
     );
   };
@@ -432,19 +427,19 @@ export default function Kiwi() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 text-center luxury-card luxury-card-gold-border">
-        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.6s' }} />
-        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite]" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fff3c4, #e2a812 60%, #92600a)', animationDelay: '0.6s' }} />
+        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite]" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
         <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">หวยยี่กี</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--muted-gray)' }}>{g?.dice ? 'ลูกเต๋า 3 ลูก → สุ่มผลทันที → แทงสัตว์เดี่ยว / คู่ / ตอง!' : g?.symbols ? 'เลือกสัตว์ 1 ตัว → สุ่มผลทันที → ถูกรับรางวัลทันที!' : `เลือกเลข ${g ? `${g.pickCount} ตัว` : ''} → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น!`}</p>
+        <p className="text-sm mt-1 text-[var(--muted-gray)]">{g?.dice ? 'ลูกเต๋า 3 ลูก → สุ่มผลทันที → แทงสัตว์เดี่ยว / คู่ / ตอง!' : g?.symbols ? 'เลือกสัตว์ 1 ตัว → สุ่มผลทันที → ถูกรับรางวัลทันที!' : `เลือกเลข ${g ? `${g.pickCount} ตัว` : ''} → สุ่มผลทันที → ถูกกี่ตัวจ่ายเท่านั้น!`}</p>
         <div className="flex flex-col items-center gap-2.5 mt-3">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05), rgba(212, 175, 55, 0.15))', border: '1px solid var(--border-gold)', boxShadow: 'var(--shadow-gold)' }}>
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border bg-gradient-to-r from-[rgba(212,175,55,0.15)] via-[rgba(212,175,55,0.05)] to-[rgba(212,175,55,0.15)] border-[var(--border-gold)] shadow-[var(--shadow-gold)]">
             <span className="text-sm">💰</span>
-            <span className="text-xs font-semibold" style={{ color: 'var(--gold-primary)' }}>{g?.label ? `${g.label} — ราคาต่อครั้ง` : 'ราคาต่อครั้ง'}</span>
-            <span className="font-display font-bold text-2xl" style={{ color: 'var(--gold-bright)' }}>{g ? satang(g.price) : '—'} <span className="text-sm">บาท</span></span>
+            <span className="text-xs font-semibold text-[var(--gold-primary)]">{g?.label ? `${g.label} — ราคาต่อครั้ง` : 'ราคาต่อครั้ง'}</span>
+            <span className="font-display font-bold text-2xl text-[var(--gold-bright)]">{g ? satang(g.price) : '—'} <span className="text-sm">บาท</span></span>
           </div>
-          <div className="flex items-center justify-center gap-4 text-[11px] flex-wrap" style={{ color: 'var(--muted-gray)' }}>
-            <span>⚖️ จ่ายตามผล {tierText && <span style={{ color: 'var(--gold-bright)' }}>{tierText}</span>}</span>
+          <div className="flex items-center justify-center gap-4 text-[11px] flex-wrap text-[var(--muted-gray)]">
+            <span>⚖️ จ่ายตามผล {tierText && <span className="text-[var(--gold-bright)]">{tierText}</span>}</span>
           </div>
         </div>
       </div>
@@ -456,9 +451,9 @@ export default function Kiwi() {
             className={`rounded-xl border px-2 py-2.5 text-center transition ${game === x.game
               ? 'luxury-card-gold-border'
               : 'luxury-card'}`}>
-            <div className="text-xs font-bold leading-tight" style={{ color: 'var(--white)' }}>{x.label}</div>
-            <div className="text-[10px] mt-0.5" style={{ color: 'var(--muted-gray)' }}>{satang(x.price)} บาท</div>
-            <div className="text-[9px] mt-0.5 leading-tight" style={{ color: 'var(--gold-primary)' }}>
+            <div className="text-xs font-bold leading-tight text-[var(--white)]">{x.label}</div>
+            <div className="text-[10px] mt-0.5 text-[var(--muted-gray)]">{satang(x.price)} บาท</div>
+            <div className="text-[9px] mt-0.5 leading-tight text-[var(--gold-primary)]">
               {x.dice ? 'เดี่ยว/คู่/ตอง' : x.symbols ? 'ตรงสัตว์ x5' : Object.entries(x.tiers || {}).map(([h, m]) => 'ถูก' + h + ' = x' + m).join('  ')}
             </div>
           </button>
@@ -468,18 +463,18 @@ export default function Kiwi() {
       {/* เลือกเลข + เล่น */}
       <div className="luxury-card p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="text-sm font-bold" style={{ color: 'var(--white)' }}>
+          <div className="text-sm font-bold text-[var(--white)]">
             {g?.dice ? (betType ? g.diceBets?.[betType]?.label || 'เลือกรูปแบบ' : 'เลือกรูปแบบการแทง')
               : g?.symbols ? 'เลือกสัตว์ 1 ตัว' : `เลือก ${g?.pickCount ?? '—'} เลข จาก 1-${g?.poolSize ?? '—'}`}
-            <span className="font-normal text-xs ml-2" style={{ color: 'var(--muted-gray)' }}>เลือกแล้ว {picks.length}/{g?.dice ? (betType === 'pair' ? 2 : 1) : (g?.pickCount ?? '—')}</span>
+            <span className="font-normal text-xs ml-2 text-[var(--muted-gray)]">เลือกแล้ว {picks.length}/{g?.dice ? (betType === 'pair' ? 2 : 1) : (g?.pickCount ?? '—')}</span>
           </div>
-          {picks.length > 0 && <button onClick={() => setPicks([])} className="text-[11px] transition" style={{ color: 'var(--muted-gray)' }}>ล้าง</button>}
+          {picks.length > 0 && <button onClick={() => setPicks([])} className="text-[11px] transition text-[var(--muted-gray)]">ล้าง</button>}
         </div>
         {g?.dice ? (
           <>
             {/* เลือกรูปแบบการแทง */}
             <div>
-              <div className="text-xs mb-1.5" style={{ color: 'var(--muted-gray)' }}>เลือกรูปแบบ</div>
+              <div className="text-xs mb-1.5 text-[var(--muted-gray)]">เลือกรูปแบบ</div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(g.diceBets || {}).map(([bt, info]) => (
                   <button key={bt} onClick={() => pickBetType(bt)} disabled={busy}
@@ -490,9 +485,9 @@ export default function Kiwi() {
                 ))}
               </div>
               {betType && g.diceBets?.[betType] && (
-                <div className="text-[11px] mt-1 space-y-0.5" style={{ color: 'var(--muted-gray)' }}>
+                <div className="text-[11px] mt-1 space-y-0.5 text-[var(--muted-gray)]">
                   <div>{g.diceBets[betType].desc}</div>
-                  <div className="font-semibold" style={{ color: 'var(--gold-bright)' }}>💰 อัตราจ่าย: {g.diceBets[betType].payout}</div>
+                  <div className="font-semibold text-[var(--gold-bright)]">💰 อัตราจ่าย: {g.diceBets[betType].payout}</div>
                 </div>
               )}
             </div>
@@ -551,14 +546,14 @@ export default function Kiwi() {
       )}
       {tickets.length > 0 && (
         <div className="luxury-card overflow-hidden">
-          <div className="px-5 py-4 border-b font-bold" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>ประวัติยี่กี</div>
-          <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
+          <div className="px-5 py-4 border-b font-bold border-[var(--border-light)] text-[var(--white)]">ประวัติยี่กี</div>
+          <div className="divide-y divide-[var(--border-light)]">
             {(showAllHist ? tickets : tickets.slice(0, 10)).map(t => (
               <button key={t.id} onClick={() => openTicket(t)}
                 className="w-full flex items-center gap-3 px-5 py-3 text-left transition hover:bg-navy-700/40">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold" style={{ color: 'var(--white)' }}>{t.gameLabel} • {t.slipRef}</div>
-                  <div className="text-[11px]" style={{ color: 'var(--muted-gray)' }}>
+                  <div className="text-sm font-semibold text-[var(--white)]">{t.gameLabel} • {t.slipRef}</div>
+                  <div className="text-[11px] text-[var(--muted-gray)]">
                     {fmtDateTime(t.createdAt)}
                     {t.dice ? ` • ${t.betType ? (DICE_BET_LABEL[t.betType] || t.betType) : ''}${t.picks?.length ? ` ${t.picks.map(p => animalText(t.diceSymbols?.[p - 1])).join('+')}` : ''}`
                       : t.symbols ? ` • ${animalEmoji(t.symbols, t.picks[0])}` : ` • ถูก ${t.hits} เลข`}
@@ -569,16 +564,15 @@ export default function Kiwi() {
                 ) : t.payout > 0 ? (
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-full luxury-badge-success">+{satang(t.payout)} บาท</span>
                 ) : (
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>ไม่ถูก</span>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[var(--bg-dark-surface)] text-[var(--muted-gray)] border border-[var(--border-light)]">ไม่ถูก</span>
                 )}
-                <span className="text-[10px] shrink-0" style={{ color: 'var(--dark-gray)' }}>👁</span>
+                <span className="text-[10px] shrink-0 text-[var(--dark-gray)]">👁</span>
               </button>
             ))}
           </div>
           {tickets.length > 10 && (
             <button onClick={() => setShowAllHist(v => !v)}
-              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40"
-              style={{ color: 'var(--gold-primary)', borderTop: '1px solid var(--border-light)' }}>
+              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40 border-t border-[var(--border-light)] text-[var(--gold-primary)]">
               {showAllHist ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${tickets.length} รายการ)`}
             </button>
           )}
