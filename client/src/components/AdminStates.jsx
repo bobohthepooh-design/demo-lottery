@@ -20,7 +20,7 @@ export function AdminError({ message, onRetry }) {
   return (
     <div
       role="alert"
-      className="rounded-xl border border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.1)] p-5 text-center space-y-3"
+      className="rounded-xl border border-[color-mix(in_srgb,var(--danger-red)_40%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)] p-5 text-center space-y-3"
     >
       <div className="text-sm font-bold [color:var(--danger-red)]">โหลดข้อมูลไม่สำเร็จ</div>
       {message && <div className="text-xs [color:var(--muted-gray)] break-words">{message}</div>}

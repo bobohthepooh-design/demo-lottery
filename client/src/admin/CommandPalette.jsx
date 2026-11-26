@@ -9,7 +9,7 @@ import { adminGroups } from './navConfig.js';
 // quick actions — จุดที่ใช้บ่อยนอกเหนือจากเมนู nav (filter ด้วย perm เหมือน nav)
 const ACTIONS = [
   { to: '/admin', label: 'ภาพรวม', icon: 'dashboard', perm: 'dashboard.admin', hint: 'หน้าหลักผู้ดูแล' },
-  { to: '/admin/lotteries?tab=settle', label: 'ออกผลรางวัล', icon: 'draws', perm: 'lottery.manage', hint: 'ประกาศผลรอบหวย' },
+  { to: '/admin/lotteries?tab=settle', label: 'ออกผลรางวัล', icon: 'draws', perm: ['lottery.manage', 'results.publish'], hint: 'ประกาศผลรอบหวย' },
   { to: '/admin/settings', label: 'ตั้งค่าระบบ', icon: 'settings', perm: 'settings.manage', hint: 'การตั้งค่าทั่วไป' },
 ];
 
@@ -21,7 +21,11 @@ export default function CommandPalette({ open, onOpenChange }) {
   const listRef = useRef(null);
 
   const perms = useMemo(() => user?.permissions || [], [user?.permissions]);
-  const hasPerm = (p) => !p || perms.includes(p) || perms.includes('*');
+  const hasPerm = (p) => {
+    if (perms.includes('*')) return true;
+    if (Array.isArray(p)) return p.every(x => perms.includes(x));
+    return !p || perms.includes(p);
+  };
 
   // รวม nav items (group ตาม sidebar) + quick actions — filter ตามสิทธิ์ + คำค้น (includes บน label)
   const { sections, flat } = useMemo(() => {

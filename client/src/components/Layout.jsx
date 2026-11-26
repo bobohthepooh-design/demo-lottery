@@ -87,10 +87,12 @@ export default function Layout() {
   const navVisible = n => (!n.auth || user) && (!n.admin || isAdmin) && (!n.memberOnly || !isAdmin) && (!n.betGate || showBetMenu);
   const visibleGroups = navGroups.map(g => ({ ...g, items: g.items.filter(navVisible) })).filter(g => g.items.length);
 
-  // เมนู admin แยกเป็นกลุ่มย่อย (ใช้ groups เดียวกับ AdminLayout — filter super_admin ตาม role)
+  // เมนู admin แยกเป็นกลุ่มย่อย (ใช้ groups เดียวกับ AdminLayout — filter super_admin + perm เหมือนกัน)
   const isSuper = (user?.roles || []).includes('super_admin');
+  const adminPerms = user?.permissions || [];
+  const hasAdminPerm = (p) => !p || adminPerms.includes(p) || adminPerms.includes('*');
   const adminNavGroups = adminGroups
-    .map(g => ({ ...g, items: g.items.filter(i => !i.superOnly || isSuper) }))
+    .map(g => ({ ...g, items: g.items.filter(i => (!i.superOnly || isSuper) && hasAdminPerm(i.perm)) }))
     .filter(g => g.items.length > 0);
 
   // ปิด dropdown admin เมื่อคลิกข้างนอก / เปลี่ยนหน้า
