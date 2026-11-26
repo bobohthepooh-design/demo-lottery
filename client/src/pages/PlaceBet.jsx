@@ -13,6 +13,8 @@ import { annSummary, annEntries } from '../ann.js';
 import { bettingOpenAtSql, thaiHM } from '../bettingWindow.js';
 import { Button } from '../components/ui/index.js';
 import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/shadcn/dialog.jsx';
+import { Input } from '../components/shadcn/input.jsx';
 
 const BET_TYPE_STYLE = {
   '2top': '2 ตัวบน', '2bottom': '2 ตัวล่าง', '3top': '3 ตัวบน', 'top4': '4 ตัวบน',
@@ -619,9 +621,13 @@ export default function PlaceBet() {
                 <>
                   {/* Number Input */}
                   <div>
-                    <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
+                    <Input
+                      ref={numRef}
+                      value={number}
+                      onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
-                      inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
+                      inputMode="numeric"
+                      placeholder={rule ? '0'.repeat(rule.digits) : ''}
                       style={{
                         width: '100%',
                         background: 'var(--bg-dark-surface)',
@@ -636,96 +642,51 @@ export default function PlaceBet() {
                         fontWeight: 800,
                         outline: 'none',
                         transition: 'all 0.2s'
-                      }} className="sm:px-5 sm:py-5 sm:text-4xl sm:tracking-[0.5em] focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]" />
+                      }}
+                      className="sm:px-5 sm:py-5 sm:text-4xl sm:tracking-[0.5em] focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]"
+                    />
 
                     {/* Quick Actions - Horizontal row like the reference image */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                      <button type="button" disabled={number.length < 2}
+                    <div className="flex flex-wrap items-center gap-2 mt-4">
+                      <Button
+                        type="button"
+                        disabled={number.length < 2}
                         onClick={() => setNumber(number.split('').reverse().join(''))}
-                        style={{
-                          fontSize: '0.8125rem',
-                          padding: '0.5rem 0.875rem',
-                          borderRadius: '0.625rem',
-                          background: 'var(--info-blue)',
-                          border: '2px solid var(--info-blue)',
-                          color: 'var(--white)',
-                          transition: 'all 0.2s',
-                          opacity: number.length < 2 ? 0.4 : 1,
-                          fontWeight: 700
-                        }} className="sm:text-xs hover:opacity-90">
+                        variant="secondary"
+                        size="sm"
+                        style={{ background: 'var(--info-blue)', borderColor: 'var(--info-blue)', color: 'var(--white)', opacity: number.length < 2 ? 0.4 : 1 }}
+                        className="text-xs font-bold"
+                      >
                         🔁 กลับเลข
-                      </button>
+                      </Button>
                       {rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
                         <>
-                          <button type="button" onClick={() => addRud('19')}
-                            style={{
-                              fontSize: '0.8125rem',
-                              padding: '0.5rem 0.875rem',
-                              borderRadius: '0.625rem',
-                              background: 'var(--bg-dark-surface)',
-                              border: '2px solid var(--border-light)',
-                              color: 'var(--muted-gray)',
-                              transition: 'all 0.2s',
-                              fontWeight: 600
-                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                          <Button type="button" onClick={() => addRud('19')} variant="ghost" size="sm" className="text-xs font-semibold hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
                             19 ประตู
-                          </button>
-                          <button type="button" onClick={() => addRud('face')}
-                            style={{
-                              fontSize: '0.8125rem',
-                              padding: '0.5rem 0.875rem',
-                              borderRadius: '0.625rem',
-                              background: 'var(--bg-dark-surface)',
-                              border: '2px solid var(--border-light)',
-                              color: 'var(--muted-gray)',
-                              transition: 'all 0.2s',
-                              fontWeight: 600
-                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                          </Button>
+                          <Button type="button" onClick={() => addRud('face')} variant="ghost" size="sm" className="text-xs font-semibold hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
                             รูดหน้า
-                          </button>
-                          <button type="button" onClick={() => addRud('back')}
-                            style={{
-                              fontSize: '0.8125rem',
-                              padding: '0.5rem 0.875rem',
-                              borderRadius: '0.625rem',
-                              background: 'var(--bg-dark-surface)',
-                              border: '2px solid var(--border-light)',
-                              color: 'var(--muted-gray)',
-                              transition: 'all 0.2s',
-                              fontWeight: 600
-                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                          </Button>
+                          <Button type="button" onClick={() => addRud('back')} variant="ghost" size="sm" className="text-xs font-semibold hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
                             รูดหลัง
-                          </button>
+                          </Button>
                         </>
                       )}
                       {rule.digits >= 2 && (
                         <>
-                          <button type="button" onClick={() => addPattern('be')}
-                            style={{
-                              fontSize: '0.8125rem',
-                              padding: '0.5rem 0.875rem',
-                              borderRadius: '0.625rem',
-                              background: 'var(--bg-dark-surface)',
-                              border: '2px solid var(--border-light)',
-                              color: 'var(--muted-gray)',
-                              transition: 'all 0.2s',
-                              fontWeight: 600
-                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                          <Button type="button" onClick={() => addPattern('be')} variant="ghost" size="sm" className="text-xs font-semibold hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
                             เลขเบิ้ล
-                          </button>
-                          <button type="button" onClick={() => addPattern('tod')}
-                            style={{
-                              fontSize: '0.8125rem',
-                              padding: '0.5rem 0.875rem',
-                              borderRadius: '0.625rem',
-                              background: 'var(--info-blue)',
-                              border: '2px solid var(--info-blue)',
-                              color: 'var(--white)',
-                              transition: 'all 0.2s',
-                              fontWeight: 700
-                            }} className="sm:text-xs hover:opacity-90">
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => addPattern('tod')}
+                            variant="secondary"
+                            size="sm"
+                            style={{ background: 'var(--info-blue)', borderColor: 'var(--info-blue)', color: 'var(--white)' }}
+                            className="text-xs font-bold"
+                          >
                             เลขตอง
-                          </button>
+                          </Button>
                         </>
                       )}
                     </div>
@@ -848,58 +809,54 @@ export default function PlaceBet() {
         </div>
       )}
 
-      {/* confirm modal — order ticket สไตล์กระดาษ */}
-      {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4" onClick={() => !busy && setConfirming(false)}>
-          <div className="w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="text-center mb-3">
-              <h2 className="text-base sm:text-lg font-bold text-white">{headBar}ยืนยันโพยหวย</h2>
-              <p className="text-xs sm:text-sm text-navy-300">{drawLabel(draw)}</p>
+      {/* confirm modal — ใช้ shadcn Dialog */}
+      <Dialog open={confirming} onOpenChange={(open) => !busy && setConfirming(open)}>
+        <DialogContent className="max-w-md bg-gradient-to-b from-navy-800 to-navy-900 border border-gold-500/30 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-bold">{headBar}ยืนยันโพยหวย</DialogTitle>
+            <p className="text-xs sm:text-sm text-navy-300">{drawLabel(draw)}</p>
+          </DialogHeader>
+          <div className="paper-slip rounded-lg px-5 py-5 pt-6 pb-7">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-bold tracking-widest text-[#8a7a5c] uppercase">ใบโพยแทงหวย</span>
+              <span className="text-[10px] text-[#8a7a5c]">ใบเสร็จรับโพย</span>
             </div>
-            <div className="paper-slip rounded-lg px-5 py-5 pt-6 pb-7">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold tracking-widest text-[#8a7a5c] uppercase">ใบโพยแทงหวย</span>
-                <span className="text-[10px] text-[#8a7a5c]">ใบเสร็จรับโพย</span>
-              </div>
-              <div className="paper-dash mb-3" />
-              <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-                {slip.map((i, idx) => (
-                  <div key={idx} className="flex justify-between items-baseline text-sm rounded px-2 py-1.5 bg-[#fbf3df]/70">
-                    <span className="min-w-0">
-                      <span className="text-[#8a7a5c] font-mono text-[11px] mr-1.5">{String(idx + 1).padStart(2, '0')}.</span>
-                      <span className="paper-num text-[#8a5a00] text-base">{i.number}</span>
-                      <span className="text-[#6b5636] text-xs ml-2">{i.name}</span>
-                      {i.isAnn && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-600/20 border border-amber-700/50 text-amber-800">อั้น</span>}
-                      {i.isTod && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-sky-700/15 border border-sky-700/40 text-sky-800">โต๊ด</span>}
-                    </span>
-                    <span className="paper-num text-[#2b2118] shrink-0 ml-2">{satang(i.stakeSatang)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="paper-dash my-3" />
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between"><span className="text-[#6b5636]">ยอดแทงรวม ({slip.length} รายการ)</span><span className="paper-num text-[#2b2118] text-base">{satang(totalSatang)} บาท</span></div>
-                <div className="flex justify-between"><span className="text-[#6b5636]">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="paper-num text-[#1e7d46]">{satang(totalPotential)} บาท</span></div>
-                <div className="flex justify-between"><span className="text-[#6b5636]">เครดิตคงเหลือหลังแทง</span><span className="paper-num text-[#8a5a00]">{satang(balance - totalSatang)} บาท</span></div>
-              </div>
-              <div className="paper-dash mt-3" />
-              <div className="text-center text-[10px] text-[#8a7a5c] mt-2.5 leading-relaxed">
-                📌 ยกเลิกโพยได้ก่อนเวลาปิดรับ • คืนเครดิตอัตโนมัติหากรอบถูกยกเลิก • เครดิตเสมือนเพื่อการศึกษา
-              </div>
+            <div className="paper-dash mb-3" />
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              {slip.map((i, idx) => (
+                <div key={idx} className="flex justify-between items-baseline text-sm rounded px-2 py-1.5 bg-[#fbf3df]/70">
+                  <span className="min-w-0">
+                    <span className="text-[#8a7a5c] font-mono text-[11px] mr-1.5">{String(idx + 1).padStart(2, '0')}.</span>
+                    <span className="paper-num text-[#8a5a00] text-base">{i.number}</span>
+                    <span className="text-[#6b5636] text-xs ml-2">{i.name}</span>
+                    {i.isAnn && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-600/20 border border-amber-700/50 text-amber-800">อั้น</span>}
+                    {i.isTod && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-sky-700/15 border border-sky-700/40 text-sky-800">โต๊ด</span>}
+                  </span>
+                  <span className="paper-num text-[#2b2118] shrink-0 ml-2">{satang(i.stakeSatang)}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex gap-3 mt-4">
-              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}
-                className="flex-1 !py-2.5 sm:!py-3 text-sm sm:text-base backdrop-blur-sm">
-                ← แก้ไขต่อ
-              </Button>
-              <Button onClick={submit} disabled={busy}
-                className="flex-1 !py-2.5 sm:!py-3 text-sm sm:text-base shadow-lg shadow-gold-500/20">
-                {busy ? 'กำลังส่ง...' : '✓ ยืนยันส่งโพย'}
-              </Button>
+            <div className="paper-dash my-3" />
+            <div className="space-y-1.5 text-sm">
+              <div className="flex justify-between"><span className="text-[#6b5636]">ยอดแทงรวม ({slip.length} รายการ)</span><span className="paper-num text-[#2b2118] text-base">{satang(totalSatang)} บาท</span></div>
+              <div className="flex justify-between"><span className="text-[#6b5636]">รางวัลจำลองถ้าถูกทุกตัว (ไม่รวมทุน)</span><span className="paper-num text-[#1e7d46]">{satang(totalPotential)} บาท</span></div>
+              <div className="flex justify-between"><span className="text-[#6b5636]">เครดิตคงเหลือหลังแทง</span><span className="paper-num text-[#8a5a00]">{satang(balance - totalSatang)} บาท</span></div>
+            </div>
+            <div className="paper-dash mt-3" />
+            <div className="text-center text-[10px] text-[#8a7a5c] mt-2.5 leading-relaxed">
+              📌 ยกเลิกโพยได้ก่อนเวลาปิดรับ • คืนเครดิตอัตโนมัติหากรอบถูกยกเลิก • เครดิตเสมือนเพื่อการศึกษา
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy} className="flex-1">
+              ← แก้ไขต่อ
+            </Button>
+            <Button onClick={submit} disabled={busy} className="flex-1">
+              {busy ? 'กำลังส่ง...' : '✓ ยืนยันส่งโพย'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
