@@ -81,9 +81,9 @@ export default function AdminHealth() {
   const staleSources = sources.filter(s => s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
   const overall = overdue.length ? 'bad' : staleSources.length ? 'warn' : 'ok';
   const banner = {
-    ok: { cls: 'border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.1)] text-[var(--success-green)]', txt: '🟢 ระบบปกติ — ไม่มีรอบค้าง ผลทุกแหล่งอัปเดตอยู่' },
-    warn: { cls: 'border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] text-[var(--warning-amber)]', txt: `🟡 ระบบทำงาน แต่มีแหล่งผลเงียบ >36 ชม. ${staleSources.length} แหล่ง` },
-    bad: { cls: 'border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.1)] text-[var(--danger-red)]', txt: `🔴 มีรอบค้างออกผล ${overdue.length} รอบ — ตรวจแหล่งผล/ตั้งผลเอง` },
+    ok: { cls: 'border-[color-mix(in_srgb,var(--success-green)_30%,transparent)] bg-[color-mix(in_srgb,var(--success-green)_10%,transparent)] text-[var(--success-green)]', txt: '🟢 ระบบปกติ — ไม่มีรอบค้าง ผลทุกแหล่งอัปเดตอยู่' },
+    warn: { cls: 'border-[color-mix(in_srgb,var(--warning-amber)_30%,transparent)] bg-[color-mix(in_srgb,var(--warning-amber)_10%,transparent)] text-[var(--warning-amber)]', txt: `🟡 ระบบทำงาน แต่มีแหล่งผลเงียบ >36 ชม. ${staleSources.length} แหล่ง` },
+    bad: { cls: 'border-[color-mix(in_srgb,var(--danger-red)_40%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)] text-[var(--danger-red)]', txt: `🔴 มีรอบค้างออกผล ${overdue.length} รอบ — ตรวจแหล่งผล/ตั้งผลเอง` },
   }[overall];
 
   return (
@@ -163,7 +163,7 @@ export default function AdminHealth() {
                 <h2 className="font-bold text-[var(--white)] mb-3">🔄 การดึงผลอัตโนมัติ (source chain + fallback)</h2>
                 <div className="flex flex-wrap gap-2">
                   {d.fetchHealth.map(h => (
-                    <div key={h.label} className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${h.ok === false ? 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-[var(--danger-red)]' : 'border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.05)] text-[var(--success-green)]'}`}>
+                    <div key={h.label} className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${h.ok === false ? 'border-[color-mix(in_srgb,var(--danger-red)_30%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)] text-[var(--danger-red)]' : 'border-[color-mix(in_srgb,var(--success-green)_30%,transparent)] bg-[color-mix(in_srgb,var(--success-green)_5%,transparent)] text-[var(--success-green)]'}`}>
                       <span className="font-bold">{h.label}</span>
                       <span className="text-[var(--muted-gray)] ml-1">{h.ok === false ? `✕ ${h.lastError || 'error'}` : `✓ ${age(h.lastOkAt) || '—'}`}</span>
                     </div>
@@ -200,7 +200,7 @@ export default function AdminHealth() {
                 <CardBody>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="font-bold text-[var(--white)]">💾 Backups ({backups.length})</h2>
-                    <button onClick={createBackup} className="text-xs px-3 py-1.5 rounded-lg bg-[rgba(212,175,55,0.2)] text-[var(--gold-primary)] border border-[var(--border-gold)] hover:bg-[rgba(212,175,55,0.3)]">+ สร้าง backup</button>
+                    <button onClick={createBackup} className="text-xs px-3 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--gold-primary)_20%,transparent)] text-[var(--gold-primary)] border border-[var(--border-gold)] hover:bg-[color-mix(in_srgb,var(--gold-primary)_30%,transparent)]">+ สร้าง backup</button>
                   </div>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {backups.map(b => (
@@ -225,12 +225,12 @@ export default function AdminHealth() {
                     <option value="low">low</option><option value="medium">medium</option>
                     <option value="high">high</option><option value="critical">critical</option>
                   </select>
-                  <button onClick={createIncident} className="text-xs px-3 py-1.5 rounded-lg bg-[rgba(239,68,68,0.2)] text-[var(--danger-red)] border border-[rgba(239,68,68,0.3)]">บันทึก</button>
+                  <button onClick={createIncident} className="text-xs px-3 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--danger-red)_20%,transparent)] text-[var(--danger-red)] border border-[color-mix(in_srgb,var(--danger-red)_30%,transparent)]">บันทึก</button>
                 </div>
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
                   {incidents.map(inc => (
                     <div key={inc.id} className="flex items-center gap-2 bg-[var(--bg-dark-surface)] rounded px-2.5 py-1.5 text-xs">
-                      <span className={`px-1.5 py-0.5 rounded font-bold ${inc.severity === 'critical' ? 'bg-[rgba(239,68,68,0.2)] text-[var(--danger-red)]' : inc.severity === 'high' ? 'bg-[rgba(249,115,22,0.2)] text-[rgba(249,115,22,1)]' : 'bg-[var(--bg-card)] text-[var(--muted-gray)]'}`}>{inc.severity}</span>
+                      <span className={`px-1.5 py-0.5 rounded font-bold ${inc.severity === 'critical' ? 'bg-[color-mix(in_srgb,var(--danger-red)_20%,transparent)] text-[var(--danger-red)]' : inc.severity === 'high' ? 'bg-[rgba(249,115,22,0.2)] text-[rgba(249,115,22,1)]' : 'bg-[var(--bg-card)] text-[var(--muted-gray)]'}`}>{inc.severity}</span>
                       <span className={`flex-1 ${inc.status === 'resolved' ? 'line-through text-[var(--dark-gray)]' : 'text-[var(--white)]'}`}>{inc.title}</span>
                       <span className="text-[var(--dark-gray)]">{inc.created_by_name || ''}</span>
                       {inc.status !== 'resolved' && (

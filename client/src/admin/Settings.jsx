@@ -173,7 +173,7 @@ export default function AdminSettings() {
             {lotteryTypes.map(t => {
               const shown = !hiddenTypes.includes(t.code);
               return (
-                <label key={t.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition ${shown ? '' : 'border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.1)]'}`} style={shown ? { borderColor: 'var(--border-light)', background: 'var(--bg-dark-surface)' } : {}}>
+                <label key={t.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition ${shown ? '' : 'border-[color-mix(in_srgb,var(--danger-red)_40%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)]'}`} style={shown ? { borderColor: 'var(--border-light)', background: 'var(--bg-dark-surface)' } : {}}>
                   <input type="checkbox" checked={shown} onChange={e => toggleTypeMenu(t.code, e.target.checked)}
                     className="w-5 h-5 [accent-color:var(--gold-primary)]" />
                   <span className="flex-1 text-sm font-semibold [color:var(--white)]">{t.name_th}</span>
@@ -239,10 +239,10 @@ export default function AdminSettings() {
         </div>
         <div className="space-y-2">
           {campaigns.map(c => (
-            <div key={c.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5`} style={c.active ? { borderColor: 'var(--border-gold)', background: 'rgba(212, 175, 55, 0.05)' } : { borderColor: 'var(--border-light)', background: 'var(--bg-dark-surface)' }}>
+            <div key={c.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5`} style={c.active ? { borderColor: 'var(--border-gold)', background: 'color-mix(in srgb, var(--gold-primary) 5%, transparent)' } : { borderColor: 'var(--border-light)', background: 'var(--bg-dark-surface)' }}>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold truncate [color:var(--white)]">{c.name}
-                  {c.active ? <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded [background:rgba(212,_175,_55,_0.2)] [color:var(--gold-primary)] [border:1px_solid_var(--border-gold)]">ACTIVE</span> : null}
+                  {c.active ? <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded [background:color-mix(in_srgb,var(--gold-primary)_20%,transparent)] [color:var(--gold-primary)] [border:1px_solid_var(--border-gold)]">ACTIVE</span> : null}
                 </div>
                 <div className="text-[11px] [color:var(--muted-gray)]">คืน {c.percent}% • ย้อนหลัง {c.window_hours} ชม. • ขั้นต่ำ {(c.min_satang / 100).toLocaleString('th-TH')} บาท{c.created_by_name ? ` • โดย ${c.created_by_name}` : ''}</div>
               </div>
@@ -260,7 +260,7 @@ export default function AdminSettings() {
           <div key={s.key} className="p-4 flex items-center gap-4 [border-color:var(--border-light)]">
             <div className="w-56 shrink-0">
               <code className="text-sm [color:var(--gold-primary)]">{s.key}</code>
-              {SUPER_ONLY_KEYS.includes(s.key) && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded [background:rgba(239,_68,_68,_0.15)] [color:var(--danger-red)] [border:1px_solid_rgba(239,_68,_68,_0.4)]">SUPER</span>}
+              {SUPER_ONLY_KEYS.includes(s.key) && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded [background:color-mix(in_srgb,var(--danger-red)_15%,transparent)] [color:var(--danger-red)] [border:1px_solid_color-mix(in_srgb,var(--danger-red)_40%,transparent)]">SUPER</span>}
               <div className="text-[10px] [color:var(--muted-gray)]">updated {s.updatedAt}</div>
             </div>
             <input value={edits[s.key] ?? ''} onChange={e => setEdits({...edits, [s.key]: e.target.value})}

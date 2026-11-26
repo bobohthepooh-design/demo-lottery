@@ -60,7 +60,7 @@ export default function AdminBanner() {
         <h1 className="text-2xl font-bold [color:var(--white)]">จัดการแบนเนอร์หน้าแรก</h1>
         <p className="text-sm mt-1 [color:var(--light-gray)]">แก้ไขข้อความและปุ่มบนแบนเนอร์ด้านบนของหน้าแรก — บันทแล้วมีผลทันที</p>
       </div>
-      {msg && <div className={`text-sm rounded-lg p-3 border`} style={msg.startsWith('ERROR') ? { color: 'var(--danger-red)', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' } : { color: 'var(--success-green)', background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>{msg}</div>}
+      {msg && <div className={`text-sm rounded-lg p-3 border`} style={msg.startsWith('ERROR') ? { color: 'var(--danger-red)', background: 'color-mix(in srgb, var(--danger-red) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--danger-red) 30%, transparent)' } : { color: 'var(--success-green)', background: 'color-mix(in srgb, var(--success-green) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--success-green) 30%, transparent)' }}>{msg}</div>}
 
       {/* Preview */}
       <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
@@ -94,7 +94,7 @@ export default function AdminBanner() {
         {announce.enabled && announce.text && (
           <div className="rounded-lg overflow-hidden [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-gold)]">
             <div className="flex items-center">
-              <span className="shrink-0 px-3 py-1 text-[10px] font-bold border-r [color:var(--gold-primary)] [background:rgba(212,_175,_55,_0.15)] [border-color:var(--border-gold)]">📢 ประกาศ</span>
+              <span className="shrink-0 px-3 py-1 text-[10px] font-bold border-r [color:var(--gold-primary)] [background:color-mix(in_srgb,var(--gold-primary)_15%,transparent)] [border-color:var(--border-gold)]">📢 ประกาศ</span>
               <div className="overflow-hidden flex-1 py-1">
                 <div className="flex w-max animate-marquee gap-12 px-3">
                   {[0, 1].map(n => <span key={n} className="text-[11px] whitespace-nowrap [color:var(--white)]">{announce.text}</span>)}

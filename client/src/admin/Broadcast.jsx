@@ -47,7 +47,7 @@ export default function AdminBroadcast() {
             <Input label="ลิงก์ (ไม่บังคับ — path ภายใน เช่น /results)" maxLength={200} value={form.link} onChange={e => setForm({ ...form, link: e.target.value })}
               placeholder="/results" inputClassName="py-2.5 font-mono text-xs" className="[background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]" />
             <Button disabled={busy} className="w-full [background:linear-gradient(135deg,_var(--gold-gradient-start),_var(--gold-gradient-end))] [color:var(--bg-deep-black)]">{busy ? 'กำลังส่ง…' : 'ส่งประกาศถึงสมาชิกทั้งหมด'}</Button>
-            {msg && <div className={`text-sm rounded-lg p-3`} style={msg.startsWith('ERROR') ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger-red)' } : { background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-green)' }} role="status">{msg}</div>}
+            {msg && <div className={`text-sm rounded-lg p-3`} style={msg.startsWith('ERROR') ? { background: 'color-mix(in srgb, var(--danger-red) 10%, transparent)', color: 'var(--danger-red)' } : { background: 'color-mix(in srgb, var(--success-green) 10%, transparent)', color: 'var(--success-green)' }} role="status">{msg}</div>}
           </form>
         </CardBody>
       </Card>

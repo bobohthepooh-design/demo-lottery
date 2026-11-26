@@ -8,10 +8,10 @@ const fmt = (satangVal) => `${satang(satangVal)} บาท`;
 
 function StatCard({ icon, label, value, sub, tone = 'gold' }) {
   const tones = {
-    gold: 'border-[var(--border-gold)] bg-[rgba(212,175,55,0.1)] text-[var(--gold-primary)]',
-    green: 'border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.1)] text-[var(--success-green)]',
-    red: 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-[var(--danger-red)]',
-    blue: 'border-[rgba(59,130,246,0.3)] bg-[rgba(59,130,246,0.1)] text-[var(--info-blue)]',
+    gold: 'border-[var(--border-gold)] bg-[color-mix(in_srgb,var(--gold-primary)_10%,transparent)] text-[var(--gold-primary)]',
+    green: 'border-[color-mix(in_srgb,var(--success-green)_30%,transparent)] bg-[color-mix(in_srgb,var(--success-green)_10%,transparent)] text-[var(--success-green)]',
+    red: 'border-[color-mix(in_srgb,var(--danger-red)_30%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)] text-[var(--danger-red)]',
+    blue: 'border-[color-mix(in_srgb,var(--info-blue)_30%,transparent)] bg-[color-mix(in_srgb,var(--info-blue)_10%,transparent)] text-[var(--info-blue)]',
     purple: 'border-[rgba(168,85,247,0.3)] bg-[rgba(168,85,247,0.1)] text-[var(--info-blue)]',
   };
   return (
@@ -67,7 +67,7 @@ export default function AdminOverview() {
         const srcStale = (health?.sources || []).filter(s => s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
         if (srcStale.length && !stale.length) items.push({ tone: 'amber', icon: 'reports', text: `แหล่งผลเงียบ >36 ชม. ${srcStale.length} แห่ง`, sub: srcStale.map(s => s.source).join(', '), to: '/admin/health' });
         if (!items.length) return null;
-        const toneCls = { red: 'border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.1)]', amber: 'border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.1)]' };
+        const toneCls = { red: 'border-[color-mix(in_srgb,var(--danger-red)_40%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)]', amber: 'border-[color-mix(in_srgb,var(--warning-amber)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning-amber)_10%,transparent)]' };
         const txtCls = { red: 'text-[var(--danger-red)]', amber: 'text-[var(--warning-amber)]' };
         return (
           <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl p-4">
@@ -90,7 +90,7 @@ export default function AdminOverview() {
 
       {/* รายรับ / รายจ่าย หลัก */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="border border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.08)] rounded-xl p-6 relative overflow-hidden">
+        <div className="border border-[color-mix(in_srgb,var(--success-green)_30%,transparent)] bg-[color-mix(in_srgb,var(--success-green)_8%,transparent)] rounded-xl p-6 relative overflow-hidden">
           <Icon name="wallet" className="absolute -right-6 -top-6 w-36 h-36 opacity-10 text-[var(--success-green)]" />
           <div className="text-sm text-[var(--success-green)] font-semibold">รายรับรวม (เครดิตเข้า)</div>
           <div className="text-3xl font-black text-[var(--success-green)] mt-1">{fmt(m.totalIn || 0)}</div>
@@ -98,7 +98,7 @@ export default function AdminOverview() {
             เติมเครดิต {fmt(m.deposit || 0)} • admin จ่าย {fmt(m.adminCredit || 0)} • เริ่มต้น {fmt(m.initialCredit || 0)}
           </div>
         </div>
-        <div className="border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] rounded-xl p-6 relative overflow-hidden">
+        <div className="border border-[color-mix(in_srgb,var(--danger-red)_30%,transparent)] bg-[color-mix(in_srgb,var(--danger-red)_8%,transparent)] rounded-xl p-6 relative overflow-hidden">
           <Icon name="reports" className="absolute -right-6 -top-6 w-36 h-36 opacity-10 text-[var(--gold-primary)]" />
           <div className="text-sm text-[var(--gold-primary)] font-semibold">รายจ่ายรวม (เครดิตออก)</div>
           <div className="text-3xl font-black text-[var(--gold-primary)] mt-1">{fmt(m.totalOut || 0)}</div>
@@ -106,7 +106,7 @@ export default function AdminOverview() {
             ถอน {fmt(m.withdraw || 0)} • admin หัก {fmt(m.adminDebit || 0)} • รางวัล {fmt(m.winnings || 0)} • คืนเงิน {fmt(m.refunds || 0)}
           </div>
         </div>
-        <div className={`rounded-xl p-6 relative overflow-hidden border ${m.houseNet >= 0 ? 'border-[var(--border-gold)] bg-[rgba(212,175,55,0.08)]' : 'border-[rgba(59,130,246,0.3)] bg-[rgba(59,130,246,0.08)]'}`}>
+        <div className={`rounded-xl p-6 relative overflow-hidden border ${m.houseNet >= 0 ? 'border-[var(--border-gold)] bg-[color-mix(in_srgb,var(--gold-primary)_8%,transparent)]' : 'border-[color-mix(in_srgb,var(--info-blue)_30%,transparent)] bg-[color-mix(in_srgb,var(--info-blue)_8%,transparent)]'}`}>
           <Icon name={m.houseNet >= 0 ? 'dashboard' : 'reports'} className={`absolute -right-6 -top-6 w-36 h-36 opacity-10 ${m.houseNet >= 0 ? 'text-[var(--gold-primary)]' : 'text-[var(--info-blue)]'}`} />
           <div className={`text-sm font-semibold ${m.houseNet >= 0 ? 'text-[var(--gold-primary)]' : 'text-[var(--info-blue)]'}`}>ส่วนต่างระบบ ( Stakes − รางวัล )</div>
           <div className={`text-3xl font-black mt-1 ${m.houseNet >= 0 ? 'text-[var(--gold-primary)]' : 'text-[var(--info-blue)]'}`}>{fmt(m.houseNet || 0)}</div>
@@ -116,7 +116,7 @@ export default function AdminOverview() {
 
       {/* เตือนรอบค้างออกผล */}
       {(d.overdueDraws || 0) > 0 && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.4)] rounded-xl px-5 py-4 flex items-center gap-3">
+        <div className="bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)] border border-[color-mix(in_srgb,var(--danger-red)_40%,transparent)] rounded-xl px-5 py-4 flex items-center gap-3">
           <Icon name="security" className="w-6 h-6 text-[var(--danger-red)] shrink-0" />
           <div>
             <div className="font-bold text-[var(--gold-primary)]">มี {d.overdueDraws} รอบที่เลยเวลาออกรางวัลแล้วยังไม่ออกผล</div>
@@ -167,7 +167,7 @@ export default function AdminOverview() {
               <div className="text-xs font-bold text-[var(--danger-red)] mb-1.5">⚠️ รอบค้างออกผล ({health.overdue.length})</div>
               <div className="flex flex-wrap gap-1.5">
                 {health.overdue.slice(0, 20).map(d => (
-                  <span key={d.id} className="text-[11px] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-[var(--danger-red)] rounded px-2 py-1">
+                  <span key={d.id} className="text-[11px] bg-[color-mix(in_srgb,var(--danger-red)_10%,transparent)] border border-[color-mix(in_srgb,var(--danger-red)_30%,transparent)] text-[var(--danger-red)] rounded px-2 py-1">
                     {d.type_name_th}{d.cat_name_th ? ` — ${d.cat_name_th}` : ''} • {fmtDateTime(d.draw_at)}
                   </span>
                 ))}
@@ -196,8 +196,8 @@ export default function AdminOverview() {
           {daily.map(x => (
             <div key={x.day} className="flex-1 flex flex-col items-center gap-1 min-w-0">
               <div className="w-full flex gap-0.5 items-end justify-center [height:120px]">
-                <div className="w-1/2 bg-[rgba(34,197,94,0.7)] rounded-t" style={{ height: `${Math.max(2, (x.inn / maxDaily) * 100)}%` }} title={`เข้า ${satang(x.inn)} บาท`} />
-                <div className="w-1/2 bg-[rgba(239,68,68,0.7)] rounded-t" style={{ height: `${Math.max(2, (x.out / maxDaily) * 100)}%` }} title={`ออก ${satang(x.out)} บาท`} />
+                <div className="w-1/2 bg-[color-mix(in_srgb,var(--success-green)_70%,transparent)] rounded-t" style={{ height: `${Math.max(2, (x.inn / maxDaily) * 100)}%` }} title={`เข้า ${satang(x.inn)} บาท`} />
+                <div className="w-1/2 bg-[color-mix(in_srgb,var(--danger-red)_70%,transparent)] rounded-t" style={{ height: `${Math.max(2, (x.out / maxDaily) * 100)}%` }} title={`ออก ${satang(x.out)} บาท`} />
               </div>
               <div className="text-[9px] text-[var(--muted-gray)] truncate w-full text-center">{x.day.slice(5)}</div>
             </div>
@@ -205,8 +205,8 @@ export default function AdminOverview() {
           {!daily.length && <div className="text-[var(--muted-gray)] text-sm w-full text-center py-10">ยังไม่มีธุรกรรมใน 7 วัน</div>}
         </div>
         <div className="flex gap-4 mt-3 text-[11px] text-[var(--muted-gray)]">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[rgba(34,197,94,0.7)] inline-block" /> เครดิตเข้า</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[rgba(239,68,68,0.7)] inline-block" /> เครดิตออก</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[color-mix(in_srgb,var(--success-green)_70%,transparent)] inline-block" /> เครดิตเข้า</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[color-mix(in_srgb,var(--danger-red)_70%,transparent)] inline-block" /> เครดิตออก</span>
         </div>
       </div>
 

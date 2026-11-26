@@ -77,9 +77,9 @@ export default function Approvals() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold [color:var(--white)]">ศูนย์อนุมัติ</h1>
-          <span className="px-3 py-1 rounded-full text-xs font-bold [background:rgba(212,_175,_55,_0.15)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">Maker-Checker</span>
+          <span className="px-3 py-1 rounded-full text-xs font-bold [background:color-mix(in_srgb,var(--gold-primary)_15%,transparent)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">Maker-Checker</span>
         </div>
-        <span className="text-xs px-3 py-1 rounded-lg [background:rgba(34,_197,_94,_0.15)] [border:1px_solid_rgba(34,_197,_94,_0.3)] [color:var(--success-green)]">คำขอที่รออนุมัติ: {status === 'pending' ? total : '—'}</span>
+        <span className="text-xs px-3 py-1 rounded-lg [background:color-mix(in_srgb,var(--success-green)_15%,transparent)] [border:1px_solid_color-mix(in_srgb,var(--success-green)_30%,transparent)] [color:var(--success-green)]">คำขอที่รออนุมัติ: {status === 'pending' ? total : '—'}</span>
       </div>
       <div className="luxury-card overflow-hidden">
         <div className="flex flex-wrap gap-2 p-4 border-b [border-color:var(--border-light)]">
@@ -159,11 +159,11 @@ export default function Approvals() {
                 <>
                   <Input value={note} onChange={e => setNote(e.target.value)} placeholder="หมายเหตุ (จำเป็นเมื่อต้องปฏิเสธ)" className="flex-1 min-w-[200px] luxury-input text-xs" />
                   <button onClick={() => act(detail.id, 'approve')} disabled={busy === detail.id} className="luxury-btn text-xs px-6 py-2">อนุมัติ</button>
-                  <button onClick={() => act(detail.id, 'reject')} disabled={busy === detail.id} className="text-xs px-6 py-2 rounded-lg border font-semibold transition-all [background:rgba(239,_68,_68,_0.15)] [border-color:rgba(239,_68,_68,_0.3)] [color:var(--danger-red)]">ปฏิเสธ</button>
+                  <button onClick={() => act(detail.id, 'reject')} disabled={busy === detail.id} className="text-xs px-6 py-2 rounded-lg border font-semibold transition-all [background:color-mix(in_srgb,var(--danger-red)_15%,transparent)] [border-color:color-mix(in_srgb,var(--danger-red)_30%,transparent)] [color:var(--danger-red)]">ปฏิเสธ</button>
                 </>
               )}
               {isMine(detail) && canApprove && (
-                <span className="text-xs px-3 py-2 rounded-lg [background:rgba(245,_158,_11,_0.15)] [border:1px_solid_rgba(245,_158,_11,_0.3)] [color:var(--warning-amber)]">คุณเป็นผู้สร้างคำขอนี้ — ต้องให้ admin อีกคนอนุมัติ (maker ≠ checker)</span>
+                <span className="text-xs px-3 py-2 rounded-lg [background:color-mix(in_srgb,var(--warning-amber)_15%,transparent)] [border:1px_solid_color-mix(in_srgb,var(--warning-amber)_30%,transparent)] [color:var(--warning-amber)]">คุณเป็นผู้สร้างคำขอนี้ — ต้องให้ admin อีกคนอนุมัติ (maker ≠ checker)</span>
               )}
               {isMine(detail) && (
                 <button onClick={() => act(detail.id, 'cancel')} disabled={busy === detail.id} className="luxury-btn-ghost text-xs px-6 py-2 rounded-lg">ยกเลิกคำขอ</button>

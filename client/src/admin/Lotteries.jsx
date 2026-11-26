@@ -319,7 +319,7 @@ export default function AdminLotteries() {
               </select>
             </div>
             {(t.result_mode || 'auto') === 'manual' && (
-              <div className="mt-3 rounded-lg p-3 text-[11px] [border:1px_solid_var(--warning-amber)] [background:rgba(245,_158,_11,_0.1)] [color:rgba(245,_158,_11,_0.9)]">
+              <div className="mt-3 rounded-lg p-3 text-[11px] [border:1px_solid_var(--warning-amber)] [background:color-mix(in_srgb,var(--warning-amber)_10%,transparent)] [color:color-mix(in_srgb,var(--warning-amber)_90%,transparent)]">
                 <div className="font-semibold mb-1 [color:var(--warning-amber)]">✏️ โหมดกรอกผลเอง — admin ต้องกรอกผล:</div>
                 {manualFields(t).map((g, i) => (
                   <div key={i} className="leading-relaxed">

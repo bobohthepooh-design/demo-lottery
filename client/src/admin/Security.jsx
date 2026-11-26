@@ -64,7 +64,7 @@ export default function AdminSecurity() {
           <div className="flex gap-1">
             {['open', 'acknowledged', 'resolved'].map(s => (
               <button key={s} onClick={() => setFlagStatus(s)}
-                className={`text-[11px] px-2.5 py-1 rounded-lg border ${flagStatus === s ? 'bg-[rgba(212,175,55,0.2)] border-[rgba(212,175,55,0.5)] text-[var(--gold-primary)]' : 'border-[var(--border-light)] text-[var(--muted-gray)]'}`}>
+                className={`text-[11px] px-2.5 py-1 rounded-lg border ${flagStatus === s ? 'bg-[color-mix(in_srgb,var(--gold-primary)_20%,transparent)] border-[color-mix(in_srgb,var(--gold-primary)_50%,transparent)] text-[var(--gold-primary)]' : 'border-[var(--border-light)] text-[var(--muted-gray)]'}`}>
                 {s === 'open' ? 'เปิดอยู่' : s === 'acknowledged' ? 'รับทราบแล้ว' : 'ปิดแล้ว'}
               </button>
             ))}

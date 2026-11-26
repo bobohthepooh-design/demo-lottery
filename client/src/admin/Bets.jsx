@@ -26,10 +26,10 @@ const SLIP_STYLE = {
 };
 
 const LUXURY_SLIP_STYLE = {
-  won: { borderColor: 'var(--success-green)', background: 'rgba(34, 197, 94, 0.1)' },
+  won: { borderColor: 'var(--success-green)', background: 'color-mix(in srgb, var(--success-green) 10%, transparent)' },
   lost: { borderColor: 'var(--border-light)', background: 'var(--bg-card)' },
-  partial: { borderColor: 'var(--gold-primary)', background: 'rgba(212, 175, 55, 0.1)' },
-  pending: { borderColor: 'var(--info-blue)', background: 'rgba(59, 130, 246, 0.1)' },
+  partial: { borderColor: 'var(--gold-primary)', background: 'color-mix(in srgb, var(--gold-primary) 10%, transparent)' },
+  pending: { borderColor: 'var(--info-blue)', background: 'color-mix(in srgb, var(--info-blue) 10%, transparent)' },
   cancelled: { borderColor: 'var(--border-light)', background: 'var(--bg-card)', opacity: 0.6 },
   refunded: { borderColor: 'var(--border-light)', background: 'var(--bg-card)', opacity: 0.6 },
 };

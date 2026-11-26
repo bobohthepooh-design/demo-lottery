@@ -67,7 +67,7 @@ export default function AdminPayments() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold [color:var(--white)]">ชำระเงิน</h1>
-          <span className="px-3 py-1 rounded-full text-xs font-bold [background:rgba(212,_175,_55,_0.15)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">เติม/ถอน</span>
+          <span className="px-3 py-1 rounded-full text-xs font-bold [background:color-mix(in_srgb,var(--gold-primary)_15%,transparent)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">เติม/ถอน</span>
         </div>
         <div className="flex gap-2">
           <Select value={kind || 'all'} onValueChange={v => setKind(v === 'all' ? '' : v)}>
@@ -166,7 +166,7 @@ export default function AdminPayments() {
                             <button onClick={() => review(p.id, 'approve')} disabled={busy === p.id}
                               className="luxury-btn text-xs px-4 py-2">✅ อนุมัติ</button>
                             <button onClick={() => review(p.id, 'reject')} disabled={busy === p.id}
-                              className="text-xs px-4 py-2 rounded-lg border font-semibold transition-all [background:rgba(239,_68,_68,_0.15)] [border-color:rgba(239,_68,_68,_0.3)] [color:var(--danger-red)]">❌ ปฏิเสธ</button>
+                              className="text-xs px-4 py-2 rounded-lg border font-semibold transition-all [background:color-mix(in_srgb,var(--danger-red)_15%,transparent)] [border-color:color-mix(in_srgb,var(--danger-red)_30%,transparent)] [color:var(--danger-red)]">❌ ปฏิเสธ</button>
                           </div>
                         </div>
                       )}
@@ -192,7 +192,7 @@ export default function AdminPayments() {
 
       {/* Slip image viewer */}
       {slipView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 [background:rgba(16,_17,_20,_0.85)]" onClick={() => setSlipView(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 [background:color-mix(in_srgb,var(--bg-deep-black)_85%,transparent)]" onClick={() => setSlipView(null)}>
           <div className="luxury-card luxury-card-gold-border max-w-lg w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-bold [color:var(--gold-primary)]">🧾 รูปสลิปการโอน</div>

@@ -55,7 +55,7 @@ export default function AdminChat() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold [color:var(--white)]">แชทสมาชิก</h1>
         {totalUnread > 0 && (
-          <span className="text-xs rounded-full px-3 py-1 font-bold [background:rgba(212,_175,_55,_0.15)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">
+          <span className="text-xs rounded-full px-3 py-1 font-bold [background:color-mix(in_srgb,var(--gold-primary)_15%,transparent)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">
             ยังไม่อ่าน {totalUnread} ข้อความ
           </span>
         )}
@@ -63,11 +63,11 @@ export default function AdminChat() {
 
       {/* แถบแจ้งเตือน — สมาชิกส่งข้อความมา ยังไม่อ่าน */}
       {unreadThreads.length > 0 && (
-        <div className="rounded-xl px-4 py-2.5 flex flex-wrap items-center gap-2 [background:rgba(245,_158,_11,_0.1)] [border:1px_solid_rgba(245,_158,_11,_0.4)]">
+        <div className="rounded-xl px-4 py-2.5 flex flex-wrap items-center gap-2 [background:color-mix(in_srgb,var(--warning-amber)_10%,transparent)] [border:1px_solid_color-mix(in_srgb,var(--warning-amber)_40%,transparent)]">
           <span className="text-sm font-bold [color:var(--warning-amber)]">📩 มีข้อความใหม่จากสมาชิก:</span>
           {unreadThreads.map(t => (
             <button key={t.threadId} onClick={() => setSel(t.userId)}
-              className="text-xs rounded-full px-3 py-1 font-semibold transition [background:rgba(245,_158,_11,_0.2)] [border:1px_solid_rgba(245,_158,_11,_0.4)] [color:var(--light-gray)]">
+              className="text-xs rounded-full px-3 py-1 font-semibold transition [background:color-mix(in_srgb,var(--warning-amber)_20%,transparent)] [border:1px_solid_color-mix(in_srgb,var(--warning-amber)_40%,transparent)] [color:var(--light-gray)]">
               {t.displayName || t.username} ({t.unread} ข้อความ) — กดเพื่ออ่าน
             </button>
           ))}
@@ -83,7 +83,7 @@ export default function AdminChat() {
             {threads.map(t => (
               <button key={t.threadId} onClick={() => setSel(t.userId)}
                 className="w-full text-left px-3 py-2.5 transition"
-                style={sel === t.userId ? { background: 'rgba(212, 175, 55, 0.1)', borderLeft: '2px solid var(--gold-primary)' } : { borderBottom: '1px solid var(--border-light)' }}
+                style={sel === t.userId ? { background: 'color-mix(in srgb, var(--gold-primary) 10%, transparent)', borderLeft: '2px solid var(--gold-primary)' } : { borderBottom: '1px solid var(--border-light)' }}
                 onMouseEnter={e => { if (sel !== t.userId) e.currentTarget.style.background = 'var(--bg-card-hover)'; }}
                 onMouseLeave={e => { if (sel !== t.userId) e.currentTarget.style.background = 'transparent'; }}>
                 <div className="flex items-center gap-2">
@@ -127,9 +127,9 @@ export default function AdminChat() {
                       m.isAdmin
                         ? 'rounded-br-sm'
                         : 'rounded-bl-sm'
-                    }`} style={m.isAdmin ? { background: 'linear-gradient(to bottom right, rgba(212, 175, 55, 0.8), rgba(212, 175, 55, 0.9))', color: 'var(--bg-deep-black)' } : { background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--light-gray)' }}>
+                    }`} style={m.isAdmin ? { background: 'linear-gradient(to bottom right, color-mix(in srgb, var(--gold-primary) 80%, transparent), color-mix(in srgb, var(--gold-primary) 90%, transparent))', color: 'var(--bg-deep-black)' } : { background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--light-gray)' }}>
                       {m.body}
-                      <div className="text-[8px] mt-0.5" style={{ color: m.isAdmin ? 'rgba(16, 17, 20, 0.7)' : 'var(--dark-gray)' }}>{fmtDateTime(m.createdAt)}</div>
+                      <div className="text-[8px] mt-0.5" style={{ color: m.isAdmin ? 'color-mix(in srgb, var(--bg-deep-black) 70%, transparent)' : 'var(--dark-gray)' }}>{fmtDateTime(m.createdAt)}</div>
                     </div>
                   </div>
                 ))}

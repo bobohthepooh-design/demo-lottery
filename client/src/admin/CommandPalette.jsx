@@ -113,7 +113,7 @@ export default function CommandPalette({ open, onOpenChange }) {
                   onMouseEnter={() => setActive(i.idx)}
                   onClick={() => go(i)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors ${i.idx === sel
-                    ? 'bg-[rgba(212,175,55,0.15)] text-[var(--gold-bright)] font-semibold'
+                    ? 'bg-[color-mix(in_srgb,var(--gold-primary)_15%,transparent)] text-[var(--gold-bright)] font-semibold'
                     : 'text-[var(--white)]/80 hover:bg-[var(--bg-dark-surface)]'}`}>
                   <Icon name={i.icon} className="w-4 h-4 shrink-0" />
                   <span className="truncate">{i.label}</span>

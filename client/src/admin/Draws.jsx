@@ -364,12 +364,12 @@ function BulkAnnounce({ types, cats, onDone }) {
     finally { setBusy(false); }
   };
   if (!open) return (
-    <button onClick={() => setOpen(true)} className="text-xs px-3 py-1.5 rounded-lg luxury-badge [background:rgba(245,_158,_11,_0.15)] [color:var(--warning-amber)] [border:1px_solid_var(--warning-amber)]">
+    <button onClick={() => setOpen(true)} className="text-xs px-3 py-1.5 rounded-lg luxury-badge [background:color-mix(in_srgb,var(--warning-amber)_15%,transparent)] [color:var(--warning-amber)] [border:1px_solid_var(--warning-amber)]">
       ⚠ ตั้งเลขอั้นหลายรอบ
     </button>
   );
   return (
-    <div className="rounded-xl p-4 space-y-3 [background:rgba(245,_158,_11,_0.05)] [border:1px_solid_var(--warning-amber)]">
+    <div className="rounded-xl p-4 space-y-3 [background:color-mix(in_srgb,var(--warning-amber)_5%,transparent)] [border:1px_solid_var(--warning-amber)]">
       <div className="flex items-center justify-between">
         <div className="text-sm font-bold [color:var(--warning-amber)]">ตั้งเลขอั้นครอบคลุมหลายรอบ</div>
         <button onClick={() => setOpen(false)} className="text-xs hover:text-white [color:var(--muted-gray)]">✕</button>
@@ -393,7 +393,7 @@ function BulkAnnounce({ types, cats, onDone }) {
           className="luxury-input text-xs font-mono [padding:0.5rem_0.75rem]" />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={submit} disabled={busy} className="luxury-btn text-xs px-4 py-2 [background:linear-gradient(135deg,_var(--warning-amber),_#F59E0B)] [color:var(--bg-deep-black)]">
+        <button onClick={submit} disabled={busy} className="luxury-btn text-xs px-4 py-2 [background:linear-gradient(135deg,_var(--warning-amber),_var(--warning-amber))] [color:var(--bg-deep-black)]">
           {busy ? 'กำลังตั้ง…' : 'ยืนยันตั้งเลขอั้น'}
         </button>
         {msg && <span className={`text-xs ${msg.startsWith('ERROR') ? 'text-red-400' : 'text-green-300'}`}>{msg}</span>}

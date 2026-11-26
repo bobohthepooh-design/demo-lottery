@@ -124,7 +124,7 @@ export default function AdminWallet() {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold [color:var(--white)]">จัดการเครดิตเสมือน</h1>
-        <span className="px-3 py-1 rounded-full text-xs font-bold [background:rgba(212,_175,_55,_0.15)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">Virtual Wallet</span>
+        <span className="px-3 py-1 rounded-full text-xs font-bold [background:color-mix(in_srgb,var(--gold-primary)_15%,transparent)] [border:1px_solid_var(--border-gold)] [color:var(--gold-primary)]">Virtual Wallet</span>
       </div>
 
       {/* Single Adjust Form */}
@@ -183,7 +183,7 @@ export default function AdminWallet() {
               {members.map(m => (
                 <label key={m.id} className="flex items-center gap-2 text-xs px-3 py-2 rounded cursor-pointer transition-colors" style={{
                   color: 'var(--white)',
-                  background: bulk.userIds.includes(m.id) ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                  background: bulk.userIds.includes(m.id) ? 'color-mix(in srgb, var(--gold-primary) 10%, transparent)' : 'transparent',
                   border: bulk.userIds.includes(m.id) ? '1px solid var(--border-gold)' : '1px solid transparent'
                 }}>
                   <input type="checkbox" checked={bulk.userIds.includes(m.id)} onChange={() => toggleMember(m.id)} className="[accent-color:var(--gold-primary)]" />

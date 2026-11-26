@@ -13,9 +13,9 @@ const DRAW_STATUS_TH = {
   settled: 'ออกผลแล้ว', cancelled: 'ยกเลิก',
 };
 const DRAW_STATUS_CLS = {
-  scheduled: 'border-[var(--border-light)] text-[var(--muted-gray)]', open: 'border-[rgba(34,197,94,0.3)] text-[var(--success-green)]',
-  closed: 'border-[rgba(245,158,11,0.3)] text-[var(--warning-amber)]', settled: 'border-[rgba(59,130,246,0.3)] text-[var(--info-blue)]',
-  cancelled: 'border-[rgba(239,68,68,0.3)] text-[var(--danger-red)]',
+  scheduled: 'border-[var(--border-light)] text-[var(--muted-gray)]', open: 'border-[color-mix(in_srgb,var(--success-green)_30%,transparent)] text-[var(--success-green)]',
+  closed: 'border-[color-mix(in_srgb,var(--warning-amber)_30%,transparent)] text-[var(--warning-amber)]', settled: 'border-[color-mix(in_srgb,var(--info-blue)_30%,transparent)] text-[var(--info-blue)]',
+  cancelled: 'border-[color-mix(in_srgb,var(--danger-red)_30%,transparent)] text-[var(--danger-red)]',
 };
 function DrawStatusBadge({ status }) {
   return <Badge variant="outline" className={cn('text-[10px] font-semibold', DRAW_STATUS_CLS[status] || 'border-navy-500 text-navy-300')}>{DRAW_STATUS_TH[status] || status}</Badge>;

@@ -100,7 +100,7 @@ export default function Tickets() {
               <div className="text-xs whitespace-pre-wrap [color:var(--light-gray)]">{sel.message}</div>
             </div>
             {sel.admin_reply && (
-              <div className="rounded p-3 [background:rgba(34,_197,_94,_0.05)] [border:1px_solid_rgba(34,_197,_94,_0.2)]">
+              <div className="rounded p-3 [background:color-mix(in_srgb,var(--success-green)_5%,transparent)] [border:1px_solid_color-mix(in_srgb,var(--success-green)_20%,transparent)]">
                 <div className="text-[10px] font-bold [color:var(--success-green)]">คำตอบก่อนหน้า</div>
                 <div className="text-xs whitespace-pre-wrap [color:var(--light-gray)]">{sel.admin_reply}</div>
               </div>

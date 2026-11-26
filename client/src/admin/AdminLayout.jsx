@@ -115,7 +115,7 @@ export default function AdminLayout() {
           {g.items.map(i => (
             <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setNavOpen(false)}
               className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors border ${isActive
-                ? 'font-semibold bg-gradient-to-r from-[rgba(212,175,55,0.2)] to-[rgba(212,175,55,0.1)] text-[var(--gold-bright)] border-[var(--border-gold)]'
+                ? 'font-semibold bg-gradient-to-r from-[color-mix(in_srgb,var(--gold-primary)_20%,transparent)] to-[color-mix(in_srgb,var(--gold-primary)_10%,transparent)] text-[var(--gold-bright)] border-[var(--border-gold)]'
                 : 'text-[var(--muted-gray)] border-transparent'}`}>
               <Icon name={i.icon} className="w-4 h-4 shrink-0" />
               {i.label}
@@ -149,14 +149,14 @@ export default function AdminLayout() {
         <div className="rounded-xl lg:sticky lg:top-24 lg:bottom-auto lg:h-auto lg:max-h-[calc(100vh-7.5rem)] lg:w-60 lg:flex lg:flex-col
           bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-dark-surface)] border border-[var(--border-gold)] shadow-[var(--shadow-pop)]">
           <div className="hidden lg:flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-[var(--border-light)]">
-            <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[rgba(212,175,55,0.2)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
+            <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[color-mix(in_srgb,var(--gold-primary)_20%,transparent)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
               <Icon name="settings" className="w-4 h-4" />
             </span>
             <div className="leading-tight">
               <div className="font-display font-bold text-sm text-[var(--white)]">Admin Panel</div>
               <div className="text-[10px] text-[var(--muted-gray)]">ระบบจัดการหลังบ้าน</div>
             </div>
-            <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-[var(--border-gold)] bg-[rgba(212,175,55,0.15)] text-[var(--gold-bright)]">STAFF</span>
+            <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-[var(--border-gold)] bg-[color-mix(in_srgb,var(--gold-primary)_15%,transparent)] text-[var(--gold-bright)]">STAFF</span>
           </div>
           {renderNav()}
           {user && (
@@ -187,7 +187,7 @@ export default function AdminLayout() {
         <SheetContent side="left" className="w-[85vw] sm:max-w-xs p-0 gap-0 border-[var(--border-gold)] bg-[var(--bg-deep-black)]">
           <SheetHeader className="px-4 pt-4 pb-3 border-b border-[var(--border-light)]">
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[rgba(212,175,55,0.2)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
+              <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[color-mix(in_srgb,var(--gold-primary)_20%,transparent)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
                 <Icon name="settings" className="w-4 h-4" />
               </span>
               <div className="leading-tight">
