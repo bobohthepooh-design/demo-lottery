@@ -410,6 +410,7 @@ export async function placeBet(userId, { drawId, items, idempotencyKey }) {
 
 export async function listMyBets(userId, { limit = 50, offset = 0, status = null } = {}) {
   const statusClause = status ? ' AND bs.status = $4' : '';
+  // แสดงเฉพาะโพยหวย — เกมด่วน (SC/HL/KI ใช้ STANDING draw) มีประวัติในหน้าเกมของตัวเอง
   const slips = await q(`SELECT bs.*, d.draw_code, d.draw_at, d.close_at, d.status AS draw_status, d.announce AS draw_announce,
                                   lt.code AS type_code, lt.name_th AS type_name_th,
                                   c.name_th AS category_name_th
@@ -417,7 +418,7 @@ export async function listMyBets(userId, { limit = 50, offset = 0, status = null
                            JOIN lottery_draws d ON d.id = bs.draw_id
                            JOIN lottery_types lt ON lt.id = d.lottery_type_id
                            LEFT JOIN lottery_categories c ON c.id = d.category_id
-                           WHERE bs.user_id = $1${statusClause} ORDER BY bs.id DESC LIMIT $2 OFFSET $3`,
+                           WHERE bs.user_id = $1 AND d.draw_code NOT LIKE '%-STANDING'${statusClause} ORDER BY bs.id DESC LIMIT $2 OFFSET $3`,
     status ? [userId, limit, offset, status] : [userId, limit, offset]);
   // ดึง items ของทุก slip ใน query เดียว (แก้ N+1) แล้ว group ตาม slip_id
   const itemsBySlip = new Map();

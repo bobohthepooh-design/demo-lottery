@@ -37,7 +37,9 @@ router.get('/mine', async (req, res) => {
   const offset = parseInt(req.query.offset || '0', 10);
   const status = ['pending', 'won', 'lost', 'partial', 'cancelled', 'refunded'].includes(req.query.status)
     ? req.query.status : null;
-  const totalRow = await qGet(`SELECT COUNT(*)::int AS c FROM bet_slips WHERE user_id = $1${status ? ' AND status = $2' : ''}`,
+  const totalRow = await qGet(`SELECT COUNT(*)::int AS c FROM bet_slips bs
+                               JOIN lottery_draws d ON d.id = bs.draw_id
+                               WHERE bs.user_id = $1 AND d.draw_code NOT LIKE '%-STANDING'${status ? ' AND bs.status = $2' : ''}`,
     status ? [req.user.id, status] : [req.user.id]);
   res.json({ slips: await svc.listMyBets(req.user.id, { limit, offset, status }), total: totalRow?.c || 0 });
 });
