@@ -61,7 +61,7 @@ export default function Home() {
     { to: '/play', icon: '🎯', label: 'แทงหวย', sub: 'เลือกรอบ', bet: true },
     { to: '/games', icon: '🎮', label: 'เล่นเกม', sub: 'ด่วน', bet: true },
     { to: '/results', icon: '🏆', label: 'ผลรางวัล', sub: 'ล่าสุด' },
-    { to: '/register', icon: '👤', label: 'สมัครสมาชิก', sub: 'เริ่มต้น' },
+    { to: '/wallet', icon: '💳', label: 'กระเป๋า', sub: 'เครดิต' },
   ]).filter(a => showBet || !a.bet);
 
   // ผลรางวัลวันนี้ — เฉพาะตลาดที่มีผลจริงแล้ว ล่าสุดต่อ ตลาด (เฉพาะหวย ไม่รวมหวยราศี HR/เกมด่วน)
