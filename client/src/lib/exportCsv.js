@@ -5,10 +5,14 @@
 // - escape เครื่องหมาย " , ขึ้นบรรทัดใหม่ — ค่าที่มีอักขระพิเศษจะถูกครอบด้วย "
 // - ใช้กับข้อมูลที่โหลดมาแล้วฝั่ง client เท่านั้น (ไม่ fetch เพิ่ม)
 
-const BOM = '﻿'; // UTF-8 BOM
+const BOM = '\uFEFF'; // UTF-8 BOM
+
+// กัน CSV formula injection — ค่าที่ขึ้นต้นด้วย = + - @ หรือ tab จะถูกตีเป็น formula ใน Excel
+const FORMULA_PREFIX = /^[=+\-@\t]/;
 
 const escapeCell = (v) => {
-  const s = String(v ?? '');
+  let s = String(v ?? '');
+  if (FORMULA_PREFIX.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
