@@ -78,37 +78,51 @@ const TYPE_BG = {
   SC: 'linear-gradient(135deg,#f59e0b,#92400e)',   // ขูด — ส้ม/น้ำตาล
   HL: 'linear-gradient(135deg,#f43f5e,#881337)',   // ไฮโล — แดงเข้ม
 };
+// tile 3D/clay — bevel ขอบบน-ล่าง + gloss แสงด้านบน เหมือน icon ปุ่มกดนูน
+const TILE_SHADOW = 'inset 0 1.5px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.3), 0 4px 10px rgba(0,0,0,.45)';
+function Tile({ bg, className = '', style, children }) {
+  return (
+    <span className={`relative inline-flex items-center justify-center rounded-[22%] overflow-hidden shrink-0 ${className}`}
+      style={{ background: bg, boxShadow: TILE_SHADOW, ...style }}>
+      {children}
+      {/* gloss — แสงสะท้อนครึ่งบน */}
+      <span className="absolute inset-x-0 top-0 h-[55%] pointer-events-none"
+        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.05) 70%, transparent)' }} />
+      {/* ขอบล่างเข้ม — ความหนา */}
+      <span className="absolute inset-x-0 bottom-0 h-[28%] pointer-events-none"
+        style={{ background: 'linear-gradient(0deg, rgba(0,0,0,.22), transparent)' }} />
+    </span>
+  );
+}
+
 const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲' };
 export function FlagIcon({ code, className = '', style }) {
   // ธงชาติ — flag สีจริงบน tile เข้ม
   const F = FLAG_CODES[code];
   if (F) {
     return (
-      <span className={`inline-flex items-center justify-center rounded-[22%] overflow-hidden shrink-0 ${className}`}
-        style={{ background: TILE_BG, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18), 0 1px 3px rgba(0,0,0,.4)', ...style }}>
-        <span className="flex items-center justify-center w-[88%]" style={{ aspectRatio: '3/2' }}>
+      <Tile bg={TILE_BG} className={className} style={style}>
+        <span className="flex items-center justify-center w-[88%] relative z-[1]" style={{ aspectRatio: '3/2' }}>
           <F />
         </span>
-      </span>
+      </Tile>
     );
   }
   // ออมสิน — ตึกธนาคาร 3D
   if (code === 'GS') {
     return (
-      <span className={`inline-flex items-center justify-center rounded-[22%] shrink-0 ${className}`}
-        style={{ background: TYPE_BG.GS, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.28), 0 1px 3px rgba(0,0,0,.35)', ...style }}>
-        <Bank3D className="w-[78%] h-[78%]" />
-      </span>
+      <Tile bg={TYPE_BG.GS} className={className} style={style}>
+        <Bank3D className="w-[78%] h-[78%] relative z-[1]" />
+      </Tile>
     );
   }
   const name = TYPE_ICONS[code];
   const bg = TYPE_BG[code];
   if (!name || !bg) return <span className={className} style={style}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
   return (
-    <span className={`inline-flex items-center justify-center rounded-[22%] text-white shrink-0 ${className}`}
-      style={{ background: bg, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.28), 0 1px 3px rgba(0,0,0,.35)', ...style }}>
-      <Icon name={name} className="w-[72%] h-[72%]" />
-    </span>
+    <Tile bg={bg} className={`text-white ${className}`} style={style}>
+      <Icon name={name} className="w-[72%] h-[72%] relative z-[1]" />
+    </Tile>
   );
 }
 
