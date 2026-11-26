@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
@@ -10,9 +10,11 @@ import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 export default function AdminMembers() {
   const [filtered, setFiltered] = useState([]);
   const [page, setPage] = useState(1);
-  // filter sync กับ URL query (?q=) — refresh/share link แล้ว filter ยังอยู่
+  // filter sync กับ URL query (?q=) — URL เก็บเฉพาะคำค้นที่ apply แล้ว (debounce/Enter) ไม่ใช่ตัวอักษรที่กำลังพิมพ์
   const [filters, setFilters] = useUrlFilters({ q: '' });
-  const q = filters.q;
+  const appliedQ = filters.q;
+  const [q, setQ] = useState(appliedQ); // draft ขณะพิมพ์ — commit ลง URL หลัง debounce
+  const debounceRef = useRef(null);
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
   const [act, setAct] = useState(null);
@@ -23,12 +25,13 @@ export default function AdminMembers() {
   const PAGE_SIZE = 50;
 
   // ดึงสมาชิกทั้งหมดที่ตรง q (วน offset ทีละ FETCH_LIMIT) แล้ว paginate ฝั่ง client
-  const load = async (resetPage = false) => {
+  // query = คำค้นที่จะใช้ (default = appliedQ จาก URL) — ส่งตรงๆ ได้เพื่อเลี่ยง stale closure ตอน apply
+  const load = async (resetPage = false, query = appliedQ) => {
     try {
       const all = [];
       let offset = 0, total = 0;
       for (;;) {
-        const r = await api(`/admin/members?q=${encodeURIComponent(q)}&limit=${FETCH_LIMIT}&offset=${offset}`);
+        const r = await api(`/admin/members?q=${encodeURIComponent(query)}&limit=${FETCH_LIMIT}&offset=${offset}`);
         const list = Array.isArray(r?.members) ? r.members : [];
         total = Number(r?.total) || 0;
         all.push(...list);
@@ -41,6 +44,26 @@ export default function AdminMembers() {
   };
   const loadRg = () => api('/admin/rg/restricted').then(r => setRgList(r.restricted || [])).catch(() => {});
   useEffect(() => { load(); loadRg(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // apply คำค้น — commit draft ลง URL + โหลดใหม่ (ใช้ทั้ง debounce และ Enter)
+  // force=true (Enter) → reload เสมอเหมือนเดิม; debounce → ข้ามถ้าค่าไม่เปลี่ยน (กัน refetch ตอน mount)
+  const applySearch = (value, force = false) => {
+    clearTimeout(debounceRef.current);
+    const v = String(value ?? q).trim();
+    if (v === appliedQ && !force) return;
+    setFilters({ q: v });
+    load(true, v);
+  };
+
+  // sync draft กลับมาเมื่อ URL เปลี่ยนจากที่อื่น (back/forward/share link)
+  useEffect(() => { setQ(appliedQ); }, [appliedQ]);
+
+  // ค้นหาแบบ debounce 400ms — commit ลง URL + apply ผลลัพธ์ (pattern เดียวกับ Bets.jsx)
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => applySearch(), 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
     if (!(await confirmAction({ title: 'ยืนยันการแก้ไขสมาชิก', message: `บันทึกการเปลี่ยนแปลงของ ${edit.username} ใช่หรือไม่?` }))) return;
@@ -88,8 +111,8 @@ export default function AdminMembers() {
         </div>
         <input 
           value={q} 
-          onChange={e => setFilters({ q: e.target.value })} 
-          onKeyDown={e => e.key === 'Enter' && load(true)}
+          onChange={e => setQ(e.target.value)} 
+          onKeyDown={e => e.key === 'Enter' && applySearch(undefined, true)}
           placeholder="ค้นหา username/email..." 
           className="luxury-input w-64 py-2.5 text-sm" 
         />
