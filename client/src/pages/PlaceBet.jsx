@@ -617,55 +617,24 @@ export default function PlaceBet() {
                 <div className="sm:col-span-2" style={{ color: 'var(--muted-gray)', fontSize: '0.875rem', padding: '2rem 0', textAlign: 'center' }}>กำลังโหลดประเภทการแทง...</div>
               ) : (
                 <>
-                  {/* Quick Actions */}
-                  <div style={{}} className="sm:col-span-2">
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', background: 'linear-gradient(135deg, var(--bg-dark-surface), var(--bg-card))', borderRadius: '1rem', border: '2px solid var(--border-gold)', boxShadow: 'var(--shadow-md)' }} className="gap-2.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-2.5">
-                      <span style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', fontWeight: 700, letterSpacing: '0.02em' }} className="sm:text-base">ปุ่มลัด:</span>
-                      <button type="button" onClick={() => setNumber(randNum(rule.digits))}
-                        style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))', border: 'none', color: 'var(--bg-deep-black)', fontWeight: 700, transition: 'all 0.2s', boxShadow: 'var(--shadow-gold)' }} className="sm:text-xs hover:shadow-[var(--shadow-gold-lg)] hover:-translate-y-0.5">
-                        🎲 สุ่มเลข
-                      </button>
-                      <button type="button" disabled={number.length < 2}
-                        onClick={() => setNumber(number.split('').reverse().join(''))}
-                        style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', transition: 'all 0.2s', opacity: number.length < 2 ? 0.4 : 1, fontWeight: 600 }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
-                        🔁 กลับเลข
-                      </button>
-                      {rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
-                        <>
-                          <button type="button" onClick={() => addRud('19')}
-                            style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'rgba(212, 175, 55, 0.15)', border: '2px solid var(--border-gold)', color: 'var(--gold-primary)', fontWeight: 700, transition: 'all 0.2s' }} className="sm:text-xs hover:bg-[rgba(212,175,55,0.25)] hover:shadow-[var(--shadow-gold)]">
-                            🎯 รูด 19 ประตู
-                          </button>
-                          <button type="button" onClick={() => addRud('face')}
-                            style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', transition: 'all 0.2s', fontWeight: 600 }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
-                            👈 รูดหน้า
-                          </button>
-                          <button type="button" onClick={() => addRud('back')}
-                            style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', transition: 'all 0.2s', fontWeight: 600 }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
-                            👉 รูดหลัง
-                          </button>
-                        </>
-                      )}
-                      {rule.digits >= 2 && (
-                        <>
-                          <button type="button" onClick={() => addPattern('tod')}
-                            style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', transition: 'all 0.2s', fontWeight: 600 }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
-                            🔢 เลขตอง
-                          </button>
-                          {rule.digits <= 3 && (
-                            <button type="button" onClick={() => addPattern('be')}
-                              style={{ fontSize: '0.8125rem', padding: '0.4375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', transition: 'all 0.2s', fontWeight: 600 }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
-                              🔢 เลขเบิ้ล
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Number Input */}
                   <div>
-                    <label style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--gold-primary)', marginBottom: '0.5rem', display: 'block', letterSpacing: '0.02em' }} className="sm:text-base">หมายเลข ({rule?.digits || '?'} หลัก)</label>
+                    {/* Tab-style label "กดเลขเอง" */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      <button type="button" disabled
+                        style={{
+                          fontSize: '0.875rem',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '0.625rem',
+                          background: 'rgba(34, 197, 94, 0.2)',
+                          border: '2px solid rgba(34, 197, 94, 0.5)',
+                          color: 'var(--success-green)',
+                          fontWeight: 700,
+                          cursor: 'default'
+                        }} className="sm:text-sm">
+                        กดเลขเอง
+                      </button>
+                    </div>
                     <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                       inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
@@ -684,6 +653,99 @@ export default function PlaceBet() {
                         outline: 'none',
                         transition: 'all 0.2s'
                       }} className="sm:px-5 sm:py-5 sm:text-4xl sm:tracking-[0.5em] focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]" />
+
+                    {/* Quick Actions - Horizontal row like the reference image */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                      <button type="button" disabled={number.length < 2}
+                        onClick={() => setNumber(number.split('').reverse().join(''))}
+                        style={{
+                          fontSize: '0.8125rem',
+                          padding: '0.5rem 0.875rem',
+                          borderRadius: '0.625rem',
+                          background: 'var(--info-blue)',
+                          border: '2px solid var(--info-blue)',
+                          color: 'var(--white)',
+                          transition: 'all 0.2s',
+                          opacity: number.length < 2 ? 0.4 : 1,
+                          fontWeight: 700
+                        }} className="sm:text-xs hover:opacity-90">
+                        🔁 กลับเลข
+                      </button>
+                      {rule.digits === 2 && !rule.bet_type?.startsWith('ann_') && (
+                        <>
+                          <button type="button" onClick={() => addRud('19')}
+                            style={{
+                              fontSize: '0.8125rem',
+                              padding: '0.5rem 0.875rem',
+                              borderRadius: '0.625rem',
+                              background: 'var(--bg-dark-surface)',
+                              border: '2px solid var(--border-light)',
+                              color: 'var(--muted-gray)',
+                              transition: 'all 0.2s',
+                              fontWeight: 600
+                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                            19 ประตู
+                          </button>
+                          <button type="button" onClick={() => addRud('face')}
+                            style={{
+                              fontSize: '0.8125rem',
+                              padding: '0.5rem 0.875rem',
+                              borderRadius: '0.625rem',
+                              background: 'var(--bg-dark-surface)',
+                              border: '2px solid var(--border-light)',
+                              color: 'var(--muted-gray)',
+                              transition: 'all 0.2s',
+                              fontWeight: 600
+                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                            รูดหน้า
+                          </button>
+                          <button type="button" onClick={() => addRud('back')}
+                            style={{
+                              fontSize: '0.8125rem',
+                              padding: '0.5rem 0.875rem',
+                              borderRadius: '0.625rem',
+                              background: 'var(--bg-dark-surface)',
+                              border: '2px solid var(--border-light)',
+                              color: 'var(--muted-gray)',
+                              transition: 'all 0.2s',
+                              fontWeight: 600
+                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                            รูดหลัง
+                          </button>
+                        </>
+                      )}
+                      {rule.digits >= 2 && (
+                        <>
+                          <button type="button" onClick={() => addPattern('be')}
+                            style={{
+                              fontSize: '0.8125rem',
+                              padding: '0.5rem 0.875rem',
+                              borderRadius: '0.625rem',
+                              background: 'var(--bg-dark-surface)',
+                              border: '2px solid var(--border-light)',
+                              color: 'var(--muted-gray)',
+                              transition: 'all 0.2s',
+                              fontWeight: 600
+                            }} className="sm:text-xs hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+                            เลขเบิ้ล
+                          </button>
+                          <button type="button" onClick={() => addPattern('tod')}
+                            style={{
+                              fontSize: '0.8125rem',
+                              padding: '0.5rem 0.875rem',
+                              borderRadius: '0.625rem',
+                              background: 'var(--info-blue)',
+                              border: '2px solid var(--info-blue)',
+                              color: 'var(--white)',
+                              transition: 'all 0.2s',
+                              fontWeight: 700
+                            }} className="sm:text-xs hover:opacity-90">
+                            เลขตอง
+                          </button>
+                        </>
+                      )}
+                    </div>
+
                     {favKey > 0 && (
                       <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
                         {favList.map(f => (
