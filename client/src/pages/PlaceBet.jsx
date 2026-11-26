@@ -743,15 +743,7 @@ export default function PlaceBet() {
                         )}
                       </div>
                     )}
-                    {favKey > 0 && recentList.length > 0 && (
-                      <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.375rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--dark-gray)', fontWeight: 600 }}>เพิ่งแทง:</span>
-                        {recentList.map(f => (
-                          <button key={f} type="button" onClick={() => pickFav(f)}
-                            style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem', borderRadius: '0.625rem', background: 'var(--bg-dark-surface)', border: '2px solid var(--border-light)', color: 'var(--muted-gray)', fontFamily: 'monospace', transition: 'all 0.2s', fontWeight: 600 }} className="hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">{f}</button>
-                        ))}
-                      </div>
-                    )}
+
                   </div>
 
                   {/* Amount Input */}
