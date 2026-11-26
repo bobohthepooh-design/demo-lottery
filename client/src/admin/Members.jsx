@@ -9,6 +9,7 @@ import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 
 export default function AdminMembers() {
   const [filtered, setFiltered] = useState([]);
+  const [totalRows, setTotalRows] = useState(0); // total จาก API — ใช้แจ้งเตือนเมื่อโดน cap
   const [page, setPage] = useState(1);
   // filter sync กับ URL query (?q=) — URL เก็บเฉพาะคำค้นที่ apply แล้ว (debounce/Enter) ไม่ใช่ตัวอักษรที่กำลังพิมพ์
   const [filters, setFilters] = useUrlFilters({ q: '' });
@@ -39,6 +40,7 @@ export default function AdminMembers() {
         if (!list.length || list.length < FETCH_LIMIT || all.length >= total || all.length >= MAX_MEMBER_ROWS) break;
       }
       setFiltered(all);
+      setTotalRows(total);
       if (resetPage) setPage(1);
     } catch (e) { toast(e.message, 'error'); }
   };
@@ -187,6 +189,11 @@ export default function AdminMembers() {
             </tbody>
           </table>
         </div>
+        {filtered.length > 0 && filtered.length < totalRows && (
+          <div className="px-4 pb-2 [color:var(--muted-gray)] [font-size:12px]">
+            ทั้งหมด {totalRows.toLocaleString()} สมาชิก — โหลด {filtered.length.toLocaleString()} รายการแรก (ค้นหาเพิ่มเพื่อลดผลลัพธ์)
+          </div>
+        )}
         <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} className="px-4 py-3 [border-top:1px_solid_var(--border-light)]" />
       </div>
 

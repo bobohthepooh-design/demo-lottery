@@ -31,6 +31,7 @@ const utcToLocalInput = (s) => {
 
 export default function AdminDraws() {
   const [filtered, setFiltered] = useState([]);
+  const [totalRows, setTotalRows] = useState(0); // total จาก API — ใช้แจ้งเตือนเมื่อโดน cap
   const [page, setPage] = useState(1);
   const [types, setTypes] = useState([]);
   const [cats, setCats] = useState([]);
@@ -61,16 +62,17 @@ export default function AdminDraws() {
     setDrawsLoading(true); setDrawsErr('');
     try {
       const all = [];
-      let offset = 0;
+      let offset = 0, totalRows = 0;
       for (;;) {
         const r = await api(`/admin/draws?${drawsQs(offset)}`);
         const list = Array.isArray(r?.draws) ? r.draws : [];
-        const total = Number(r?.total) || 0;
+        totalRows = Number(r?.total) || 0;
         all.push(...list);
         offset += list.length;
-        if (!list.length || list.length < FETCH_LIMIT || all.length >= total || all.length >= MAX_DRAW_ROWS) break;
+        if (!list.length || list.length < FETCH_LIMIT || all.length >= totalRows || all.length >= MAX_DRAW_ROWS) break;
       }
       setFiltered(all);
+      setTotalRows(totalRows);
     } catch (e) { setDrawsErr(e.message); }
     finally { setDrawsLoading(false); }
   };
@@ -307,6 +309,11 @@ export default function AdminDraws() {
         </Table>
         )}
       </div>
+      {filtered.length > 0 && filtered.length < totalRows && (
+        <div className="px-4 pb-2 [color:var(--muted-gray)] [font-size:12px]">
+          ทั้งหมด {totalRows.toLocaleString()} รอบ — โหลด {filtered.length.toLocaleString()} รอบแรก (กรองเพิ่มเพื่อลดผลลัพธ์)
+        </div>
+      )}
       <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} />
 
       {editDraw && (
