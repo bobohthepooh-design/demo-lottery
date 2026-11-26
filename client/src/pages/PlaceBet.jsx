@@ -482,8 +482,7 @@ export default function PlaceBet() {
                 เลือกประเภทการแทง
               </h2>
               {rule && <div style={{ fontSize: '0.875rem', color: 'var(--gold-primary)', marginBottom: '0.75rem', marginLeft: '1.125rem', padding: '0.5rem 0.875rem', background: 'rgba(212, 175, 55, 0.08)', borderRadius: '0.75rem', border: '1px solid rgba(212, 175, 55, 0.2)', fontWeight: 500 }} className="sm:text-base">💡 {ruleHint(rule)}</div>}
-              {/* มือถือ: ชิปเลื่อนแนวนอน 1 แถว (ไม่ต้องเลื่อนลงหลายจอ) — sm+ เป็น grid เต็มเหมือนเดิม */}
-              <div className="bet-type-grid flex sm:grid sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible pb-1.5 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
+              <div className="bet-type-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {rules.map(r => {
                   const isAnn = r.bet_type?.startsWith('ann_');
                   const isSel = selRule === String(r.id);
@@ -491,7 +490,7 @@ export default function PlaceBet() {
                     <button key={r.id} onClick={() => setSelRule(String(r.id))}
                       onMouseEnter={() => setHoveredRule(r.id)}
                       onMouseLeave={() => setHoveredRule(null)}
-                      className="shrink-0 sm:shrink min-w-[8rem] sm:min-w-0 p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-200"
+                      className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-200"
                       style={{
                         border: '2px solid',
                         background: isSel ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))' : 'var(--bg-dark-surface)',
