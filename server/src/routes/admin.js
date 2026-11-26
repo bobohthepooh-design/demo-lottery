@@ -852,9 +852,10 @@ router.get('/bets', requirePerm('bets.view_all'), async (req, res) => {
     const like = `%${q}%`;
     args.push(like, like, like);
   }
-  const whereSql = sql.slice(sql.indexOf('WHERE'));
+  // count ต้องใช้ FROM+JOIN เดียวกับ list query — WHERE อาจอ้าง u.username/d.draw_code
+  const fromWhereSql = sql.slice(sql.indexOf('FROM'));
   const countArgs = args.slice();
-  const total = (await db().prepare(`SELECT COUNT(*) c FROM bet_slips bs ${whereSql}`).get(...countArgs)).c;
+  const total = (await db().prepare(`SELECT COUNT(*) c ${fromWhereSql}`).get(...countArgs)).c;
   const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
   sql += ' ORDER BY bs.id DESC LIMIT ? OFFSET ?'; args.push(limit, offset);
   const slips = await db().prepare(sql).all(...args);

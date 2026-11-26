@@ -174,6 +174,23 @@ describe('betting', () => {
   });
 });
 
+describe('admin bets search', () => {
+  // regression: count query ต้องมี JOIN users/lottery_draws เหมือน list query
+  // ไม่งั้น q= (ILIKE บน u.username/d.draw_code) ทำให้ PostgreSQL missing FROM-clause entry
+  it('GET /admin/bets?q= by username returns filtered slips + total', async () => {
+    const r = await adminAgent.get(`/admin/bets?q=m${ts}`);
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    expect(r.body.total).toBeGreaterThanOrEqual(1);
+    expect(r.body.slips.length).toBeGreaterThanOrEqual(1);
+    expect(r.body.slips.every(s => s.username.includes(`m${ts}`))).toBe(true);
+  });
+  it('GET /admin/bets?q= by draw_code works', async () => {
+    const r = await adminAgent.get(`/admin/bets?q=T${ts}`);
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    expect(r.body.total).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe('phone otp', () => {
   const phone = `08${String(Date.now()).slice(-8)}`;
   it('registers via OTP and gets session + credit', async () => {
