@@ -4,6 +4,7 @@ import { Input, Button } from '../components/ui/index.js';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/shadcn/select.jsx';
 import { Badge } from '../components/shadcn/badge.jsx';
 import { cn } from '../lib/utils.js';
+import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 
 const STATUS_TH = {
   pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก',
@@ -32,7 +33,9 @@ const LUXURY_SLIP_STYLE = {
   refunded: { borderColor: 'var(--border-light)', background: 'var(--bg-card)', opacity: 0.6 },
 };
 
-const PAGE = 50;
+const FETCH_LIMIT = 500;  // server cap ต่อ request
+const MAX_SLIP_ROWS = 2000; // safety cap — กัน dataset ใหญ่เกิน
+const PAGE_SIZE = 50;
 const potential = (i) => Math.floor(i.amount * Number(i.payout_multiplier || 0));
 
 function ItemRow({ i }) {
@@ -84,48 +87,60 @@ function exportCsv(rows, filename) {
 }
 
 export default function AdminBets() {
-  const [slips, setSlips] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [total, setTotal] = useState(0);
-  const [status, setStatus] = useState('');
-  const [q, setQ] = useState('');
-  const [qApplied, setQApplied] = useState(''); // ค้นหาตอนกด Enter/ปุ่ม — ไม่ refetch ทุก keystroke
+  const [page, setPage] = useState(1);
+  // filter sync กับ URL query (?status=&q=) — refresh/share link แล้ว filter ยังอยู่
+  const [filters, setFilters] = useUrlFilters({ status: '', q: '' });
+  const { status, q: qApplied } = filters;
+  const [q, setQ] = useState(filters.q); // draft ขณะพิมพ์ — commit ลง URL หลัง debounce
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState('');
-  const [loadingMore, setLoadingMore] = useState(false);
   const debounceRef = useRef(null);
 
   const buildQs = (offset) => {
-    const p = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
+    const p = new URLSearchParams({ limit: String(FETCH_LIMIT), offset: String(offset) });
     if (status) p.set('status', status);
     if (qApplied) p.set('q', qApplied);
     return p.toString();
   };
 
-  const load = (offset = 0, append = false) => api(`/admin/bets?${buildQs(offset)}`)
-    .then(r => {
-      const list = Array.isArray(r?.slips) ? r.slips : [];
-      setTotal(Number(r?.total) || 0);
-      setSlips(prev => append ? [...prev, ...list] : list);
+  // ดึงทุกรายการที่ตรง filter (วน offset ทีละ FETCH_LIMIT) แล้ว paginate ฝั่ง client
+  const load = async () => {
+    try {
+      const all = [];
+      let offset = 0, totalRows = 0;
+      for (;;) {
+        const r = await api(`/admin/bets?${buildQs(offset)}`);
+        const list = Array.isArray(r?.slips) ? r.slips : [];
+        totalRows = Number(r?.total) || 0;
+        all.push(...list);
+        offset += list.length;
+        if (!list.length || list.length < FETCH_LIMIT || all.length >= totalRows || all.length >= MAX_SLIP_ROWS) break;
+      }
+      setTotal(totalRows);
+      setFiltered(all);
       setErr('');
-      return list.length;
-    })
-    .catch(e => { if (!append) setSlips([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); return 0; });
+    } catch (e) { setFiltered([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); }
+  };
 
-  // filter เปลี่ยน → โหลดหน้าแรกใหม่
-  useEffect(() => { load(0, false); }, [status, qApplied]);
+  // filter เปลี่ยน → โหลดใหม่ + กลับหน้า 1
+  useEffect(() => { setPage(1); load(); }, [status, qApplied]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ค้นหาแบบ debounce 400ms
+  // sync draft กลับมากรณี URL เปลี่ยนจากที่อื่น (back/forward/share)
+  useEffect(() => { setQ(filters.q); }, [filters.q]);
+
+  // ค้นหาแบบ debounce 400ms — commit ลง URL params (replace ไม่รัว history)
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setQApplied(q.trim()), 400);
+    debounceRef.current = setTimeout(() => setFilters({ q: q.trim() }), 400);
     return () => clearTimeout(debounceRef.current);
-  }, [q]);
+  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasMore = slips.length < total;
-  const loadMore = async () => {
-    setLoadingMore(true);
-    try { await load(slips.length, true); } finally { setLoadingMore(false); }
-  };
+  // client-side pagination — filtered = ข้อมูลทั้งหมดที่ตรง filter (สำหรับ export), paged = เฉพาะหน้าที่แสดง
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const curPage = Math.min(page, pageCount);
+  const paged = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   // export CSV — ดึงทุกรายการที่ตรง filter (cap 2000) ไม่ใช่แค่หน้าที่โหลดอยู่
   const exportAll = async () => {
@@ -146,7 +161,7 @@ export default function AdminBets() {
           <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="ค้นหา username / เลขโพย / รอบหวย..."
             className="luxury-input text-sm [width:16rem] [padding:0.6rem_0.75rem]" />
-          <Select value={status || 'all'} onValueChange={v => setStatus(v === 'all' ? '' : v)}>
+          <Select value={status || 'all'} onValueChange={v => setFilters({ status: v === 'all' ? '' : v })}>
             <SelectTrigger className="w-36 py-2 text-sm [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)] [color:var(--white)]">
               <SelectValue placeholder="ทุกสถานะ" />
             </SelectTrigger>
@@ -162,9 +177,9 @@ export default function AdminBets() {
         </div>
       </div>
       {err && <div className="text-sm rounded-lg p-3 [color:var(--danger-red)] [background:rgba(239,_68,_68,_0.1)] [border:1px_solid_var(--danger-red)]">เกิดข้อผิดพลาด: {err}</div>}
-      <div className="[color:var(--muted-gray)] [font-size:12px]">ทั้งหมด {total.toLocaleString()} โพย — แสดง {slips.length.toLocaleString()} รายการ</div>
+      <div className="[color:var(--muted-gray)] [font-size:12px]">ทั้งหมด {total.toLocaleString()} โพย{filtered.length < total ? ` — โหลด ${filtered.length.toLocaleString()} รายการแรก` : ''}</div>
       <div className="space-y-3">
-        {slips.map(s => {
+        {paged.map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
           const settled = ['won', 'lost', 'partial'].includes(s.status);
           const style = LUXURY_SLIP_STYLE[s.status] || LUXURY_SLIP_STYLE.lost;
@@ -207,13 +222,9 @@ export default function AdminBets() {
             </div>
           );
         })}
-        {hasMore && (
-          <button onClick={loadMore} disabled={loadingMore} className="luxury-btn-ghost w-full py-3 text-sm">
-            {loadingMore ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${PAGE} รายการ (เหลือ ${(total - slips.length).toLocaleString()})`}
-          </button>
-        )}
-        {!slips.length && <div className="text-center py-10 [color:var(--muted-gray)]">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
+        {!filtered.length && <div className="text-center py-10 [color:var(--muted-gray)]">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
       </div>
+      <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} />
     </div>
   );
 }

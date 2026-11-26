@@ -5,18 +5,42 @@ import { toast } from '../components/toast.js';
 import { Modal } from '../components/ui/index.js';
 import { cn } from '../lib/utils.js';
 import '../styles/luxury-theme.css';
+import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 
 export default function AdminMembers() {
-  const [members, setMembers] = useState([]);
-  const [q, setQ] = useState('');
+  const [filtered, setFiltered] = useState([]);
+  const [page, setPage] = useState(1);
+  // filter sync กับ URL query (?q=) — refresh/share link แล้ว filter ยังอยู่
+  const [filters, setFilters] = useUrlFilters({ q: '' });
+  const q = filters.q;
   const [edit, setEdit] = useState(null);
   const [del, setDel] = useState(null);
   const [act, setAct] = useState(null);
   const [rgList, setRgList] = useState(null);
 
-  const load = () => api(`/admin/members?q=${encodeURIComponent(q)}`).then(r => setMembers(r.members)).catch(e => toast(e.message, 'error'));
+  const FETCH_LIMIT = 500;    // server cap ต่อ request
+  const MAX_MEMBER_ROWS = 5000; // safety cap — กัน dataset ใหญ่เกิน
+  const PAGE_SIZE = 50;
+
+  // ดึงสมาชิกทั้งหมดที่ตรง q (วน offset ทีละ FETCH_LIMIT) แล้ว paginate ฝั่ง client
+  const load = async (resetPage = false) => {
+    try {
+      const all = [];
+      let offset = 0, total = 0;
+      for (;;) {
+        const r = await api(`/admin/members?q=${encodeURIComponent(q)}&limit=${FETCH_LIMIT}&offset=${offset}`);
+        const list = Array.isArray(r?.members) ? r.members : [];
+        total = Number(r?.total) || 0;
+        all.push(...list);
+        offset += list.length;
+        if (!list.length || list.length < FETCH_LIMIT || all.length >= total || all.length >= MAX_MEMBER_ROWS) break;
+      }
+      setFiltered(all);
+      if (resetPage) setPage(1);
+    } catch (e) { toast(e.message, 'error'); }
+  };
   const loadRg = () => api('/admin/rg/restricted').then(r => setRgList(r.restricted || [])).catch(() => {});
-  useEffect(() => { load(); loadRg(); }, []);
+  useEffect(() => { load(); loadRg(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
     if (!(await confirmAction({ title: 'ยืนยันการแก้ไขสมาชิก', message: `บันทึกการเปลี่ยนแปลงของ ${edit.username} ใช่หรือไม่?` }))) return;
@@ -35,6 +59,11 @@ export default function AdminMembers() {
       setDel(null); load();
     } catch (e) { toast(e.message, 'error'); setDel(null); }
   };
+
+  // client-side pagination — filtered = ข้อมูลทั้งหมดที่ตรง filter (สำหรับ export), paged = เฉพาะหน้าที่แสดง
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const curPage = Math.min(page, pageCount);
+  const paged = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   const loadActivity = (m) => api(`/admin/members/${m.id}/activity`)
     .then(setAct).catch(e => toast(e.message, 'error'));
@@ -59,8 +88,8 @@ export default function AdminMembers() {
         </div>
         <input 
           value={q} 
-          onChange={e => setQ(e.target.value)} 
-          onKeyDown={e => e.key === 'Enter' && load()}
+          onChange={e => setFilters({ q: e.target.value })} 
+          onKeyDown={e => e.key === 'Enter' && load(true)}
           placeholder="ค้นหา username/email..." 
           className="luxury-input w-64 py-2.5 text-sm" 
         />
@@ -99,7 +128,7 @@ export default function AdminMembers() {
               </tr>
             </thead>
             <tbody>
-              {members.map(m => (
+              {paged.map(m => (
                 <tr key={m.id} className="border-b border-[var(--border-light)] hover:bg-[var(--bg-card-hover)] transition">
                   <td className="text-[var(--muted-gray)] px-4 py-3 text-sm">{m.id}</td>
                   <td className="px-4 py-3">
@@ -133,6 +162,7 @@ export default function AdminMembers() {
             </tbody>
           </table>
         </div>
+        <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} className="px-4 py-3 [border-top:1px_solid_var(--border-light)]" />
       </div>
 
       {/* modal แก้ไขสมาชิก */}

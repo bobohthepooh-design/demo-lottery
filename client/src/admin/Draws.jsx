@@ -7,6 +7,7 @@ import { Button, Card, CardHeader, CardBody, Input, Select, Modal, Badge } from 
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 import { Badge as SBadge } from '../components/shadcn/badge.jsx';
 import { cn } from '../lib/utils.js';
+import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 
 const STATUS_BADGE = {
   open: 'luxury-badge-success',
@@ -28,9 +29,8 @@ const utcToLocalInput = (s) => {
 };
 
 export default function AdminDraws() {
-  const [draws, setDraws] = useState([]);
-  const [drawsTotal, setDrawsTotal] = useState(0);
-  const [loadingMoreDraws, setLoadingMoreDraws] = useState(false);
+  const [filtered, setFiltered] = useState([]);
+  const [page, setPage] = useState(1);
   const [types, setTypes] = useState([]);
   const [cats, setCats] = useState([]);
   const [form, setForm] = useState({ lottery_type_id: '', category_id: '', draw_code: '', draw_at: '', close_at: '' });
@@ -39,35 +39,35 @@ export default function AdminDraws() {
   const [schedule, setSchedule] = useState(null);
   const [seedMsg, setSeedMsg] = useState('');
   const [seedBusy, setSeedBusy] = useState(false);
-  const [filter, setFilter] = useState({ status: '', type: '', category: '' });
+  // filter sync กับ URL query (?status=&type=&category=) — refresh/share link แล้ว filter ยังอยู่
+  const [filter, setFilter] = useUrlFilters({ status: '', type: '', category: '' });
 
   const loadSchedule = () => api('/admin/draws/schedule').then(r => setSchedule(r.schedule || [])).catch(() => {});
-  const DRAW_PAGE = 50;
+  const FETCH_LIMIT = 500;   // server cap ต่อ request
+  const MAX_DRAW_ROWS = 2000; // safety cap — กัน dataset ใหญ่เกิน
+  const PAGE_SIZE = 50;
   const drawsQs = (offset) => {
-    const qs = new URLSearchParams({ limit: String(DRAW_PAGE), offset: String(offset) });
+    const qs = new URLSearchParams({ limit: String(FETCH_LIMIT), offset: String(offset) });
     if (filter.status) qs.set('status', filter.status);
     if (filter.type) qs.set('type', filter.type);
     if (filter.category) qs.set('category', filter.category);
     return qs.toString();
   };
-  const loadDraws = () => {
-    api(`/admin/draws?${drawsQs(0)}`).then(r => {
-      setDraws(Array.isArray(r?.draws) ? r.draws : []);
-      setDrawsTotal(Number(r?.total) || 0);
-    }).catch(e => toast(e.message, 'error'));
-  };
-  const loadMoreDraws = async () => {
-    setLoadingMoreDraws(true);
+  // ดึงทุกรอบที่ตรง filter (วน offset ทีละ FETCH_LIMIT) แล้ว paginate ฝั่ง client
+  const loadDraws = async () => {
     try {
-      const r = await api(`/admin/draws?${drawsQs(draws.length)}`);
-      const list = Array.isArray(r?.draws) ? r.draws : [];
-      setDrawsTotal(Number(r?.total) || drawsTotal);
-      setDraws(prev => {
-        const seen = new Set(prev.map(d => d.id));
-        return [...prev, ...list.filter(d => !seen.has(d.id))];
-      });
+      const all = [];
+      let offset = 0;
+      for (;;) {
+        const r = await api(`/admin/draws?${drawsQs(offset)}`);
+        const list = Array.isArray(r?.draws) ? r.draws : [];
+        const total = Number(r?.total) || 0;
+        all.push(...list);
+        offset += list.length;
+        if (!list.length || list.length < FETCH_LIMIT || all.length >= total || all.length >= MAX_DRAW_ROWS) break;
+      }
+      setFiltered(all);
     } catch (e) { toast(e.message, 'error'); }
-    finally { setLoadingMoreDraws(false); }
   };
   const load = () => {
     loadDraws();
@@ -76,7 +76,12 @@ export default function AdminDraws() {
     loadSchedule();
   };
   useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { loadDraws(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1); loadDraws(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // client-side pagination — filtered = ข้อมูลทั้งหมดที่ตรง filter (สำหรับ export), paged = เฉพาะหน้าที่แสดง
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const curPage = Math.min(page, pageCount);
+  const paged = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   // บังคับเติมรอบหวยล่วงหน้าทันที (ระบบทำอัตโนมัติทุก 1 นาทีอยู่แล้ว)
   const runSeed = async () => {
@@ -103,7 +108,7 @@ export default function AdminDraws() {
   };
 
   const setStatus = async (id, status) => {
-    const d = draws.find(x => x.id === id);
+    const d = filtered.find(x => x.id === id);
     const warn = status === 'cancelled'
       ? { title: '⚠️ ยืนยันยกเลิกรอบ', message: `ยกเลิกรอบ "${d?.draw_code}" ถาวร?\nรอบที่ยกเลิกจะไม่สามารถแก้ไขได้`, danger: true, confirmLabel: 'ยกเลิกรอบ' }
       : { title: 'ยืนยันเปลี่ยนสถานะ', message: `เปลี่ยนสถานะรอบ "${d?.draw_code}" เป็น "${STATUS_TH[status]}" ใช่หรือไม่?` };
@@ -224,22 +229,21 @@ export default function AdminDraws() {
 
       {/* ตัวกรองรอบหวย — สถานะ / ประเภท / หมวด */}
       <div className="flex items-center gap-3 flex-wrap">
-        <select value={filter.status} onChange={e => setFilter({...filter, status: e.target.value})} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
+        <select value={filter.status} onChange={e => setFilter({ status: e.target.value })} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
           <option value="">ทุกสถานะ</option>
           {Object.entries(STATUS_TH).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value, category: ''})} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
+        <select value={filter.type} onChange={e => setFilter({ type: e.target.value, category: '' })} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
           <option value="">ทุกประเภท</option>
           {types.map(t => <option key={t.id} value={t.id}>{t.name_th}</option>)}
         </select>
-        <select value={filter.category} onChange={e => setFilter({...filter, category: e.target.value})} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
+        <select value={filter.category} onChange={e => setFilter({ category: e.target.value })} className="luxury-input text-sm [padding:0.5rem_0.75rem]">
           <option value="">ทุกหมวด</option>
           <option value="null">ไม่มีหมวด</option>
           {cats.filter(c => !filter.type || String(c.lottery_type_id) === String(filter.type)).map(c => (
             <option key={c.id} value={c.id}>{c.name_th}</option>
           ))}
         </select>
-        <span className="[color:var(--muted-gray)] [font-size:12px]">ทั้งหมด {drawsTotal.toLocaleString()} รอบ — แสดง {draws.length.toLocaleString()} รอบ</span>
       </div>
 
       <div className="luxury-card">
@@ -255,7 +259,7 @@ export default function AdminDraws() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {draws.map(d => (
+            {paged.map(d => (
               <TableRow key={d.id} className="[border-bottom:1px_solid_var(--border-light)]">
                 <TableCell className="font-mono [color:var(--gold-primary)]">
                   {d.draw_code}
@@ -286,11 +290,7 @@ export default function AdminDraws() {
           </TableBody>
         </Table>
       </div>
-      {draws.length < drawsTotal && (
-        <button onClick={loadMoreDraws} disabled={loadingMoreDraws} className="luxury-btn-ghost w-full py-3 text-sm">
-          {loadingMoreDraws ? 'กำลังโหลด...' : `แสดงเพิ่มเติมอีก ${DRAW_PAGE} รอบ (เหลือ ${(drawsTotal - draws.length).toLocaleString()})`}
-        </button>
-      )}
+      <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} />
 
       {editDraw && (
         <Modal open onClose={() => setEditDraw(null)} title={`แก้ไขรอบหวย: ${editDraw.draw_code}`}>
