@@ -124,75 +124,48 @@ export default function AdminLayout() {
   }, [navigate, visibleGroups]);
 
   return (
-    <div className="admin-compact flex flex-col lg:flex-row gap-6" style={{ backgroundColor: 'var(--bg-deep-black)' }}>
+    <div className="admin-compact flex flex-col lg:flex-row gap-6 bg-[var(--bg-deep-black)]">
       <aside className="lg:w-60 shrink-0">
         {/* lg: sticky — ติดบนตอนเลื่อนแต่ไม่คำนวณตำแหน่งจาก vw (fixed+calc(50vw) ทำให้
             เด้งทุกครั้งที่ scrollbar โผล่/หาย) aside ยืดเต็มสูงแถว flex อยู่แล้ว */}
         <div className="rounded-xl sticky top-[3.625rem] sm:top-[4.125rem] z-30 overflow-hidden
-          lg:sticky lg:top-24 lg:bottom-auto lg:h-auto lg:max-h-[calc(100vh-7.5rem)] lg:w-60 lg:flex lg:flex-col"
-          style={{
-          background: 'linear-gradient(180deg, var(--bg-card), var(--bg-dark-surface))',
-          border: '1px solid var(--border-gold)',
-          boxShadow: 'var(--shadow-pop)'
-        }}>
-          <div className="hidden lg:flex items-center gap-2.5 px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
-            <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
-              background: 'rgba(212, 175, 55, 0.2)',
-              border: '1px solid var(--border-gold)',
-              color: 'var(--gold-primary)'
-            }}>
+          lg:sticky lg:top-24 lg:bottom-auto lg:h-auto lg:max-h-[calc(100vh-7.5rem)] lg:w-60 lg:flex lg:flex-col
+          bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-dark-surface)] border border-[var(--border-gold)] shadow-[var(--shadow-pop)]">
+          <div className="hidden lg:flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-[var(--border-light)]">
+            <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[rgba(212,175,55,0.2)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
               <Icon name="settings" className="w-4 h-4" />
             </span>
             <div className="leading-tight">
-              <div className="font-display font-bold text-sm" style={{ color: 'var(--white)' }}>Admin Panel</div>
-              <div className="text-[10px]" style={{ color: 'var(--muted-gray)' }}>ระบบจัดการหลังบ้าน</div>
+              <div className="font-display font-bold text-sm text-[var(--white)]">Admin Panel</div>
+              <div className="text-[10px] text-[var(--muted-gray)]">ระบบจัดการหลังบ้าน</div>
             </div>
-            <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded" style={{
-              border: '1px solid var(--border-gold)',
-              background: 'rgba(212, 175, 55, 0.15)',
-              color: 'var(--gold-bright)'
-            }}>STAFF</span>
+            <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-[var(--border-gold)] bg-[rgba(212,175,55,0.15)] text-[var(--gold-bright)]">STAFF</span>
           </div>
           <nav className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:flex-1 lg:min-h-0 p-2">
             {visibleGroups.map(g => (
               <div key={g.label} className="contents">
-                <div className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1" style={{ color: 'var(--muted-gray)' }}>
+                <div className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1 text-[var(--muted-gray)]">
                   {g.label}
                 </div>
                 {g.items.map(i => (
                   <NavLink key={i.to} to={i.to} end={i.end}
-                    className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors ${isActive ? 'font-semibold' : ''}`}
-                    style={({ isActive }) => isActive ? {
-                      background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))',
-                      color: 'var(--gold-bright)',
-                      border: '1px solid var(--border-gold)'
-                    } : {
-                      color: 'var(--muted-gray)',
-                      border: '1px solid transparent'
-                    }}>
+                    className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors border ${isActive
+                      ? 'font-semibold bg-gradient-to-r from-[rgba(212,175,55,0.2)] to-[rgba(212,175,55,0.1)] text-[var(--gold-bright)] border-[var(--border-gold)]'
+                      : 'text-[var(--muted-gray)] border-transparent'}`}>
                     <Icon name={i.icon} className="w-4 h-4 shrink-0" />
                     {i.label}
                     {i.to === '/admin/chat' && chatUnread > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center" style={{
-                        background: 'var(--danger-red)',
-                        color: 'var(--white)'
-                      }}>
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--danger-red)] text-[var(--white)]">
                         {chatUnread > 99 ? '99+' : chatUnread}
                       </span>
                     )}
                     {i.to === '/admin/payments' && payPending > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center" style={{
-                        background: 'var(--warning-amber)',
-                        color: 'var(--bg-deep-black)'
-                      }}>
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--warning-amber)] text-[var(--bg-deep-black)]">
                         {payPending > 99 ? '99+' : payPending}
                       </span>
                     )}
                     {i.to === '/admin/approvals' && apprPending > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center" style={{
-                        background: 'var(--success-green)',
-                        color: 'var(--bg-deep-black)'
-                      }}>
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--success-green)] text-[var(--bg-deep-black)]">
                         {apprPending > 99 ? '99+' : apprPending}
                       </span>
                     )}
@@ -202,17 +175,13 @@ export default function AdminLayout() {
             ))}
           </nav>
           {user && (
-            <div className="hidden lg:flex items-center gap-2.5 px-4 py-3" style={{ borderTop: '1px solid var(--border-light)' }}>
-              <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{
-                background: 'var(--bg-dark-surface)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--gold-primary)'
-              }}>
+            <div className="hidden lg:flex items-center gap-2.5 px-4 py-3 border-t border-[var(--border-light)]">
+              <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[var(--bg-dark-surface)] border border-[var(--border-light)] text-[var(--gold-primary)]">
                 {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
               </span>
               <div className="leading-tight min-w-0">
-                <div className="text-xs font-semibold truncate" style={{ color: 'var(--white)' }}>{user.displayName || user.username}</div>
-                <div className="text-[10px] truncate" style={{ color: 'var(--muted-gray)' }}>{(user.roles || []).join(', ') || 'staff'}</div>
+                <div className="text-xs font-semibold truncate text-[var(--white)]">{user.displayName || user.username}</div>
+                <div className="text-[10px] truncate text-[var(--muted-gray)]">{(user.roles || []).join(', ') || 'staff'}</div>
               </div>
             </div>
           )}

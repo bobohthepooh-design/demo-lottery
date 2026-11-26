@@ -219,22 +219,22 @@ export default function Hilo() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
-        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: 'linear-gradient(90deg, var(--gold-gradient-start), var(--gold-gradient-end))' }} />
-        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '0.6s' }} />
-        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
+        <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite]" style={{ bottom: '-4%', left: '6%', background: 'radial-gradient(circle at 35% 30%, #fde68a, #d9a520 60%, #8a6405)', animationDelay: '0.6s' }} />
+        <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite]" style={{ top: '-4%', right: '8%', background: 'radial-gradient(circle at 35% 30%, #1f2937, #111827 65%, #030712)', animationDelay: '2s' }} />
         <div className="flex justify-center gap-3 mb-4">
           <DieFace value={3} /><DieFace value={4} /><DieFace value={5} />
         </div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">ไฮโลเต๋า</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--muted-gray)' }}>ทอยเต๋า <b style={{ color: 'var(--gold-bright)' }}>3 ลูก</b> → ทายผลรวม <b style={{ color: 'var(--info-blue)' }}>ต่ำ (3-10)</b> / <b style={{ color: 'var(--success-green)' }}>สูง (12-18)</b> / <b style={{ color: 'var(--gold-bright)' }}>11 ไฮโล</b> → รู้ผลทันที!</p>
+        <p className="text-sm mt-1 text-[var(--muted-gray)]">ทอยเต๋า <b className="text-[var(--gold-bright)]">3 ลูก</b> → ทายผลรวม <b className="text-[var(--info-blue)]">ต่ำ (3-10)</b> / <b className="text-[var(--success-green)]">สูง (12-18)</b> / <b className="text-[var(--gold-bright)]">11 ไฮโล</b> → รู้ผลทันที!</p>
         <div className="flex flex-col items-center gap-3 mt-4">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05), rgba(212, 175, 55, 0.15))', border: '1px solid var(--border-gold)', boxShadow: 'var(--shadow-gold)' }}>
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border bg-gradient-to-r from-[rgba(212,175,55,0.15)] via-[rgba(212,175,55,0.05)] to-[rgba(212,175,55,0.15)] border-[var(--border-gold)] shadow-[var(--shadow-gold)]">
             <span className="text-sm">💰</span>
-            <span className="text-xs font-semibold" style={{ color: 'var(--gold-primary)' }}>ราคาต่อครั้ง</span>
-            <span className="font-display font-bold text-2xl" style={{ color: 'var(--gold-bright)' }}>{satang(price)} <span className="text-sm">บาท</span></span>
+            <span className="text-xs font-semibold text-[var(--gold-primary)]">ราคาต่อครั้ง</span>
+            <span className="font-display font-bold text-2xl text-[var(--gold-bright)]">{satang(price)} <span className="text-sm">บาท</span></span>
           </div>
-          <div className="flex items-center justify-center gap-4 text-[11px] flex-wrap" style={{ color: 'var(--muted-gray)' }}>
-            <span>🕐 <b style={{ color: 'var(--success-green)' }}>แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
+          <div className="flex items-center justify-center gap-4 text-[11px] flex-wrap text-[var(--muted-gray)]">
+            <span>🕐 <b className="text-[var(--success-green)]">แทงได้ตลอด 24 ชม.</b> ไม่มีกำหนดรอบ</span>
             <span>⚖️ อัตราจ่าย{mult ? ` ต่ำ ×${mult.low} • สูง ×${mult.high} • 11 ×${mult.eleven}` : 'ตามโอกาสจริง'}</span>
           </div>
         </div>
@@ -244,16 +244,16 @@ export default function Hilo() {
       <div className="luxury-card p-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="font-bold" style={{ color: 'var(--white)' }}>วางเดิมพัน</div>
-            <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>เครดิตคงเหลือ {satang(balance)} บาท • ไม่จำกัดรอบ เล่นต่อได้เรื่อยๆ</div>
+            <div className="font-bold text-[var(--white)]">วางเดิมพัน</div>
+            <div className="text-xs text-[var(--muted-gray)]">เครดิตคงเหลือ {satang(balance)} บาท • ไม่จำกัดรอบ เล่นต่อได้เรื่อยๆ</div>
             {awaiting.length > 0 && (
-              <div className="text-[11px] mt-1" style={{ color: 'var(--warning-amber)' }}>มีตั๋วรอเดิมพัน {awaiting.length} ใบ — เปิดจากประวัติด้านล่างเพื่อทาย</div>
+              <div className="text-[11px] mt-1 text-[var(--warning-amber)]">มีตั๋วรอเดิมพัน {awaiting.length} ใบ — เปิดจากประวัติด้านล่างเพื่อทาย</div>
             )}
           </div>
         </div>
-        {err && <div className="text-sm mt-3" style={{ color: 'var(--danger-red)' }}>{err}</div>}
+        {err && <div className="text-sm mt-3 text-[var(--danger-red)]">{err}</div>}
         {balance < price && (
-          <div className="text-xs rounded-lg px-3 py-2 mt-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: 'var(--warning-amber)' }}>
+          <div className="text-xs rounded-lg px-3 py-2 mt-3 bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] text-[var(--warning-amber)]">
             เครดิตไม่พอ — <a href="/wallet?action=deposit" className="underline font-semibold">เติมเครดิต</a> ก่อนนะ
           </div>
         )}
@@ -378,11 +378,11 @@ export default function Hilo() {
       )}
       {tickets.length > 0 && (
         <div className="luxury-card overflow-hidden">
-          <div className="px-5 py-4 border-b font-bold flex items-center gap-2" style={{ borderColor: 'var(--border-light)', color: 'var(--white)' }}>
+          <div className="px-5 py-4 border-b font-bold flex items-center gap-2 border-[var(--border-light)] text-[var(--white)]">
             ประวัติไฮโล
             {awaiting.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full luxury-badge-gold">รอเดิมพัน {awaiting.length}</span>}
           </div>
-          <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
+          <div className="divide-y divide-[var(--border-light)]">
             {(showAllHist ? tickets : tickets.slice(0, 10)).map(t => {
               const won = t.status === 'revealed' && t.side === t.pick;
               return (
@@ -423,8 +423,7 @@ export default function Hilo() {
           </div>
           {tickets.length > 10 && (
             <button onClick={() => setShowAllHist(v => !v)}
-              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40"
-              style={{ color: 'var(--gold-primary)', borderTop: '1px solid var(--border-light)' }}>
+              className="w-full py-2.5 text-xs font-bold transition hover:bg-navy-700/40 border-t border-[var(--border-light)] text-[var(--gold-primary)]">
               {showAllHist ? '▴ ย่อแสดง 10 รายการล่าสุด' : `▾ แสดงทั้งหมด (${tickets.length} รายการ)`}
             </button>
           )}
