@@ -6,6 +6,7 @@ import { FlagIcon } from '../components/ResultLine.jsx';
 import { sourceBadge, sourceName } from '../resultSource.js';
 import { heroNumbers, resultSummary } from '../resultFields.js';
 import { Marquee } from '../components/ui/index.js';
+import LotteryBalls from '../components/LotteryBalls.jsx';
 const GROUP_ORDER = ['TH', 'LA', 'HN', 'GS', 'HR'];
 const GROUP_LABEL = { TH: 'ไทย', LA: 'ลาว', HN: 'ฮานอย', GS: 'ออมสิน', HR: 'ราศี' };
 
@@ -111,14 +112,19 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      {/* hero banner — gradient frame + แสงกวาด + orb ลอย (animation อยู่ใน index.css) */}
+      {/* hero banner — cinematic: ghost word + ลูกบอลลอยตาม cursor + แสงกวาด (animation ใน index.css) */}
       <div className="hero-banner rounded-2xl px-4 sm:px-6 py-4 sm:py-5">
+        <span className="hero-ghost" aria-hidden="true">LUCKY</span>
         <span className="hero-orb w-24 h-24 sm:w-36 sm:h-36 -top-[30%] left-[4%] bg-[rgba(212,175,55,0.35)]" />
         <span className="hero-orb w-20 h-20 sm:w-28 sm:h-28 -bottom-[35%] right-[8%] bg-[rgba(168,85,247,0.30)] [animation-delay:1.2s]" />
         <span className="hero-orb w-16 h-16 sm:w-24 sm:h-24 -top-[25%] right-[30%] bg-[rgba(59,130,246,0.28)] [animation-delay:2.4s]" />
-        <div className="relative flex items-center justify-between gap-3">
+        <LotteryBalls />
+        <div className="relative flex items-center justify-between gap-3 z-10">
           <div className="min-w-0">
-            <div className="font-display font-black text-lg sm:text-2xl tracking-wide bg-gradient-to-r from-[#F5D76E] via-[#D4AF37] to-[#fff3c4] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_4s_linear_infinite]">LOTTERY DEMO</div>
+            <div className="font-display font-black text-lg sm:text-2xl tracking-wide">
+              <span className="hero-word" style={{ animationDelay: '0.05s' }}><span className="bg-gradient-to-r from-[#F5D76E] via-[#D4AF37] to-[#fff3c4] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_4s_linear_infinite]">LOTTERY</span></span>{' '}
+              <span className="hero-word" style={{ animationDelay: '0.15s' }}><span className="bg-gradient-to-r from-[#F5D76E] via-[#D4AF37] to-[#fff3c4] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_4s_linear_infinite]">DEMO</span></span>
+            </div>
             <div className="text-[11px] sm:text-xs mt-0.5 text-[var(--muted-gray)]">
               หวยออนไลน์ • เกมด่วน • ผลรางวัลอัปเดตอัตโนมัติ
             </div>

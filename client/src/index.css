@@ -981,6 +981,81 @@ button, [role="button"], a { transition: transform var(--duration-fast, 120ms) e
   animation: orb-float 9s ease-in-out infinite;
 }
 
+/* ลูกบอลหวยลอย (signature — wave ตาม cursor, physics อยู่ใน LotteryBalls.jsx) */
+.hero-balls {
+  position: absolute;
+  left: 0; right: 0; bottom: -14px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(6px, 1.4vw, 16px);
+  padding: 0 8%;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-ball {
+  --size: clamp(30px, 4.6vw, 46px);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display, inherit);
+  font-weight: 900;
+  font-size: calc(var(--size) * 0.36);
+  color: #4a3208;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 243, 196, 0.55) 18%, transparent 42%),
+    radial-gradient(circle at 50% 55%, #F5D76E 0%, #D4AF37 52%, #9a7414 88%, #6b4d0d 100%);
+  border: 1px solid rgba(255, 235, 170, 0.55);
+  box-shadow:
+    inset 0 -3px 6px rgba(90, 60, 5, 0.45),
+    inset 0 2px 3px rgba(255, 255, 255, 0.6),
+    0 6px 14px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  will-change: transform;
+  flex-shrink: 0;
+}
+/* touch → ลอยเบาๆ แทน physics (JS ไม่รันบน coarse pointer) */
+@media (pointer: coarse) {
+  .hero-ball { animation: orb-float 7s ease-in-out infinite; }
+}
+/* ghost wordmark ยักษ์ด้านหลัง hero */
+.hero-ghost {
+  position: absolute;
+  right: -2%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-display, inherit);
+  font-weight: 900;
+  font-size: clamp(90px, 18vw, 220px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(212, 175, 55, 0.14);
+  user-select: none;
+  pointer-events: none;
+  z-index: 0;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .hero-ghost { font-size: 30vw; right: -6%; opacity: 0.7; }
+  .hero-balls { bottom: -10px; gap: 4px; padding: 0 4%; }
+}
+/* word-by-word blur-in entrance สำหรับ hero headline */
+@keyframes hero-word-in {
+  from { opacity: 0; transform: translateY(14px); filter: blur(8px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+.hero-word {
+  display: inline-block;
+  animation: hero-word-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-word { animation: none; }
+}
+
 /* ไอคอนประเภทหวย (FlagIcon tile) — hover ยก/ขยาย/เรืองแสง ให้ความรู้สึก 3D */
 .flag-tile {
   transition: transform 0.18s ease, filter 0.18s ease;
