@@ -111,6 +111,29 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
+      {/* hero banner — gradient frame + แสงกวาด + orb ลอย (animation อยู่ใน index.css) */}
+      <div className="hero-banner rounded-2xl px-4 sm:px-6 py-4 sm:py-5">
+        <span className="hero-orb w-24 h-24 sm:w-36 sm:h-36" style={{ top: '-30%', left: '4%', background: 'rgba(212,175,55,0.35)' }} />
+        <span className="hero-orb w-20 h-20 sm:w-28 sm:h-28" style={{ bottom: '-35%', right: '8%', background: 'rgba(168,85,247,0.30)', animationDelay: '1.2s' }} />
+        <span className="hero-orb w-16 h-16 sm:w-24 sm:h-24" style={{ top: '-25%', right: '30%', background: 'rgba(59,130,246,0.28)', animationDelay: '2.4s' }} />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-display font-black text-lg sm:text-2xl tracking-wide" style={{
+              background: 'linear-gradient(90deg, #F5D76E, #D4AF37 40%, #fff3c4 60%, #D4AF37)',
+              backgroundSize: '200% 100%',
+              WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+            }}>LOTTERY DEMO</div>
+            <div className="text-[11px] sm:text-xs mt-0.5" style={{ color: 'var(--muted-gray)' }}>
+              หวยออนไลน์ • เกมด่วน • ผลรางวัลอัปเดตอัตโนมัติ
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 text-xl sm:text-2xl shrink-0 select-none" aria-hidden="true">
+            <span className="animate-float" style={{ animationDelay: '0s' }}>🎱</span>
+            <span className="animate-float" style={{ animationDelay: '0.6s' }}>🎰</span>
+            <span className="animate-float" style={{ animationDelay: '1.2s' }}>🏆</span>
+          </div>
+        </div>
+      </div>
       {/* welcome — member เท่านั้น */}
       {user && (
         <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3" style={{
@@ -150,7 +173,7 @@ export default function Home() {
           const ac = QUICK_ACCENT[a.to] || QUICK_ACCENT.default;
           return (
           <Link key={a.label} to={a.to}
-            className="group relative rounded-2xl py-4 sm:py-5 px-2 flex flex-col items-center gap-2 sm:gap-2.5 transition-all duration-200 hover:-translate-y-1 active:scale-95 overflow-hidden"
+            className="qa-card group relative rounded-2xl py-4 sm:py-5 px-2 flex flex-col items-center gap-2 sm:gap-2.5 transition-all duration-200 hover:-translate-y-1 active:scale-95 overflow-hidden"
             style={{
               background: `linear-gradient(160deg, ${ac.bg1}, var(--bg-card) 70%)`,
               border: `1px solid ${ac.border}`,

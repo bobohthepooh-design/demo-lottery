@@ -86,7 +86,7 @@ const TYPE_BG = {
 const TILE_SHADOW = 'inset 0 1.5px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.3), 0 4px 10px rgba(0,0,0,.45)';
 function Tile({ bg, className = '', style, children }) {
   return (
-    <span className={`relative inline-flex items-center justify-center rounded-[22%] overflow-hidden shrink-0 ${className}`}
+    <span className={`flag-tile relative inline-flex items-center justify-center rounded-[22%] overflow-hidden shrink-0 ${className}`}
       style={{ background: bg, boxShadow: TILE_SHADOW, ...style }}>
       {children}
       {/* gloss — แสงสะท้อนครึ่งบน */}
