@@ -4,15 +4,27 @@ import { ZodiacChip, zodiacList } from './ZodiacChip.jsx';
 import { sourceBadge } from '../resultSource.js';
 import { Icon } from './icons.jsx';
 
-// ไอคอนประเภทหวย/เกม — stroke style เดียวกับ nav icons (ดู icons.jsx)
+// ไอคอนประเภทหวย/เกม — กระเบื้อง gradient สีตามประเภท + glyph ขาว (สไตล์ casino icon)
 const TYPE_ICONS = { TH: 'th', LA: 'la', HN: 'hn', HR: 'hr', GS: 'bank', KI: 'ki', SC: 'sc', HL: 'hl' };
+const TYPE_BG = {
+  TH: 'linear-gradient(135deg,#dc2626,#1d4ed8)',   // ไทย — แดง/น้ำเงิน
+  LA: 'linear-gradient(135deg,#ef4444,#1e3a8a)',   // ลาว — แดง/น้ำเงินเข้ม
+  HN: 'linear-gradient(135deg,#f87171,#b91c1c)',   // ฮานอย — แดง
+  HR: 'linear-gradient(135deg,#a855f7,#f59e0b)',   // ราศี — ม่วง/ทอง
+  GS: 'linear-gradient(135deg,#10b981,#064e3b)',   // ออมสิน — เขียวมรกต
+  KI: 'linear-gradient(135deg,#84cc16,#3f6212)',   // ยี่กี — เขียวกีวี
+  SC: 'linear-gradient(135deg,#f59e0b,#92400e)',   // ขูด — ส้ม/น้ำตาล
+  HL: 'linear-gradient(135deg,#f43f5e,#881337)',   // ไฮโล — แดงเข้ม
+};
 const FALLBACK_EMOJI = { KI: '🔢', SC: '🎰', HL: '🎲' };
 export function FlagIcon({ code, className = '', style }) {
   const name = TYPE_ICONS[code];
-  if (!name) return <span className={className} style={style}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
+  const bg = TYPE_BG[code];
+  if (!name || !bg) return <span className={className} style={style}>{FALLBACK_EMOJI[code] || '🎟️'}</span>;
   return (
-    <span className={`inline-flex items-center justify-center shrink-0 ${className}`} style={style}>
-      <Icon name={name} className="w-full h-full" />
+    <span className={`inline-flex items-center justify-center rounded-[22%] text-white shrink-0 ${className}`}
+      style={{ background: bg, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.28), 0 1px 3px rgba(0,0,0,.35)', ...style }}>
+      <Icon name={name} className="w-[72%] h-[72%]" />
     </span>
   );
 }
