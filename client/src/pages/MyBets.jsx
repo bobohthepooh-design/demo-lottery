@@ -187,6 +187,8 @@ const PAGE = 10; // แสดงทีละ 10 โพย — ที่เหล
 
 // กลุ่มโพยตามวันที่ออกรางวัล — key 'YYYY-MM-DD' ตาม timezone ที่ผู้ใช้เลือก
 function slipDay(s) {
+  // เกมด่วน (STANDING draw) ไม่มีรอบจริง — จัดกลุ่มเดียว "เกมด่วน" ไม่ใช่วันที่ 1 ม.ค.
+  if (String(s.draw_code || '').endsWith('-STANDING')) return { key: 'instant-games', label: 'เกมด่วน' };
   const raw = s.draw_at || s.created_at;
   const d = raw ? new Date(String(raw).replace(' ', 'T') + 'Z') : null;
   if (!d || isNaN(d)) return { key: 'unknown', label: 'ไม่ระบุวันที่' };

@@ -56,5 +56,7 @@ export function thaiTime(s) {
 export function drawLabel(d) {
   if (!d) return '';
   const name = d.category_name_th || d.type_name_th || '';
+  // เกมด่วน (สล็อต/ไฮโล/ยี่กี) ใช้ STANDING draw ที่ไม่มีรอบจริง — ไม่แสดงวันที่ 1 ม.ค.
+  if (String(d.draw_code || '').endsWith('-STANDING')) return name || 'เกมด่วน';
   return `${name} • งวด ${thaiDate(d.draw_at)} เวลา ${thaiTime(d.draw_at)} น.`;
 }
