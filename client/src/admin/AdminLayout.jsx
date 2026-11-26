@@ -5,49 +5,9 @@ import { api } from '../api.js';
 import { Icon } from '../components/icons.jsx';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../components/shadcn/sheet.jsx';
 import { toast } from '../components/toast.js';
+import { adminGroups } from './navConfig.js';
+import CommandPalette from './CommandPalette.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
-
-export const adminGroups = [
-  {
-    label: 'ภาพรวม',
-    items: [
-      { to: '/admin', label: 'ภาพรวม', icon: 'dashboard', end: true, perm: 'dashboard.admin' },
-      { to: '/admin/reports', label: 'รายงาน', icon: 'reports', perm: 'reports.view' },
-      { to: '/admin/health', label: 'สุขภาพระบบ', icon: 'bell', perm: 'dashboard.admin' },
-    ],
-  },
-  {
-    label: 'กำกับดูแล',
-    items: [
-      { to: '/admin/approvals', label: 'ศูนย์อนุมัติ', icon: 'audit', perm: 'approvals.view' },
-      { to: '/admin/admin-users', label: 'บัญชีผู้ดูแล', icon: 'user', perm: 'admin.users.manage' },
-    ],
-  },
-  {
-    label: 'จัดการข้อมูล',
-    items: [
-      { to: '/admin/members', label: 'สมาชิก', icon: 'members', perm: 'members.manage' },
-      { to: '/admin/lotteries', label: 'ประเภทหวย/กติกา', icon: 'lotteries', perm: 'lottery.manage' },
-      { to: '/admin/draws', label: 'รอบหวย', icon: 'draws', perm: 'draws.manage' },
-      { to: '/admin/bets', label: 'ตรวจโพย', icon: 'bets', perm: 'bets.view_all' },
-      { to: '/admin/chat', label: 'แชทสมาชิก', icon: 'chat', perm: 'members.manage' },
-      { to: '/admin/tickets', label: 'ตั๋วสนับสนุน', icon: 'ticket', perm: 'members.manage' },
-      { to: '/admin/broadcast', label: 'แจ้งเตือนสมาชิก', icon: 'volume', perm: 'members.manage' },
-    ],
-  },
-  {
-    label: 'เครดิต & ระบบ',
-    items: [
-      { to: '/admin/wallet', label: 'จัดการเครดิต', icon: 'wallet', perm: 'wallet.adjust' },
-      { to: '/admin/payments', label: 'เติม/ถอนเงิน', icon: 'wallet', perm: 'wallet.adjust' },
-      { to: '/admin/banner', label: 'แบนเนอร์หน้าแรก', icon: 'banner', perm: 'settings.manage' },
-      { to: '/admin/audit', label: 'Audit Log', icon: 'audit', perm: 'audit.view' },
-      { to: '/admin/security', label: 'Security Events', icon: 'security', perm: 'security.view' },
-      { to: '/admin/settings', label: 'ตั้งค่าระบบ', icon: 'settings', perm: 'settings.manage' },
-      { to: '/admin/roles', label: 'สิทธิ์การใช้งาน', icon: 'roles', perm: 'roles.manage' },
-    ],
-  },
-];
 
 export default function AdminLayout() {
   const { user } = useAuth();
@@ -57,6 +17,7 @@ export default function AdminLayout() {
   const [payPending, setPayPending] = useState(0); // คำขอเติม/ถอนที่รอตรวจสอบ
   const [apprPending, setApprPending] = useState(0); // คำขอ maker-checker ที่รออนุมัติ
   const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
+  const [paletteOpen, setPaletteOpen] = useState(false); // command palette (Ctrl+K)
   const prevUnread = useRef(0);
 
   const perms = user?.permissions || [];
@@ -124,6 +85,19 @@ export default function AdminLayout() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [navigate, visibleGroups]);
+
+  // Ctrl+K / Cmd+K — เปิด command palette (ข้ามตอนโฟกัสอยู่ในช่องพิมพ์)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'k') return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      e.preventDefault();
+      setPaletteOpen(o => !o);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // nav groups — ใช้ร่วมกันระหว่าง sidebar (lg) และ mobile Sheet drawer
   // inSheet=true แสดง group label ใน drawer (sidebar ซ่อน label บน mobile เพราะ aside ถูกซ่อนทั้งก้อนอยู่แล้ว)
@@ -237,6 +211,7 @@ export default function AdminLayout() {
         </SheetContent>
       </Sheet>
       <ConfirmHost />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }

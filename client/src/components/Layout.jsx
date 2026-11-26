@@ -12,7 +12,7 @@ import ToastHost from './ToastHost.jsx';
 import { isSoundOn, setSoundOn, initSound } from '../sound.js';
 import { Icon } from './icons.jsx';
 import { CasinoIcon } from './CasinoIcons.jsx';
-import { adminGroups } from '../admin/AdminLayout.jsx';
+import { adminGroups } from '../admin/navConfig.js';
 import { Fragment, useEffect, useState, useMemo } from 'react';
 import { t } from '../i18n.js';
 
