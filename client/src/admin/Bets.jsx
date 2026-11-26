@@ -6,6 +6,7 @@ import { Badge } from '../components/shadcn/badge.jsx';
 import { cn } from '../lib/utils.js';
 import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
+import { exportCsv } from '../lib/exportCsv.js';
 
 const STATUS_TH = {
   pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก',
@@ -70,22 +71,28 @@ function ItemRow({ i }) {
   );
 }
 
-// export CSV — BOM ให้ Excel เปิดภาษาไทยได้
-function exportCsv(rows, filename) {
-  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const head = ['เลขโพย', 'สมาชิก', 'รอบหวย', 'ประเภท', 'ยอดเดิมพัน', 'ยอดจ่าย', 'สถานะ', 'เวลา'];
-  const lines = [head.join(',')];
-  for (const s of rows) {
-    lines.push([s.slip_ref, s.username, s.draw_code, s.type_name_th || s.category_name_th || '',
-      s.total_stake, s.total_payout, STATUS_TH[s.status] || s.status, s.created_at].map(esc).join(','));
-  }
-  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+// columns สำหรับ export CSV (label ไทย; ยอดเงินเป็นสตางค์ตามที่เก็บในระบบ)
+const BETS_CSV_COLS = [
+  { key: 'slip_ref', label: 'เลขโพย' },
+  { key: 'username', label: 'สมาชิก' },
+  { key: 'draw_code', label: 'รอบหวย' },
+  { key: 'type', label: 'ประเภท' },
+  { key: 'total_stake', label: 'ยอดเดิมพัน (สตางค์)' },
+  { key: 'total_payout', label: 'ยอดจ่าย (สตางค์)' },
+  { key: 'status', label: 'สถานะ' },
+  { key: 'created_at', label: 'เวลา' },
+];
+
+const betCsvRows = (rows) => rows.map(s => ({
+  slip_ref: s.slip_ref,
+  username: s.username,
+  draw_code: s.draw_code,
+  type: s.type_name_th || s.category_name_th || '',
+  total_stake: s.total_stake,
+  total_payout: s.total_payout,
+  status: STATUS_TH[s.status] || s.status,
+  created_at: s.created_at,
+}));
 
 export default function AdminBets() {
   const [filtered, setFiltered] = useState([]);
@@ -146,15 +153,9 @@ export default function AdminBets() {
   const curPage = Math.min(page, pageCount);
   const paged = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
-  // export CSV — ดึงทุกรายการที่ตรง filter (cap 2000) ไม่ใช่แค่หน้าที่โหลดอยู่
-  const exportAll = async () => {
-    const p = new URLSearchParams({ limit: '2000', offset: '0' });
-    if (status) p.set('status', status);
-    if (qApplied) p.set('q', qApplied);
-    try {
-      const r = await api(`/admin/bets?${p}`);
-      exportCsv(Array.isArray(r?.slips) ? r.slips : [], `bets-${new Date().toISOString().slice(0, 10)}.csv`);
-    } catch (e) { setErr(e?.message || 'export ไม่สำเร็จ'); }
+  // export CSV — ใช้ filtered ที่โหลดมาครบแล้ว (ไม่ refetch; server cap 500/request)
+  const exportFiltered = () => {
+    exportCsv(`bets-${new Date().toISOString().slice(0, 10)}.csv`, betCsvRows(filtered), BETS_CSV_COLS);
   };
 
   return (
@@ -174,9 +175,10 @@ export default function AdminBets() {
               {Object.entries(STATUS_TH).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
-          <button onClick={exportAll} className="luxury-btn-ghost text-sm px-3 py-2"
-            title="ดาวน์โหลดโพยทั้งหมดที่ตรงเงื่อนไขเป็น CSV">
-            ⬇ CSV
+          <button onClick={exportFiltered} disabled={!filtered.length || loading}
+            className="luxury-btn-ghost text-sm px-3 py-2 disabled:opacity-50"
+            title={`ส่งออกโพยทั้งหมดที่ตรงตัวกรองเป็น CSV (สูงสุด ${MAX_SLIP_ROWS.toLocaleString()} รายการที่โหลดมา)`}>
+            ส่งออก CSV (ข้อมูลที่แสดง)
           </button>
         </div>
       </div>

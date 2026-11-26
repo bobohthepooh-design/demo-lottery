@@ -4,6 +4,7 @@ import { toast } from '../components/toast.js';
 import { Card, CardBody, Input, Button } from '../components/ui/index.js';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/shadcn/select.jsx';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { exportCsv } from '../lib/exportCsv.js';
 
 const ACTION_TH = {
   'user.login': 'เข้าสู่ระบบ', 'user.login_line': 'เข้าสู่ระบบ (LINE)',
@@ -24,22 +25,24 @@ const ACTION_TH = {
   'wallet.credit_adjust': 'แอดมินเพิ่มเครดิต', 'wallet.debit_adjust': 'แอดมินหักเครดิต',
 };
 
-// export CSV — BOM ให้ Excel เปิดภาษาไทยได้
-function exportCsv(rows, filename) {
-  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const head = ['เวลา', 'ผู้ใช้', 'Action', 'Entity', 'IP', 'รายละเอียด'];
-  const lines = [head.join(',')];
-  for (const l of rows) {
-    lines.push([l.created_at, l.username || `#${l.user_id}`, ACTION_TH[l.action] || l.action,
-      `${l.entity_type || ''} ${l.entity_id || ''}`, l.ip || '', l.detail || ''].map(esc).join(','));
-  }
-  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+// columns สำหรับ export CSV (label ไทย)
+const AUDIT_CSV_COLS = [
+  { key: 'created_at', label: 'เวลา' },
+  { key: 'user', label: 'ผู้ใช้' },
+  { key: 'action', label: 'Action' },
+  { key: 'entity', label: 'Entity' },
+  { key: 'ip', label: 'IP' },
+  { key: 'detail', label: 'รายละเอียด' },
+];
+
+const auditCsvRows = (rows) => rows.map(l => ({
+  created_at: l.created_at,
+  user: l.username || `#${l.user_id}`,
+  action: ACTION_TH[l.action] || l.action,
+  entity: [l.entity_type, l.entity_id].filter(Boolean).join(' '),
+  ip: l.ip,
+  detail: l.detail,
+}));
 
 export default function AdminAudit() {
   const [logs, setLogs] = useState([]);
@@ -114,10 +117,12 @@ export default function AdminAudit() {
             className="[color:var(--gold-primary)] [border:1px_solid_var(--border-light)]">
             {verifying ? 'กำลังตรวจ...' : 'ตรวจ hash chain'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => exportCsv(filtered, `audit-${new Date().toISOString().slice(0, 10)}.csv`)}
-            title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่เป็น CSV"
+          <Button variant="ghost" size="sm"
+            onClick={() => exportCsv(`audit-${new Date().toISOString().slice(0, 10)}.csv`, auditCsvRows(filtered), AUDIT_CSV_COLS)}
+            disabled={!filtered.length}
+            title="ดาวน์โหลดผลลัพธ์ที่กรองอยู่ทั้งหมดเป็น CSV (สูงสุด 200 รายการที่โหลดมา)"
             className="[color:var(--gold-primary)] [border:1px_solid_var(--border-light)]">
-            ⬇ CSV
+            ส่งออก CSV (ข้อมูลที่แสดง)
           </Button>
         </div>
       </div>

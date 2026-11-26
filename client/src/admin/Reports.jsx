@@ -7,6 +7,7 @@ import { StatCard } from '../components/ui/index.js';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 import { Badge } from '../components/shadcn/badge.jsx';
 import { cn } from '../lib/utils.js';
+import { exportCsv } from '../lib/exportCsv.js';
 
 const DRAW_STATUS_TH = {
   scheduled: 'กำหนดการ', open: 'เปิดรับ', closed: 'ปิดรับ',
@@ -25,6 +26,66 @@ function Kpi({ label, value, sub, tone = 'text-white' }) {
   return <StatCard label={label} value={value} sub={sub} accent={tone} />;
 }
 
+// ปุ่ม export CSV ราย section — rows = ข้อมูลที่โหลดมาแล้ว (ยอดเงินเป็นสตางค์)
+function ExportButton({ name, rows, columns }) {
+  return (
+    <button type="button" disabled={!rows?.length}
+      onClick={() => exportCsv(`${name}-${new Date().toISOString().slice(0, 10)}.csv`, rows, columns)}
+      title="ดาวน์โหลดข้อมูลส่วนนี้เป็น CSV"
+      className="text-xs px-2.5 py-1 rounded-lg border border-[var(--border-light)] text-[var(--muted-gray)] hover:text-[var(--gold-primary)] hover:border-[var(--gold-primary)] disabled:opacity-40 disabled:hover:text-[var(--muted-gray)] disabled:hover:border-[var(--border-light)] transition-colors">
+      ส่งออก CSV
+    </button>
+  );
+}
+
+const BETS_BY_TYPE_COLS = [
+  { key: 'type_name_th', label: 'ประเทศ/ประเภทหวย' },
+  { key: 'category_name_th', label: 'หมวด' },
+  { key: 'rule_name', label: 'ประเภทการแทง' },
+  { key: 'c', label: 'รายการ' },
+  { key: 'won', label: 'ถูก' },
+  { key: 'lost', label: 'ไม่ถูก' },
+  { key: 'win_rate', label: 'เรทถูก (%)' },
+  { key: 'stake', label: 'ยอดแทง (สตางค์)' },
+  { key: 'payout', label: 'จ่ายออก (สตางค์)' },
+];
+const BETS_BY_DAY_COLS = [
+  { key: 'day', label: 'วันที่' },
+  { key: 'slips', label: 'โพย' },
+  { key: 'stake', label: 'ยอดแทง (สตางค์)' },
+  { key: 'payout', label: 'จ่ายรางวัล (สตางค์)' },
+  { key: 'net', label: 'กำไรวัน (สตางค์)' },
+];
+const TOP_WINNERS_COLS = [
+  { key: 'username', label: 'สมาชิก' },
+  { key: 'slip_ref', label: 'เลขโพย' },
+  { key: 'type_name_th', label: 'ประเภทหวย' },
+  { key: 'draw_code', label: 'รอบหวย' },
+  { key: 'items', label: 'รายการถูก' },
+  { key: 'payout', label: 'เงินรางวัลรวม (สตางค์)' },
+];
+const DRAWS_SUMMARY_COLS = [
+  { key: 'draw_code', label: 'รอบ' },
+  { key: 'name_th', label: 'ประเภท' },
+  { key: 'draw_at', label: 'เวลาออกรางวัล' },
+  { key: 'status', label: 'สถานะ' },
+  { key: 'items', label: 'รายการ' },
+  { key: 'stake', label: 'ยอดแทง (สตางค์)' },
+  { key: 'payout', label: 'จ่ายรวม (สตางค์)' },
+  { key: 'net', label: 'กำไร (สตางค์)' },
+];
+const PROFIT_BY_DRAW_COLS = [
+  { key: 'draw_code', label: 'รอบ' },
+  { key: 'type_name_th', label: 'ตลาด' },
+  { key: 'cat_name_th', label: 'หมวด' },
+  { key: 'draw_at', label: 'เวลาออกรางวัล' },
+  { key: 'status', label: 'สถานะ' },
+  { key: 'items', label: 'รายการ' },
+  { key: 'stake', label: 'ยอดแทง (สตางค์)' },
+  { key: 'payout', label: 'จ่ายรางวัล (สตางค์)' },
+  { key: 'net', label: 'Vip (สตางค์)' },
+];
+
 export default function AdminReports() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState('');
@@ -39,6 +100,21 @@ export default function AdminReports() {
   const t = d.totals || {};
   const houseNet = (t.stake || 0) - (t.payout || 0);
   const winRate = t.items?.c ? Math.round((t.items.w / t.items.c) * 1000) / 10 : 0;
+
+  // แถวสำหรับ export CSV — เพิ่ม field ที่คำนวณ (เรทถูก/net) และแปลสถานะเป็นไทย
+  const betsByTypeRows = (d.betsByType || []).map(b => {
+    const settled = (b.won || 0) + (b.lost || 0);
+    return { ...b, win_rate: settled ? Math.round((b.won / settled) * 1000) / 10 : 0 };
+  });
+  const betsByDayRows = (d.betsByDay || []).map(b => ({ ...b, net: b.stake - b.payout }));
+  const drawsSummaryRows = (d.drawsSummary || []).map(x => ({
+    ...x, status: DRAW_STATUS_TH[x.status] || x.status,
+    net: ['settled', 'cancelled'].includes(x.status) ? x.stake - x.payout : '',
+  }));
+  const profitByDrawRows = (d.profitByDraw || []).map(x => ({
+    ...x, status: DRAW_STATUS_TH[x.status] || x.status,
+    net: ['settled', 'cancelled'].includes(x.status) ? x.stake - x.payout : '',
+  }));
 
   return (
     <div className="space-y-4">
@@ -58,7 +134,10 @@ export default function AdminReports() {
 
       {/* ยอดแทงตามประเภทการแทง */}
         <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl p-5">
-          <h2 className="font-bold text-[var(--white)] mb-3">ยอดแทงตามประเภทการแทง</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-[var(--white)]">ยอดแทงตามประเภทการแทง</h2>
+            <ExportButton name="report-bets-by-type" rows={betsByTypeRows} columns={BETS_BY_TYPE_COLS} />
+          </div>
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -101,7 +180,10 @@ export default function AdminReports() {
 
         {/* โพยรายวัน */}
         <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl p-5">
-          <h2 className="font-bold text-[var(--white)] mb-3">โพยรายวัน (30 วันล่าสุด)</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-[var(--white)]">โพยรายวัน (30 วันล่าสุด)</h2>
+            <ExportButton name="report-bets-by-day" rows={betsByDayRows} columns={BETS_BY_DAY_COLS} />
+          </div>
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -134,7 +216,10 @@ export default function AdminReports() {
 
       {/* ผู้ชนะรางวัลสูงสุด */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl p-5">
-        <h2 className="font-bold text-[var(--white)] mb-3">🏆 ผู้ชนะรางวัลสูงสุด</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-[var(--white)]">🏆 ผู้ชนะรางวัลสูงสุด</h2>
+          <ExportButton name="report-top-winners" rows={d.topWinners} columns={TOP_WINNERS_COLS} />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -164,7 +249,10 @@ export default function AdminReports() {
 
       {/* สถานะรอบหวยล่าสุด */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl p-5">
-        <h2 className="font-bold text-[var(--white)] mb-3">สถานะรอบหวยล่าสุด</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-[var(--white)]">สถานะรอบหวยล่าสุด</h2>
+          <ExportButton name="report-draws-summary" rows={drawsSummaryRows} columns={DRAWS_SUMMARY_COLS} />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -205,7 +293,10 @@ export default function AdminReports() {
       {/* กำไรต่อรอบ — settled 30 วันล่าสุด */}
       {d.profitByDraw?.length > 0 && (
         <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl p-5">
-          <h2 className="font-bold text-[var(--white)] mb-1">กำไรต่อรอบ (30 วันล่าสุด)</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-bold text-[var(--white)]">กำไรต่อรอบ (30 วันล่าสุด)</h2>
+            <ExportButton name="report-profit-by-draw" rows={profitByDrawRows} columns={PROFIT_BY_DRAW_COLS} />
+          </div>
           <p className="text-xs text-[var(--muted-gray)] mb-3">vip = ยอดแทง − เงินรางวัล · ติดลบ = ระบบขาดทุนรอบนั้น</p>
           <Table>
             <TableHeader>
