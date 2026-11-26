@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import { thaiDate } from '../time.js';
 import { FlagIcon } from '../components/ResultLine.jsx';
 import { StatCard } from '../components/ui/index.js';
@@ -27,11 +28,13 @@ function Kpi({ label, value, sub, tone = 'text-white' }) {
 export default function AdminReports() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState('');
-  useEffect(() => {
+  const load = useCallback(() => {
+    setErr('');
     api('/admin/reports/summary').then(setD).catch(e => setErr(e.message));
   }, []);
-  if (err) return <div className="text-sm text-[var(--danger-red)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] rounded-lg p-3">เกิดข้อผิดพลาด: {err}</div>;
-  if (!d) return <div className="text-[var(--muted-gray)]">กำลังโหลด...</div>;
+  useEffect(() => { load(); }, [load]);
+  if (err) return <AdminError message={err} onRetry={load} />;
+  if (!d) return <AdminLoading label="กำลังโหลดรายงาน..." />;
 
   const t = d.totals || {};
   const houseNet = (t.stake || 0) - (t.payout || 0);

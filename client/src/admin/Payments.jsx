@@ -3,6 +3,8 @@ import { api, satang, fmtDateTime } from '../api.js';
 import { Button, Input } from '../components/ui/index.js';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/shadcn/select.jsx';
 import { cn } from '../lib/utils.js';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
+import { SkeletonCard } from '../components/Skeleton.jsx';
 
 const STATUS_TH = { pending_slip: 'รอสลิป', pending_review: 'รอตรวจสอบ', approved: 'อนุมัติแล้ว', rejected: 'ปฏิเสธ' };
 const STATUS_BADGE = {
@@ -22,21 +24,27 @@ export default function AdminPayments() {
   const [slipView, setSlipView] = useState(null); // { id, loading, imageBase64, meta }
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState('');
   const PAGE_SIZE = 50;
 
   const viewSlip = async (p) => {
-    setSlipView({ id: p.id, loading: true });
+    setSlipView({ id: p.id, p, loading: true });
     try {
       const r = await api(`/admin/payments/${p.id}/slip`);
-      setSlipView({ id: p.id, loading: false, imageBase64: r.imageBase64, meta: r });
+      setSlipView({ id: p.id, p, loading: false, imageBase64: r.imageBase64, meta: r });
     } catch (e) {
-      setSlipView({ id: p.id, loading: false, error: e.message });
+      setSlipView({ id: p.id, p, loading: false, error: e.message });
     }
   };
 
-  const load = (p = page) => api(`/admin/payments?status=${status}${kind ? `&kind=${kind}` : ''}&limit=${PAGE_SIZE}&offset=${p * PAGE_SIZE}`)
-    .then(r => { setRows(r.requests || []); setTotal(r.total || 0); })
-    .catch(e => setMsg(e.message));
+  const load = (p = page) => {
+    setLoading(true); setLoadErr('');
+    return api(`/admin/payments?status=${status}${kind ? `&kind=${kind}` : ''}&limit=${PAGE_SIZE}&offset=${p * PAGE_SIZE}`)
+      .then(r => { setRows(r.requests || []); setTotal(r.total || 0); })
+      .catch(e => { setRows([]); setTotal(0); setLoadErr(e.message); })
+      .finally(() => setLoading(false));
+  };
   useEffect(() => { setPage(0); load(0); }, [status, kind]);
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -94,8 +102,11 @@ export default function AdminPayments() {
             คำขอ <span className="[color:var(--gold-primary)]">({total.toLocaleString()} รายการ — หน้า {page + 1}/{pageCount})</span>
           </h2>
         </div>
-        {rows.length === 0 ? (
-          <div className="py-12 text-center text-sm [color:var(--muted-gray)]">ไม่มีคำขอ</div>
+        {loadErr && <div className="px-4 pt-3"><AdminError message={loadErr} onRetry={() => load(page)} /></div>}
+        {loading && rows.length === 0 ? (
+          <div className="p-4"><AdminLoading label="กำลังโหลดคำขอชำระเงิน..." /></div>
+        ) : rows.length === 0 ? (
+          <div className="py-12 text-center text-sm [color:var(--muted-gray)]">{loadErr ? '' : 'ไม่มีคำขอ'}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -187,8 +198,8 @@ export default function AdminPayments() {
               <div className="text-sm font-bold [color:var(--gold-primary)]">🧾 รูปสลิปการโอน</div>
               <button onClick={() => setSlipView(null)} className="text-lg transition-colors [color:var(--muted-gray)]">✕</button>
             </div>
-            {slipView.loading && <div className="text-sm py-8 text-center [color:var(--muted-gray)]">กำลังโหลด...</div>}
-            {slipView.error && <div className="text-sm py-8 text-center [color:var(--danger-red)]">{slipView.error}</div>}
+            {slipView.loading && <SkeletonCard className="h-48 w-full !rounded-lg" />}
+            {slipView.error && <AdminError message={slipView.error} onRetry={() => viewSlip(slipView.p)} />}
             {!slipView.loading && !slipView.error && slipView.imageBase64 && (() => {
               const src = slipView.imageBase64.startsWith('data:')
                 ? slipView.imageBase64

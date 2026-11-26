@@ -3,21 +3,27 @@ import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import '../styles/luxury-theme.css';
 
 export default function AdminRoles() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [sel, setSel] = useState({});
+  const [err, setErr] = useState('');
 
-  const load = () => api('/admin/roles').then(r => {
-    setData(r);
-    const m = {};
-    r.roles.forEach(role => { m[role.id] = new Set(role.permissions); });
-    setSel(m);
-  }).catch(e => toast(e.message, 'error'));
-  useEffect(() => { load(); }, []);
-  if (!data) return <div className="text-[var(--muted-gray)]">กำลังโหลด...</div>;
+  const load = () => {
+    setErr('');
+    return api('/admin/roles').then(r => {
+      setData(r);
+      const m = {};
+      r.roles.forEach(role => { m[role.id] = new Set(role.permissions); });
+      setSel(m);
+    }).catch(e => setErr(e.message));
+  };
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (err) return <AdminError message={err} onRetry={load} />;
+  if (!data) return <AdminLoading label="กำลังโหลดสิทธิ์การใช้งาน..." />;
 
   const isSuper = (user?.roles || []).includes('super_admin');
 

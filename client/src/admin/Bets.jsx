@@ -5,6 +5,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import { Badge } from '../components/shadcn/badge.jsx';
 import { cn } from '../lib/utils.js';
 import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 
 const STATUS_TH = {
   pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก',
@@ -96,6 +97,7 @@ export default function AdminBets() {
   const [q, setQ] = useState(filters.q); // draft ขณะพิมพ์ — commit ลง URL หลัง debounce
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(true);
   const debounceRef = useRef(null);
 
   const buildQs = (offset) => {
@@ -107,6 +109,7 @@ export default function AdminBets() {
 
   // ดึงทุกรายการที่ตรง filter (วน offset ทีละ FETCH_LIMIT) แล้ว paginate ฝั่ง client
   const load = async () => {
+    setLoading(true);
     try {
       const all = [];
       let offset = 0, totalRows = 0;
@@ -122,6 +125,7 @@ export default function AdminBets() {
       setFiltered(all);
       setErr('');
     } catch (e) { setFiltered([]); setErr(e?.message || 'โหลดข้อมูลไม่สำเร็จ'); }
+    finally { setLoading(false); }
   };
 
   // filter เปลี่ยน → โหลดใหม่ + กลับหน้า 1
@@ -176,8 +180,11 @@ export default function AdminBets() {
           </button>
         </div>
       </div>
-      {err && <div className="text-sm rounded-lg p-3 [color:var(--danger-red)] [background:rgba(239,_68,_68,_0.1)] [border:1px_solid_var(--danger-red)]">เกิดข้อผิดพลาด: {err}</div>}
+      {err && <AdminError message={err} onRetry={load} />}
       <div className="[color:var(--muted-gray)] [font-size:12px]">ทั้งหมด {total.toLocaleString()} โพย{filtered.length < total ? ` — โหลด ${filtered.length.toLocaleString()} รายการแรก` : ''}</div>
+      {loading && !filtered.length ? (
+        <AdminLoading label="กำลังโหลดโพย..." />
+      ) : (
       <div className="space-y-3">
         {paged.map(s => {
           const houseNet = (s.total_stake || 0) - (s.total_payout || 0); // มุมเจ้ามือ: บวก = ได้กำไร
@@ -222,8 +229,9 @@ export default function AdminBets() {
             </div>
           );
         })}
-        {!filtered.length && <div className="text-center py-10 [color:var(--muted-gray)]">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
+        {!filtered.length && !loading && <div className="text-center py-10 [color:var(--muted-gray)]">{total ? 'ไม่พบโพยที่ตรงกับเงื่อนไข' : 'ไม่มีโพย'}</div>}
       </div>
+      )}
       <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} />
     </div>
   );

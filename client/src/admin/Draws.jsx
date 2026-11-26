@@ -8,6 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Badge as SBadge } from '../components/shadcn/badge.jsx';
 import { cn } from '../lib/utils.js';
 import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 
 const STATUS_BADGE = {
   open: 'luxury-badge-success',
@@ -39,6 +40,8 @@ export default function AdminDraws() {
   const [schedule, setSchedule] = useState(null);
   const [seedMsg, setSeedMsg] = useState('');
   const [seedBusy, setSeedBusy] = useState(false);
+  const [drawsLoading, setDrawsLoading] = useState(true);
+  const [drawsErr, setDrawsErr] = useState('');
   // filter sync กับ URL query (?status=&type=&category=) — refresh/share link แล้ว filter ยังอยู่
   const [filter, setFilter] = useUrlFilters({ status: '', type: '', category: '' });
 
@@ -55,6 +58,7 @@ export default function AdminDraws() {
   };
   // ดึงทุกรอบที่ตรง filter (วน offset ทีละ FETCH_LIMIT) แล้ว paginate ฝั่ง client
   const loadDraws = async () => {
+    setDrawsLoading(true); setDrawsErr('');
     try {
       const all = [];
       let offset = 0;
@@ -67,7 +71,8 @@ export default function AdminDraws() {
         if (!list.length || list.length < FETCH_LIMIT || all.length >= total || all.length >= MAX_DRAW_ROWS) break;
       }
       setFiltered(all);
-    } catch (e) { toast(e.message, 'error'); }
+    } catch (e) { setDrawsErr(e.message); }
+    finally { setDrawsLoading(false); }
   };
   const load = () => {
     loadDraws();
@@ -247,6 +252,12 @@ export default function AdminDraws() {
       </div>
 
       <div className="luxury-card">
+        {drawsErr && filtered.length > 0 && <div className="p-4 pb-0"><AdminError message={drawsErr} onRetry={loadDraws} /></div>}
+        {drawsLoading && !filtered.length ? (
+          <div className="p-4"><AdminLoading label="กำลังโหลดรอบหวย..." /></div>
+        ) : drawsErr && !filtered.length ? (
+          <div className="p-4"><AdminError message={drawsErr} onRetry={loadDraws} /></div>
+        ) : (
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent [border-bottom:1px_solid_var(--border-light)]">
@@ -289,6 +300,7 @@ export default function AdminDraws() {
             ))}
           </TableBody>
         </Table>
+        )}
       </div>
       <TablePager page={curPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage} />
 

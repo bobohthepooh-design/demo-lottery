@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import { Icon } from '../components/icons.jsx';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 
@@ -31,12 +32,14 @@ export default function AdminOverview() {
   const [d, setD] = useState(null);
   const [health, setHealth] = useState(null);
   const [err, setErr] = useState('');
-  useEffect(() => {
+  const load = useCallback(() => {
+    setErr('');
     api('/admin/overview').then(setD).catch(e => setErr(e.message));
     api('/admin/health').then(setHealth).catch(() => {});
   }, []);
-  if (err) return <div className="text-[var(--danger-red)]">เกิดข้อผิดพลาด: {err}</div>;
-  if (!d) return <div className="text-[var(--muted-gray)]">กำลังโหลด...</div>;
+  useEffect(() => { load(); }, [load]);
+  if (err) return <AdminError message={err} onRetry={load} />;
+  if (!d) return <AdminLoading label="กำลังโหลดภาพรวม..." />;
 
   const m = d.money || {};
   const daily = d.daily || [];

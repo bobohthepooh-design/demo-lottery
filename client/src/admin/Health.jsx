@@ -3,6 +3,7 @@ import { api, fmtDateTime } from '../api.js';
 import { sourceBadge, marketInfo, MODE_BADGE, isOfficial } from '../resultSource.js';
 import { Card, CardBody } from '../components/ui/index.js';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 
 // หน้าสุขภาพระบบ — /api/admin/health (sources ผลล่าสุด, รอบค้าง, สถิติรวม)
 // refresh อัตโนมัติทุก 30 วิ
@@ -95,7 +96,7 @@ export default function AdminHealth() {
         <div className="text-xs text-[var(--muted-gray)]">อัปเดต {updated ? updated.toLocaleTimeString('th-TH') : '—'}</div>
       </div>
 
-      {err && <div className="text-sm text-[var(--danger-red)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] rounded-lg p-3">โหลดไม่สำเร็จ: {err}</div>}
+      {err && <AdminError message={err} onRetry={load} />}
 
       {d && (
         <>
@@ -287,7 +288,7 @@ export default function AdminHealth() {
           )}
         </>
       )}
-      {!d && !err && <div className="text-[var(--muted-gray)]">กำลังโหลด...</div>}
+      {!d && !err && <AdminLoading label="กำลังโหลดสุขภาพระบบ..." />}
     </div>
   );
 }

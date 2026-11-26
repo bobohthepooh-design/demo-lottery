@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
+import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import { DEFAULT_BANNER } from '../bannerConfig.js';
 import { confirmAction } from './confirm.jsx';
 import { Card, CardBody, Button } from '../components/ui/index.js';
@@ -24,16 +25,19 @@ export default function AdminBanner() {
   const [announce, setAnnounce] = useState(DEFAULT_ANNOUNCEMENT);
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState('');
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true); setLoadErr('');
     api('/admin/settings').then(r => {
       const s = r.settings.find(x => x.key === 'homepage_banner');
       if (s?.value && typeof s.value === 'object') setForm({ ...DEFAULT_BANNER, ...s.value });
       const a = r.settings.find(x => x.key === 'announcement');
       if (a?.value && typeof a.value === 'object') setAnnounce({ ...DEFAULT_ANNOUNCEMENT, ...a.value });
-    }).catch(e => setMsg('ERROR: ' + e.message))
+    }).catch(e => setLoadErr(e.message))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(() => { load(); }, [load]);
 
   const save = async () => {
     setMsg('');
@@ -47,7 +51,8 @@ export default function AdminBanner() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  if (loading) return <div className="[color:var(--muted-gray)]">กำลังโหลด...</div>;
+  if (loading) return <AdminLoading label="กำลังโหลดแบนเนอร์..." />;
+  if (loadErr) return <AdminError message={loadErr} onRetry={load} />;
 
   return (
     <div className="max-w-2xl space-y-4">
