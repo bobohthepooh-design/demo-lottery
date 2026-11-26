@@ -3,6 +3,7 @@ import { ConfirmHost } from './confirm.jsx';
 import { useAuth } from '../auth.jsx';
 import { api } from '../api.js';
 import { Icon } from '../components/icons.jsx';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../components/shadcn/sheet.jsx';
 import { toast } from '../components/toast.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -55,6 +56,7 @@ export default function AdminLayout() {
   const [chatUnread, setChatUnread] = useState(0);
   const [payPending, setPayPending] = useState(0); // คำขอเติม/ถอนที่รอตรวจสอบ
   const [apprPending, setApprPending] = useState(0); // คำขอ maker-checker ที่รออนุมัติ
+  const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
   const prevUnread = useRef(0);
 
   const perms = user?.permissions || [];
@@ -123,13 +125,54 @@ export default function AdminLayout() {
     return () => window.removeEventListener('keydown', onKey);
   }, [navigate, visibleGroups]);
 
+  // nav groups — ใช้ร่วมกันระหว่าง sidebar (lg) และ mobile Sheet drawer
+  // inSheet=true แสดง group label ใน drawer (sidebar ซ่อน label บน mobile เพราะ aside ถูกซ่อนทั้งก้อนอยู่แล้ว)
+  const renderNav = (inSheet = false) => (
+    <nav className={inSheet
+      ? 'flex flex-col gap-0.5 p-2 flex-1 min-h-0 overflow-y-auto'
+      : 'hidden lg:flex lg:flex-col gap-0.5 lg:overflow-x-visible lg:overflow-y-auto lg:flex-1 lg:min-h-0 p-2'}>
+      {visibleGroups.map(g => (
+        <div key={g.label} className="contents">
+          <div className={inSheet
+            ? 'text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1 text-[var(--muted-gray)]'
+            : 'hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1 text-[var(--muted-gray)]'}>
+            {g.label}
+          </div>
+          {g.items.map(i => (
+            <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setNavOpen(false)}
+              className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors border ${isActive
+                ? 'font-semibold bg-gradient-to-r from-[rgba(212,175,55,0.2)] to-[rgba(212,175,55,0.1)] text-[var(--gold-bright)] border-[var(--border-gold)]'
+                : 'text-[var(--muted-gray)] border-transparent'}`}>
+              <Icon name={i.icon} className="w-4 h-4 shrink-0" />
+              {i.label}
+              {i.to === '/admin/chat' && chatUnread > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--danger-red)] text-[var(--white)]">
+                  {chatUnread > 99 ? '99+' : chatUnread}
+                </span>
+              )}
+              {i.to === '/admin/payments' && payPending > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--warning-amber)] text-[var(--bg-deep-black)]">
+                  {payPending > 99 ? '99+' : payPending}
+                </span>
+              )}
+              {i.to === '/admin/approvals' && apprPending > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--success-green)] text-[var(--bg-deep-black)]">
+                  {apprPending > 99 ? '99+' : apprPending}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="admin-compact flex flex-col lg:flex-row gap-6 bg-[var(--bg-deep-black)]">
-      <aside className="lg:w-60 shrink-0">
+      <aside className="hidden lg:block lg:w-60 shrink-0">
         {/* lg: sticky — ติดบนตอนเลื่อนแต่ไม่คำนวณตำแหน่งจาก vw (fixed+calc(50vw) ทำให้
             เด้งทุกครั้งที่ scrollbar โผล่/หาย) aside ยืดเต็มสูงแถว flex อยู่แล้ว */}
-        <div className="rounded-xl sticky top-[3.625rem] sm:top-[4.125rem] z-30 overflow-hidden
-          lg:sticky lg:top-24 lg:bottom-auto lg:h-auto lg:max-h-[calc(100vh-7.5rem)] lg:w-60 lg:flex lg:flex-col
+        <div className="rounded-xl lg:sticky lg:top-24 lg:bottom-auto lg:h-auto lg:max-h-[calc(100vh-7.5rem)] lg:w-60 lg:flex lg:flex-col
           bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-dark-surface)] border border-[var(--border-gold)] shadow-[var(--shadow-pop)]">
           <div className="hidden lg:flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-[var(--border-light)]">
             <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[rgba(212,175,55,0.2)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
@@ -141,39 +184,7 @@ export default function AdminLayout() {
             </div>
             <span className="ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-[var(--border-gold)] bg-[rgba(212,175,55,0.15)] text-[var(--gold-bright)]">STAFF</span>
           </div>
-          <nav className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:flex-1 lg:min-h-0 p-2">
-            {visibleGroups.map(g => (
-              <div key={g.label} className="contents">
-                <div className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.14em] px-3 pt-3 pb-1 text-[var(--muted-gray)]">
-                  {g.label}
-                </div>
-                {g.items.map(i => (
-                  <NavLink key={i.to} to={i.to} end={i.end}
-                    className={({ isActive }) => `relative flex items-center gap-2.5 whitespace-nowrap px-3 py-2 rounded-lg text-[13px] transition-colors border ${isActive
-                      ? 'font-semibold bg-gradient-to-r from-[rgba(212,175,55,0.2)] to-[rgba(212,175,55,0.1)] text-[var(--gold-bright)] border-[var(--border-gold)]'
-                      : 'text-[var(--muted-gray)] border-transparent'}`}>
-                    <Icon name={i.icon} className="w-4 h-4 shrink-0" />
-                    {i.label}
-                    {i.to === '/admin/chat' && chatUnread > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--danger-red)] text-[var(--white)]">
-                        {chatUnread > 99 ? '99+' : chatUnread}
-                      </span>
-                    )}
-                    {i.to === '/admin/payments' && payPending > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--warning-amber)] text-[var(--bg-deep-black)]">
-                        {payPending > 99 ? '99+' : payPending}
-                      </span>
-                    )}
-                    {i.to === '/admin/approvals' && apprPending > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center bg-[var(--success-green)] text-[var(--bg-deep-black)]">
-                        {apprPending > 99 ? '99+' : apprPending}
-                      </span>
-                    )}
-                  </NavLink>
-                ))}
-              </div>
-            ))}
-          </nav>
+          {renderNav()}
           {user && (
             <div className="hidden lg:flex items-center gap-2.5 px-4 py-3 border-t border-[var(--border-light)]">
               <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[var(--bg-dark-surface)] border border-[var(--border-light)] text-[var(--gold-primary)]">
@@ -187,7 +198,44 @@ export default function AdminLayout() {
           )}
         </div>
       </aside>
-      <div className="flex-1 min-w-0"><div key={location.pathname} className="page-enter"><Outlet /></div></div>
+      <div className="flex-1 min-w-0">
+        {/* mobile: hamburger เปิด nav drawer (desktop ใช้ sidebar แทน) */}
+        <button type="button" onClick={() => setNavOpen(true)} aria-label="เปิดเมนู"
+          className="lg:hidden mb-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold
+            bg-[var(--bg-card)] border border-[var(--border-gold)] text-[var(--gold-bright)]
+            shadow-[var(--shadow-pop)]">
+          <Icon name="menu" className="w-4 h-4" />
+          เมนู
+        </button>
+        <div key={location.pathname} className="page-enter"><Outlet /></div>
+      </div>
+      <Sheet open={navOpen} onOpenChange={setNavOpen}>
+        <SheetContent side="left" className="w-[85vw] sm:max-w-xs p-0 gap-0 border-[var(--border-gold)] bg-[var(--bg-deep-black)]">
+          <SheetHeader className="px-4 pt-4 pb-3 border-b border-[var(--border-light)]">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-[rgba(212,175,55,0.2)] border border-[var(--border-gold)] text-[var(--gold-primary)]">
+                <Icon name="settings" className="w-4 h-4" />
+              </span>
+              <div className="leading-tight">
+                <SheetTitle className="font-display font-bold text-sm text-[var(--white)]">Admin Panel</SheetTitle>
+                <div className="text-[10px] text-[var(--muted-gray)]">ระบบจัดการหลังบ้าน</div>
+              </div>
+            </div>
+          </SheetHeader>
+          {renderNav(true)}
+          {user && (
+            <div className="flex items-center gap-2.5 px-4 py-3 border-t border-[var(--border-light)]">
+              <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[var(--bg-dark-surface)] border border-[var(--border-light)] text-[var(--gold-primary)]">
+                {(user.displayName || user.username || '?').slice(0, 1).toUpperCase()}
+              </span>
+              <div className="leading-tight min-w-0">
+                <div className="text-xs font-semibold truncate text-[var(--white)]">{user.displayName || user.username}</div>
+                <div className="text-[10px] truncate text-[var(--muted-gray)]">{(user.roles || []).join(', ') || 'staff'}</div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
       <ConfirmHost />
     </div>
   );
