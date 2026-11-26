@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import { Icon } from '../components/icons.jsx';
@@ -33,9 +33,15 @@ export default function AdminOverview() {
   const [health, setHealth] = useState(null);
   const [err, setErr] = useState('');
   const [updatedAt, setUpdatedAt] = useState(null); // เวลาที่ข้อมูล refresh ล่าสุด (สำหรับแสดง "อัปเดตล่าสุด")
+  const hasData = useRef(false); // มีข้อมูลแสดงอยู่แล้วหรือยัง — กัน background refresh fail แล้วเด้งทั้งหน้าเป็น AdminError
   const load = useCallback(() => {
     setErr('');
-    api('/admin/overview').then(x => { setD(x); setUpdatedAt(new Date()); }).catch(e => setErr(e.message));
+    api('/admin/overview')
+      .then(x => { hasData.current = true; setD(x); setUpdatedAt(new Date()); })
+      .catch(e => {
+        if (hasData.current) console.warn('[admin/overview] refresh failed:', e.message); // เก็บข้อมูลเก่าค้างไว้ ไม่รบกวนหน้าจอ
+        else setErr(e.message);
+      });
     api('/admin/health').then(setHealth).catch(() => {});
   }, []);
   // auto-refresh: poll 30 วิ + refresh เมื่อ SSE แจ้ง sys:update + reload เมื่อ tab กลับมา visible
