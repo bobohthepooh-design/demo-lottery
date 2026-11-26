@@ -4,6 +4,7 @@ import { sourceBadge, marketInfo, MODE_BADGE, isOfficial } from '../resultSource
 import { Card, CardBody } from '../components/ui/index.js';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/shadcn/table.jsx';
 import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
+import { toast } from '../components/toast.js';
 
 // หน้าสุขภาพระบบ — /api/admin/health (sources ผลล่าสุด, รอบค้าง, สถิติรวม)
 // refresh อัตโนมัติทุก 30 วิ
@@ -50,9 +51,9 @@ export default function AdminHealth() {
   const createBackup = async () => {
     try {
       const r = await api('/admin/backups', { method: 'POST', body: {} });
-      alert(`สร้าง backup แล้ว: ${r.file} (${(r.sizeBytes / 1024).toFixed(0)} KB, ${r.rows} rows)`);
+      toast(`สร้าง backup แล้ว: ${r.file} (${(r.sizeBytes / 1024).toFixed(0)} KB)`, 'success');
       load();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const createIncident = async () => {
@@ -60,13 +61,14 @@ export default function AdminHealth() {
     try {
       await api('/admin/incidents', { method: 'POST', body: incForm });
       setIncForm({ title: '', severity: 'medium', detail: '' });
+      toast('บันทึก incident แล้ว', 'success');
       load();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const setIncidentStatus = async (inc, status) => {
-    try { await api(`/admin/incidents/${inc.id}`, { method: 'PATCH', body: { status } }); load(); }
-    catch (e) { alert(e.message); }
+    try { await api(`/admin/incidents/${inc.id}`, { method: 'PATCH', body: { status } }); toast('อัปเดตสถานะ incident แล้ว', 'success'); load(); }
+    catch (e) { toast(e.message, 'error'); }
   };
   useEffect(() => {
     load();

@@ -5,6 +5,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import { cn } from '../lib/utils.js';
 import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import { SkeletonCard } from '../components/Skeleton.jsx';
+import { toast } from '../components/toast.js';
 
 const STATUS_TH = { pending_slip: 'รอสลิป', pending_review: 'รอตรวจสอบ', approved: 'อนุมัติแล้ว', rejected: 'ปฏิเสธ' };
 const STATUS_BADGE = {
@@ -54,11 +55,13 @@ export default function AdminPayments() {
       const r = await api(`/admin/payments/${id}/review`, { method: 'POST', body: { action, note: note[id] || '' } });
       if (r.pendingApproval) {
         setMsg(`📨 ส่งคำขอ ${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'} การชำระเงิน ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว`);
+        toast('ส่งคำขอเข้าศูนย์อนุมัติแล้ว', 'info');
       } else {
         setMsg(action === 'approve' ? `✅ อนุมัติแล้ว${r.balance != null ? ` — ยอดใหม่ ${satang(r.balance)} บาท` : ''}` : 'ปฏิเสธแล้ว');
+        toast(action === 'approve' ? 'อนุมัติคำขอชำระเงินแล้ว' : 'ปฏิเสธคำขอชำระเงินแล้ว', 'success');
       }
       load(page);
-    } catch (e) { setMsg('❌ ' + e.message); }
+    } catch (e) { setMsg('❌ ' + e.message); toast(e.message, 'error'); }
     finally { setBusy(null); }
   };
 

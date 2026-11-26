@@ -22,7 +22,7 @@ export default function AdminBroadcast() {
       setMsg(`ส่งสำเร็จ ${r.sent} คน`);
       toast(`ส่งประกาศถึงสมาชิก ${r.sent} คนแล้ว`, 'success');
       setForm({ title: '', body: '', link: '' });
-    } catch (e2) { setMsg('ERROR: ' + e2.message); }
+    } catch (e2) { setMsg('ERROR: ' + e2.message); toast(e2.message, 'error'); }
     finally { setBusy(false); }
   };
 

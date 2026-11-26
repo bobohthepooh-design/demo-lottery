@@ -72,6 +72,7 @@ export default function AdminMembers() {
     try {
       await api(`/admin/members/${edit.id}`, { method: 'PATCH', body });
       setEdit(null); load();
+      toast('บันทึกข้อมูลสมาชิกแล้ว', 'success');
     } catch (e) { toast(e.message, 'error'); }
   };
 
@@ -79,6 +80,7 @@ export default function AdminMembers() {
     try {
       const r = await api(`/admin/members/${del.id}`, { method: 'DELETE' });
       if (r.pendingApproval) toast(`📨 ส่งคำขอลบบัญชี ${del.username} เข้าศูนย์อนุมัติแล้ว`, 'info');
+      else toast('ลบบัญชีสมาชิกแล้ว', 'success');
       setDel(null); load();
     } catch (e) { toast(e.message, 'error'); setDel(null); }
   };

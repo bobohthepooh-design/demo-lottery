@@ -115,7 +115,11 @@ export default function AdminLotteries() {
   const createType = async (e) => {
     e.preventDefault();
     if (!(await confirmAction({ title: 'ยืนยันเพิ่มประเภทหวย', message: `เพิ่มประเภทหวย "${typeForm.name_th}" (${typeForm.code}) ใช่หรือไม่?` }))) return;
-    try { await api('/admin/lottery/types', { method: 'POST', body: typeForm }); setShowTypeForm(false); setTypeForm({ code:'', name_th:'', name_en:'', description:'' }); load(); }
+    try {
+      await api('/admin/lottery/types', { method: 'POST', body: typeForm });
+      setShowTypeForm(false); setTypeForm({ code:'', name_th:'', name_en:'', description:'' }); load();
+      toast(`เพิ่มประเภทหวย "${typeForm.name_th}" แล้ว`, 'success');
+    }
     catch (e2) { toast(e2.message, 'error'); }
   };
 
@@ -126,8 +130,11 @@ export default function AdminLotteries() {
       message: `${enabling ? 'เปิด' : 'ปิด'}การใช้งาน "${t.name_th}" ใช่หรือไม่?${enabling ? '' : '\nประเภทที่ปิดจะไม่แสดงให้สมาชิกเห็น'}`,
       danger: !enabling,
     }))) return;
-    await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { is_active: enabling ? 1 : 0 } });
-    load();
+    try {
+      await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { is_active: enabling ? 1 : 0 } });
+      toast(enabling ? `เปิดประเภทหวย "${t.name_th}" แล้ว` : `ปิดประเภทหวย "${t.name_th}" แล้ว`, 'success');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const setResultMode = async (t, mode) => {
@@ -135,8 +142,11 @@ export default function AdminLotteries() {
       title: 'ยืนยันเปลี่ยนโหมดผลรางวัล',
       message: `ตั้งผลรางวัลของ "${t.name_th}" เป็น "${mode === 'auto' ? 'อัตโนมัติ (ดึงจากแหล่งข้อมูล)' : 'กรอกเองโดย admin'}" ใช่หรือไม่?`,
     }))) return;
-    await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { result_mode: mode } });
-    load();
+    try {
+      await api(`/admin/lottery/types/${t.id}`, { method: 'PATCH', body: { result_mode: mode } });
+      toast(`เปลี่ยนโหมดผลรางวัลเป็น "${mode === 'auto' ? 'อัตโนมัติ' : 'กรอกเอง'}" แล้ว`, 'success');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   // patch match_config (เก็บ payouts/prizes ของเกมด่วน) — ใช้ในฟอร์มแก้ไขกติกา
@@ -196,6 +206,7 @@ export default function AdminLotteries() {
       if (editRule.id) await api(`/admin/lottery/rules/${editRule.id}`, { method: 'PATCH', body });
       else await api('/admin/lottery/rules', { method: 'POST', body });
       setEditRule(null); load();
+      toast('บันทึกกติกาแล้ว', 'success');
     } catch (e) { toast(e.message, 'error'); }
   };
 
@@ -398,8 +409,11 @@ export default function AdminLotteries() {
                           message: `${on ? 'ปิด' : 'เปิด'}ตลาด "${cat.name_th}" ใช่หรือไม่?${on ? '\nสมาชิกจะไม่เห็นตลาดนี้และแทงไม่ได้ (โพยเก่าไม่กระทบ)' : ''}`,
                           danger: on,
                         }))) return;
-                        await api(`/admin/lottery/categories/${cat.id}`, { method: 'PATCH', body: { is_active: on ? 0 : 1 } });
-                        load();
+                        try {
+                          await api(`/admin/lottery/categories/${cat.id}`, { method: 'PATCH', body: { is_active: on ? 0 : 1 } });
+                          toast(`${on ? 'ปิด' : 'เปิด'}ตลาด "${cat.name_th}" แล้ว`, 'success');
+                          load();
+                        } catch (e) { toast(e.message, 'error'); }
                       }}
                         className={`text-[10px] px-2.5 py-1 rounded-full border font-semibold ${on ? 'luxury-badge-success' : 'luxury-badge'}`}
                         style={on ? {} : { background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}
@@ -438,7 +452,11 @@ export default function AdminLotteries() {
                               message: `${enabling ? 'เปิดใช้' : 'ปิด'}กติกา "${r.name_th}" (${r.bet_type}) ใช่หรือไม่?`,
                               danger: !enabling,
                             }))) return;
-                            await api(`/admin/lottery/rules/${r.id}`, { method: 'PATCH', body: { is_active: enabling ? 1 : 0 } }); load();
+                            try {
+                              await api(`/admin/lottery/rules/${r.id}`, { method: 'PATCH', body: { is_active: enabling ? 1 : 0 } });
+                              toast(`${enabling ? 'เปิดใช้' : 'ปิด'}กติกา "${r.name_th}" แล้ว`, 'success');
+                              load();
+                            } catch (e) { toast(e.message, 'error'); }
                           }}
                             className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${r.is_active ? 'luxury-badge-success' : 'luxury-badge'}`}
                             style={r.is_active ? {} : { background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>

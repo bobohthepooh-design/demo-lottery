@@ -75,8 +75,9 @@ export default function AdminSettings() {
       await api('/admin/settings/cashback_percent', { method: 'PUT', body: { value: v } });
       setCashbackPct(String(v));
       setCashbackMsg(`บันทึกแล้ว — คืนยอดเสีย ${v}%/วัน`);
+      toast(`บันทึก cashback ${v}%/วันแล้ว`, 'success');
       load();
-    } catch (e) { setCashbackMsg('ERROR: ' + e.message); }
+    } catch (e) { setCashbackMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
   };
 
   const cashbackAction = async (kind) => {
@@ -94,8 +95,10 @@ export default function AdminSettings() {
         setCashbackMsg(r.skipped === 'disabled'
           ? 'ERROR: ยังไม่ได้ตั้ง cashback_percent (>0)'
           : `จ่ายแล้ว — ${r.users} คน รวม ${(r.total / 100).toLocaleString('th-TH')} บาท`);
+        if (r.skipped === 'disabled') toast('ยังไม่ได้ตั้ง cashback_percent (>0)', 'error');
+        else toast(`จ่าย cashback แล้ว — ${r.users} คน รวม ${(r.total / 100).toLocaleString('th-TH')} บาท`, 'success');
       }
-    } catch (e) { setCashbackMsg('ERROR: ' + e.message); }
+    } catch (e) { setCashbackMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
   };
 
   const createCampaign = async () => {
@@ -137,7 +140,8 @@ export default function AdminSettings() {
     try {
       await api(`/admin/settings/${key}`, { method: 'PUT', body: { value } });
       setMsg(`บันทึก ${key} แล้ว`); load();
-    } catch (e) { setMsg('ERROR: ' + e.message); }
+      toast(`บันทึก ${key} แล้ว`, 'success');
+    } catch (e) { setMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
   };
 
   return (

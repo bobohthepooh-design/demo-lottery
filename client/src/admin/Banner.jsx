@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
+import { toast } from '../components/toast.js';
 import { DEFAULT_BANNER } from '../bannerConfig.js';
 import { confirmAction } from './confirm.jsx';
 import { Card, CardBody, Button } from '../components/ui/index.js';
@@ -46,7 +47,8 @@ export default function AdminBanner() {
       await api('/admin/settings/homepage_banner', { method: 'PUT', body: { value: form } });
       await api('/admin/settings/announcement', { method: 'PUT', body: { value: announce } });
       setMsg('บันทึกแบนเนอร์และประกาศแล้ว — หน้าแรกจะอัปเดตทันที');
-    } catch (e) { setMsg('ERROR: ' + e.message); }
+      toast('บันทึกแบนเนอร์และประกาศแล้ว', 'success');
+    } catch (e) { setMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
   };
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));

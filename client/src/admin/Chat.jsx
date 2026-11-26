@@ -41,6 +41,7 @@ export default function AdminChat() {
     try {
       await api(`/admin/chat/threads/${sel}/messages`, { method: 'POST', body: { body } });
       setInput('');
+      toast('ส่งข้อความแล้ว', 'success');
       loadMsgs(sel); loadThreads();
     } catch (e) { toast(e.message, 'error'); }
     finally { setBusy(false); }

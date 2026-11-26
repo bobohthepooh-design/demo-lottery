@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, satang, fmtDateTime } from '../api.js';
 import { confirmAction } from './confirm.jsx';
+import { toast } from '../components/toast.js';
 import { Input, Select, Button } from '../components/ui/index.js';
 import { cn } from '../lib/utils.js';
 
@@ -45,9 +46,9 @@ export default function AdminWallet() {
     if (!(await confirmAction({ title: 'Backfill journal entries', message: 'สร้าง journal entries ย้อนหลังให้ transactions ที่ยังไม่มี? (ทำครั้งเดียวสำหรับข้อมูลเก่า)' }))) return;
     try {
       const r = await api('/admin/ledger/rebuild', { method: 'POST', body: {} });
-      alert(`Backfill แล้ว ${r.posted} transactions`);
+      toast(`Backfill journal entries แล้ว ${r.posted} รายการ`, 'success');
       load();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   const submit = async (e) => {
@@ -65,12 +66,14 @@ export default function AdminWallet() {
       }});
       if (r.pendingApproval) {
         setMsg(`📨 ส่งคำขอปรับเครดิต ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว — รอ admin อีกคนอนุมัติ`);
+        toast('ส่งคำขอปรับเครดิตเข้าศูนย์อนุมัติแล้ว', 'info');
       } else {
         setMsg(`สำเร็จ — ref ${r.transaction.reference} • ยอดใหม่ ${satang(r.balance)} บาท`);
+        toast('ปรับเครดิตแล้ว', 'success');
       }
       setForm({ userId: '', amount: '', direction: 'credit', reason: '', idempotencyKey: newKey() });
       load();
-    } catch (e2) { setMsg('ERROR: ' + e2.message); }
+    } catch (e2) { setMsg('ERROR: ' + e2.message); toast(e2.message, 'error'); }
   };
 
   // ---------- bulk adjust + export ----------
@@ -98,13 +101,15 @@ export default function AdminWallet() {
       const r = await api('/admin/wallet/bulk-adjust', { method: 'POST', body });
       if (r.pendingApproval) {
         setBulkMsg(`📨 ส่งคำขอปรับเครดิตกลุ่ม ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว`);
+        toast('ส่งคำขอปรับเครดิตกลุ่มเข้าศูนย์อนุมัติแล้ว', 'info');
       } else {
         const fails = (r.results || []).filter(x => !x.ok);
         setBulkMsg(`สำเร็จ ${r.succeeded} • ล้มเหลว ${r.failed}` + (fails.length ? ` — ${fails.slice(0, 3).map(f => `#${f.userId}: ${f.error}`).join(' | ')}` : ''));
+        toast(`ปรับเครดิตสำเร็จ ${r.succeeded} • ล้มเหลว ${r.failed}`, r.failed ? 'error' : 'success');
       }
       setBulk({ mode: 'selected', userIds: [], amount: '', direction: 'credit', reason: '' });
       load();
-    } catch (e2) { setBulkMsg('ERROR: ' + e2.message); }
+    } catch (e2) { setBulkMsg('ERROR: ' + e2.message); toast(e2.message, 'error'); }
     finally { setBulkBusy(false); }
   };
 

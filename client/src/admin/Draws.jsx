@@ -94,8 +94,9 @@ export default function AdminDraws() {
     try {
       const r = await api('/admin/draws/seed', { method: 'POST', body: {} });
       setSeedMsg(`สร้างรอบใหม่ ${r.created} รอบ`);
+      toast(`สร้างรอบใหม่ ${r.created} รอบ`, 'success');
       load();
-    } catch (e) { setSeedMsg('ERROR: ' + e.message); }
+    } catch (e) { setSeedMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
     finally { setSeedBusy(false); }
   };
 
@@ -109,6 +110,7 @@ export default function AdminDraws() {
         draw_at: form.draw_at.replace('T', ' '), close_at: form.close_at.replace('T', ' '),
       }});
       setShowForm(false); setForm({ lottery_type_id: '', category_id: '', draw_code: '', draw_at: '', close_at: '' }); load();
+      toast('สร้างรอบหวยแล้ว', 'success');
     } catch (e2) { toast(e2.message, 'error'); }
   };
 
@@ -122,6 +124,8 @@ export default function AdminDraws() {
       const r = await api(`/admin/draws/${id}/status`, { method: 'PATCH', body: { status } });
       if (status === 'cancelled' && r?.refundedSlips) {
         toast(`คืนเครดิตอัตโนมัติ ${r.refundedSlips} โพย รวม ${satang(r.refundedAmount)} บาท + แจ้งเตือนสมาชิกแล้ว`, 'success');
+      } else {
+        toast(`เปลี่ยนสถานะเป็น "${STATUS_TH[status]}" แล้ว`, 'success');
       }
       load();
     }
@@ -155,6 +159,7 @@ export default function AdminDraws() {
         announce: top.length || bottom.length ? { top, bottom } : null,
       }});
       setEditDraw(null); load();
+      toast('บันทึกการแก้ไขรอบหวยแล้ว', 'success');
     } catch (e) { toast(e.message, 'error'); }
   };
 
@@ -360,7 +365,7 @@ function BulkAnnounce({ types, cats, onDone }) {
       setMsg(`ตั้งเลขอั้นให้ ${r.updated} รอบแล้ว`);
       toast(`ตั้งเลขอั้น ${r.updated} รอบ`, 'success');
       onDone?.();
-    } catch (e) { setMsg('ERROR: ' + e.message); }
+    } catch (e) { setMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
     finally { setBusy(false); }
   };
   if (!open) return (

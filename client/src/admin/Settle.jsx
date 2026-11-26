@@ -149,8 +149,9 @@ export default function AdminSettle() {
       if (r.skipped?.length) parts.push(`ข้าม ${r.skipped.length} รอบ`);
       if (r.errors?.length) parts.push(`error ${r.errors.length}: ${r.errors.join(' | ')}`);
       setAutoMsg(parts.length ? parts.join(' • ') : 'ไม่มีรอบที่ถึงเวลาออกผลในขณะนี้');
+      toast(r.settled?.length ? `ออกผลอัตโนมัติ ${r.settled.length} รอบแล้ว` : 'ไม่มีรอบที่ถึงเวลาออกผล', r.errors?.length ? 'error' : 'success');
       load();
-    } catch (e) { setAutoMsg('ERROR: ' + e.message); }
+    } catch (e) { setAutoMsg('ERROR: ' + e.message); toast(e.message, 'error'); }
     finally { setAutoBusy(false); }
   };
 
@@ -219,8 +220,9 @@ export default function AdminSettle() {
     try {
       const r = await api(`/admin/draws/${useSel}/settle`, { method: 'POST', body: { winning_numbers: winning } });
       setResult(r); load();
+      toast(`ออกผลรางวัลสำเร็จ — จ่ายรวม ${satang(r.totalPayout)} บาท`, 'success');
       if (target) setErr(`ออกผลย้อนหลังสำเร็จ: ตรวจ ${r.settledItems} รายการ • ถูกรางวัล ${r.winningItems} รายการ • จ่ายรวม ${satang(r.totalPayout)} บาท`);
-    } catch (e) { setErr(e.message); }
+    } catch (e) { setErr(e.message); toast(e.message, 'error'); }
   };
 
   return (
@@ -410,8 +412,9 @@ export default function AdminSettle() {
               setEditMsg(r.pendingApproval
                 ? `📨 ส่งคำขอแก้ไขผลย้อนหลัง ${r.approval?.reference || ''} เข้าศูนย์อนุมัติแล้ว — ต้องรอ admin อีกคนอนุมัติ`
                 : 'บันทึกผลแก้ไขสำเร็จ — ระบบปรับเครดิตโพยทั้งหมดแล้ว');
+              toast(r.pendingApproval ? 'ส่งคำขอแก้ไขผลย้อนหลังเข้าศูนย์อนุมัติแล้ว' : 'บันทึกผลแก้ไขแล้ว', r.pendingApproval ? 'info' : 'success');
               load();
-            } catch (e) { setEditMsg(e.message); }
+            } catch (e) { setEditMsg(e.message); toast(e.message, 'error'); }
           };
           return (
             <>
