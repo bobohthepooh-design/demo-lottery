@@ -124,56 +124,30 @@ export default function Layout() {
   const doLogout = async () => { await logout(); navigate('/'); };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-deep-black)' }}>
-      <header className="sticky top-0 z-40 backdrop-blur-md border-b" style={{
-        background: 'linear-gradient(90deg, var(--bg-deep-black), var(--bg-dark-surface), var(--bg-deep-black))',
-        borderColor: 'var(--border-gold)',
-        boxShadow: 'var(--shadow-lg)'
-      }}>
-        <div className="h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, var(--gold-primary), transparent)' }} />
+    <div className="min-h-screen flex flex-col bg-[var(--bg-deep-black)]">
+      <header className="sticky top-0 z-40 backdrop-blur-md border-b border-[var(--border-gold)] bg-gradient-to-r from-[var(--bg-deep-black)] via-[var(--bg-dark-surface)] to-[var(--bg-deep-black)] shadow-[var(--shadow-lg)]">
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--gold-primary)] to-transparent" />
         <div className="max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
           <Link to="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center overflow-hidden" style={{
-              border: '1px solid var(--border-gold)',
-              background: 'var(--bg-deep-black)',
-              boxShadow: 'var(--shadow-gold)'
-            }}>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center overflow-hidden border border-[var(--border-gold)] bg-[var(--bg-deep-black)] shadow-[var(--shadow-gold)]">
               <img src="/devin.svg" alt="Devin" className="w-8 h-8 sm:w-9 sm:h-9 object-contain" />
             </div>
             <div className="font-display font-bold leading-none tracking-[0.22em] text-sm sm:text-base hidden sm:block luxury-gradient-text">DEVIN</div>
           </Link>
 
           {/* เมนูหลัก — luxury glass pill bar */}
-          <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl pl-1.5 py-1 max-lg:order-3 max-lg:basis-full max-lg:mx-2 sm:max-lg:mx-3 max-lg:mt-1 max-lg:mb-1.5" style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-light)',
-            backdropFilter: 'blur(10px)'
-          }}>
+          <div className="hidden sm:flex items-stretch min-w-0 flex-1 rounded-xl pl-1.5 py-1 max-lg:order-3 max-lg:basis-full max-lg:mx-2 sm:max-lg:mx-3 max-lg:mt-1 max-lg:mb-1.5 bg-[var(--bg-card)] border border-[var(--border-light)] backdrop-blur-[10px]">
             <nav className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/" end
-                className={({ isActive }) => `topnav-link shrink-0 px-2 sm:px-2.5 py-1.5 text-xs sm:text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}
-                style={({ isActive }) => isActive ? {
-                  background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-                  color: 'var(--bg-deep-black)',
-                  boxShadow: 'var(--shadow-gold)'
-                } : {
-                  color: 'var(--muted-gray)'
-                }}>
+                className={({ isActive }) => `topnav-link shrink-0 px-2 sm:px-2.5 py-1.5 text-xs sm:text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'font-semibold bg-gradient-to-br from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)] text-[var(--bg-deep-black)] shadow-[var(--shadow-gold)]' : 'text-[var(--muted-gray)]'}`}>
                 {t('home')}
               </NavLink>
               {visibleGroups.filter(g => g.label !== 'navAdmin').map((g, gi) => (
                 <Fragment key={g.label}>
-                  {gi > 0 && <span className="w-px h-4 mx-1 shrink-0 max-xl:hidden" style={{ background: 'var(--border-light)' }} />}
+                  {gi > 0 && <span className="w-px h-4 mx-1 shrink-0 max-xl:hidden bg-[var(--border-light)]" />}
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end}
-                      className={({ isActive }) => `topnav-link shrink-0 px-2 sm:px-2.5 py-1.5 text-xs sm:text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}
-                      style={({ isActive }) => isActive ? {
-                        background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-                        color: 'var(--bg-deep-black)',
-                        boxShadow: 'var(--shadow-gold)'
-                      } : {
-                        color: 'var(--muted-gray)'
-                      }}>
+                      className={({ isActive }) => `topnav-link shrink-0 px-2 sm:px-2.5 py-1.5 text-xs sm:text-sm transition rounded-lg inline-flex items-center whitespace-nowrap ${isActive ? 'font-semibold bg-gradient-to-br from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)] text-[var(--bg-deep-black)] shadow-[var(--shadow-gold)]' : 'text-[var(--muted-gray)]'}`}>
                       {t(n.k)}
                     </NavLink>
                   ))}
@@ -181,42 +155,23 @@ export default function Layout() {
               ))}
             </nav>
             {/* controls */}
-            <div className="flex items-center gap-1 shrink-0 pl-2 ml-1" style={{ borderLeft: '1px solid var(--border-light)' }}>
+            <div className="flex items-center gap-1 shrink-0 pl-2 ml-1 border-l border-[var(--border-light)]">
               {isAdmin && (
                 <div className="relative" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setAdminMenuOpen(v => !v)}
-                    className="px-2.5 py-1.5 text-sm font-bold transition rounded-lg border inline-flex items-center gap-1"
-                    style={adminMenuOpen ? {
-                      borderColor: 'var(--gold-primary)',
-                      background: 'rgba(212, 175, 55, 0.2)',
-                      color: 'var(--gold-bright)'
-                    } : {
-                      borderColor: 'var(--border-gold)',
-                      color: 'var(--gold-primary)'
-                    }}>
+                    className={`px-2.5 py-1.5 text-sm font-bold transition rounded-lg border inline-flex items-center gap-1 ${adminMenuOpen ? 'border-[var(--gold-primary)] bg-[rgba(212,175,55,0.2)] text-[var(--gold-bright)]' : 'border-[var(--border-gold)] text-[var(--gold-primary)]'}`}>
                     <Icon name="dashboard" className="w-4.5 h-4.5" /><span className="hidden xl:inline">{t('admin')}</span>
                     <svg viewBox="0 0 24 24" className={`w-3 h-3 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
                   </button>
                   {adminMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl py-1.5 z-50" style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-gold)',
-                      boxShadow: 'var(--shadow-pop)'
-                    }}>
-                      <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--gold-primary)', borderBottom: '1px solid var(--border-light)' }}>Admin Panel</div>
+                    <div className="absolute right-0 top-full mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl py-1.5 z-50 bg-[var(--bg-card)] border border-[var(--border-gold)] shadow-[var(--shadow-pop)]">
+                      <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest mb-1 text-[var(--gold-primary)] border-b border-[var(--border-light)]">Admin Panel</div>
                       {adminNavGroups.map(g => (
                         <div key={g.label}>
-                          <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted-gray)' }}>{g.label}</div>
+                          <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted-gray)]">{g.label}</div>
                           {g.items.map(i => (
                             <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setAdminMenuOpen(false)}
-                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'font-semibold' : ''}`}
-                              style={({ isActive }) => isActive ? {
-                                color: 'var(--gold-bright)',
-                                background: 'rgba(212, 175, 55, 0.1)',
-                                border: '1px solid var(--border-gold)'
-                              } : {
-                                color: 'var(--light-gray)'
-                              }}>
+                              className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2 text-[13px] transition ${isActive ? 'font-semibold text-[var(--gold-bright)] bg-[rgba(212,175,55,0.1)] border border-[var(--border-gold)]' : 'text-[var(--light-gray)]'}`}>
                               {i.icon && <Icon name={i.icon} className="w-5 h-5 shrink-0" />}
                               {i.label}
                             </NavLink>
@@ -227,48 +182,37 @@ export default function Layout() {
                   )}
                 </div>
               )}
-              <div className="hidden xl:flex items-center gap-1.5 rounded-lg px-2 py-1" style={{ border: '1px solid var(--border-light)', background: 'var(--bg-dark-surface)' }} title="วันที่และเวลาปัจจุบัน">
-                <Icon name="clock" className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--gold-primary)' }} />
+              <div className="hidden xl:flex items-center gap-1.5 rounded-lg px-2 py-1 border border-[var(--border-light)] bg-[var(--bg-dark-surface)]" title="วันที่และเวลาปัจจุบัน">
+                <Icon name="clock" className="w-3.5 h-3.5 shrink-0 text-[var(--gold-primary)]" />
                 <div className="leading-tight text-right">
-                  <div className="text-xs" style={{ color: 'var(--muted-gray)' }}>{dateStr}</div>
-                  <div className="text-sm font-mono font-bold" style={{ color: 'var(--gold-bright)' }}>{timeStr}</div>
+                  <div className="text-xs text-[var(--muted-gray)]">{dateStr}</div>
+                  <div className="text-sm font-mono font-bold text-[var(--gold-bright)]">{timeStr}</div>
                 </div>
               </div>
               {user ? (
                 <>
                   <NotificationBell />
-                  <Link to="/wallet" className="hidden lg:flex items-center gap-1.5 rounded-full px-2.5 py-1 transition" style={{
-                    border: '1px solid var(--border-gold)',
-                    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.05))'
-                  }}>
-                    <Icon name="wallet" className="w-3.5 h-3.5" style={{ color: 'var(--bg-deep-black)' }} />
-                    <span className="text-xs font-black tracking-wider hidden xl:inline" style={{ color: 'var(--bg-deep-black)' }}>{t('credit')}</span>
-                    <span className="text-sm font-black font-mono" style={{ color: 'var(--bg-deep-black)' }}>{satang(balance)}</span>
+                  <Link to="/wallet" className="hidden lg:flex items-center gap-1.5 rounded-full px-2.5 py-1 transition border border-[var(--border-gold)] bg-gradient-to-br from-[rgba(212,175,55,0.25)] to-[rgba(212,175,55,0.05)]">
+                    <Icon name="wallet" className="w-3.5 h-3.5 text-[var(--bg-deep-black)]" />
+                    <span className="text-xs font-black tracking-wider hidden xl:inline text-[var(--bg-deep-black)]">{t('credit')}</span>
+                    <span className="text-sm font-black font-mono text-[var(--bg-deep-black)]">{satang(balance)}</span>
                   </Link>
                   <button onClick={doLogout} title="ออกจากระบบ" aria-label="ออกจากระบบ"
-                    className="flex items-center justify-center w-8 h-8 rounded-lg transition"
-                    style={{ border: '1px solid var(--border-light)', background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)' }}>
+                    className="flex items-center justify-center w-8 h-8 rounded-lg transition border border-[var(--border-light)] bg-[var(--bg-dark-surface)] text-[var(--muted-gray)]">
                     <Icon name="logout" className="w-4 h-4" />
                   </button>
                 </>
               ) : (
                 <div className="flex gap-1.5">
-                  <Link to="/login" className="text-sm tracking-wide px-3.5 py-2 rounded-md border transition" style={{
-                    borderColor: 'var(--border-gold)',
-                    color: 'var(--gold-primary)'
-                  }}>{t('login')}</Link>
-                  <Link to="/register" className="text-sm tracking-wide px-3.5 py-2 rounded-md font-bold transition" style={{
-                    background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-                    color: 'var(--bg-deep-black)'
-                  }}>{t('register')}</Link>
+                  <Link to="/login" className="text-sm tracking-wide px-3.5 py-2 rounded-md border transition border-[var(--border-gold)] text-[var(--gold-primary)]">{t('login')}</Link>
+                  <Link to="/register" className="text-sm tracking-wide px-3.5 py-2 rounded-md font-bold transition bg-gradient-to-br from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)] text-[var(--bg-deep-black)]">{t('register')}</Link>
                 </div>
               )}
               <button
                 onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
                 title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
                 aria-label={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
-                className="flex items-center justify-center w-8 h-8 rounded-lg transition"
-                style={{ border: '1px solid var(--border-light)', background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)' }}>
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition border border-[var(--border-light)] bg-[var(--bg-dark-surface)] text-[var(--muted-gray)]">
                 <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4" />
               </button>
             </div>
@@ -276,12 +220,11 @@ export default function Layout() {
 
           {/* มือถือ (<640px) — เวลา + เครดิต + กระดิ่ง + เสียง + hamburger */}
           <div className="flex items-center gap-1.5 sm:hidden">
-            <div className="text-[10px] sm:text-xs font-mono font-bold" style={{ color: 'var(--gold-bright)' }}>{timeStr}</div>
+            <div className="text-[10px] sm:text-xs font-mono font-bold text-[var(--gold-bright)]">{timeStr}</div>
             {user && (
-              <Link to="/wallet" className="flex items-center gap-1 rounded-full px-2 py-1"
-                style={{ border: '1px solid var(--border-gold)', background: 'rgba(212,175,55,0.12)' }}>
-                <span style={{ color: 'var(--gold-primary)', display: 'inline-flex' }}><Icon name="wallet" className="w-3.5 h-3.5" /></span>
-                <span className="text-[11px] font-black font-mono" style={{ color: 'var(--gold-bright)' }}>{satang(balance)}</span>
+              <Link to="/wallet" className="flex items-center gap-1 rounded-full px-2 py-1 border border-[var(--border-gold)] bg-[rgba(212,175,55,0.12)]">
+                <span className="text-[var(--gold-primary)] inline-flex"><Icon name="wallet" className="w-3.5 h-3.5" /></span>
+                <span className="text-[11px] font-black font-mono text-[var(--gold-bright)]">{satang(balance)}</span>
               </Link>
             )}
             {user && <NotificationBell />}
@@ -289,56 +232,40 @@ export default function Layout() {
               onClick={() => { const v = !soundOn; setSoundOn(v); setSoundOnState(v); }}
               title={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
               aria-label={soundOn ? 'ปิดเสียง' : 'เปิดเสียง'}
-              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg transition"
-              style={{ border: '1px solid var(--border-light)', background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)' }}>
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg transition border border-[var(--border-light)] bg-[var(--bg-dark-surface)] text-[var(--muted-gray)]">
               <Icon name={soundOn ? 'volume' : 'volumeOff'} className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </button>
-            <button className="p-1.5 sm:p-2 transition" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู" style={{ color: 'var(--muted-gray)' }}><Icon name="menu" className="w-5 h-5 sm:w-6 sm:h-6" /></button>
+            <button className="p-1.5 sm:p-2 transition text-[var(--muted-gray)]" onClick={() => setMenuOpen(!menuOpen)} aria-label="เมนู"><Icon name="menu" className="w-5 h-5 sm:w-6 sm:h-6" /></button>
           </div>
         </div>
       </header>
 
       {/* เมนูมือถือ/แท็บเล็ต — luxury overlay */}
       {menuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 overflow-y-auto" style={{ background: 'rgba(16, 17, 20, 0.97)', backdropFilter: 'blur(10px)' }} onClick={() => setMenuOpen(false)}>
+        <div className="lg:hidden fixed inset-0 z-50 overflow-y-auto bg-[rgba(16,17,20,0.97)] backdrop-blur-[10px]" onClick={() => setMenuOpen(false)}>
           <div className="min-h-full px-3 sm:px-4 py-3 sm:py-4 space-y-1" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 pt-1 pb-2 sm:pb-3 sticky top-0" style={{ background: 'rgba(16, 17, 20, 0.95)', backdropFilter: 'blur(10px)' }}>
+            <div className="flex items-center justify-between px-3 pt-1 pb-2 sm:pb-3 sticky top-0 bg-[rgba(16,17,20,0.95)] backdrop-blur-[10px]">
               <span className="kicker">{t('menu')}</span>
               <div className="flex items-center gap-2 sm:gap-3">
-                {user && <span className="text-[10px] sm:text-xs font-black font-mono" style={{ color: 'var(--gold-bright)' }}>{t('credit')} {satang(balance)} บาท</span>}
+                {user && <span className="text-[10px] sm:text-xs font-black font-mono text-[var(--gold-bright)]">{t('credit')} {satang(balance)} บาท</span>}
                 <button onClick={() => setMenuOpen(false)} aria-label={t('close')}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full transition text-base sm:text-lg leading-none"
-                  style={{ border: '1px solid var(--border-light)', color: 'var(--muted-gray)' }}>✕</button>
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full transition text-base sm:text-lg leading-none border border-[var(--border-light)] text-[var(--muted-gray)]">✕</button>
               </div>
             </div>
             <NavLink to="/" end onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base tracking-wide rounded-xl ${isActive ? 'font-semibold' : ''}`}
-              style={({ isActive }) => isActive ? {
-                color: 'var(--gold-bright)',
-                background: 'rgba(212, 175, 55, 0.1)',
-                border: '1px solid var(--border-gold)'
-              } : {
-                color: 'var(--light-gray)'
-              }}>
+              className={({ isActive }) => `flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base tracking-wide rounded-xl ${isActive ? 'font-semibold text-[var(--gold-bright)] bg-[rgba(212,175,55,0.1)] border border-[var(--border-gold)]' : 'text-[var(--light-gray)]'}`}>
               <Icon name="home" className="w-6 h-6 sm:w-7 sm:h-7" />{t('home')}
             </NavLink>
             {visibleGroups.map(g => (
               g.label === 'navAdmin' ? (
                 <div key={g.label}>
-                  <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-1 sm:pb-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--gold-primary)' }}>{t(g.label)}</div>
+                  <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-1 sm:pb-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest text-[var(--gold-primary)]">{t(g.label)}</div>
                   {adminNavGroups.map(ag => (
                     <div key={ag.label}>
-                      <div className="px-3 sm:px-4 pt-2 sm:pt-2.5 pb-0.5 sm:pb-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted-gray)' }}>{ag.label}</div>
+                      <div className="px-3 sm:px-4 pt-2 sm:pt-2.5 pb-0.5 sm:pb-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--muted-gray)]">{ag.label}</div>
                       {ag.items.map(i => (
                         <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setMenuOpen(false)}
-                          className={({ isActive }) => `flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base tracking-wide rounded-xl ${isActive ? 'font-semibold' : ''}`}
-                          style={({ isActive }) => isActive ? {
-                            color: 'var(--gold-bright)',
-                            background: 'rgba(212, 175, 55, 0.1)',
-                            border: '1px solid var(--border-gold)'
-                          } : {
-                            color: 'var(--light-gray)'
-                          }}>
+                          className={({ isActive }) => `flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base tracking-wide rounded-xl ${isActive ? 'font-semibold text-[var(--gold-bright)] bg-[rgba(212,175,55,0.1)] border border-[var(--border-gold)]' : 'text-[var(--light-gray)]'}`}>
                           {i.icon && <Icon name={i.icon} className="w-5 h-5 sm:w-6 sm:h-6" />}
                           {i.label}
                         </NavLink>
@@ -348,17 +275,10 @@ export default function Layout() {
                 </div>
               ) : (
                 <div key={g.label}>
-                  <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-1 sm:pb-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--muted-gray)' }}>{t(g.label)}</div>
+                  <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-1 sm:pb-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest text-[var(--muted-gray)]">{t(g.label)}</div>
                   {g.items.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) => `flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base tracking-wide rounded-xl ${isActive ? 'font-semibold' : ''}`}
-                      style={({ isActive }) => isActive ? {
-                        color: 'var(--gold-bright)',
-                        background: 'rgba(212, 175, 55, 0.1)',
-                        border: '1px solid var(--border-gold)'
-                      } : {
-                        color: 'var(--light-gray)'
-                      }}>
+                      className={({ isActive }) => `flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base tracking-wide rounded-xl ${isActive ? 'font-semibold text-[var(--gold-bright)] bg-[rgba(212,175,55,0.1)] border border-[var(--border-gold)]' : 'text-[var(--light-gray)]'}`}>
                       {n.icon && <Icon name={n.icon} className="w-6 h-6 sm:w-7 sm:h-7" />}
                       {t(n.k)}
                     </NavLink>
@@ -368,8 +288,7 @@ export default function Layout() {
             ))}
             {user && (
               <button onClick={() => { setMenuOpen(false); doLogout(); }}
-                className="w-full text-left px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base tracking-wide rounded-xl mt-2"
-                style={{ color: 'var(--gold-primary)', borderTop: '1px solid var(--border-gold)' }}>
+                className="w-full text-left px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base tracking-wide rounded-xl mt-2 text-[var(--gold-primary)] border-t border-[var(--border-gold)]">
                 {t('logout')}
               </button>
             )}
@@ -380,11 +299,8 @@ export default function Layout() {
       <AnnouncementBar />
       {/* Demo mode banner - luxury style */}
       <div className="max-w-7xl w-full mx-auto px-4 pt-2">
-        <div className="rounded-lg px-4 py-2 text-center" style={{
-          background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(245, 215, 110, 0.15), rgba(212, 175, 55, 0.2))',
-          border: '1px solid var(--border-gold)'
-        }}>
-          <span className="text-xs font-bold tracking-wider" style={{ color: 'var(--gold-bright)' }}>🎮 DEMO MODE — สำหรับการศึกษา • เครดิตเสมือนเท่านั้น</span>
+        <div className="rounded-lg px-4 py-2 text-center border border-[var(--border-gold)] bg-gradient-to-r from-[rgba(212,175,55,0.2)] via-[rgba(245,215,110,0.15)] to-[rgba(212,175,55,0.2)]">
+          <span className="text-xs font-bold tracking-wider text-[var(--gold-bright)]">🎮 DEMO MODE — สำหรับการศึกษา • เครดิตเสมือนเท่านั้น</span>
         </div>
       </div>
       {/* ผลรางวัล + ผู้ชนะ ล่าสุด — แถบ LED ทองสไตล์ตารางประกาศผล (admin ปิด/เปิดได้ที่ แบนเนอร์หน้าแรก) */}
@@ -392,12 +308,11 @@ export default function Layout() {
       {banner?.show_winners_ticker !== false && <WinTicker />}
       {/* banner บังคับยืนยันอายุ 18+ */}
       {user && !user.ageConfirmed && (
-        <div style={{ background: 'rgba(245, 158, 11, 0.15)', borderBottom: '1px solid var(--border-gold)' }}>
+        <div className="bg-[rgba(245,158,11,0.15)] border-b border-[var(--border-gold)]">
           <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-3 text-sm">
-            <span style={{ color: 'var(--warning-amber)' }}>⚠️ กรุณายืนยันว่าคุณมีอายุ <b>18 ปีขึ้นไป</b> เพื่อใช้งานต่อ (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
+            <span className="text-[var(--warning-amber)]">⚠️ กรุณายืนยันว่าคุณมีอายุ <b>18 ปีขึ้นไป</b> เพื่อใช้งานต่อ (เพื่อการศึกษา ใช้เครดิตเสมือน)</span>
             <button onClick={async () => { try { await api('/auth/me/confirm-age', { method: 'POST', body: {} }); await refresh(); } catch {} }}
-              className="font-bold px-4 py-1 rounded-lg text-xs"
-              style={{ background: 'var(--warning-amber)', color: 'var(--bg-deep-black)' }}>
+              className="font-bold px-4 py-1 rounded-lg text-xs bg-[var(--warning-amber)] text-[var(--bg-deep-black)]">
               ยืนยันอายุ 18+
             </button>
           </div>
@@ -411,17 +326,9 @@ export default function Layout() {
       </main>
 
       {/* Bottom navigation — luxury style */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="relative sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:rounded-2xl"
-          style={{
-            borderTop: '1px solid var(--border-gold)',
-            background: 'linear-gradient(180deg, var(--bg-dark-surface), var(--bg-deep-black))',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 -8px 30px rgba(0,0,0,0.5)'
-          }}>
-          <div className="absolute top-0 inset-x-8 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent, var(--gold-primary), transparent)' }} />
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
+        <div className="relative sm:mx-auto sm:mb-3 sm:max-w-md sm:border sm:rounded-2xl border-t sm:border border-[var(--border-gold)] bg-gradient-to-b from-[var(--bg-dark-surface)] to-[var(--bg-deep-black)] backdrop-blur-[10px] shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+          <div className="absolute top-0 inset-x-8 h-px bg-gradient-to-r from-transparent via-[var(--gold-primary)] to-transparent" />
           <div className="flex h-16">
             {(user ? [
               { to: '/', k: 'home', icon: 'home', end: true, show: true },
@@ -437,22 +344,10 @@ export default function Layout() {
               { to: '/login', k: 'login', icon: 'roles', show: true },
             ]).filter(i => i.show).map(i => i.center ? (
               <NavLink key={i.to} to={i.to} end={i.end}
-                className="relative flex-1 flex flex-col items-center justify-start pt-1 text-xs sm:text-sm transition-colors"
-                style={{ color: 'var(--gold-bright)' }}>
+                className="relative flex-1 flex flex-col items-center justify-start pt-1 text-xs sm:text-sm transition-colors text-[var(--gold-bright)]">
                 {({ isActive }) => (
                   <>
-                    <span className="flex items-center justify-center rounded-full border-2 -mt-7 w-12 h-12 sm:w-14 sm:h-14"
-                      style={i.accent === 'violet' ? {
-                        background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-                        borderColor: 'var(--bg-deep-black)',
-                        color: '#fff',
-                        boxShadow: '0 6px 16px rgba(168,85,247,0.45), 0 0 0 4px var(--bg-deep-black)'
-                      } : {
-                        background: 'linear-gradient(135deg, var(--gold-gradient-start), var(--gold-gradient-end))',
-                        borderColor: 'var(--bg-deep-black)',
-                        color: 'var(--bg-deep-black)',
-                        boxShadow: '0 6px 16px rgba(212,175,55,0.45), 0 0 0 4px var(--bg-deep-black)'
-                      }}>
+                    <span className={`flex items-center justify-center rounded-full border-2 -mt-7 w-12 h-12 sm:w-14 sm:h-14 ${i.accent === 'violet' ? 'bg-gradient-to-br from-[#a855f7] to-[#7c3aed] border-[var(--bg-deep-black)] text-white shadow-[0_6px_16px_rgba(168,85,247,0.45),0_0_0_4px_var(--bg-deep-black)]' : 'bg-gradient-to-br from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)] border-[var(--bg-deep-black)] text-[var(--bg-deep-black)] shadow-[0_6px_16px_rgba(212,175,55,0.45),0_0_0_4px_var(--bg-deep-black)]'}`}>
                       <Icon name={i.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
                     </span>
                     <span className="mt-1 font-bold" style={{ color: isActive ? (i.accent === 'violet' ? '#c4b5fd' : 'var(--gold-bright)') : 'var(--muted-gray)' }}>{t(i.k)}</span>
@@ -461,8 +356,7 @@ export default function Layout() {
               </NavLink>
             ) : (
               <NavLink key={i.to} to={i.to} end={i.end}
-                className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors"
-                style={{ color: 'var(--muted-gray)' }}>
+                className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors text-[var(--muted-gray)]">
                 {({ isActive }) => (
                   <>
                     {isActive && (
@@ -477,15 +371,14 @@ export default function Layout() {
                       style={isActive ? { filter: `drop-shadow(0 0 8px ${activeBtnColor.shadow})` } : undefined}>
                       <CasinoIcon name={i.icon} tone={isActive ? 'green' : 'gray'} className="w-6 h-6" />
                     </span>
-                    <span className={`relative ${isActive ? 'font-bold' : ''}`} style={isActive ? { color: 'var(--white)' } : undefined}>{t(i.k)}</span>
+                    <span className={`relative ${isActive ? 'font-bold text-[var(--white)]' : ''}`}>{t(i.k)}</span>
                   </>
                 )}
               </NavLink>
             ))}
             {/* เพิ่มเติม — เปิดเมนูทั้งหมด (tablet/มือถือเข้าถึงทุกหน้าได้จาก bottom bar) */}
             <button onClick={() => setMenuOpen(true)}
-              className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors"
-              style={{ color: 'var(--muted-gray)' }}>
+              className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs sm:text-sm transition-colors text-[var(--muted-gray)]">
               <span className="relative transition-transform duration-200 opacity-70">
                 <CasinoIcon name="menu" tone="gray" className="w-6 h-6" />
               </span>
@@ -495,8 +388,8 @@ export default function Layout() {
         </div>
       </nav>
 
-      <footer className="py-4 pb-20 lg:pb-4 text-center text-xs" style={{ borderTop: '1px solid var(--border-light)', color: 'var(--muted-gray)' }}>
-        <span>{t('footer')}</span><div className="mt-1"><Link to="/legal" style={{ color: 'var(--gold-primary)' }}>ข้อกำหนด • ความเป็นส่วนตัว • เล่นอย่างรับผิดชอบ</Link></div>
+      <footer className="py-4 pb-20 lg:pb-4 text-center text-xs border-t border-[var(--border-light)] text-[var(--muted-gray)]">
+        <span>{t('footer')}</span><div className="mt-1"><Link to="/legal" className="text-[var(--gold-primary)]">ข้อกำหนด • ความเป็นส่วนตัว • เล่นอย่างรับผิดชอบ</Link></div>
       </footer>
 
       <ToastHost />

@@ -440,7 +440,7 @@ export default function MyBets() {
                 {/* โพยสไตล์กระดาษ — เลข monospace + เส้นประ + stamp ผลรางวัลเอียง */}
                 <div className="paper-slip rounded-lg px-4 py-4 pt-5 pb-6 mx-auto max-w-xl">
                   {s.status === 'won' && <div className="paper-stamp win">ถูกรางวัล</div>}
-                  {s.status === 'lost' && <div className="paper-stamp" style={{ borderColor: '#8a7a5c', color: '#8a7a5c' }}>ไม่ถูก</div>}
+                  {s.status === 'lost' && <div className="paper-stamp !border-[#8a7a5c] !text-[#8a7a5c]">ไม่ถูก</div>}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold tracking-widest text-[#8a7a5c] uppercase">โพยแทงหวย</span>
                     <span className="paper-num text-sm text-[#8a5a00]">{s.slip_ref}</span>

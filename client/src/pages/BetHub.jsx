@@ -61,18 +61,14 @@ function RoundCard({ d, nowSql, nowMs }) {
       <div className="flex items-center gap-1.5 sm:gap-2">
         <FlagIcon code={d.type_code} className="w-5 h-3.5 sm:w-6 sm:h-4 rounded-md" />
         <div>
-          <div className="font-bold text-xs sm:text-sm" style={{ color: 'var(--white)' }}>{drawLabel(d)}</div>
-          <div className="text-[10px] sm:text-xs" style={{ color: 'var(--muted-gray)' }}>{d.draw_code}</div>
+          <div className="font-bold text-xs sm:text-sm text-[var(--white)]">{drawLabel(d)}</div>
+          <div className="text-[10px] sm:text-xs text-[var(--muted-gray)]">{d.draw_code}</div>
         </div>
       </div>
 
       {/* เลขอั้น */}
       {ann && (
-        <div className="text-xs font-bold px-2 py-0.5 rounded" style={{
-          background: 'rgba(245, 158, 11, 0.2)',
-          border: '1px solid var(--warning-amber)',
-          color: 'var(--warning-amber)'
-        }}>
+        <div className="text-xs font-bold px-2 py-0.5 rounded bg-[rgba(245,158,11,0.2)] border border-[var(--warning-amber)] text-[var(--warning-amber)]">
           📣 {ann.length > 30 ? `${ann.slice(0, 30)}…` : ann}
         </div>
       )}
@@ -80,9 +76,9 @@ function RoundCard({ d, nowSql, nowMs }) {
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         {/* Countdown / Status */}
         {live ? (
-          <div className="rounded p-1.5 sm:p-2 text-right" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
-            <div className="text-[10px] sm:text-xs mb-0.5" style={{ color: 'var(--muted-gray)' }}>ปิดใน</div>
-            <div className="font-bold text-sm sm:text-lg" style={{ color: 'var(--success-green)' }}>{fmtHMS(closeMs)}</div>
+          <div className="rounded p-1.5 sm:p-2 text-right bg-black/30">
+            <div className="text-[10px] sm:text-xs mb-0.5 text-[var(--muted-gray)]">ปิดใน</div>
+            <div className="font-bold text-sm sm:text-lg text-[var(--success-green)]">{fmtHMS(closeMs)}</div>
           </div>
         ) : (
           <div className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded ${drawing ? 'bg-gold-500/20 text-gold-300 border border-gold-400/50' : 'bg-navy-700/50 text-navy-400'}`}>
@@ -112,27 +108,14 @@ function RoundCard({ d, nowSql, nowMs }) {
 function TypeCard({ tg, onClick }) {
   const ac = typeAccent(tg.typeCode);
   return (
-    <div onClick={onClick} className="rounded-xl p-3 sm:p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer" style={{
-      background: 'var(--bg-card)',
-      border: `2px solid ${ac.border}`
-    }}
-    onMouseEnter={e => {
-      e.currentTarget.style.borderColor = 'var(--border-gold)';
-      e.currentTarget.style.boxShadow = 'var(--shadow-gold)';
-    }}
-    onMouseLeave={e => {
-      e.currentTarget.style.borderColor = ac.border;
-      e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-    }}>
+    <div onClick={onClick} className="rounded-xl p-3 sm:p-4 flex flex-col items-center text-center hover:scale-[1.03] transition-transform duration-200 shadow-lg cursor-pointer bg-[var(--bg-card)] border-2 hover:border-[var(--border-gold)] hover:shadow-[var(--shadow-gold)]"
+      style={{ borderColor: ac.border }}
+    >
       <FlagIcon code={tg.typeCode} className="w-10 h-7 sm:w-12 sm:h-8 rounded-lg mb-1.5 sm:mb-2" />
-      <h3 className={`text-sm sm:text-base lg:text-lg font-bold mb-0.5 sm:mb-1`} style={{ color: ac.text }}>{tg.typeName}</h3>
-      <div className="text-xs sm:text-sm mb-1.5 sm:mb-2" style={{ color: 'var(--muted-gray)' }}>{tg.totalRounds} รอบ</div>
+      <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-0.5 sm:mb-1" style={{ color: ac.text }}>{tg.typeName}</h3>
+      <div className="text-xs sm:text-sm mb-1.5 sm:mb-2 text-[var(--muted-gray)]">{tg.totalRounds} รอบ</div>
       {tg.liveRounds > 0 && (
-        <div className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded-full" style={{
-          background: 'rgba(34, 197, 94, 0.2)',
-          color: 'var(--success-green)',
-          border: '1px solid rgba(34, 197, 94, 0.3)'
-        }}>
+        <div className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.75 sm:py-1 rounded-full bg-[rgba(34,197,94,0.2)] text-[var(--success-green)] border border-[rgba(34,197,94,0.3)]">
           {tg.liveRounds} เปิด
         </div>
       )}
@@ -290,12 +273,12 @@ export default function BetHub() {
             const open = all.filter(d => isBettingOpen(d, nowSql));
             const done = all.filter(d => ['settled', 'cancelled'].includes(d.status));
             const upcoming = all.filter(d => !isBettingOpen(d, nowSql) && !done.includes(d));
-            const section = (title, icon, items, accent) => items.length === 0 ? null : (
+            const section = (title, icon, items, accentCls) => items.length === 0 ? null : (
               <div key={title} className="mb-4">
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <span className="text-sm">{icon}</span>
-                  <span className="text-xs font-black tracking-wide" style={{ color: accent }}>{title}</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--bg-dark-surface)', color: 'var(--muted-gray)', border: '1px solid var(--border-light)' }}>{items.length} รอบ</span>
+                  <span className={`text-xs font-black tracking-wide ${accentCls}`}>{title}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--bg-dark-surface)] text-[var(--muted-gray)] border border-[var(--border-light)]">{items.length} รอบ</span>
                 </div>
                 <div className="space-y-2">
                   {items.map(d => <RoundCard key={d.id} d={d} nowSql={nowSql} nowMs={nowMs} />)}
@@ -303,9 +286,9 @@ export default function BetHub() {
               </div>
             );
             return (<>
-              {section('รอบที่เปิดรับอยู่', '🟢', open, 'var(--success-green)')}
-              {section('รอบถัดไป / รอผล', '🕐', upcoming, 'var(--gold-primary)')}
-              {section('ผลรางวัลแล้ว / ยกเลิก', '🏁', done, 'var(--muted-gray)')}
+              {section('รอบที่เปิดรับอยู่', '🟢', open, 'text-[var(--success-green)]')}
+              {section('รอบถัดไป / รอผล', '🕐', upcoming, 'text-[var(--gold-primary)]')}
+              {section('ผลรางวัลแล้ว / ยกเลิก', '🏁', done, 'text-[var(--muted-gray)]')}
             </>);
           })()}
         </div>
