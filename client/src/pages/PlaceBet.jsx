@@ -619,22 +619,6 @@ export default function PlaceBet() {
                 <>
                   {/* Number Input */}
                   <div>
-                    {/* Tab-style label "กดเลขเอง" */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                      <button type="button" disabled
-                        style={{
-                          fontSize: '0.875rem',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '0.625rem',
-                          background: 'rgba(34, 197, 94, 0.2)',
-                          border: '2px solid rgba(34, 197, 94, 0.5)',
-                          color: 'var(--success-green)',
-                          fontWeight: 700,
-                          cursor: 'default'
-                        }} className="sm:text-sm">
-                        กดเลขเอง
-                      </button>
-                    </div>
                     <input ref={numRef} value={number} onChange={e => setNumber(e.target.value.replace(/\D/g,'').slice(0, rule?.digits || 3))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                       inputMode="numeric" placeholder={rule ? '0'.repeat(rule.digits) : ''}
