@@ -72,8 +72,10 @@ export default function AdminHealth() {
   };
   useEffect(() => {
     load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+    const t = setInterval(() => { if (!document.hidden) load(); }, 30000);
+    const onVis = () => { if (!document.hidden) load(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVis); };
   }, [load]);
 
   const counts = d?.counts || {};

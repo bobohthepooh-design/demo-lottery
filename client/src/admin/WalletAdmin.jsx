@@ -4,6 +4,7 @@ import { confirmAction } from './confirm.jsx';
 import { toast } from '../components/toast.js';
 import { Input, Select, Button } from '../components/ui/index.js';
 import { cn } from '../lib/utils.js';
+import { exportCsv as downloadCsv } from '../lib/exportCsv.js';
 
 const TYPE_TH = {
   initial_credit: 'เครดิตเริ่มต้น', admin_adjust: 'ปรับเครดิต(+)', admin_debit: 'ปรับเครดิต(-)',
@@ -113,14 +114,19 @@ export default function AdminWallet() {
     finally { setBulkBusy(false); }
   };
 
-  // export transactions เป็น CSV (เฉพาะหน้าที่กำลังดู)
+  // export transactions เป็น CSV (เฉพาะหน้าที่กำลังดู) — ใช้ shared exporter (BOM + escape + กัน formula injection)
   const exportCsv = () => {
-    const head = 'ref,username,type,direction,amount_satang,balance_after_satang,description,created_at';
-    const rows = txs.map(t => [t.reference, t.username, t.type, t.direction, t.amount, t.balance_after, `"${String(t.description || '').replace(/"/g, '""')}"`, t.created_at].join(','));
-    const blob = new Blob(['﻿' + head + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `wallet-tx-p${txPage + 1}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-    URL.revokeObjectURL(a.href);
+    downloadCsv(`wallet-tx-p${txPage + 1}-${new Date().toISOString().slice(0, 10)}.csv`,
+      txs.map(t => ({ ...t, type: TYPE_TH[t.type] || t.type })), [
+      { key: 'reference', label: 'เลขอ้างอิง' },
+      { key: 'username', label: 'ชื่อผู้ใช้' },
+      { key: 'type', label: 'ประเภท' },
+      { key: 'direction', label: 'ทิศทาง' },
+      { key: 'amount', label: 'จำนวนเงิน(สตางค์)' },
+      { key: 'balance_after', label: 'ยอดหลัง(สตางค์)' },
+      { key: 'description', label: 'รายละเอียด' },
+      { key: 'created_at', label: 'เวลาที่สร้าง' },
+    ]);
   };
 
   const txPageCount = Math.max(1, Math.ceil(txTotal / TX_PAGE));
