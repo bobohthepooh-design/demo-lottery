@@ -374,6 +374,51 @@ export default function PlaceBet() {
   const kb = kindBadge(draw.result_kind);
   const headBar = <span className={`inline-block w-1.5 h-4 rounded-full ${ac?.bar || 'bg-gold-500'} mr-2 align-middle`} />;
 
+  // ช่องจำนวนเงิน — ใช้ร่วมกันทุกประเภทแทง (เลขปกติ / หวยราศี / pattana)
+  const amountField = (
+    <div>
+      <label style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--gold-primary)', marginBottom: '0.5rem', display: 'block', letterSpacing: '0.02em' }} className="sm:text-base">จำนวนเงิน (บาท)</label>
+      <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
+        inputMode="decimal" placeholder="0.00"
+        style={{
+          width: '100%',
+          background: 'var(--bg-dark-surface)',
+          border: '2px solid var(--border-light)',
+          borderRadius: '1rem',
+          padding: '0.85rem 1rem',
+          fontSize: '1.5rem',
+          textAlign: 'center',
+          color: 'var(--gold-primary)',
+          fontFamily: 'monospace',
+          fontWeight: 800,
+          outline: 'none',
+          transition: 'all 0.2s'
+        }} className="sm:px-5 sm:py-5 sm:text-3xl focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]" />
+      <div className="grid grid-cols-4 gap-2 sm:gap-3 mt-3">
+        {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
+          <button key={v} type="button" onClick={() => setAmount(String(v))}
+            onMouseEnter={() => setHoveredPreset(v)}
+            onMouseLeave={() => setHoveredPreset(null)}
+            style={{
+              fontSize: '0.875rem',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '0.625rem',
+              border: '2px solid',
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              background: Number(amount) === v ? 'rgba(212, 175, 55, 0.2)' : 'var(--bg-dark-surface)',
+              borderColor: Number(amount) === v ? 'var(--border-gold)' : 'var(--border-light)',
+              color: Number(amount) === v ? 'var(--gold-primary)' : 'var(--muted-gray)',
+              transform: hoveredPreset === v ? 'translateY(-2px)' : 'translateY(0)'
+            }} className="sm:text-sm sm:py-2.5 sm:px-1 hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
+            {v}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 lg:gap-5">
       {/* left: entry form */}
@@ -482,7 +527,7 @@ export default function PlaceBet() {
 
             {/* Number Input Area */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {isZodiac ? (
+              {isZodiac ? (<>
                 <div style={{}} className="sm:col-span-2">
                   <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
                     เลือกปีนักษัตร {zodiacDigits > 1 ? `(เลือก ${zodiacDigits} ตัวตามลำดับ)` : '(1 ใน 12)'}
@@ -535,7 +580,8 @@ export default function PlaceBet() {
                     )}
                   </div>
                 </div>
-              ) : isPattana ? (
+                {amountField}
+              </>) : isPattana ? (<>
                 <div style={{}} className="sm:col-span-2">
                   <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted-gray)', marginBottom: '0.5rem', display: 'block' }}>
                     เลือกเลข 5 ตัวจาก 1-45 (เลือกแล้ว {picks.length}/5)
@@ -566,7 +612,8 @@ export default function PlaceBet() {
                     </div>
                   )}
                 </div>
-              ) : !rule ? (
+                {amountField}
+              </>) : !rule ? (
                 <div className="sm:col-span-2" style={{ color: 'var(--muted-gray)', fontSize: '0.875rem', padding: '2rem 0', textAlign: 'center' }}>กำลังโหลดประเภทการแทง...</div>
               ) : (
                 <>
@@ -662,47 +709,7 @@ export default function PlaceBet() {
                   </div>
 
                   {/* Amount Input */}
-                  <div>
-                    <label style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--gold-primary)', marginBottom: '0.5rem', display: 'block', letterSpacing: '0.02em' }} className="sm:text-base">จำนวนเงิน (บาท)</label>
-                    <input value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g,''))}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
-                      inputMode="decimal" placeholder="0.00"
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-dark-surface)',
-                        border: '2px solid var(--border-light)',
-                        borderRadius: '1rem',
-                        padding: '0.85rem 1rem',
-                        fontSize: '1.5rem',
-                        textAlign: 'center',
-                        color: 'var(--gold-primary)',
-                        fontFamily: 'monospace',
-                        fontWeight: 800,
-                        outline: 'none',
-                        transition: 'all 0.2s'
-                      }} className="sm:px-5 sm:py-5 sm:text-3xl focus:border-[var(--border-gold)] focus:shadow-[0_0_0_4px_rgba(212,175,55,0.15)]" />
-                    <div className="grid grid-cols-4 gap-2 sm:gap-3 mt-3">
-                      {[1, 5, 10, 20, 50, 100, 200, 500].map(v => (
-                        <button key={v} type="button" onClick={() => setAmount(String(v))}
-                          onMouseEnter={() => setHoveredPreset(v)}
-                          onMouseLeave={() => setHoveredPreset(null)}
-                          style={{
-                            fontSize: '0.875rem',
-                            padding: '0.5rem 0.75rem',
-                            borderRadius: '0.625rem',
-                            border: '2px solid',
-                            fontWeight: 700,
-                            transition: 'all 0.2s',
-                            background: Number(amount) === v ? 'rgba(212, 175, 55, 0.2)' : 'var(--bg-dark-surface)',
-                            borderColor: Number(amount) === v ? 'var(--border-gold)' : 'var(--border-light)',
-                            color: Number(amount) === v ? 'var(--gold-primary)' : 'var(--muted-gray)',
-                            transform: hoveredPreset === v ? 'translateY(-2px)' : 'translateY(0)'
-                          }} className="sm:text-sm sm:py-2.5 sm:px-1 hover:border-[var(--border-gold)] hover:text-[var(--gold-primary)]">
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {amountField}
 
                 </>
               )}
