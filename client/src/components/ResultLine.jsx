@@ -69,14 +69,18 @@ function Bank3D({ className = 'w-full h-full' }) {
 
 // ไอคอนประเภทหวย/เกม — tile สีตามประเภท + เนื้อในเป็นสีสัน (ธงชาติ / icon 3D)
 const FLAG_CODES = { TH: FlagTH, LA: FlagLA, HN: FlagVN };
-const TILE_BG = 'linear-gradient(135deg,#334155,#0f172a)'; // พื้นเข้มให้ธงเด่น
+const FLAG_BG = { // พื้นหลังสีประจำชาติให้เข้ากับธง
+  TH: 'linear-gradient(135deg,#f87171,#dc2626 40%,#1e40af)',
+  LA: 'linear-gradient(135deg,#fca5a5,#ef4444 40%,#1e3a8a)',
+  HN: 'linear-gradient(135deg,#fecaca,#dc2626 45%,#7f1d1d)',
+};
 const TYPE_ICONS = { HR: 'hr', KI: 'ki', SC: 'sc', HL: 'hl' };
 const TYPE_BG = {
-  HR: 'linear-gradient(135deg,#a855f7,#f59e0b)',   // ราศี — ม่วง/ทอง
-  GS: 'linear-gradient(135deg,#10b981,#064e3b)',   // ออมสิน — เขียวมรกต
-  KI: 'linear-gradient(135deg,#84cc16,#3f6212)',   // ยี่กี — เขียวกีวี
-  SC: 'linear-gradient(135deg,#f59e0b,#92400e)',   // ขูด — ส้ม/น้ำตาล
-  HL: 'linear-gradient(135deg,#f43f5e,#881337)',   // ไฮโล — แดงเข้ม
+  HR: 'linear-gradient(135deg,#e9d5ff,#a855f7 45%,#f59e0b)',   // ราศี — ม่วง/ทอง
+  GS: 'linear-gradient(135deg,#a7f3d0,#10b981 45%,#064e3b)',   // ออมสิน — เขียวมรกต
+  KI: 'linear-gradient(135deg,#ecfccb,#84cc16 45%,#3f6212)',   // ยี่กี — เขียวกีวี
+  SC: 'linear-gradient(135deg,#fde68a,#f59e0b 45%,#92400e)',   // ขูด — ส้ม/น้ำตาล
+  HL: 'linear-gradient(135deg,#fecdd3,#f43f5e 45%,#881337)',   // ไฮโล — แดงชมพู
 };
 // tile 3D/clay — bevel ขอบบน-ล่าง + gloss แสงด้านบน เหมือน icon ปุ่มกดนูน
 const TILE_SHADOW = 'inset 0 1.5px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.3), 0 4px 10px rgba(0,0,0,.45)';
@@ -101,7 +105,7 @@ export function FlagIcon({ code, className = '', style }) {
   const F = FLAG_CODES[code];
   if (F) {
     return (
-      <Tile bg={TILE_BG} className={className} style={style}>
+      <Tile bg={FLAG_BG[code] || TYPE_BG.HR} className={className} style={style}>
         <span className="flex items-center justify-center w-[88%] relative z-[1]" style={{ aspectRatio: '3/2' }}>
           <F />
         </span>
