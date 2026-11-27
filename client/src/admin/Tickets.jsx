@@ -56,6 +56,7 @@ export default function Tickets() {
         </Select>
       </div>
       <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
+        <div className="hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent [border-color:var(--border-light)]">
@@ -85,6 +86,27 @@ export default function Tickets() {
             ))}
           </TableBody>
         </Table>
+        </div>
+        <div className="lg:hidden p-3 space-y-3">
+          {rows.map(t => (
+            <div key={t.id} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-bold [color:var(--white)]">#{t.id} — {t.username}
+                  <div className="text-[10px] font-normal [color:var(--dark-gray)]">{t.display_name}</div>
+                </div>
+                <Badge variant="outline" className={`text-[10px] ${STATUS_CLS[t.status]}`}>{STATUS_TH[t.status]}</Badge>
+              </div>
+              <div className="text-xs [color:var(--light-gray)]">{t.subject}</div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">หมวด</span><span className="[color:var(--light-gray)]">{CAT_TH[t.category] || t.category}</span></div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ตอบล่าสุดโดย</span><span className="[color:var(--muted-gray)]">{t.admin_name || '—'}</span></div>
+              <div className="text-[10px] [color:var(--muted-gray)]">{fmtDateTime(t.created_at)}</div>
+              <div className="pt-1">
+                <Button variant="ghost" className="text-xs px-3 py-1.5 [color:var(--gold-primary)] [border:1px_solid_var(--border-light)]" onClick={() => open(t)}>ตอบ</Button>
+              </div>
+            </div>
+          ))}
+          {!rows.length && <div className="text-center py-8 text-sm [color:var(--muted-gray)]">ไม่มี ticket</div>}
+        </div>
       </Card>
 
       {sel && (

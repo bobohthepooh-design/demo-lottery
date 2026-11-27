@@ -156,6 +156,7 @@ export default function AdminOverview() {
               รอบเปิด {health.counts?.open ?? 0} • กำหนดการ {health.counts?.scheduled ?? 0} • ออกผลวันนี้ {health.counts?.settledToday ?? 0} • โพยรอผล {health.counts?.pendingBets ?? 0}
             </span>
           </div>
+          <div className="hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -184,6 +185,24 @@ export default function AdminOverview() {
               {!health.sources.length && <TableRow><TableCell colSpan={5} className="text-[var(--muted-gray)] text-xs py-3">ยังไม่มีผลรางวัลในระบบ</TableCell></TableRow>}
             </TableBody>
           </Table>
+          </div>
+          <div className="lg:hidden space-y-3">
+            {health.sources.map(s => {
+              const stale = s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3;
+              return (
+                <div key={s.source} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold font-mono [color:var(--light-gray)]">{s.source}</div>
+                    <div className="text-xs [color:var(--muted-gray)]">รวม {s.total}</div>
+                  </div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ผลล่าสุด</span><span className={stale ? 'text-[var(--warning-amber)]' : 'text-[var(--success-green)]'}>{s.last_at ? fmtDateTime(s.last_at) : '—'}{stale ? ' ⚠️' : ''}</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">รอบ</span><span className="[color:var(--muted-gray)]">{s.last?.draw_code || '—'}</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ตลาด</span><span className="[color:var(--muted-gray)]">{s.last ? `${s.last.type_name_th}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}</span></div>
+                </div>
+              );
+            })}
+            {!health.sources.length && <div className="text-[var(--muted-gray)] text-xs py-3 text-center">ยังไม่มีผลรางวัลในระบบ</div>}
+          </div>
           {health.overdue?.length > 0 && (
             <div className="mt-3 border-t border-[var(--border-light)] pt-3">
               <div className="text-xs font-bold text-[var(--danger-red)] mb-1.5">⚠️ รอบค้างออกผล ({health.overdue.length})</div>

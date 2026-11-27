@@ -99,7 +99,7 @@ export default function Approvals() {
           </Select>
           <Input value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา reference/คำอธิบาย" className="w-56 luxury-input text-xs" />
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">
@@ -129,6 +129,25 @@ export default function Approvals() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="lg:hidden p-3 space-y-3">
+          {rows.map(r => (
+            <div key={r.id} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-bold font-mono [color:var(--gold-primary)]">{r.reference}</div>
+                <span className={`text-[10px] font-bold px-2 py-1 rounded border ${STATUS_CLS[r.status] || ''}`}>{STATUS_TH[r.status] || r.status}</span>
+              </div>
+              <div className="text-xs [color:var(--white)]">{CAT_TH[r.category] || r.category}</div>
+              <div className="text-xs [color:var(--muted-gray)]">{r.summary}</div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ผู้สร้าง</span><span className="[color:var(--muted-gray)]">{r.maker_name || `#${r.maker_id}`}</span></div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ผู้อนุมัติ</span><span className="[color:var(--muted-gray)]">{r.checker_name || '—'}</span></div>
+              <div className="text-[10px] [color:var(--muted-gray)]">{fmtDateTime(r.created_at)}</div>
+              <div className="pt-1">
+                <button className="luxury-btn-ghost text-xs px-4 py-1.5 rounded-lg" onClick={() => openDetail(r.id)}>ดูรายละเอียด</button>
+              </div>
+            </div>
+          ))}
+          {!rows.length && <div className="text-center py-8 text-xs [color:var(--muted-gray)]">ไม่มีคำขอ</div>}
         </div>
       </div>
 

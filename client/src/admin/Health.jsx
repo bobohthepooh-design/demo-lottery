@@ -117,6 +117,7 @@ export default function AdminHealth() {
           <Card>
             <CardBody>
               <h2 className="font-bold text-[var(--white)] mb-3">📡 แหล่งผลรางวัล ({sources.length})</h2>
+              <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -154,6 +155,33 @@ export default function AdminHealth() {
                   {!sources.length && <TableRow><TableCell colSpan={7} className="text-center text-[var(--muted-gray)] text-xs py-4">ยังไม่มีผลรางวัลในระบบ</TableCell></TableRow>}
                 </TableBody>
               </Table>
+              </div>
+              <div className="lg:hidden space-y-3">
+                {sources.map(s => {
+                  const badge = sourceBadge(s.source);
+                  const a = age(s.last_at);
+                  const stale = a && /วัน|ชม/.test(a) && !a.startsWith('0') && (s.last_at && (Date.now() - new Date(String(s.last_at).replace(' ', 'T') + 'Z').getTime()) > 36 * 3600e3);
+                  const mi = s.last ? marketInfo(s.last.type_code || '', s.last.cat_code || '') : null;
+                  return (
+                    <div key={s.source} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-bold font-mono [color:var(--light-gray)]">{s.source}</div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badge?.cls || 'bg-[var(--bg-dark-surface)] text-[var(--muted-gray)]'}`}>{badge?.short || s.source}</span>
+                      </div>
+                      <div className={`text-xs flex justify-between gap-2 ${stale ? 'text-[var(--warning-amber)]' : 'text-[var(--success-green)]'}`}><span className="[color:var(--muted-gray)]">ผลล่าสุด</span><span>{s.last_at ? fmtDateTime(s.last_at) : '—'}</span></div>
+                      <div className={`text-xs flex justify-between gap-2 ${stale ? 'text-[var(--warning-amber)] font-bold' : 'text-[var(--muted-gray)]'}`}><span className="[color:var(--muted-gray)]">อายุผล</span><span>{a || '—'}{stale ? ' ⚠️' : ''}</span></div>
+                      <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">รอบล่าสุด</span><span className="[color:var(--muted-gray)]">{s.last?.draw_code || '—'}</span></div>
+                      <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ตลาด</span><span className="[color:var(--muted-gray)] text-right">
+                        {s.last ? `${s.last.type_name_th || ''}${s.last.cat_name_th ? ' — ' + s.last.cat_name_th : ''}` : '—'}
+                        {mi && <span className={`ml-1 text-[9px] px-1 py-0.5 rounded border ${MODE_BADGE[mi.mode]?.cls || ''}`}>{MODE_BADGE[mi.mode]?.label || mi.mode}</span>}
+                        {mi && isOfficial(mi) && <span className="ml-1 text-[9px] text-[var(--success-green)]">✓ทางการ</span>}
+                      </span></div>
+                      <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">จำนวนผล</span><span className="[color:var(--muted-gray)]">{s.total}</span></div>
+                    </div>
+                  );
+                })}
+                {!sources.length && <div className="text-center text-[var(--muted-gray)] text-xs py-4">ยังไม่มีผลรางวัลในระบบ</div>}
+              </div>
               <div className="text-[11px] text-[var(--dark-gray)] mt-3">
                 ⚠️ = ผลเก่าเกิน 36 ชม. — แหล่งอาจหยุดอัปเดต • ✓ทางการ = ผลจากแหล่ง government เท่านั้น
               </div>
@@ -257,6 +285,7 @@ export default function AdminHealth() {
             <Card variant="danger">
               <CardBody>
                 <h2 className="font-bold text-[var(--danger-red)] mb-3">⚠️ รอบค้างออกผล ({overdue.length})</h2>
+                <div className="hidden lg:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -284,6 +313,24 @@ export default function AdminHealth() {
                     })}
                   </TableBody>
                 </Table>
+                </div>
+                <div className="lg:hidden space-y-3">
+                  {overdue.map(drow => {
+                    const late = Date.now() - new Date(String(drow.draw_at).replace(' ', 'T') + 'Z').getTime();
+                    const lateH = Math.floor(late / 3600e3);
+                    return (
+                      <div key={drow.id} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-sm font-bold font-mono [color:var(--light-gray)]">{drow.draw_code}</div>
+                          <span className="text-xs text-[var(--danger-red)] font-bold">ค้างมา {lateH >= 24 ? `${Math.floor(lateH / 24)} วัน ` : ''}{lateH % 24} ชม.</span>
+                        </div>
+                        <div className="text-xs [color:var(--light-gray)]">{drow.type_name_th}{drow.cat_name_th ? ` — ${drow.cat_name_th}` : ''}</div>
+                        <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">เวลาที่ควรออก</span><span className="[color:var(--muted-gray)]">{fmtDateTime(drow.draw_at)}</span></div>
+                        <div className="text-xs [color:var(--dark-gray)]">สถานะ: {drow.status}</div>
+                      </div>
+                    );
+                  })}
+                </div>
                 <div className="text-[11px] text-[var(--muted-gray)] mt-3">
                   วิธีแก้: รอตัวดึงผลรอบถัดไป • ถ้าแหล่งภายนอกไม่มีผลจริง → admin กรอกผลเองที่ หน้ารอบหวย → ออกผล
                 </div>

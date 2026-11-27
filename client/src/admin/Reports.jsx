@@ -138,6 +138,7 @@ export default function AdminReports() {
             <h2 className="font-bold text-[var(--white)]">ยอดแทงตามประเภทการแทง</h2>
             <ExportButton name="report-bets-by-type" rows={betsByTypeRows} columns={BETS_BY_TYPE_COLS} />
           </div>
+          <div className="hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -176,6 +177,31 @@ export default function AdminReports() {
               {!d.betsByType.length && <TableRow><TableCell colSpan="8" className="text-center text-[var(--muted-gray)] py-4">ไม่มีข้อมูล</TableCell></TableRow>}
             </TableBody>
           </Table>
+          </div>
+          <div className="lg:hidden space-y-3">
+            {d.betsByType.map((b, i) => {
+              const settled = (b.won || 0) + (b.lost || 0);
+              const rate = settled ? Math.round((b.won / settled) * 1000) / 10 : 0;
+              return (
+                <div key={`${b.rule_name}-${b.type_code}-${b.category_name_th}-${i}`} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[var(--white)] font-bold">
+                    <FlagIcon code={b.type_code} className="w-5 h-3.5" />
+                    {b.type_name_th}
+                  </div>
+                  <div className="text-xs [color:var(--light-gray)]">{b.rule_name}</div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">หมวด</span><span className="[color:var(--muted-gray)]">{b.category_name_th || '—'}</span></div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div><div className="text-sm font-bold [color:var(--muted-gray)]">{b.c}</div><div className="text-[10px] [color:var(--muted-gray)]">รายการ</div></div>
+                    <div><div className="text-sm font-bold [color:var(--muted-gray)]">{b.won}</div><div className="text-[10px] [color:var(--muted-gray)]">ถูก</div></div>
+                    <div><div className="text-sm font-bold [color:var(--muted-gray)]">{rate}%</div><div className="text-[10px] [color:var(--muted-gray)]">เรทถูก</div></div>
+                  </div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ยอดแทง</span><span className="[color:var(--gold-primary)]">{satang(b.stake)} บาท</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">จ่ายออก</span><span className="[color:var(--success-green)]">{satang(b.payout)} บาท</span></div>
+                </div>
+              );
+            })}
+            {!d.betsByType.length && <div className="text-center text-[var(--muted-gray)] py-4">ไม่มีข้อมูล</div>}
+          </div>
         </div>
 
         {/* โพยรายวัน */}
@@ -184,6 +210,7 @@ export default function AdminReports() {
             <h2 className="font-bold text-[var(--white)]">โพยรายวัน (30 วันล่าสุด)</h2>
             <ExportButton name="report-bets-by-day" rows={betsByDayRows} columns={BETS_BY_DAY_COLS} />
           </div>
+          <div className="hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -212,6 +239,27 @@ export default function AdminReports() {
               {!d.betsByDay.length && <TableRow><TableCell colSpan="5" className="text-center text-[var(--muted-gray)] py-4">ไม่มีข้อมูล</TableCell></TableRow>}
             </TableBody>
           </Table>
+          </div>
+          <div className="lg:hidden space-y-3">
+            {d.betsByDay.map(b => {
+              const net = b.stake - b.payout;
+              return (
+                <div key={b.day} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold [color:var(--white)]">{thaiDate(b.day + ' 00:00:00')}</div>
+                    <div className="text-xs [color:var(--muted-gray)]">{b.slips} โพย</div>
+                  </div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ยอดแทง</span><span className="[color:var(--gold-primary)]">{satang(b.stake)} บาท</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">จ่ายรางวัล</span><span className="[color:var(--success-green)]">{satang(b.payout)} บาท</span></div>
+                  <div className={cn('text-xs flex justify-between gap-2 font-semibold', net >= 0 ? 'text-[var(--success-green)]' : 'text-[var(--danger-red)]')}>
+                    <span className="[color:var(--muted-gray)]">กำไรวัน</span>
+                    <span>{net >= 0 ? '+' : ''}{satang(net)} บาท</span>
+                  </div>
+                </div>
+              );
+            })}
+            {!d.betsByDay.length && <div className="text-center text-[var(--muted-gray)] py-4">ไม่มีข้อมูล</div>}
+          </div>
         </div>
 
       {/* ผู้ชนะรางวัลสูงสุด */}
@@ -220,6 +268,7 @@ export default function AdminReports() {
           <h2 className="font-bold text-[var(--white)]">🏆 ผู้ชนะรางวัลสูงสุด</h2>
           <ExportButton name="report-top-winners" rows={d.topWinners} columns={TOP_WINNERS_COLS} />
         </div>
+        <div className="hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -245,6 +294,23 @@ export default function AdminReports() {
             {!d.topWinners.length && <TableRow><TableCell colSpan="5" className="text-center text-[var(--muted-gray)] py-4">ยังไม่มีผู้ชนะ</TableCell></TableRow>}
           </TableBody>
         </Table>
+        </div>
+        <div className="lg:hidden space-y-3">
+          {d.topWinners.map(w => (
+            <div key={w.slip_ref} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-bold [color:var(--white)]">{w.username}</div>
+                <div className="text-xs font-mono [color:var(--gold-primary)]">{w.slip_ref}</div>
+              </div>
+              <div className="text-xs [color:var(--muted-gray)]">
+                {w.type_name_th}{w.draw_code && !w.draw_code.endsWith('-STANDING') ? ` • ${w.draw_code}` : ''}
+              </div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">รายการถูก</span><span className="[color:var(--muted-gray)]">{w.items} รายการ</span></div>
+              <div className="text-xs flex justify-between gap-2 font-semibold"><span className="[color:var(--muted-gray)]">เงินรางวัลรวม</span><span className="[color:var(--success-green)]">{satang(w.payout)} บาท</span></div>
+            </div>
+          ))}
+          {!d.topWinners.length && <div className="text-center text-[var(--muted-gray)] py-4">ยังไม่มีผู้ชนะ</div>}
+        </div>
       </div>
 
       {/* สถานะรอบหวยล่าสุด */}
@@ -253,6 +319,7 @@ export default function AdminReports() {
           <h2 className="font-bold text-[var(--white)]">สถานะรอบหวยล่าสุด</h2>
           <ExportButton name="report-draws-summary" rows={drawsSummaryRows} columns={DRAWS_SUMMARY_COLS} />
         </div>
+        <div className="hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -288,6 +355,31 @@ export default function AdminReports() {
             {!d.drawsSummary.length && <TableRow><TableCell colSpan="8" className="text-center text-[var(--muted-gray)] py-4">ไม่มีข้อมูล</TableCell></TableRow>}
           </TableBody>
         </Table>
+        </div>
+        <div className="lg:hidden space-y-3">
+          {d.drawsSummary.map(x => {
+            const net = x.stake - x.payout;
+            const settled = ['settled', 'cancelled'].includes(x.status);
+            return (
+              <div key={x.draw_code} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-bold font-mono [color:var(--gold-primary)]">{x.draw_code}</div>
+                  <DrawStatusBadge status={x.status} />
+                </div>
+                <div className="text-xs [color:var(--white)]">{x.name_th}</div>
+                <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">เวลาออกรางวัล</span><span className="[color:var(--muted-gray)]">{fmtDateTime(x.draw_at)}</span></div>
+                <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">รายการ</span><span className="[color:var(--muted-gray)]">{x.items}</span></div>
+                <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ยอดแทง</span><span className="[color:var(--gold-primary)]">{satang(x.stake)} บาท</span></div>
+                <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">จ่ายรวม</span><span className="[color:var(--success-green)]">{satang(x.payout)} บาท</span></div>
+                <div className={cn('text-xs flex justify-between gap-2 font-semibold', settled ? (net >= 0 ? 'text-[var(--success-green)]' : 'text-[var(--danger-red)]') : 'text-[var(--dark-gray)]')}>
+                  <span className="[color:var(--muted-gray)]">กำไร</span>
+                  <span>{settled ? `${net >= 0 ? '+' : ''}${satang(net)} บาท` : '—'}</span>
+                </div>
+              </div>
+            );
+          })}
+          {!d.drawsSummary.length && <div className="text-center text-[var(--muted-gray)] py-4">ไม่มีข้อมูล</div>}
+        </div>
       </div>
 
       {/* กำไรต่อรอบ — settled 30 วันล่าสุด */}
@@ -298,6 +390,7 @@ export default function AdminReports() {
             <ExportButton name="report-profit-by-draw" rows={profitByDrawRows} columns={PROFIT_BY_DRAW_COLS} />
           </div>
           <p className="text-xs text-[var(--muted-gray)] mb-3">vip = ยอดแทง − เงินรางวัล · ติดลบ = ระบบขาดทุนรอบนั้น</p>
+          <div className="hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border-light)] hover:bg-transparent">
@@ -332,6 +425,30 @@ export default function AdminReports() {
               })}
             </TableBody>
           </Table>
+          </div>
+          <div className="lg:hidden space-y-3">
+            {d.profitByDraw.map(x => {
+              const net = x.stake - x.payout;
+              const settled = ['settled', 'cancelled'].includes(x.status);
+              return (
+                <div key={x.draw_code} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold font-mono [color:var(--gold-primary)]">{x.draw_code}</div>
+                    <DrawStatusBadge status={x.status} />
+                  </div>
+                  <div className="text-xs [color:var(--white)]">{x.type_name_th}{x.cat_name_th ? ` — ${x.cat_name_th}` : ''}</div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">เวลาออกรางวัล</span><span className="[color:var(--muted-gray)]">{fmtDateTime(x.draw_at)}</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">รายการ</span><span className="[color:var(--muted-gray)]">{x.items}</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">ยอดแทง</span><span className="[color:var(--gold-primary)]">{satang(x.stake)} บาท</span></div>
+                  <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">จ่ายรางวัล</span><span className="[color:var(--success-green)]">{satang(x.payout)} บาท</span></div>
+                  <div className={cn('text-xs flex justify-between gap-2 font-semibold', settled ? (net >= 0 ? 'text-[var(--success-green)]' : 'text-[var(--danger-red)]') : 'text-[var(--dark-gray)]')}>
+                    <span className="[color:var(--muted-gray)]">Vip</span>
+                    <span>{settled ? `${net >= 0 ? '+' : ''}${satang(net)} บาท` : '—'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

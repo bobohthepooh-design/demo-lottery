@@ -136,6 +136,7 @@ export default function AdminAudit() {
         </Card>
       )}
       <Card className="[background:var(--bg-card)] [border:1px_solid_var(--border-light)] [border-radius:var(--radius-xl)]">
+        <div className="hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent [border-color:var(--border-light)]">
@@ -163,7 +164,25 @@ export default function AdminAudit() {
             ))}
           </TableBody>
         </Table>
-        {!filtered.length && <div className="text-center py-8 text-sm [color:var(--muted-gray)]">{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
+          {!filtered.length && <div className="text-center py-8 text-sm [color:var(--muted-gray)]">{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
+        </div>
+        <div className="lg:hidden p-3 space-y-3">
+          {paged.map(l => (
+            <div key={l.id} className="border border-[var(--border-light)] rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-bold [color:var(--white)]">{l.username || `#${l.user_id}`}</div>
+                <div className="text-[10px] whitespace-nowrap [color:var(--muted-gray)]">{fmtDateTime(l.created_at)}</div>
+              </div>
+              <div className="text-xs [color:var(--white)]">{ACTION_TH[l.action] || l.action}
+                {ACTION_TH[l.action] && <code className="block [color:var(--dark-gray)] [font-size:10px]">{l.action}</code>}
+              </div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">Entity</span><span className="[color:var(--muted-gray)]">{l.entity_type} {l.entity_id}</span></div>
+              <div className="text-xs flex justify-between gap-2"><span className="[color:var(--muted-gray)]">IP</span><span className="[color:var(--muted-gray)]">{l.ip}</span></div>
+              <div className="text-xs font-mono [color:var(--muted-gray)] break-all">{l.detail || '—'}</div>
+            </div>
+          ))}
+          {!filtered.length && <div className="text-center py-8 text-sm [color:var(--muted-gray)]">{logs.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ไม่มีรายการ'}</div>}
+        </div>
       </Card>
       {pageCount > 1 && (
         <div className="flex items-center justify-between text-sm">
