@@ -7,6 +7,7 @@ import { toast } from '../components/toast.js';
 import { getTz, setTz } from '../time.js';
 import { pushSupported, subscribePush, unsubscribePush, pushSubscriptionCount } from '../push.js';
 import { Card, CardHeader, CardBody, Input, Select, Button } from '../components/ui/index.js';
+import QRCode from 'qrcode';
 import '../styles/luxury-theme.css';
 
 // KYC — member ขอ verify ตัวตน (manual review โดยแอดมิน)
@@ -305,6 +306,7 @@ export default function Profile() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [mfa, setMfa] = useState(null); // {secret, uri}
+  const [mfaQr, setMfaQr] = useState(''); // data URL ของ QR จาก otpauth uri
   const [mfaCode, setMfaCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [showDisable, setShowDisable] = useState(false);
@@ -321,7 +323,11 @@ export default function Profile() {
   };
 
   const setupMfa = async () => {
-    try { setMfa(await api('/auth/mfa/setup', { method: 'POST' })); } catch (e) { setErr(e.message); }
+    try {
+      const r = await api('/auth/mfa/setup', { method: 'POST' });
+      setMfa(r);
+      setMfaQr(r?.uri ? await QRCode.toDataURL(r.uri, { margin: 1, width: 180 }) : '');
+    } catch (e) { setErr(e.message); }
   };
   const enableMfa = async () => {
     try { await api('/auth/mfa/enable', { method: 'POST', body: { code: mfaCode } }); setMfa(null); setMfaCode(''); await refresh(); setMsg('เปิดใช้งาน MFA สำเร็จ'); }
@@ -388,10 +394,14 @@ export default function Profile() {
           </Button>
         ) : (
           <div className="space-y-3">
+            {mfaQr && (
+              <div className="flex justify-center">
+                <img src={mfaQr} alt="QR code สำหรับตั้งค่า MFA" className="rounded-lg bg-white p-2" width={180} height={180} />
+              </div>
+            )}
             <div className="bg-[var(--bg-dark-surface)] rounded-lg p-4 text-sm border border-[var(--border-light)]">
-              <div className="text-[var(--muted-gray)] mb-1">Secret (ใส่ในแอป Authenticator):</div>
-              <code className="text-[var(--gold-primary)] text-lg tracking-wider">{mfa.secret}</code>
-              <div className="text-[var(--muted-gray)] mt-2 text-xs break-all">{mfa.uri}</div>
+              <div className="text-[var(--muted-gray)] mb-1">สแกน QR ด้วยแอป Authenticator (หรือใส่ Secret เอง):</div>
+              <code className="text-[var(--gold-primary)] text-lg tracking-wider break-all">{mfa.secret}</code>
             </div>
             <div className="flex gap-2">
               <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
