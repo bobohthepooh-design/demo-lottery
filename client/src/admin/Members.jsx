@@ -139,7 +139,43 @@ export default function AdminMembers() {
       )}
 
       <div className="luxury-card overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* mobile cards (< lg) — แสดงเฉพาะฟิลด์สำคัญ + actions ครบเหมือนตาราง */}
+        <div className="lg:hidden divide-y divide-[var(--border-light)]">
+          {paged.map(m => (
+            <div key={m.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-[var(--white)] font-semibold">{m.username}</div>
+                  <div className="text-xs text-[var(--muted-gray)]">{m.displayName || '—'} • ID {m.id}</div>
+                </div>
+                <span className={cn('luxury-badge text-[10px] font-semibold',
+                  m.status === 'active' ? 'luxury-badge-success' : 'luxury-badge-danger')}>
+                  {m.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <div className="text-[var(--muted-gray)]">เครดิต: <span className="text-[var(--gold-primary)] font-bold">{satang(m.balance)} บาท</span></div>
+                <div className="text-[var(--muted-gray)]">บทบาท: <span className="text-[var(--gold-primary)]">{m.roles.join(', ')}</span></div>
+                <div className="text-[var(--muted-gray)]">อีเมล: <span className="text-[var(--white)]">{m.email || '—'}</span></div>
+                <div className="text-[var(--muted-gray)]">MFA: {m.mfaEnabled ? '✅' : '—'}{m.withdrawUnlocked ? ' 💸' : ''}</div>
+                <div className="text-[var(--muted-gray)]">18+/RG: {m.selfExcludedUntil
+                  ? <span className="text-[var(--danger-red)] font-bold">{m.selfExcludedUntil === 'permanent' ? '⛔ถาวร' : `⛔ถึง ${m.selfExcludedUntil}`}</span>
+                  : (m.dailyLimitSatang || m.monthlyLimitSatang)
+                    ? <span className="text-[var(--warning-amber)]">⚠️จำกัด</span>
+                    : '—'}{!m.ageConfirmed && <span className="text-[var(--danger-red)] ml-1" title="ยังไม่ยืนยันอายุ 18+">❗</span>}</div>
+              </div>
+              <div className="flex gap-4 pt-1">
+                <button onClick={() => loadActivity(m)} className="text-[var(--info-blue)] text-xs hover:underline transition">กิจกรรม</button>
+                <button onClick={() => setEdit({ ...m })} className="text-[var(--gold-primary)] text-xs hover:underline transition">แก้ไข</button>
+                <button onClick={() => setDel(m)} className="text-[var(--danger-red)] text-xs hover:underline transition">ลบ</button>
+              </div>
+            </div>
+          ))}
+          {paged.length === 0 && (
+            <div className="px-4 py-6 text-center text-xs text-[var(--muted-gray)]">ไม่มีข้อมูลสมาชิก</div>
+          )}
+        </div>
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[var(--border-light)]">

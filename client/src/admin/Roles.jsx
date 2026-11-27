@@ -57,7 +57,32 @@ export default function AdminRoles() {
       )}
       
       <div className="luxury-card overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* mobile cards (< lg) — card ต่อ permission, checkbox ต่อ role */}
+        <div className="lg:hidden divide-y divide-[var(--border-light)]">
+          {data.permissions.map(p => (
+            <div key={p.id} className="p-4 space-y-2">
+              <div>
+                <code className="text-xs text-[var(--white)]">{p.code}</code>
+                <div className="text-[10px] text-[var(--muted-gray)] mt-1">{p.description}</div>
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                {data.roles.map(r => (
+                  <label key={r.id} className="flex items-center gap-1.5 text-xs text-[var(--white)] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      disabled={!isSuper}
+                      checked={sel[r.id]?.has(p.id)}
+                      onChange={() => toggle(r.id, p.id)}
+                      className="w-4 h-4 accent-[var(--gold-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    {r.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[var(--border-light)]">

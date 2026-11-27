@@ -144,7 +144,65 @@ export default function AdminUsers() {
       </div>
 
       <div className="luxury-card overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* mobile cards (< lg) */}
+        <div className="lg:hidden divide-y divide-[var(--border-light)]">
+          {admins.map(a => (
+            <div key={a.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-[var(--white)] font-semibold">{a.username}</span>
+                  {isSelf(a) && <span className="ml-1 text-[9px] text-[var(--gold-primary)]">(คุณ)</span>}
+                  <div className="text-xs text-[var(--muted-gray)]">{a.display_name || '—'} • ID {a.id}</div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                  a.status === 'active'
+                    ? 'bg-[var(--success-green)]/15 text-[var(--success-green)] border-[var(--success-green)]/40'
+                    : 'bg-[var(--danger-red)]/15 text-[var(--danger-red)] border-[var(--danger-red)]/40'
+                }`}>
+                  {a.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <div className="text-[var(--muted-gray)]">Roles: <span className="text-[var(--white)]">{(a.roles || []).join(', ')}</span></div>
+                <div className="text-[var(--muted-gray)]">MFA: {a.mfa_enabled ? <span className="text-[var(--success-green)]">✓ เปิด</span> : <span className="text-[var(--warning-amber)]">ยังไม่เปิด</span>}</div>
+                <div className="text-[var(--muted-gray)]">Sessions: <span className="text-[var(--white)]">{a.activeSessions}</span></div>
+                <div className="text-[var(--muted-gray)]">เข้าใช้ล่าสุด: <span className="text-[var(--white)]">{a.lastLoginAt ? fmtDateTime(a.lastLoginAt) : '—'}</span></div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => loadSessions(a)}
+                  className="text-[10px] text-[var(--info-blue)] hover:underline transition"
+                >
+                  sessions
+                </button>
+                {!isSelf(a) && a.mfa_enabled && (
+                  <button
+                    className="text-[10px] text-[var(--warning-amber)] hover:underline transition disabled:opacity-50"
+                    disabled={busy === `mfa-${a.id}`}
+                    onClick={() => resetMfa(a)}
+                  >
+                    reset MFA
+                  </button>
+                )}
+                {!isSelf(a) && (
+                  <button
+                    className={`text-[10px] hover:underline transition disabled:opacity-50 ${
+                      a.status === 'active' ? 'text-[var(--danger-red)]' : 'text-[var(--success-green)]'
+                    }`}
+                    disabled={busy === `st-${a.id}`}
+                    onClick={() => setStatus(a, a.status === 'active' ? 'disabled' : 'active')}
+                  >
+                    {a.status === 'active' ? 'ปิดบัญชี' : 'เปิดบัญชี'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          {admins.length === 0 && (
+            <div className="px-4 py-6 text-center text-xs text-[var(--muted-gray)]">ไม่มีข้อมูลผู้ดูแล</div>
+          )}
+        </div>
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[var(--border-light)]">
