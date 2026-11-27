@@ -55,6 +55,7 @@ node tests/smoke.mjs            # smoke API test (ต้องมี server ร�
 - ภาษา UI: **ไทยเป็นหลัก** — error messages จาก backend เป็นภาษาไทยอยู่แล้ว
 - หน้า member: `/`, `/play` (แทงหวย), `/lotteries`, `/games`, `/wallet`, `/profile`
 - หน้า admin: `/admin/*` (layout `client/src/admin/AdminLayout.jsx`) — เมนู + badge อยู่ที่นั่น
+- Admin utilities (2026-11): `admin/useUrlFilters.jsx` (URL-persisted filters + `TablePager`), `components/AdminStates.jsx` (`AdminLoading`/`AdminError`), `lib/exportCsv.js` (BOM+escape+formula-guard), `admin/navConfig.js` (adminGroups กลาง — AdminLayout/CommandPalette/Layout import ร่วมกัน), `admin/CommandPalette.jsx` (Ctrl+K)
 
 ### Database
 - Schema canonical: `server/src/db/schema.pg.sql` + migrations `server/src/db/migrations/*.sql` (marker + apply)

@@ -1,6 +1,6 @@
 # PROJECT_STATUS.md — สถานะโปรเจกต์
 
-> อัปเดตล่าสุด: 2026-11-23 | Branch: master | Deploy: Docker Compose บนเครื่อง local (LAN/demo)
+> อัปเดตล่าสุด: 2026-11-27 | Branch: master | Deploy: Docker Compose บนเครื่อง local (LAN/demo)
 
 ## สถานะรวม: 🟢 ทำงานได้ — demo/LAN mode, ระบบเงินจริงยังไม่เปิด
 
@@ -45,7 +45,25 @@
 | 🟢 | `docs/audit/*` 11 ฉบับเก่า อาจล้าสมัยหลัง feature ใหม่ |
 | 🟢 | GitHub repo public: `github.com/bobohthepooh-design/demo-lottery` — CI 5 jobs เขียว (test/e2e/gitleaks/semgrep/trivy) |
 
+## Admin UX overhaul (2026-11-27 — 12 commits + residual fixes)
+
+- **Mobile admin drawer**: hamburger + shadcn Sheet แทน horizontal-scroll nav (desktop sidebar เหมือนเดิม)
+- **URL-persisted filters + pagination**: `useUrlFilters.jsx` (hook + `TablePager`) — Draws/Bets/Members จำ filter ใน URL (share link ได้), client-side pagination 50/หน้า, fetch-all loop พร้อม safety cap
+- **Skeleton + error retry**: `components/AdminStates.jsx` (`AdminLoading`/`AdminError`) ครบ 8 หน้า
+- **Command palette Ctrl+K**: `navConfig.js` (adminGroups กลาง) + `CommandPalette.jsx` — perm-filtered nav + quick actions
+- **CSS vars consistency**: 60 hardcoded rgba/hex → `color-mix(in srgb, var(--*) N%, transparent)` ใน admin 17 ไฟล์
+- **Toast coverage**: ทุก admin mutation มี success/error toast (แก้ bug จริง — Lotteries 4 mutations ไม่มี try/catch)
+- **Overview auto-refresh**: poll 30s + SSE `sys:update` + visibilitychange guard; Health.jsx ตามทีหลัง
+- **CSV export**: `lib/exportCsv.js` (UTF-8 BOM + RFC4180 escape + formula-injection guard) — Audit/Bets/Reports/WalletAdmin
+- **Fixes**: `/admin/bets?q=` count query ขาด JOIN (search+export พัง) + regression tests; header admin dropdown กรอง perm; Draws/Members truncation notice; palette multi-perm
+
 ## Recent commits (สำคัญ)
+
+- `3d12fc8` Health hidden-guard + WalletAdmin shared CSV
+- `bb18514` Draws/Members truncation notices
+- `3fd57ff` fix `/admin/bets?q=` count query missing JOINs (+2 regression tests)
+- `2849a0c` header admin dropdown perm filter + palette multi-perm
+- `e626767..b18548a` admin UX 8-task SDD (drawer/filters/skeleton/palette/css-vars/toast/refresh/CSV)
 
 - `d99aa4a` feat(payments): require_email_verify_for_withdraw setting (default off)
 - `67c4766`/`2db8566` CI fixes: migrate/seed advisory lock, smoke drift, semgrep GCM, trivy docker, vitest 5.1.1 — **CI 5/5 jobs เขียวบน GitHub แล้ว**

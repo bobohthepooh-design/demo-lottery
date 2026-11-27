@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### Added — Admin UX overhaul (2026-11-27)
+- Mobile admin navigation drawer (hamburger + Sheet) แทน horizontal scroll
+- URL-persisted table filters + client-side pagination (`useUrlFilters`, `TablePager`) สำหรับ Draws/Bets/Members
+- Skeleton loading + error retry states (`AdminStates`) ครบทุกหน้า admin
+- Command palette Ctrl+K (`CommandPalette` + `navConfig`) พร้อม permission filtering
+- Overview dashboard auto-refresh 30s + SSE `sys:update` + hidden-tab guard
+- Shared CSV export (`lib/exportCsv`) — UTF-8 BOM, RFC4180 escaping, formula-injection guard — Audit/Bets/Reports/WalletAdmin
+- Toast feedback ครบทุก admin mutation
+
+### Fixed
+- `/admin/bets?q=` count query ขาด JOIN → ค้นหาโพย/CSV export พัง (มี regression tests)
+- Header admin dropdown แสดงเมนูที่ไม่มีสิทธิ์ (ตอนนี้กรองตาม permissions)
+- Draws/Members row cap แจ้งเตือนจำนวนที่โหลดจริง
+- Health.jsx poll เพิ่ม `document.hidden` guard
+
 ## [2026-11] — DevSecOps & Security Hardening sprint
 
 ### Added
