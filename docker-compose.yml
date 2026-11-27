@@ -92,6 +92,16 @@ services:
     depends_on: [app]
     networks: [internal]
 
+  # Cloudflare Tunnel — Quick tunnel (hostname ฟรีทันที: trycloudflare.com)
+  # ตอน restart จะได้ hostname ใหม่ — เหมาะสำหรับ dev/test
+  # ถ้าต้องการ domain ของตัวเอง → ใช้ managed tunnel + set Public Hostname ใน dashboard
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://caddy:80
+    depends_on: [caddy]
+    networks: [internal]
+
 networks:
   internal:
 
