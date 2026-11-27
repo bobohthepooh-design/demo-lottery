@@ -50,7 +50,7 @@ export async function requireAuth(req, res, next) {
       [s.id]);
     if (renewed.changes) setSessionCookie(res, s.id);
     req.session = s;
-    req.user = { id: s.user_id, username: s.username, email: s.email, displayName: s.display_name, mfaEnabled: s.mfa_enabled,
+    req.user = { id: s.user_id, username: s.username, email: s.email, displayName: s.display_name, mfaEnabled: !!s.mfa_enabled,
       ageConfirmed: !!s.age_confirmed, selfExcludedUntil: s.self_excluded_until,
       dailyLimitSatang: s.daily_limit_satang, monthlyLimitSatang: s.monthly_limit_satang, emailVerified: !!s.email_verified, phone: s.phone };
     next();
