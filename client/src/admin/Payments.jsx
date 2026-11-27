@@ -111,7 +111,9 @@ export default function AdminPayments() {
         ) : rows.length === 0 ? (
           <div className="py-12 text-center text-sm [color:var(--muted-gray)]">{loadErr ? '' : 'ไม่มีคำขอ'}</div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
+          <div className="overflow-x-auto hidden lg:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">
@@ -179,6 +181,67 @@ export default function AdminPayments() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile/Tablet (< lg): การ์ดแนวตั้ง — ข้อมูลเดียวกับตาราง */}
+          <div className="lg:hidden p-4 space-y-3">
+            {rows.map(p => (
+              <div key={p.id} className="rounded-xl p-4 space-y-3 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">
+                {/* คำขอ */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-bold text-sm whitespace-nowrap [color:var(--white)]">
+                      {p.kind === 'deposit' ? '💳 เติม' : '🏦 ถอน'} ฿{satang(p.amount)}
+                    </div>
+                    <div className="text-[11px] font-mono mt-1 [color:var(--gold-primary)]">{p.reference}</div>
+                    <div className="text-[11px] mt-1 [color:var(--muted-gray)]">{fmtDateTime(p.created_at)}</div>
+                  </div>
+                  <span className={cn('text-[11px] font-bold px-2 py-1 rounded border shrink-0', STATUS_BADGE[p.status])}>
+                    {STATUS_TH[p.status]}
+                  </span>
+                </div>
+                {/* สมาชิก */}
+                <div className="text-xs [color:var(--white)]">
+                  <span className="text-[10px] [color:var(--muted-gray)]">สมาชิก: </span>{p.username}
+                  {p.email && <div className="text-[11px] [color:var(--muted-gray)]">{p.email}</div>}
+                </div>
+                {/* รายละเอียด */}
+                <div className="text-xs space-y-1 [color:var(--muted-gray)]">
+                  {p.slip_trans_ref && <div>สลิป: <span className="font-mono [color:var(--gold-primary)]">{p.slip_trans_ref}</span></div>}
+                  {p.slip_amount != null && <div>ยอดสลิป ฿{satang(p.slip_amount)}</div>}
+                  {p.slip_error && <div className="text-red-400">⚠️ {p.slip_error}</div>}
+                  {p.kind === 'withdraw' && <div>ปลายทาง: {p.bank_name} {p.bank_account_no} — {p.bank_account_name}</div>}
+                  {p.kind === 'withdraw' && p.promptpay_id && (() => {
+                    const match = p.phone && String(p.promptpay_id).replace(/\D/g, '') === String(p.phone).replace(/\D/g, '');
+                    return <div className={match ? 'text-green-400' : 'text-amber-300'}>
+                      พร้อมเพย์: {p.promptpay_id} {match ? '✓ ตรงเบอร์ OTP' : p.phone ? '⚠️ ไม่ตรงเบอร์สมาชิก' : ''}
+                    </div>;
+                  })()}
+                  {p.slip_payer && <div>ผู้โอน: {p.slip_payer}</div>}
+                  {p.has_slip_image && (
+                    <button onClick={() => viewSlip(p)} className="text-[11px] underline transition-colors [color:var(--info-blue)]">
+                      🧾 ดูรูปสลิป
+                    </button>
+                  )}
+                </div>
+                {/* จัดการ */}
+                {(p.status === 'pending_review' || p.status === 'pending_slip') && (
+                  <div className="space-y-2 pt-1 [border-top:1px_solid_var(--border-light)]">
+                    <Input value={note[p.id] || ''} onChange={e => setNote({ ...note, [p.id]: e.target.value })}
+                      placeholder="หมายเหตุ (ไม่บังคับ)"
+                      className="h-9 text-xs luxury-input"
+                      inputClassName="!h-9 !px-3 !py-2 !text-xs" />
+                    <div className="flex gap-2">
+                      <button onClick={() => review(p.id, 'approve')} disabled={busy === p.id}
+                        className="luxury-btn text-xs px-4 py-2 flex-1">✅ อนุมัติ</button>
+                      <button onClick={() => review(p.id, 'reject')} disabled={busy === p.id}
+                        className="text-xs px-4 py-2 rounded-lg border font-semibold transition-all [background:color-mix(in_srgb,var(--danger-red)_15%,transparent)] [border-color:color-mix(in_srgb,var(--danger-red)_30%,transparent)] [color:var(--danger-red)] flex-1">❌ ปฏิเสธ</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          </>
         )}
         {pageCount > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t [border-color:var(--border-light)]">

@@ -265,6 +265,9 @@ export default function AdminDraws() {
         ) : drawsErr && !filtered.length ? (
           <div className="p-4"><AdminError message={drawsErr} onRetry={loadDraws} /></div>
         ) : (
+        <>
+        {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
+        <div className="hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent [border-bottom:1px_solid_var(--border-light)]">
@@ -307,6 +310,47 @@ export default function AdminDraws() {
             ))}
           </TableBody>
         </Table>
+        </div>
+
+        {/* Mobile/Tablet (< lg): การ์ดแนวตั้ง — ข้อมูลเดียวกับตาราง */}
+        <div className="lg:hidden p-4 space-y-3">
+          {paged.map(d => {
+            const s = annSummary(d.announce);
+            return (
+              <div key={d.id} className="rounded-xl p-4 space-y-3 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-mono font-bold [color:var(--gold-primary)]">{d.draw_code}</div>
+                    <div className="text-xs truncate [color:var(--white)]">{d.type_name_th}{d.category_name_th ? <span className="[color:var(--muted-gray)]"> — {d.category_name_th}</span> : null}</div>
+                    {s && <div className="text-[10px] font-sans mt-0.5 [color:var(--warning-amber)]">เลขอั้น: {s}</div>}
+                  </div>
+                  <span className={cn('text-[10px] font-semibold shrink-0 px-2 py-0.5 rounded-full border', STATUS_BADGE[d.status] || 'luxury-badge')}>
+                    {STATUS_TH[d.status]}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <div className="text-[10px] [color:var(--muted-gray)]">ออกรางวัล</div>
+                    <div className="[color:var(--muted-gray)]">{fmtDateTime(d.draw_at)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] [color:var(--muted-gray)]">ปิดรับ</div>
+                    <div className="[color:var(--muted-gray)]">{fmtDateTime(d.close_at)}</div>
+                  </div>
+                </div>
+                {d.status !== 'settled' && d.status !== 'cancelled' && (
+                  <div className="flex gap-3 pt-1 [border-top:1px_solid_var(--border-light)]">
+                    {d.status !== 'open' && <button onClick={() => setStatus(d.id, 'open')} className="text-xs font-semibold hover:underline [color:var(--success-green)]">เปิด</button>}
+                    {d.status === 'open' && <button onClick={() => setStatus(d.id, 'closed')} className="text-xs font-semibold hover:underline [color:var(--muted-gray)]">ปิด</button>}
+                    <button onClick={() => setStatus(d.id, 'cancelled')} className="text-xs font-semibold hover:underline [color:var(--danger-red)]">ยกเลิก</button>
+                    <button onClick={() => openEdit(d)} className="text-xs font-semibold hover:underline [color:var(--gold-primary)]">แก้ไข</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        </>
         )}
       </div>
       {filtered.length > 0 && filtered.length < totalRows && (

@@ -235,7 +235,8 @@ export default function AdminWallet() {
           </h2>
           <button onClick={exportCsv} className="luxury-btn-outline text-xs px-4 py-2 rounded-lg">⬇️ Export CSV (หน้านี้)</button>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
+        <div className="overflow-x-auto hidden lg:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">
@@ -269,6 +270,31 @@ export default function AdminWallet() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile/Tablet (< lg): การ์ดแนวตั้ง — ข้อมูลเดียวกับตาราง */}
+        <div className="lg:hidden p-4 space-y-3">
+          {txs.map(t => (
+            <div key={t.id} className="rounded-xl p-4 space-y-2 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-mono font-bold text-sm [color:var(--gold-primary)]">{t.reference}</div>
+                  <div className="text-xs [color:var(--white)]">{t.username}</div>
+                  <div className="text-[11px] [color:var(--muted-gray)]">{fmtDateTime(t.created_at)}</div>
+                </div>
+                <div className={cn('text-right font-bold text-sm shrink-0', t.direction === 'credit' ? 'text-green-400' : 'text-red-400')}>
+                  {t.direction === 'credit' ? '+' : '−'}{satang(t.amount)} บาท
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className={cn('text-[10px] font-semibold px-2 py-1 rounded border', t.direction === 'credit' ? 'luxury-badge-success' : 'luxury-badge-danger')}>
+                  {TYPE_TH[t.type] || t.type}
+                </span>
+                <div className="text-xs font-semibold [color:var(--gold-primary)]">คงเหลือ {satang(t.balance_after)} บาท</div>
+              </div>
+              {t.description && <div className="text-xs [color:var(--muted-gray)]">{t.description}</div>}
+            </div>
+          ))}
+        </div>
         {txPageCount > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t [border-color:var(--border-light)]">
             <span className="text-xs [color:var(--muted-gray)]">หน้า {txPage + 1}/{txPageCount} — {txTotal.toLocaleString()} รายการ</span>
@@ -301,7 +327,8 @@ export default function AdminWallet() {
               : `✗ พบปัญหา: ${ledgerVerify.transactionsMissingJournal} tx ขาด journal • unbalanced ${ledgerVerify.unbalancedTransactions?.length || 0} รายการ`}
           </div>
         )}
-        <div className="overflow-x-auto">
+        {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
+        <div className="overflow-x-auto hidden lg:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">
@@ -325,6 +352,32 @@ export default function AdminWallet() {
               {!ledgerAccts.length && <tr><td colSpan={4} className="text-center py-6 text-xs [color:var(--muted-gray)]">ยังไม่มี journal entries — รอธุรกรรมใหม่ หรือกด Backfill</td></tr>}
             </tbody>
           </table>
+        </div>
+        {!ledgerAccts.length && <div className="lg:hidden p-4 text-center text-xs [color:var(--muted-gray)]">ยังไม่มี journal entries — รอธุรกรรมใหม่ หรือกด Backfill</div>}
+
+        {/* Mobile/Tablet (< lg): การ์ดแนวตั้ง — ข้อมูลเดียวกับตาราง */}
+        <div className="lg:hidden p-4 pt-0 space-y-3">
+          {ledgerAccts.map(a => (
+            <div key={a.account} className="rounded-xl p-4 space-y-2 [background:var(--bg-dark-surface)] [border:1px_solid_var(--border-light)]">
+              <div className="font-mono font-bold text-sm [color:var(--white)]">{a.account}</div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <div className="text-[10px] [color:var(--muted-gray)]">Dr รวม</div>
+                  <div className="[color:var(--muted-gray)]">{satang(a.debit_total)} บาท</div>
+                </div>
+                <div>
+                  <div className="text-[10px] [color:var(--muted-gray)]">Cr รวม</div>
+                  <div className="[color:var(--muted-gray)]">{satang(a.credit_total)} บาท</div>
+                </div>
+                <div>
+                  <div className="text-[10px] [color:var(--muted-gray)]">ยอดคงเหลือ</div>
+                  <div className={cn('font-bold', a.balance >= 0 ? 'text-green-400' : 'text-red-400')}>
+                    {a.balance >= 0 ? '+' : ''}{satang(a.balance)} บาท
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
