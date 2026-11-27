@@ -99,7 +99,7 @@ export default function Approvals() {
           </Select>
           <Input value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา reference/คำอธิบาย" className="w-56 luxury-input text-xs" />
         </div>
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto table-vscroll">
           <table className="w-full text-sm">
             <thead>
               <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">

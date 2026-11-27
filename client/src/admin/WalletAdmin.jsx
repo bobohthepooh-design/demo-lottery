@@ -236,7 +236,7 @@ export default function AdminWallet() {
           <button onClick={exportCsv} className="luxury-btn-outline text-xs px-4 py-2 rounded-lg">⬇️ Export CSV (หน้านี้)</button>
         </div>
         {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
-        <div className="overflow-x-auto hidden lg:block">
+        <div className="overflow-x-auto hidden lg:block table-vscroll">
           <table className="w-full text-sm">
             <thead>
               <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">
@@ -328,7 +328,7 @@ export default function AdminWallet() {
           </div>
         )}
         {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
-        <div className="overflow-x-auto hidden lg:block">
+        <div className="overflow-x-auto hidden lg:block table-vscroll">
           <table className="w-full text-sm">
             <thead>
               <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">

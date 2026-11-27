@@ -175,7 +175,7 @@ export default function AdminMembers() {
             <div className="px-4 py-6 text-center text-xs text-[var(--muted-gray)]">ไม่มีข้อมูลสมาชิก</div>
           )}
         </div>
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto table-vscroll">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[var(--border-light)]">

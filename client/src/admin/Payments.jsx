@@ -113,7 +113,7 @@ export default function AdminPayments() {
         ) : (
           <>
           {/* Desktop: ตาราง — ซ่อนบนจอ < lg */}
-          <div className="overflow-x-auto hidden lg:block">
+          <div className="overflow-x-auto hidden lg:block table-vscroll">
             <table className="w-full text-sm">
               <thead>
                 <tr className="[background:var(--bg-dark-surface)] [border-bottom:1px_solid_var(--border-light)]">

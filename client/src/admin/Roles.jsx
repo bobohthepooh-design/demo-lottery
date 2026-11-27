@@ -82,7 +82,7 @@ export default function AdminRoles() {
             </div>
           ))}
         </div>
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto table-vscroll">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[var(--border-light)]">
