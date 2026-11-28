@@ -623,6 +623,15 @@ export default function PlaceBet() {
                     <div className="flex flex-wrap items-center gap-2 mt-4">
                       <Button
                         type="button"
+                        onClick={() => setNumber(randNum(rule.digits))}
+                        variant="secondary"
+                        size="sm"
+                        className="text-xs font-bold [background:linear-gradient(135deg,var(--gold-gradient-start),var(--gold-gradient-end))] [border:none] [color:var(--bg-deep-black)]"
+                      >
+                        🎲 สุ่มเลข
+                      </Button>
+                      <Button
+                        type="button"
                         disabled={number.length < 2}
                         onClick={() => setNumber(number.split('').reverse().join(''))}
                         variant="secondary"
