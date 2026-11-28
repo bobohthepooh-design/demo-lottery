@@ -11,10 +11,6 @@ import FairnessNote from '../components/Fairness.jsx';
 import { sfx } from '../sound.js';
 
 // ชื่อสัญลักษณ์ภาษาไทย — ใช้เมื่อ outcome เก่าใน DB ไม่มี field name (ตอนนี้ server ส่ง name มาใน outcome แล้ว)
-const SYMBOL_INFO = {
-  '🍒': 'เชอร์รี่', '🍋': 'เลมอน', '🍊': 'ส้ม', '🍇': 'องุ่น', '🔔': 'กระดิ่ง', '⭐': 'ดาว', '💎': 'เพชร', '7️⃣': 'เจ็ด',
-};
-
 // รางวัลเริ่มต้นก่อน config โหลด (ตรงกับ default ฝั่ง server — จะถูกแทนที่ด้วยข้อมูลจริงจาก /lottery/public-config)
 // prize = จ่ายเมื่อซ้ำ 3 รีลบน 1 เพย์ไลน์ • max = จ่ายเมื่อซ้ำครบ 5 รีลบนเส้นเดียว
 const DEFAULT_PRIZES = [
@@ -301,25 +297,23 @@ function RevealResult({ outcome, balance, slipRef }) {
   if (!outcome) return null;
   const win = outcome.win;
   return (
-    <div className={`relative rounded-2xl border-2 p-5 text-center overflow-visible ${win ? 'luxury-card-gold-border' : 'luxury-card'}`}>
+    <div className={`relative rounded-xl border px-3 py-2.5 text-center overflow-visible ${win ? 'luxury-card-gold-border' : 'luxury-card'}`}>
       {win && <WinBurst />}
       {win ? (
-        <>
-          <div className="text-5xl mb-2 animate-coin">🎉🏆</div>
-          <div className="text-xl font-bold text-[var(--success-green)]">ถูกรางวัล!</div>
-          <div className="text-3xl font-black mt-1 text-[var(--gold-bright)]">+{satang(outcome.prize)} บาท</div>
-          <div className="text-xs mt-1 text-[var(--gold-primary)]">
-            {outcome.lines?.length > 0 && <>เพย์ไลน์ {outcome.lines.map(l => `#${l.line}`).join(', ')} — </>}
-            {outcome.lines?.length > 1
-              ? `${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''} สูงสุด ×${Math.max(...outcome.lines.map(l => l.count || 0))}`
-              : `${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''} ซ้ำ ${outcome.lines?.[0]?.count || 3} รีล`}
-          </div>
-        </>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <span className="text-xl animate-coin">🎉</span>
+          <span className="text-sm font-bold text-[var(--success-green)]">ถูก!</span>
+          <span className="text-lg font-black text-[var(--gold-bright)]">+{satang(outcome.prize)}</span>
+          <span className="text-[11px] text-[var(--gold-primary)]">
+            {outcome.lines?.length > 0 && <>เพย์ไลน์ {outcome.lines.map(l => `#${l.line}`).join(',')} </>}
+            {outcome.symbol} {outcome.lines?.length > 1 ? `×${Math.max(...outcome.lines.map(l => l.count || 0))}` : `ซ้ำ ${outcome.lines?.[0]?.count || 3} รีล`}
+          </span>
+        </div>
       ) : (
-        <>
-          <div className="text-4xl mb-2">😢</div>
-          <div className="text-lg font-bold text-[var(--muted-gray)]">ไม่ถูก — ลองใหม่</div>
-        </>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-lg">😢</span>
+          <span className="text-sm font-bold text-[var(--muted-gray)]">ไม่ถูก — ลองใหม่</span>
+        </div>
       )}
     </div>
   );

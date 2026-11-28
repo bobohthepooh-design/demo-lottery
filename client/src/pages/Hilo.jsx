@@ -453,21 +453,21 @@ function ResultPanel({ ticket }) {
   const pickTh = PICK_TH[ticket.pick] || ticket.pick;
   const outcomeTh = ticket.side === 'eleven' ? '11 ไฮโล' : ticket.side === 'high' ? 'สูง' : 'ต่ำ';
   return (
-    <div className={`relative rounded-2xl border-2 p-5 text-center overflow-visible ${
+    <div className={`relative rounded-xl border px-3 py-2.5 text-center overflow-visible ${
       won ? 'border-green-500/60 bg-green-500/10' : 'border-navy-600 bg-navy-900/60'}`}>
       {won && <WinBurst />}
       {won ? (
-        <>
-          <div className="text-4xl mb-1 animate-coin text-green-400 font-black">✓</div>
-          <div className="text-lg font-bold text-green-400">ถูกต้อง! {ticket.dice.join(' + ')} = {ticket.sum} → {outcomeTh}</div>
-          <div className="text-2xl font-black text-green-300 animate-coin">+{satang(ticket.payout)} บาท</div>
-        </>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <span className="text-xl animate-coin text-green-400 font-black">✓</span>
+          <span className="text-sm font-bold text-green-400">ถูก {ticket.dice.join('+')}={ticket.sum}→{outcomeTh}</span>
+          <span className="text-lg font-black text-green-300 animate-coin">+{satang(ticket.payout)}</span>
+        </div>
       ) : (
-        <>
-          <div className="text-3xl mb-1 text-navy-500 font-black">✕</div>
-          <div className="text-navy-200 font-semibold">{ticket.dice.join(' + ')} = {ticket.sum} → {outcomeTh}</div>
-          <div className="text-xs text-navy-400 mt-1">ทาย{pickTh} ไม่ถูก</div>
-        </>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <span className="text-lg text-navy-500 font-black">✕</span>
+          <span className="text-sm text-navy-200 font-semibold">{ticket.dice.join('+')}={ticket.sum}→{outcomeTh}</span>
+          <span className="text-xs text-navy-400">ทาย{pickTh} ไม่ถูก</span>
+        </div>
       )}
     </div>
   );
