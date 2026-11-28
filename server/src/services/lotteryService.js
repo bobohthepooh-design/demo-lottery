@@ -582,6 +582,35 @@ export async function cancelBet(userId, slipId) {
   });
 }
 
+/** Admin cancels a pending slip of ANY user — refunds stake atomically + notifies via all channels. */
+export async function adminCancelSlip(adminId, slipId, reason = null) {
+  return txAsync(async (d) => {
+    const slip = await d.prepare(`SELECT bs.*, dr.status AS draw_status
+                            FROM bet_slips bs JOIN lottery_draws dr ON dr.id = bs.draw_id
+                            WHERE bs.id = ?`).get(slipId);
+    if (!slip) throw new HttpError(404, 'ไม่พบโพย');
+    if (slip.status !== 'pending') throw new HttpError(400, 'ยกเลิกได้เฉพาะโพยที่รอผล');
+    if (slip.draw_status === 'settled' || slip.draw_status === 'cancelled')
+      throw new HttpError(400, 'รอบนี้ออกผล/ยกเลิกแล้ว ไม่สามารถยกเลิกโพยได้');
+    const claim = await d.prepare(`UPDATE bet_slips SET status = 'cancelled' WHERE id = ? AND status = 'pending'`).run(slipId);
+    if (claim.changes === 0) throw new HttpError(409, 'โพยนี้ถูกยกเลิกหรือออกผลแล้ว', 'SLIP_CLOSED');
+    await d.prepare(`UPDATE bet_items SET status = 'cancelled' WHERE slip_id = ? AND status = 'pending'`).run(slipId);
+    const refundTx = await creditTx(d, {
+      userId: slip.user_id, type: 'bet_refund', amount: slip.total_stake,
+      description: `คืนเครดิตโพย ${slip.slip_ref} (แอดมินยกเลิก${reason ? `: ${reason}` : ''})`,
+      idempotencyKey: `bet-refund-${slip.slip_ref}`,
+    });
+    await notify(slip.user_id, {
+      type: 'refund', title: `โพย ${slip.slip_ref} ถูกยกเลิก`,
+      body: `แอดมินยกเลิกโพยของคุณ — คืนเครดิต ฿${(slip.total_stake / 100).toLocaleString('th-TH')}${reason ? ` (เหตุผล: ${reason})` : ''}`,
+      link: '/my-bets',
+    }, d);
+    audit({ userId: adminId, action: 'bet.admin_cancel', entityType: 'bet_slip', entityId: slip.slip_ref,
+      detail: { slipId, targetUserId: slip.user_id, totalStake: slip.total_stake, reason } });
+    return { slipRef: slip.slip_ref, refunded: slip.total_stake, balance: refundTx.balanceAfter };
+  });
+}
+
 export async function getMySlip(userId, slipRef) {
   const slip = await qGet(`SELECT bs.*, d.draw_code, d.draw_at, lt.name_th AS type_name_th,
                                  c.name_th AS category_name_th

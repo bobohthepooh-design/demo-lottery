@@ -41,7 +41,12 @@ export const config = {
     channelId: process.env.LINE_CHANNEL_ID || '',
     channelSecret: process.env.LINE_CHANNEL_SECRET || '',
     callbackUrl: process.env.LINE_CALLBACK_URL || '',
+    // Messaging API channel access token — สำหรับ push notification หาผู้ใช้ LINE
+    // (ต้องเป็น channel เดียวกับ Login + ผู้ใช้ต้อง add OA เป็นเพื่อน ไม่งั้น push จะ 403)
+    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
   },
+  // URL สาธารณะของเว็บ — ใช้สร้าง absolute link ใน notification ภายนอก (LINE/email)
+  publicUrl: process.env.PUBLIC_URL || '',
   isProd: (process.env.NODE_ENV || 'development') === 'production',
   // TRUST_PROXY: ตั้ง 'true' เฉพาะเมื่อรันหลัง reverse proxy (nginx/caddy)
   // ถ้า expose node ตรงๆ ต้องเป็น false ไม่งั้น client spoof X-Forwarded-For

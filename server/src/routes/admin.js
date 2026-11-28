@@ -876,6 +876,16 @@ router.get('/bets', requirePerm('bets.view_all'), async (req, res) => {
   res.json({ slips: slips.map(s => ({ ...s, items: itemsBySlip.get(s.id) || [] })), total, limit, offset });
 });
 
+// admin ยกเลิกโพยที่รอผลของสมาชิก — คืนเครดิต + แจ้งเตือนผู้แทงทุกช่องทาง
+const cancelSlipSchema = z.object({ reason: z.string().max(200).optional() });
+router.post('/bets/:id/cancel', requirePerm('draws.manage'), async (req, res, next) => {
+  try {
+    const { reason } = cancelSlipSchema.parse(req.body || {});
+    broadcast('bets');
+    res.json({ ok: true, ...(await lottery.adminCancelSlip(req.user.id, Number(req.params.id), reason || null)) });
+  } catch (e) { next(e); }
+});
+
 // ---------- wallet adjust ----------
 const adjustSchema = z.object({
   userId: z.number().int().positive(),

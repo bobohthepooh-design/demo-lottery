@@ -7,6 +7,7 @@ import { cn } from '../lib/utils.js';
 import { useUrlFilters, TablePager } from './useUrlFilters.jsx';
 import { AdminLoading, AdminError } from '../components/AdminStates.jsx';
 import { exportCsv } from '../lib/exportCsv.js';
+import { toast } from '../components/toast.js';
 
 const STATUS_TH = {
   pending: 'รอผล', won: 'ถูกรางวัล', lost: 'ไม่ถูก',
@@ -104,6 +105,7 @@ export default function AdminBets() {
   const [q, setQ] = useState(filters.q); // draft ขณะพิมพ์ — commit ลง URL หลัง debounce
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState('');
+  const [cancelling, setCancelling] = useState(null);
   const [loading, setLoading] = useState(true);
   const debounceRef = useRef(null);
 
@@ -226,6 +228,32 @@ export default function AdminBets() {
               {open === s.id && (
                 <div className="px-5 py-4 space-y-2 [border-top:1px_solid_var(--border-light)]">
                   {(Array.isArray(s.items) ? s.items : []).map(i => <ItemRow key={i.id} i={i} />)}
+                  {s.status === 'pending' && (
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={cancelling === s.id}
+                        onClick={async () => {
+                          const input = window.prompt(`ยกเลิกโพย ${s.slip_ref} ของ ${s.username}?\nระบบจะคืนเครดิตเต็มจำนวนและแจ้งเตือนผู้แทง\n\nเหตุผล (ไม่บังคับ):`);
+                          if (input === null) return;
+                          const reason = input.trim();
+                          setCancelling(s.id);
+                          try {
+                            const r = await api(`/admin/bets/${s.id}/cancel`, { method: 'POST', body: { reason: reason || undefined } });
+                            toast(`ยกเลิกโพย ${r.slipRef} แล้ว — คืน ${satang(r.refunded)} บาท`, 'success');
+                            setOpen(null);
+                            load();
+                          } catch (e) { toast(e?.message || 'ยกเลิกไม่สำเร็จ', 'error'); }
+                          finally { setCancelling(null); }
+                        }}
+                        className="text-xs font-bold [background:var(--danger-red)] [border-color:var(--danger-red)] [color:var(--white)]"
+                      >
+                        {cancelling === s.id ? 'กำลังยกเลิก...' : '🚫 ยกเลิกโพย + คืนเครดิต'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
