@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SkeletonCard } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
@@ -229,7 +230,7 @@ function DiceMachineResult({ last, spinDone, g, game, onSpinDone }) {
                 )}
               </div>
             ) : (
-              <div className="text-center text-xs text-navy-300">ไม่เข้าเงื่อนไข — ลองใหม่นะ!</div>
+              <div className="text-center text-xs text-navy-300">ไม่ถูก — ลองใหม่</div>
             )}
             <div className="mt-2"><FairnessNote fairness={last.fairness}
               verify={(seed) => api('/kiwi/verify', { method: 'POST', body: { game: last.game || game, seed } })} /></div>
@@ -337,9 +338,9 @@ function KiwiDrawMachine({ last, g, game, onDone }) {
                 <div className="text-2xl font-black text-green-300 animate-coin">+{satang(last.payout)} บาท</div>
               </div>
             ) : hits > 0 ? (
-              <div className="text-center text-xs text-sky-300">ถูก {hits} เลข — ต่ำกว่าเงื่อนไขรางวัล (ต้องถูก 2+)</div>
+              <div className="text-center text-xs text-sky-300">ถูก {hits} เลข (ต้องถูก 2+)</div>
             ) : (
-              <div className="text-center text-xs text-navy-300">ไม่เข้าเงื่อนไข — ลองใหม่นะ!</div>
+              <div className="text-center text-xs text-navy-300">ไม่ถูก — ลองใหม่</div>
             )}
             <div className="mt-2"><FairnessNote fairness={last.fairness}
               verify={(seed) => api('/kiwi/verify', { method: 'POST', body: { game: last.game || game, seed } })} /></div>
@@ -428,6 +429,7 @@ export default function Kiwi() {
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
+        <Link to="/games" className="absolute top-3 left-4 text-[11px] font-semibold [color:var(--gold-primary)] hover:text-[var(--gold-bright)] transition">← เลือกเกมอื่น</Link>
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite] [bottom:-4%] [left:6%] [background:radial-gradient(circle_at_35%_30%,_#fff3c4,_#e2a812_60%,_#92600a)] [animation-delay:0.6s]" />
         <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite] [top:-4%] [right:8%] [background:radial-gradient(circle_at_35%_30%,_#1f2937,_#111827_65%,_#030712)] [animation-delay:2s]" />
         <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">หวยยี่กี</h1>

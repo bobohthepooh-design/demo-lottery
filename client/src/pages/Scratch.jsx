@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SkeletonCard } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
@@ -142,6 +143,7 @@ export default function Scratch() {
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
+        <Link to="/games" className="absolute top-3 left-4 text-[11px] font-semibold [color:var(--gold-primary)] hover:text-[var(--gold-bright)] transition">← เลือกเกมอื่น</Link>
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite] [bottom:-4%] [right:6%] [background:radial-gradient(circle_at_35%_30%,_#fff3c4,_#e2a812_60%,_#92600a)] [animation-delay:1s]" />
         <div className="text-5xl mb-2 animate-float">🎰</div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl luxury-gradient-text">สล็อต</h1>
@@ -306,23 +308,17 @@ function RevealResult({ outcome, balance, slipRef }) {
           <div className="text-5xl mb-2 animate-coin">🎉🏆</div>
           <div className="text-xl font-bold text-[var(--success-green)]">ถูกรางวัล!</div>
           <div className="text-3xl font-black mt-1 text-[var(--gold-bright)]">+{satang(outcome.prize)} บาท</div>
-          <div className="text-sm mt-1 text-[var(--muted-gray)]">
-            {outcome.lines?.length > 0 && (
-              <div className="text-[11px] mb-0.5 text-[var(--gold-primary)]">
-                เพย์ไลน์ที่ถูก: {outcome.lines.map(l => `#${l.line}`).join(', ')}
-              </div>
-            )}
+          <div className="text-xs mt-1 text-[var(--gold-primary)]">
+            {outcome.lines?.length > 0 && <>เพย์ไลน์ {outcome.lines.map(l => `#${l.line}`).join(', ')} — </>}
             {outcome.lines?.length > 1
-              ? `ถูก ${outcome.lines.length} เพย์ไลน์ — สูงสุด ${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''}`
+              ? `${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''} สูงสุด ×${Math.max(...outcome.lines.map(l => l.count || 0))}`
               : `${outcome.symbol} ${outcome.name || SYMBOL_INFO[outcome.symbol] || ''} ซ้ำ ${outcome.lines?.[0]?.count || 3} รีล`}
           </div>
-          {balance !== undefined && <div className="text-xs mt-2 text-[var(--muted-gray)]">เครดิตคงเหลือ {satang(balance)} บาท</div>}
         </>
       ) : (
         <>
           <div className="text-4xl mb-2">😢</div>
-          <div className="text-lg font-bold text-[var(--muted-gray)]">ไม่ถูกรางวัลรอบนี้</div>
-          <div className="text-xs mt-1 text-[var(--dark-gray)]">ลองเล่นเกมใหม่ — ดวงมาแล้วถูกใหญ่!</div>
+          <div className="text-lg font-bold text-[var(--muted-gray)]">ไม่ถูก — ลองใหม่</div>
         </>
       )}
     </div>

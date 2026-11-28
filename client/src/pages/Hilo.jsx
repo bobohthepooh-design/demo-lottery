@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SkeletonCard } from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { api, satang, fmtDateTime, newIdemKey } from '../api.js';
@@ -220,6 +221,7 @@ export default function Hilo() {
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center luxury-card luxury-card-gold-border">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[var(--gold-gradient-start)] to-[var(--gold-gradient-end)]" />
+        <Link to="/games" className="absolute top-3 left-4 text-[11px] font-semibold [color:var(--gold-primary)] hover:text-[var(--gold-bright)] transition">← เลือกเกมอื่น</Link>
         <div className="casino-chip w-10 h-10 sm:w-14 sm:h-14 absolute animate-[spin_8s_linear_infinite] [bottom:-4%] [left:6%] [background:radial-gradient(circle_at_35%_30%,_#fde68a,_#d9a520_60%,_#8a6405)] [animation-delay:0.6s]" />
         <div className="casino-chip w-8 h-8 sm:w-11 sm:h-11 absolute animate-[spin_8s_linear_infinite] [top:-4%] [right:8%] [background:radial-gradient(circle_at_35%_30%,_#1f2937,_#111827_65%,_#030712)] [animation-delay:2s]" />
         <div className="flex justify-center gap-3 mb-4">
@@ -459,13 +461,12 @@ function ResultPanel({ ticket }) {
           <div className="text-4xl mb-1 animate-coin text-green-400 font-black">✓</div>
           <div className="text-lg font-bold text-green-400">ถูกต้อง! {ticket.dice.join(' + ')} = {ticket.sum} → {outcomeTh}</div>
           <div className="text-2xl font-black text-green-300 animate-coin">+{satang(ticket.payout)} บาท</div>
-          {ticket.balance !== undefined && <div className="text-xs text-navy-400 mt-1">เครดิตคงเหลือ {satang(ticket.balance)} บาท</div>}
         </>
       ) : (
         <>
           <div className="text-3xl mb-1 text-navy-500 font-black">✕</div>
           <div className="text-navy-200 font-semibold">{ticket.dice.join(' + ')} = {ticket.sum} → {outcomeTh}</div>
-          <div className="text-xs text-navy-400 mt-1">ทาย{pickTh} ไม่ถูก — ลองใหม่นะ!</div>
+          <div className="text-xs text-navy-400 mt-1">ทาย{pickTh} ไม่ถูก</div>
         </>
       )}
     </div>
